@@ -1073,6 +1073,79 @@ body.is-op [data-act="pickclient"],body.is-op [data-act="noclient"]{display:none
 .ptr.busy .ptr-i{animation:ptrspin .8s linear infinite}
 @keyframes ptrspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.ptr.busy .ptr-i{animation-duration:2.4s}}
+
+/* contrôle quotidien : choix de la date */
+.chkday{margin-bottom:14px;padding:14px 16px}
+.chkday .chkd-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chkday .chkd-row input[type=date]{width:auto;flex:1 1 170px;max-width:220px}
+.chkd-note{margin:10px 0 0;font-size:13px;text-transform:capitalize}
+.chkd-note:not(.muted){text-transform:none;color:var(--warn);font-weight:600}
+.chkday.late{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,var(--surface))}
+.hist span[data-act]{cursor:pointer;border:2px solid transparent}
+.hist span.sel{border-color:var(--brand)}
+
+/* v47 : échanges de shifts */
+.swintro{margin-bottom:14px}
+.swintro h3{margin:0 0 4px}.swintro p{margin:0 0 12px;max-width:68ch}
+.swauto{margin:14px 0 0;font-weight:500}
+.swwarn{margin:12px 0 0;color:var(--warn);font-weight:600;font-size:14px}
+.swh3{font-size:15px;margin:18px 2px 8px}
+.swempty{margin:0 2px 8px}
+.swc{margin-bottom:12px;padding:14px 16px}
+.swh{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.swh h3{display:flex;align-items:center;gap:8px;margin:0}
+.swk{display:inline-flex;align-items:center;gap:8px;font-weight:700}
+.swk svg,.swh h3 svg{width:18px;height:18px}
+.swx{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}
+.sws{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2,var(--bg))}
+.sws .swn{font-weight:700}
+.swar{align-self:center;font-size:20px;color:var(--muted)}
+.swnote{margin:10px 0 0;font-style:italic;color:var(--muted)}
+.swchk{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:4px;font-size:13px}
+.swchk li{padding-left:22px;position:relative;line-height:1.4}
+.swchk li::before{position:absolute;left:0;top:0;font-weight:700}
+.swchk .no{color:var(--bad)}.swchk .no::before{content:"✕"}
+.swchk .wa{color:var(--warn)}.swchk .wa::before{content:"!"; left:4px}
+.swchk .yes{color:var(--ok)}.swchk .yes::before{content:"✓"}
+.swa{margin-top:12px}
+.btn.swmini{min-height:36px;padding:4px 12px;font-size:13px;gap:6px;margin-left:auto}
+.btn.swmini svg{width:15px;height:15px}
+.mpd .btn.swmini+.pill{margin-left:8px}
+.swmode{display:grid;gap:2px;margin:6px 0 12px}
+.swmode .check{margin:0;font-weight:500;font-size:14px}
+.swsug{max-height:min(40vh,320px);overflow:auto;margin:0 0 12px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.swsh3{margin:2px 0 6px;font-size:13px;font-weight:700;color:var(--muted)}
+.swopt{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-radius:10px;cursor:pointer;font-size:14px}
+.swopt:hover{background:var(--surface-2,var(--bg))}
+.swopt input{width:20px;height:20px;min-height:0;margin-top:1px;accent-color:var(--brand);flex:none}
+.swopt .swwa{display:block;font-style:normal;color:var(--warn);font-size:12px;margin-top:2px}
+.swerr{margin:0 0 10px;color:var(--bad);font-size:13px;font-weight:600;min-height:1em}
+.swhome{margin-bottom:14px;border-left:4px solid var(--pay)}
+.swhome .swn1{margin:0 0 6px;font-size:14px;line-height:1.45}
+.nbadge.sw{background:#E04646;color:#fff}
+@media (max-width:560px){
+  .swx{grid-template-columns:1fr}
+  .swar{justify-self:center;transform:rotate(90deg);line-height:1}
+  .swa .btn{flex:1 1 100%}
+  .mpd{flex-wrap:wrap}
+}
+
+/* v47 : mises à jour automatiques */
+.aubar{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 10px);transform:translateX(-50%);z-index:95;display:flex;align-items:center;gap:12px;max-width:min(94vw,520px);width:max-content;padding:10px 10px 10px 14px;border-radius:16px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 10px 30px rgba(15,30,70,.22)}
+.aubar[hidden]{display:none}
+.aubar .au-i{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--brand-soft);color:var(--brand);flex:none}
+.aubar .au-i svg{width:18px;height:18px}
+.aubar .au-i.spin svg{animation:ptrspin 1s linear infinite}
+.aubar .au-t{display:grid;gap:1px;min-width:0}
+.aubar .au-t b{font-size:14px}.aubar .au-t small{color:var(--muted);font-size:12px}
+.aubar .btn{min-height:38px;padding:0 14px;white-space:nowrap}
+.aubar .au-x{width:32px;height:32px;border-radius:10px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;flex:none}
+.aubar .au-x svg{width:16px;height:16px}
+@media (max-width:520px){.aubar{width:calc(100vw - 24px);max-width:none}.aubar .au-t{flex:1}}
+@media (prefers-reduced-motion:reduce){.aubar .au-i.spin svg{animation-duration:3s}}
+.auv{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.auv>div{display:grid;gap:2px;font-size:13px}
+.auv .btn{min-height:40px}
 @media (max-width:1080px){.pos{grid-template-columns:minmax(0,1fr) 340px}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:0}
@@ -1124,6 +1197,282 @@ body.is-op [data-act="pickclient"],body.is-op [data-act="noclient"]{display:none
 a.btn.primary{color:#fff}
 
 .cpick{width:40px;height:40px;border:0;padding:0;background:none;border-radius:10px;cursor:pointer}
+/* =====================================================================
+   v47 · refonte visuelle : couche « moderne » posée par-dessus (dernière du fichier)
+   Principes : fond teinté + cartes blanches, une seule couleur d'action (orange),
+   menu marine, angles généreux, ombres douces, textes en minuscules lisibles.
+   ===================================================================== */
+:root{
+  --canvas:color-mix(in srgb,var(--bg) 95.5%,var(--brand));
+  --hair:color-mix(in srgb,var(--line) 62%,transparent);
+  --ink-2:color-mix(in srgb,var(--ink) 72%,var(--bg));
+  --sh-1:0 1px 2px rgba(12,22,48,.05);
+  --sh-2:0 1px 2px rgba(12,22,48,.04),0 8px 26px rgba(12,22,48,.06);
+  --sh-3:0 2px 6px rgba(12,22,48,.05),0 22px 54px rgba(12,22,48,.13);
+  --shadow:0 24px 70px rgba(8,16,40,.3);
+  --ease:cubic-bezier(.2,.75,.25,1);
+  --ring:0 0 0 4px color-mix(in srgb,var(--brand) 18%,transparent);
+  --side-deep:color-mix(in oklab,var(--side) 20%,#070b19);
+}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--canvas);letter-spacing:-.003em;text-rendering:optimizeLegibility}
+::selection{background:color-mix(in srgb,var(--brand) 22%,transparent)}
+h1,h2,h3{letter-spacing:-.025em}
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--ink) 22%,transparent) transparent}
+
+/* ---------- logo ---------- */
+.lmark{background:var(--pay);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 10px -2px color-mix(in srgb,var(--pay) 55%,transparent);border-radius:12px}
+.logo .lt,.logo-m .lt{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--ink);-webkit-text-fill-color:var(--ink);font-weight:800;letter-spacing:-.05em}
+.side .logo .lt{color:#fff;-webkit-text-fill-color:#fff}
+.glogo .lmark{background:var(--pay)}
+
+/* ---------- menu de gauche ---------- */
+@media (min-width:901px){
+  .app{grid-template-columns:236px minmax(0,1fr);gap:28px}
+  .side{background:var(--side-bg,var(--side-deep));border-radius:26px;padding:18px 12px 14px;gap:16px;
+    border:1px solid rgba(255,255,255,.07);box-shadow:0 1px 2px rgba(7,11,25,.25),0 28px 56px -22px rgba(7,11,25,.55)}
+  .side .logo{padding:4px 8px 6px}
+  .side .logo svg{color:#fff}
+  .nav{gap:2px}
+  .nav a{position:relative;padding:10px 12px;border-radius:13px;font-size:14.5px;font-weight:560;letter-spacing:-.01em;
+    color:color-mix(in srgb,var(--side-ink) 66%,transparent);transition:background .15s var(--ease),color .15s var(--ease)}
+  .nav a svg{opacity:.9}
+  .nav a:hover{background:color-mix(in srgb,var(--side-ink) 8%,transparent);color:var(--side-ink)}
+  .nav a.on{background:color-mix(in srgb,var(--side-ink) 13%,transparent);color:var(--side-ink);font-weight:650}
+  .nav a.on svg{color:var(--pay);opacity:1}
+  .subnav{border-left:1px solid color-mix(in srgb,var(--side-ink) 16%,transparent);margin-left:23px}
+  .subnav button{font-size:13.5px;font-weight:560;color:color-mix(in srgb,var(--side-ink) 62%,transparent)}
+  .subnav button:hover{background:color-mix(in srgb,var(--side-ink) 8%,transparent);color:var(--side-ink)}
+  .subnav button.on{background:color-mix(in srgb,var(--side-ink) 12%,transparent);color:var(--side-ink);font-weight:650}
+  .navacc{border-top:1px solid color-mix(in srgb,var(--side-ink) 12%,transparent)}
+  .side-foot{font-size:12px}
+  .navtog{background:color-mix(in srgb,var(--side-ink) 10%,transparent)}
+}
+.nav a .nbadge{background:var(--pay);color:var(--pay-ink)}
+
+/* ---------- barre de recherche du haut ---------- */
+.gbar{background:color-mix(in srgb,var(--canvas) 82%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(16px);backdrop-filter:saturate(1.4) blur(16px);border-bottom:0;box-shadow:0 1px 0 var(--hair)}
+.gbox{min-height:46px;border:1px solid var(--line);border-radius:15px;background:var(--surface);box-shadow:var(--sh-1);transition:border-color .15s,box-shadow .15s}
+.gbox:focus-within{border-color:var(--brand);box-shadow:var(--ring)}
+.gbox input{font-size:15.5px}
+.gb-go{background:var(--brand);color:var(--brand-ink);border-radius:11px;min-width:40px}
+.gb-ai .gb-ri{background:var(--brand-soft);color:var(--brand)}
+.gb-res{border:1px solid var(--hair);border-radius:18px;box-shadow:var(--sh-3)}
+
+/* ---------- titres de page ---------- */
+.top h1{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--ink);-webkit-text-fill-color:var(--ink);font-size:32px;font-weight:700;letter-spacing:-.035em}
+.top .sub{font-size:13.5px;color:var(--muted)}
+.rolepill{min-height:40px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink);font-weight:600;box-shadow:var(--sh-1)}
+.rolepill.adm{background:var(--surface);color:var(--ink)}
+.rolepill.adm svg{color:var(--brand)}
+.rolepill:hover{background:var(--surface-2)}
+
+/* ---------- boutons ---------- */
+.btn{border-radius:13px;background:var(--surface);border:1px solid var(--line);color:var(--ink);font-weight:620;box-shadow:var(--sh-1);
+  transition:background .15s var(--ease),border-color .15s var(--ease),box-shadow .15s var(--ease),transform .08s var(--ease),filter .15s}
+.btn:hover{background:var(--surface-2);border-color:color-mix(in srgb,var(--ink) 18%,var(--line))}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5;box-shadow:none}
+.btn.primary,.chip.on,.seg button.on,.dy.on{background:var(--brand);color:var(--brand-ink);border-color:transparent}
+.btn.primary{box-shadow:0 1px 2px rgba(12,22,48,.18),0 6px 14px -4px color-mix(in srgb,var(--brand) 55%,transparent),inset 0 1px 0 rgba(255,255,255,.16)}
+.btn.primary:hover{background:var(--brand);filter:brightness(1.09);border-color:transparent}
+a.btn.primary{color:var(--brand-ink)}
+.btn.danger{color:var(--bad);background:var(--surface)}
+.btn.danger:hover{background:color-mix(in srgb,var(--bad) 8%,var(--surface));border-color:color-mix(in srgb,var(--bad) 35%,var(--line))}
+.btn.warnbtn,.btn-pay,.hero .btn.primary{background:var(--pay);color:var(--pay-ink);border-color:transparent}
+.btn.warnbtn{box-shadow:0 1px 2px rgba(12,22,48,.15),0 6px 14px -4px color-mix(in srgb,var(--pay) 55%,transparent),inset 0 1px 0 rgba(255,255,255,.35)}
+.ix{background:var(--surface);border:1px solid var(--line);box-shadow:var(--sh-1);transition:background .15s}
+.ix:hover{background:var(--surface-2)}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:none;border-color:var(--line)}
+.btn.ghost:hover{background:var(--surface-2)}
+.glink{color:var(--brand)}
+
+/* ---------- pastilles, puces, onglets ---------- */
+.pill{padding:3px 10px;font-weight:650;background:color-mix(in srgb,var(--ink) 6%,var(--surface));color:var(--ink-2)}
+.pill.ok{background:color-mix(in srgb,var(--ok) 14%,var(--surface));color:var(--ok)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 15%,var(--surface));color:color-mix(in srgb,var(--warn) 82%,#5a2a00)}
+.pill.bad{background:color-mix(in srgb,var(--bad) 13%,var(--surface));color:var(--bad)}
+.chip{border:1px solid var(--line);background:var(--surface);box-shadow:var(--sh-1);font-weight:600;transition:background .15s,border-color .15s}
+.chip:hover{border-color:color-mix(in srgb,var(--ink) 20%,var(--line))}
+.tabs,.seg{background:color-mix(in srgb,var(--ink) 5.5%,var(--canvas));border-radius:15px;padding:4px;gap:2px}
+.tabs button,.seg button{border-radius:11px;font-weight:620;color:var(--muted);transition:background .15s var(--ease),color .15s,box-shadow .15s}
+.tabs button:hover,.seg button:hover{color:var(--ink)}
+.tabs button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(12,22,48,.1),0 2px 8px rgba(12,22,48,.06)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(12,22,48,.1),0 2px 8px rgba(12,22,48,.06)}
+.banner{border-radius:16px;font-weight:560;border:1px solid color-mix(in srgb,var(--warn) 28%,var(--line));background:color-mix(in srgb,var(--warn) 9%,var(--surface))}
+.banner.ok{border-color:color-mix(in srgb,var(--ok) 26%,var(--line));background:color-mix(in srgb,var(--ok) 8%,var(--surface))}
+.banner a.btn,.banner .btn{background:var(--surface)}
+
+/* ---------- cartes, indicateurs, lignes ---------- */
+.card{background:var(--surface);border:1px solid var(--hair);border-radius:20px;box-shadow:var(--sh-2);padding:20px}
+.card h3{font-size:16.5px;font-weight:680;letter-spacing:-.02em;margin-bottom:14px}
+.kpi{border:1px solid var(--hair);border-radius:20px;box-shadow:var(--sh-2);padding:18px 20px}
+.kpi .l{font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted)}
+.kpi .v,.big{color:var(--ink);font-weight:700;letter-spacing:-.04em}
+.kpi .v{font-size:34px}
+.kpi:hover{transform:none;box-shadow:var(--sh-2)}
+.row{border-top:1px solid var(--hair)}
+.cols>.card,.cols>.kpi{margin-top:0}
+.avatar{background:var(--brand-soft);color:var(--brand);font-weight:700}
+.empty{color:var(--muted)}
+
+/* ---------- formulaires ---------- */
+.field label,.lab{font-size:13px;font-weight:620;letter-spacing:0;text-transform:none;color:var(--ink-2)}
+input,select,textarea{border:1px solid var(--line);border-radius:13px;background:var(--surface);transition:border-color .15s,box-shadow .15s,background .15s}
+input:hover,select:hover,textarea:hover{border-color:color-mix(in srgb,var(--ink) 22%,var(--line))}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;border-color:var(--brand);box-shadow:var(--ring)}
+input::placeholder,textarea::placeholder{color:color-mix(in srgb,var(--muted) 78%,transparent)}
+input[type=checkbox],input[type=radio]{accent-color:var(--brand)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:inherit}
+.check{font-weight:560}
+
+/* ---------- accueil ---------- */
+.hero{background:var(--surface);color:var(--ink);border:1px solid var(--hair);border-radius:28px;padding:30px 34px;box-shadow:var(--sh-2);position:relative;overflow:hidden;isolation:isolate}
+.hero::before{content:"";position:absolute;z-index:-1;right:-60px;top:-110px;width:460px;height:460px;border-radius:50%;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--brand) 20%,transparent),transparent 72%)}
+.hero::after{content:"";position:absolute;z-index:-1;right:150px;bottom:-190px;width:380px;height:380px;border-radius:50%;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--pay) 22%,transparent),transparent 72%)}
+.hero h2{font-size:40px;font-weight:700;letter-spacing:-.04em;color:var(--ink)}
+.hero .eyebrow{font-size:14px;font-weight:600;letter-spacing:0;text-transform:capitalize;opacity:1;color:var(--muted);margin-bottom:6px}
+.hero p{opacity:1;color:var(--muted);font-size:15px}
+.hero .btn,.hero .btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:var(--sh-1)}
+.hero .btn:hover{background:var(--surface-2)}
+.hero a.btn,.hero a.btn.ghost{color:var(--ink)}
+.board{padding:20px}
+.bh h3{font-size:16px}
+.bcomp textarea{min-height:46px;border-radius:14px}
+.mtiles{gap:14px}
+.mt-main{border:1px solid var(--hair);border-radius:22px;box-shadow:var(--sh-2);min-height:128px;gap:12px;font-weight:650;font-size:15px;letter-spacing:-.01em;
+  transition:transform .18s var(--ease),box-shadow .18s var(--ease),border-color .18s}
+.mt-ic{width:52px;height:52px;border-radius:16px;background:color-mix(in srgb,var(--brand) 11%,var(--surface));color:var(--brand);box-shadow:none}
+.mt:nth-child(even) .mt-ic{background:color-mix(in srgb,var(--pay) 15%,var(--surface));color:color-mix(in srgb,var(--pay) 80%,#7a2c00)}
+.mt:hover>.mt-main,.mt:focus-within>.mt-main{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:color-mix(in srgb,var(--brand) 25%,var(--line))}
+.mt-sub{border:1px solid var(--hair);border-radius:20px;box-shadow:var(--sh-3)}
+.mt-sub button:hover .si{background:var(--brand);color:#fff}
+.mtiles .mt:nth-child(even) .mt-sub button:hover .si{background:var(--pay);color:var(--pay-ink)}
+.mt-sub::after{display:none}
+@media (hover:none){.mt-sub{background:color-mix(in srgb,var(--ink) 4%,var(--surface));border:0}}
+
+/* ---------- caisse : catégories ---------- */
+.chips{gap:8px}
+.chips .cat{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:15px;min-height:50px;font-size:15px;font-weight:650;box-shadow:var(--sh-1);gap:9px;
+  transition:background .15s,border-color .15s,box-shadow .15s,color .15s}
+.chips .cat::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--cat);flex:none}
+.chips .cat:hover{border-color:color-mix(in srgb,var(--cat) 45%,var(--line))}
+.chips .cat.on{background:color-mix(in srgb,var(--cat) 12%,var(--surface));border-color:var(--cat);color:var(--ink);box-shadow:0 0 0 1px var(--cat) inset,var(--sh-1)}
+.chips .cat.on::before{box-shadow:0 0 0 4px color-mix(in srgb,var(--cat) 22%,transparent)}
+.cat.on small{color:var(--muted)}
+
+/* ---------- caisse : produits ---------- */
+.grid{grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:14px}
+.tile{position:relative;background:var(--surface);border:1px solid var(--hair);border-radius:20px;box-shadow:var(--sh-1);overflow:hidden;padding:0;gap:0;
+  transition:transform .18s var(--ease),box-shadow .18s var(--ease),border-color .18s}
+.tile:hover{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:color-mix(in srgb,var(--cat) 35%,var(--line))}
+.tile:active{transform:scale(.97);box-shadow:var(--sh-1)}
+.tile .art{border-radius:0;aspect-ratio:4/3;background:color-mix(in srgb,var(--cat) 9%,var(--surface))}
+.tile .n{order:3;background:var(--surface);color:var(--ink);border-bottom:0;padding:11px 14px 14px;min-height:60px;align-items:flex-start;font-size:14.5px;font-weight:650;line-height:1.25;letter-spacing:-.01em}
+.grid .tile .p,.tile .p{position:absolute;top:10px;left:10px;right:auto;width:auto;border-radius:999px;background:rgba(8,16,40,.74);-webkit-background-clip:border-box;background-clip:border-box;color:#fff;-webkit-text-fill-color:#fff;padding:4px 11px;font-size:14px;font-weight:700;letter-spacing:-.01em;
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 1px 3px rgba(8,16,40,.25)}
+.tile .badge{top:10px;right:10px;left:auto;background:var(--pay);color:var(--pay-ink);min-width:28px;height:28px;font-size:14px;font-weight:800;box-shadow:0 2px 6px color-mix(in srgb,var(--pay) 45%,transparent)}
+
+/* ---------- caisse : le ticket ---------- */
+.cart{background:var(--surface);border:1px solid var(--hair);border-radius:26px;box-shadow:var(--sh-3)}
+.cart-h{padding:18px 20px 12px}
+.cart-h h2{font-size:21px;font-weight:700;letter-spacing:-.03em}
+.sec{padding:0 20px 14px}
+.pick{border-radius:14px;border:1.5px dashed color-mix(in srgb,var(--ink) 20%,var(--line));background:transparent;transition:background .15s,border-color .15s}
+.pick:hover{background:var(--surface-2);border-color:var(--brand)}
+.pick.set{border-style:solid;border-color:var(--line);background:var(--surface-2)}
+.lines{border-top:1px solid var(--hair);padding:0 4px}
+.cart-empty{padding:34px 20px;font-size:14.5px}
+.tot{position:relative;padding:18px 20px 20px;border-top:2px dashed color-mix(in srgb,var(--ink) 14%,var(--line));background:color-mix(in srgb,var(--ink) 2.5%,var(--surface));gap:8px}
+.tot::before,.tot::after{content:"";position:absolute;top:-12px;width:22px;height:22px;border-radius:50%;background:var(--canvas);border:1px solid var(--hair);box-shadow:inset 0 1px 3px rgba(12,22,48,.08)}
+.tot::before{left:-12px}.tot::after{right:-12px}
+.tot .r{font-size:14.5px}
+.tot .r.big{font-size:36px;font-weight:700;letter-spacing:-.045em;margin-bottom:8px;align-items:baseline}
+.tot .r.big span:first-child{font-size:17px;font-weight:620;letter-spacing:-.01em;color:var(--muted)}
+.btn-pay{min-height:60px;border-radius:18px;font-size:19px;letter-spacing:-.02em;
+  box-shadow:0 1px 2px rgba(12,22,48,.15),0 14px 28px -10px color-mix(in srgb,var(--pay) 75%,transparent),inset 0 1px 0 rgba(255,255,255,.4);transition:filter .15s,transform .08s}
+.btn-pay:hover:not(:disabled){filter:brightness(1.06)}
+.btn-pay:active:not(:disabled){transform:scale(.985)}
+.btn-pay:disabled{background:color-mix(in srgb,var(--ink) 7%,var(--surface));color:var(--muted);box-shadow:none;opacity:1}
+.cbar{border-radius:999px;box-shadow:var(--sh-3);border:1px solid var(--hair)}
+.cbar button.go{background:var(--pay);color:var(--pay-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+.cbar button.x{color:var(--bad)}
+
+/* ---------- fenêtres, messages ---------- */
+.scrim{background:rgba(8,14,34,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:vfade .18s var(--ease)}
+.modal{border:1px solid var(--hair);border-radius:26px;box-shadow:var(--shadow);padding:24px;animation:vpop .22s var(--ease)}
+.mh h2{font-size:22px;letter-spacing:-.03em}
+.toast{background:color-mix(in srgb,var(--ink) 94%,#000);color:#fff;border-radius:16px;padding:13px 20px;box-shadow:var(--sh-3);font-weight:560;letter-spacing:-.005em}
+@keyframes vfade{from{opacity:0}to{opacity:1}}
+@keyframes vpop{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes vview{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#main.vt>*{animation:vview .3s var(--ease) both}
+#main.vt>*:nth-child(n+4){animation-duration:.2s}
+
+/* ---------- plannings ---------- */
+.dcard{padding:18px 20px}
+.dch h3{font-size:19px}
+.dt{border-collapse:separate;border-spacing:3px;min-width:520px}
+.dt th,.dt td{border:0}
+.dt thead th{border:0;background:none;color:var(--ink-2);font-weight:650}
+.dt .slc{border:0;background:none;color:var(--muted);font-weight:600}
+.dt td{border-radius:9px;overflow:hidden}
+.pc{border-radius:9px;min-height:32px}
+.pc.w{opacity:.92}
+.phead{background:color-mix(in srgb,var(--canvas) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.mpd{border:1px solid var(--hair);border-radius:16px;box-shadow:var(--sh-1)}
+.mpw .mpwh b{font-size:15px}
+.dl{border-radius:16px}
+
+/* ---------- chat ---------- */
+.tk-m.me .tk-t{background:var(--brand);color:var(--brand-ink);border-radius:18px 18px 5px 18px}
+.tk-m .tk-t{border-radius:18px 18px 18px 5px}
+
+/* ---------- écran de connexion ---------- */
+#gate{background:
+  radial-gradient(1100px 700px at 12% -10%,color-mix(in srgb,var(--brand) 55%,#0a1233),transparent 60%),
+  radial-gradient(900px 620px at 100% 110%,color-mix(in srgb,var(--pay) 62%,#2a0d00),transparent 58%),
+  color-mix(in oklab,var(--brand) 26%,#060a18)}
+.gcard{border-radius:30px;padding:34px 30px;box-shadow:0 40px 90px -20px rgba(2,6,23,.7);border:1px solid rgba(255,255,255,.5)}
+.gcard h2{font-size:23px;letter-spacing:-.035em}
+.gu{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh-1)}
+.gu:hover{border-color:var(--brand);box-shadow:var(--sh-2);transform:translateY(-2px)}
+.gbtn{min-height:54px;border-radius:15px;font-size:16px}
+
+/* ---------- menu mobile ---------- */
+@media (max-width:900px){
+  .mnav{background:color-mix(in srgb,var(--surface) 88%,transparent);-webkit-backdrop-filter:saturate(1.5) blur(18px);backdrop-filter:saturate(1.5) blur(18px);border-top:1px solid var(--hair);box-shadow:0 -8px 30px rgba(12,22,48,.07)}
+  .mn{color:color-mix(in srgb,var(--ink) 52%,var(--bg));font-weight:600}
+  .mn.on{color:var(--brand);font-weight:700}
+  .mn.on .mi{background:color-mix(in srgb,var(--brand) 13%,transparent);color:var(--brand)}
+  .mn .mi{transition:background .2s var(--ease)}
+  .mn .nbadge,.ms-t .nbadge{background:var(--pay);color:var(--pay-ink)}
+  .ms-panel{border-radius:28px 28px 0 0;box-shadow:var(--sh-3)}
+  .ms-t{border-radius:20px;background:color-mix(in srgb,var(--ink) 4%,var(--surface));border:1px solid var(--hair)}
+  .ms-t svg{color:var(--brand)}
+  .ms-t.on{background:var(--brand);color:var(--brand-ink)}
+  .ms-me{border-radius:18px;background:color-mix(in srgb,var(--ink) 4%,var(--surface))}
+  .cartbar{background:var(--ink);color:#fff;border-radius:20px;box-shadow:var(--sh-3);min-height:58px}
+  .cartbar strong{color:var(--pay)}
+  .cart{border-radius:28px 28px 0 0}
+  .hero{padding:24px 22px;border-radius:26px}
+  .hero h2{font-size:34px}
+  .top h1{font-size:28px}
+  .mt-main{min-height:112px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .tile .n{padding:10px 12px 13px;min-height:54px;font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  #main.vt>*,.modal,.scrim{animation:none!important}
+  html{scroll-behavior:auto}
+}
+
+/* retouches */
+.btn.primary.gjoinb{background:var(--surface);color:var(--brand);border:1px solid color-mix(in srgb,var(--brand) 35%,var(--line));box-shadow:none}
+.btn.primary.gjoinb:hover{background:var(--brand-soft);filter:none}
+.plact{display:flex;flex-wrap:wrap;gap:8px}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -1707,25 +2056,25 @@ function leaveInfo(){
 }
 
 /* ---------- contrôle quotidien ---------- */
-function ensureCheck(){const t=today();if(!S.checks[t])S.checks[t]={items:{},press:'',by:'',ts:0,done:false};return S.checks[t]}
+function ensureCheck(){const t=CHKDAY||today();if(!S.checks[t])S.checks[t]={items:{},press:'',by:'',ts:0,done:false};return S.checks[t]}
 function ctrlReady(c){
   return CHECK_IDS.every(k=>c.items[k]&&(c.items[k].s==='ok'||c.items[k].note.trim()))&&c.press.trim()&&c.by;
 }
 function vVisuelOld(m){
   const c=ensureCheck(),done=c.done,n=CHECK_IDS.filter(k=>c.items[k]).length,tot=CHECK_IDS.length;
   const hist=Array.from({length:7},(_,i)=>addDays(today(),i-6)).map(d=>{const x=S.checks[d],ko=x&&Object.values(x.items).some(i=>i.s==='ko');
-    return `<span class="${x&&x.done?(ko?'ko':'ok'):''}" title="${dshort(d)}">${+d.slice(8)}</span>`}).join('');
+    return `<span class="${x&&x.done?(ko?'ko':'ok'):''}${d===(CHKDAY||today())?' sel':''}" title="${dshort(d)}" data-act="chkday" data-d="${d}" role="button" tabindex="0" aria-label="Contrôle du ${dshort(d)}">${+d.slice(8)}</span>`}).join('');
   const issues=Object.entries(S.checks).filter(([d,x])=>x.done).sort((a,b)=>b[0].localeCompare(a[0])).flatMap(([d,x])=>Object.entries(x.items).filter(([k,i])=>i.s==='ko').map(([k,i])=>[d,k,i.note])).slice(0,4);
   const label=k=>CHECKS.flatMap(g=>g.items).find(i=>i[0]===k)[1];
   m.innerHTML=head('Contrôle quotidien')+
-  (done?`<div class="banner ok"><span>Contrôle validé par ${esc(staffOf(c.by).name)} à ${hm(c.ts)}.</span><button class="btn" data-act="chkopen">Modifier</button></div>`
+  (done?`<div class="banner ok"><span>Contrôle du ${dfr(CHKDAY||today())} validé par ${esc(staffOf(c.by).name)} le ${new Date(c.ts).toLocaleDateString('fr-FR')} à ${hm(c.ts)}.</span><button class="btn" data-act="chkopen">Modifier</button></div>`
    :`<div class="prog"><div class="bar"><i style="width:${Math.round(n/tot*100)}%"></i></div><b class="num">${n}/${tot}</b><button class="btn" data-act="allok">Tout est conforme</button></div>`)+
   CHECKS.map(g=>`<div class="card" style="margin-bottom:14px"><h3><span class="gic">${gIcon(g.g)}</span>${g.g}</h3>${g.items.map(([k,l,t])=>{const a=c.items[k];
     return `<div class="chk"><div class="q">${l}</div><div class="yn"><button class="ok ${a&&a.s==='ok'?'on':''}" data-act="chk" data-k="${k}" data-s="ok" ${done?'disabled':''}>Conforme</button>
     <button class="ko ${a&&a.s==='ko'?'on':''}" data-act="chk" data-k="${k}" data-s="ko" ${done?'disabled':''}>Anomalie</button></div>
     ${t==='val'?`<input id="press" inputmode="decimal" placeholder="Pression relevée" value="${esc(c.press)}" ${done?'disabled':''} aria-label="Pression relevée">`:''}
     ${a&&a.s==='ko'?`<input data-note="${k}" placeholder="Décrivez l’anomalie" value="${esc(a.note)}" ${done?'disabled':''} aria-label="Anomalie">`:''}</div>`}).join('')}</div>`).join('')+
-  (done?'':`<div class="card" style="margin-bottom:14px"><h3>Validation</h3><div class="field"><label for="chkby">Contrôle réalisé par</label><select id="chkby"><option value="">Choisir</option>${S.staff.map(s=>`<option value="${s.id}" ${c.by===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
+  (done?'':`<div class="card" style="margin-bottom:14px"><h3>Validation</h3><p class="muted" style="margin:-6px 0 10px">Contrôle du ${chkLong(CHKDAY||today())}</p><div class="field"><label for="chkby">Contrôle réalisé par</label><select id="chkby"><option value="">Choisir</option>${S.staff.map(s=>`<option value="${s.id}" ${c.by===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
     <button class="btn-pay" id="chkok" data-act="chkdone" ${ctrlReady(c)?'':'disabled'}>Valider le contrôle</button>
     <p class="muted" style="margin-top:8px;font-size:13px">Tous les points, la pression et le nom sont nécessaires. Une anomalie demande une description.</p></div>`)+
   `<div class="card"><h3>7 derniers jours</h3><div class="hist">${hist}</div>
@@ -1744,7 +2093,7 @@ document.addEventListener('click',e=>{
     case 'lvok':case 'lvno':{const l=S.leaves.find(x=>x.id===d.id);if(l){l.status=a==='lvok'?'ok':'no';save();vLeaves($('#sub'));toast(a==='lvok'?'Congés validés':'Demande refusée')}break}
     case 'chk':{const c=ensureCheck(),o=c.items[d.k];c.items[d.k]={s:d.s,note:d.s==='ko'&&o?o.note:''};save();vControl($('#main'));break}
     case 'allok':{const c=ensureCheck();CHECK_IDS.forEach(k=>{if(!c.items[k])c.items[k]={s:'ok',note:''}});save();vControl($('#main'));break}
-    case 'chkdone':{const c=ensureCheck();if(!ctrlReady(c))break;c.done=true;c.ts=Date.now();save();vControl($('#main'));toast('Contrôle du jour validé');break}
+    case 'chkdone':{const c=ensureCheck();if(!ctrlReady(c))break;c.done=true;c.ts=Date.now();c.date=CHKDAY||today();if(c.date!==today())c.late=true;save();vControl($('#main'));toast(CHKDAY&&CHKDAY!==today()?'Contrôle du '+dfr(CHKDAY)+' validé':'Contrôle du jour validé');break}
     case 'chkopen':{ensureCheck().done=false;save();vControl($('#main'));break}
   }
 });
@@ -2626,16 +2975,16 @@ function seedPlans(){return[buildPlan('p1','Vacances de la Toussaint 2026','2026
 const planFor=ds=>S.plans.find(p=>p.from&&ds>=p.from&&ds<=p.to)||S.plans.find(p=>p.base)||S.plans[0];
 const dowOf=ds=>(new Date(ds+'T12:00').getDay()+6)%7;
 const nrows=(p,d)=>p.rows[d]||5;
-function cellsOf(p,ds,id){const d=p.cells[dowOf(ds)]||{},n=nrows(p,dowOf(ds)),o=[];Object.keys(d).forEach(i=>{if(+i<n&&d[i][id])o.push([+i,d[i][id]])});return o}
+function cellsOfBase(p,ds,id){const d=p.cells[dowOf(ds)]||{},n=nrows(p,dowOf(ds)),o=[];Object.keys(d).forEach(i=>{if(+i<n&&d[i][id])o.push([+i,d[i][id]])});return o}
 function shiftOf(ds,id){if(onLeave(id,ds))return'L';return cellsOf(planFor(ds),ds,id).length?'J':'R'}
-function staffAt(ds,h){const p=planFor(ds),d=dowOf(ds),c=(p.cells[d]||{})[Math.floor((h-10)/2)]||{};return Math.floor((h-10)/2)<nrows(p,d)?S.staff.filter(s=>c[s.id]==='w'&&!onLeave(s.id,ds)):[]}
+function staffAtBase(ds,h){const p=planFor(ds),d=dowOf(ds),c=(p.cells[d]||{})[Math.floor((h-10)/2)]||{};return Math.floor((h-10)/2)<nrows(p,d)?S.staff.filter(s=>c[s.id]==='w'&&!onLeave(s.id,ds)):[]}
 function shiftLabel(ds,id){const c=cellsOf(planFor(ds),ds,id);if(!c.length)return'';const a=Math.min(...c.map(x=>x[0])),b=Math.max(...c.map(x=>x[0])),e=12+2*b;return(10+2*a)+'h–'+(e>=24?'00':e)+'h'}
 function planHours(p,id){let w=0,g=0;Object.entries(p.cells).forEach(([d,rows])=>Object.entries(rows).forEach(([i,c])=>{if(+i<nrows(p,d)){if(c[id]==='w')w+=2;else if(c[id]==='g')g+=2}}));return{w,g}}
 const prange=p=>p.from?'Du '+new Date(p.from+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long'})+' au '+new Date(p.to+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long'}):'Appliquée en dehors des périodes spéciales';
 let planSel=null;
 function curPlan(){let p=S.plans.find(x=>x.id===planSel);if(!p){p=planFor(today());planSel=p.id}return p}
 function dayCard(p,d,ds){
-  const n=nrows(p,d),dc=p.cells[d]||{},ro=!isAdmin();
+  const n=nrows(p,d),dc=ds?swDayCells(p,d,ds):(p.cells[d]||{}),ro=!isAdmin();
   const head=visStaff().map(s=>`<th class="${ds&&onLeave(s.id,ds)?'lv':''}"><span>${esc(fname(s))}</span><i style="background:${scol(s)}"></i></th>`).join('');
   const body=Array.from({length:n},(_,i)=>{const c=dc[i]||{},cnt=S.staff.filter(s=>c[s.id]==='w'&&!(ds&&onLeave(s.id,ds))).length;
     return `<tr><th class="slc">${PSL[i]}</th>${visStaff().map(s=>{const v=c[s.id]||'',lv=ds&&onLeave(s.id,ds);
@@ -2932,18 +3281,18 @@ function getPath(p){const [r,k]=p.split('.');return r==='mon'?monRec()[k]:r==='i
 function vVisuel(m){
   const c=ensureCheck(),done=c.done,n=CHECK_IDS.filter(k=>c.items[k]).length,tot=CHECK_IDS.length;
   const hist=Array.from({length:7},(_,i)=>addDays(today(),i-6)).map(d=>{const x=S.checks[d],ko=x&&Object.values(x.items).some(i=>i.s==='ko');
-    return `<span class="${x&&x.done?(ko?'ko':'ok'):''}" title="${dshort(d)}">${+d.slice(8)}</span>`}).join('');
+    return `<span class="${x&&x.done?(ko?'ko':'ok'):''}${d===(CHKDAY||today())?' sel':''}" title="${dshort(d)}" data-act="chkday" data-d="${d}" role="button" tabindex="0" aria-label="Contrôle du ${dshort(d)}">${+d.slice(8)}</span>`}).join('');
   const issues=Object.entries(S.checks).filter(([d,x])=>x.done).sort((a,b)=>b[0].localeCompare(a[0])).flatMap(([d,x])=>Object.entries(x.items).filter(([k,i])=>i.s==='ko').map(([k,i])=>[d,k,i.note])).slice(0,4);
   const label=k=>CHECKS.flatMap(g=>g.items).find(i=>i[0]===k)[1];
-  m.innerHTML=`<div class="impo"><span class="pill warn">Important</span><span>À réaliser chaque jour avant l’ouverture.</span><button class="btn" data-act="m_pdf" data-k="daily">${ic('check')}PDF du jour</button></div>`+
-  (done?`<div class="banner ok"><span>Contrôle validé par ${esc(staffOf(c.by).name)} à ${hm(c.ts)}.</span><button class="btn" data-act="chkopen">Modifier</button></div>`
+  m.innerHTML=chkDayBar()+`<div class="impo"><span class="pill warn">Important</span><span>À réaliser chaque jour avant l’ouverture.</span><button class="btn" data-act="m_pdf" data-k="daily">${ic('check')}PDF du jour</button></div>`+
+  (done?`<div class="banner ok"><span>Contrôle du ${dfr(CHKDAY||today())} validé par ${esc(staffOf(c.by).name)} le ${new Date(c.ts).toLocaleDateString('fr-FR')} à ${hm(c.ts)}.</span><button class="btn" data-act="chkopen">Modifier</button></div>`
    :`<div class="prog"><div class="bar"><i style="width:${Math.round(n/tot*100)}%"></i></div><b class="num">${n}/${tot}</b><button class="btn" data-act="allok">Tout est conforme</button></div>`)+
   CHECKS.map(g=>`<div class="card" style="margin-bottom:14px"><h3><span class="gic">${gIcon(g.g)}</span>${g.g}</h3>${g.items.map(([k,l,t])=>{const a=c.items[k];
     return `<div class="chk"><div class="q">${l}</div><div class="yn"><button class="ok ${a&&a.s==='ok'?'on':''}" data-act="chk" data-k="${k}" data-s="ok" ${done?'disabled':''}>Conforme</button>
     <button class="ko ${a&&a.s==='ko'?'on':''}" data-act="chk" data-k="${k}" data-s="ko" ${done?'disabled':''}>Anomalie</button></div>
     ${t==='val'?`<input id="press" inputmode="decimal" placeholder="Pression relevée" value="${esc(c.press)}" ${done?'disabled':''} aria-label="Pression relevée">`:''}
     ${a&&a.s==='ko'?`<input data-note="${k}" placeholder="Décrivez l’anomalie" value="${esc(a.note)}" ${done?'disabled':''} aria-label="Anomalie">`:''}</div>`}).join('')}</div>`).join('')+
-  (done?'':`<div class="card" style="margin-bottom:14px"><h3>Validation</h3><div class="field"><label for="chkby">Contrôle réalisé par</label><select id="chkby"><option value="">Choisir</option>${S.staff.map(s=>`<option value="${s.id}" ${c.by===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
+  (done?'':`<div class="card" style="margin-bottom:14px"><h3>Validation</h3><p class="muted" style="margin:-6px 0 10px">Contrôle du ${chkLong(CHKDAY||today())}</p><div class="field"><label for="chkby">Contrôle réalisé par</label><select id="chkby"><option value="">Choisir</option>${S.staff.map(s=>`<option value="${s.id}" ${c.by===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
     <button class="btn-pay" id="chkok" data-act="chkdone" ${ctrlReady(c)?'':'disabled'}>Valider le contrôle</button>
     <p class="muted" style="margin-top:8px;font-size:13px">Tous les points, la pression et le nom sont nécessaires. Une anomalie demande une description.</p></div>`)+
   `<div class="card"><h3>7 derniers jours</h3><div class="hist">${hist}</div>
@@ -3119,7 +3468,7 @@ function pdfBuild(title,sub,foot,fn){
   const u=new Uint8Array(out.length);for(let i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;return u;
 }
 function pdfFor(k,id){
-  if(k==='daily'){const c=ensureCheck();return['Contrôle visuel quotidien-'+today(),pdfBuild('CONTRÔLE VISUEL QUOTIDIEN',dfr(today()),'REGISTRE DES CONTRÔLES QUOTIDIENS',w=>{
+  if(k==='daily'){const c=ensureCheck();return['Contrôle visuel quotidien-'+(CHKDAY||today()),pdfBuild('CONTRÔLE VISUEL QUOTIDIEN',dfr(CHKDAY||today()),'REGISTRE DES CONTRÔLES QUOTIDIENS',w=>{
     w.kv('Réalisé par',c.by?sname(c.by):'-');w.kv('Pression relevée',c.press?c.press+' hPa':'-');w.kv('Statut',c.done?'Validé à '+hm(c.ts):'En cours');w.gap(6);
     CHECKS.forEach(g=>{w.sec(g.g);g.items.forEach(([kk,l])=>{const a=c.items[kk];w.row(l+(a&&a.s==='ko'&&a.note?' - '+a.note:''),a?(a.s==='ok'?'C':'NC'):'-')})});w.sig('Contrôleur',c.by?sname(c.by):'')})]}
   if(k==='monthly'){const r=monRec(),y=monLabel(ctl.mon);return['Controle mensuel-'+ctl.mon,pdfBuild(y.toUpperCase()+' – CONTRÔLE MENSUEL DES ÉQUIPEMENTS',dfr(r.date),'REGISTRE DES CONTRÔLES MENSUELS',w=>{
@@ -3266,7 +3615,7 @@ function defaultProfiles(){const h=(S.settings&&S.settings.opHide)||{},p={};
   return[{id:'op1',name:'Opérateur',pin:'',perms:p}]}
 function curProf(){const L=S.profiles||[];return L.find(x=>x.id===PROF)||L[0]||{name:'Opérateur',perms:{}}}
 function perm(k){return !!curProf().perms[k]}
-function tabsFor(id){const off=S.settings.offT||{};let L=(TABS[id]||[]).filter(([t])=>!(noPos()&&POS_TABS.includes(id+':'+t))&&(id==='params'||!off[id+':'+t]));if(id==='staff'&&!canAll())L=L.filter(([t])=>t!=='equipe'&&t!=='sjour');if(id==='staff'&&ME&&ME.kind==='etab')L=L.filter(([t])=>t!=='monplan'&&t!=='conges');return isAdmin()||!['gestion','resa'].includes(id)?L:L.filter(([t])=>perm(id+':'+t))}
+function tabsFor(id){const off=S.settings.offT||{};let L=(TABS[id]||[]).filter(([t])=>!(noPos()&&POS_TABS.includes(id+':'+t))&&(id==='params'||!off[id+':'+t]));if(id==='staff'&&!canAll())L=L.filter(([t])=>t!=='equipe'&&t!=='sjour');if(id==='staff'&&ME&&ME.kind==='etab')L=L.filter(([t])=>t!=='monplan'&&t!=='conges'&&t!=='echanges');return isAdmin()||!['gestion','resa'].includes(id)?L:L.filter(([t])=>perm(id+':'+t))}
 function subOk(v,t){return isAdmin()||!['gestion','resa'].includes(v)||perm(v+':'+t)}
 function setProf(id){PROF=id;try{localStorage.setItem(PKEY,id)}catch(e){}}
 function rolePill(){const a=isAdmin();return `<button class="rolepill ${a?'adm':''}" data-act="rolesw" aria-label="Changer de profil">${ic(a?'shield':'users')}${a?'Administrateur':esc(curProf().name)}</button>`}
@@ -3526,7 +3875,7 @@ function applyLookBase(){
   const st=S.settings,r=document.documentElement.style;
   document.body.dataset.round=st.round||'std';
   const z=+st.zoom||100;document.body.style.zoom=z===100?'':z/100;
-  if(st.sideColor){r.setProperty('--side',st.sideColor);r.setProperty('--side-ink',lum(st.sideColor)>.62?'#0A1F4D':'#fff')}
+  if(st.sideColor){r.setProperty('--side',st.sideColor);r.setProperty('--side-bg',st.sideColor);r.setProperty('--side-ink',lum(st.sideColor)>.62?'#0A1F4D':'#fff')}else{r.removeProperty('--side-bg');r.removeProperty('--side-ink')}
 }
 function lookCard(){const st=S.settings;
   return `<div class="cols"><div class="card"><h3>Style</h3>
@@ -3863,7 +4212,7 @@ const gIcon=g=>{const k=Object.keys(GICO).find(x=>g.startsWith(x));return `<svg 
 function confetti(){const c=document.createElement('div');c.className='confetti';const col=['#1D4FD7','#FF7A1A','#1F9D55','#FFB23F','#6A4DF0'];
   for(let i=0;i<46;i++){const s=document.createElement('i');s.style.cssText=`left:${Math.random()*100}%;background:${col[i%5]};animation-delay:${Math.random()*.4}s;--x:${(Math.random()-.5)*160}px;--r:${Math.random()*720}deg`;c.appendChild(s)}
   document.body.appendChild(c);setTimeout(()=>c.remove(),2600)}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act="chkdone"],[data-act="m_sign"]');if(!b)return;setTimeout(()=>{const c=checkToday();if(b.dataset.act==='chkdone'?(c&&c.done):(S.monthly[ctl.mon]&&S.monthly[ctl.mon].signed))confetti()},120)});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="chkdone"],[data-act="m_sign"]');if(!b)return;setTimeout(()=>{const c=S.checks[CHKDAY||today()]||null;if(b.dataset.act==='chkdone'?(c&&c.done):(S.monthly[ctl.mon]&&S.monthly[ctl.mon].signed))confetti()},120)});
 
 /* ---- migration ---- */
 function migrateQ(){
@@ -4113,7 +4462,7 @@ function mpText(sid){
     w.items.forEach(i=>{o+='  '+(i.lv?fShort(i.ds)+(i.to!==i.ds?' au '+fShort(i.to):'')+' : congé payé':fShort(i.ds)+' : '+i.span+' ('+(i.hw+i.hg)+' h'+(i.hg?', dont '+i.hg+' h de gestion':'')+')')+'\n'})});
   return o;
 }
-function vMonPlan(m){
+function vMonPlanBase(m){
   const sid=mpSid(),s=S.staff.find(x=>x.id===sid);
   if(!s){m.innerHTML=`<div class="card"><h3>Mon planning</h3><p class="muted">Votre compte n’est pas encore relié à une fiche employé. Demandez à l’administrateur de le faire dans Paramètres › Comptes (« Employé : … »).</p></div>`;return}
   const W=mpWeeks(sid),tot=W.reduce((a,w)=>a+w.h,0),days=W.reduce((a,w)=>a+w.wd,0),lv=W.reduce((a,w)=>a+w.lvd,0);
@@ -4950,7 +5299,9 @@ const POS_NAV=['caisse','stats','gestion'];
 const POS_TABS=['clients:fidelite','clients:carnets','resa:entrees','params:ploy','params:pcat'];
 function vHome(m){
   vHomeV0(m);
+  {const h=m.querySelector('.hero h2');if(h&&ME&&ME.kind!=='etab'&&ME.name&&!/,/.test(h.textContent))h.textContent+=', '+ME.name.split(' ')[0]}
   if(!isAdmin())opHomeClean(m);
+  swHome(m);
   if(!noPos())return;
   m.querySelectorAll('.kpi').forEach(k=>{if(/Ventes du jour/.test(k.textContent))k.remove()});
   m.querySelectorAll('[data-act="sellslot"]').forEach(b=>b.remove());
@@ -5032,7 +5383,7 @@ document.addEventListener('click',e=>{
   const a=b.dataset.act,t0=Date.now();
   const snapInc=a==='m_incsave'&&ctl.inc?JSON.parse(JSON.stringify(ctl.inc)):null,snapMnt=a==='m_mntsave'&&ctl.mnt?JSON.parse(JSON.stringify(ctl.mnt)):null,mk=ctl.mon;
   setTimeout(()=>{try{
-    if(a==='chkdone'){const c=checkToday();if(c&&c.done&&c.ts>=t0-1000)sheetQueue(sheetItem('visuel',c,today()))}
+    if(a==='chkdone'){const dy=CHKDAY||today(),c=S.checks[dy];if(c&&c.done&&c.ts>=t0-1000)sheetQueue(sheetItem('visuel',c,dy))}
     else if(a==='m_sign'){const r=S.monthly[mk];if(r&&r.signed>=t0-1000)sheetQueue(sheetItem('mensuel',r,mk))}
     else if(a==='m_incsave'&&snapInc){const x=S.incidents.find(y=>y.id===snapInc.id);if(x&&x.signed>=t0-1000)sheetQueue(sheetItem('incident',x))}
     else if(a==='m_mntsave'&&snapMnt){const x=S.maint.find(y=>y.id===snapMnt.id);if(x)sheetQueue(sheetItem('maint',x))}
@@ -5431,7 +5782,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v46';
+const LAGO_V='v47';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5705,7 +6056,7 @@ document.addEventListener('submit',async e=>{
 });
 
 /* ---- « Mon compte » ---- */
-function accountMenu(){
+function accountMenuV0(){
   const a=ME;if(!a)return;
   const em=String(a.email||'').trim()||(MAILRE.test(a.ident)?a.ident:'');
   const pw=`autocapitalize="none" autocorrect="off" spellcheck="false"`;
@@ -5838,7 +6189,7 @@ function mnavDraw(){
   document.getElementById('msgrid').innerHTML=L.map(([id,l,i])=>`<a href="#${id}" data-v="${id}" class="ms-t${id===view?' on':''}"${id===view?' aria-current="page"':''}>${ic(i)}<span>${esc(mnLabel(id,l))}</span>${id==='params'&&pc?`<b class="nbadge">${pc}</b>`:''}</a>`).join('');
   const role=isAdmin()?'Administrateur':(ME.kind==='etab'?'Établissement':((S.profiles||[]).find(p=>p.id===ME.profileId)||{}).name||'');
   document.getElementById('msme').innerHTML=`${avA(ME,0)}<span class="ms-who"><b>${esc(ME.name)}</b><small>${esc(role?role+' · ':'')}Mon compte</small></span>`;
-  chBadge();
+  chBadge();swBadge();
 }
 function mnOpen(){
   mnEnsure();const sh=document.getElementById('msheet');if(!sh||!sh.hidden)return;
@@ -6009,6 +6360,29 @@ document.addEventListener('submit',e=>{
   const bt=e.target.querySelector('button[type=submit]');if(bt){bt.disabled=true;bt.textContent='Connexion à l’équipe…'}
   setTimeout(()=>location.reload(),150);
 });
+/* ---- v47 : contrôle quotidien avec choix de la date (rattrapage) ---- */
+var CHKDAY=null;
+const chkLong=d=>new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+function chkDayBar(){
+  const t=today(),d=CHKDAY||t,late=d!==t;
+  return `<div class="card chkday${late?' late':''}"><div class="field" style="margin:0"><label for="chkdate">Date du contrôle</label>
+   <div class="chkd-row"><input type="date" id="chkdate" value="${d}" max="${t}" aria-label="Date du contrôle">
+   <button type="button" class="btn${d===t?' primary':''}" data-act="chkday" data-d="${t}">Aujourd’hui</button><button type="button" class="btn${d===addDays(t,-1)?' primary':''}" data-act="chkday" data-d="${addDays(t,-1)}">Hier</button></div></div>
+   ${late?`<p class="chkd-note">Vous remplissez le contrôle du <b>${chkLong(d)}</b> (rattrapage). La validation sera enregistrée avec cette date.</p>`:`<p class="chkd-note muted">${chkLong(d)}</p>`}</div>`;
+}
+function chkPrune(d){const c=S.checks&&S.checks[d];if(c&&!c.done&&!Object.keys(c.items||{}).length&&!c.press&&!c.by)delete S.checks[d]}
+function chkSetDay(d){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d||''))return;
+  const t=today();if(d>t)d=t;
+  const old=CHKDAY||t,nw=d===t?null:d;
+  if((nw||t)===old)return;
+  if(old!==t)chkPrune(old);
+  CHKDAY=nw;save();vControl($('#main'));
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="chkday"]');if(!b||view!=='controle')return;chkSetDay(b.dataset.d)});
+document.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const b=e.target.closest&&e.target.closest('.hist [data-act="chkday"]');if(!b||view!=='controle')return;e.preventDefault();chkSetDay(b.dataset.d)});
+document.addEventListener('change',e=>{if(e.target.id==='chkdate'&&view==='controle')chkSetDay(e.target.value)});
+addEventListener('hashchange',()=>{if(location.hash!=='#controle'&&CHKDAY){chkPrune(CHKDAY);CHKDAY=null}});
 /* ---- Chat d'équipe : un seul salon, pour tout le monde ---- */
 IC.chat='<path d="M4 5.500h16v10.500H10.500L6 19.500V16H4z"/>';
 const CHSEND='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L3 10.500l7 2.500 2.500 7z"/><path d="M10 13L21 3"/></svg>';
@@ -6112,7 +6486,465 @@ function chTick(){
   chBadge();
 }
 setInterval(chTick,1000);
-function renderNav(){renderNavM();mnavDraw();chBadge()}
+function renderNav(){renderNavM();mnavDraw();chBadge();swBadge()}
+/* ---- v47 : échanges de shifts entre employés ---- */
+IC.swap='<path d="M7 4L3 8l4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/>';
+const SW_MAXW=48,SW_REST=11,SW_DAYS=28;
+const swList=()=>S.swaps||(S.swaps=[]);
+const swNots=()=>S.notifs||(S.notifs=[]);
+const swMe=()=>(ME&&ME.staffId)||'';
+const swLab=sl=>{if(!sl.length)return'';const a=Math.min(...sl),b=Math.max(...sl),e=12+2*b;return (10+2*a)+'h–'+(e>=24?'00':e)+'h'};
+const swFn=id=>{const s=S.staff.find(x=>x.id===id);return s?fname(s):'?'};
+const swNm=id=>{const s=S.staff.find(x=>x.id===id);return s?s.name:'?'};
+const swSort=a=>a.slice().sort((x,y)=>x-y);
+const swW=(ds,id)=>cellsOf(planFor(ds),ds,id).filter(c=>c[1]==='w').map(c=>c[0]);
+const swDays=(a,b)=>Math.round((new Date(b+'T12:00')-new Date(a+'T12:00'))/864e5);
+const swWeek=ds=>addDays(ds,-dowOf(ds));
+const swNeedAdmin=()=>!(S.settings&&S.settings.swAuto);
+const SW_ST={peer:['warn','En attente du collègue'],admin:['warn','À valider par l’administrateur'],ok:['ok','Validé'],declined:['bad','Refusé par le collègue'],refused:['bad','Refusé par l’administrateur'],canceled:['','Annulé']};
+
+/* ---- le planning tient compte des échanges validés ---- */
+function swMovesFor(ds){return swList().filter(w=>w.st==='ok'&&(w.dA===ds||(w.kind==='swap'&&w.dB===ds))).sort((a,b)=>(a.okTs||a.ts)-(b.okTs||b.ts))}
+function swOwners(p,ds,L){
+  const d=dowOf(ds),n=nrows(p,d),own=new Map();
+  for(let i=0;i<n;i++)own.set(i,new Set(S.staff.filter(s=>(((p.cells[d]||{})[i])||{})[s.id]==='w').map(s=>s.id)));
+  L.forEach(w=>{const mv=[];if(w.dA===ds)w.sA.forEach(s=>mv.push([s,w.a,w.b]));if(w.kind==='swap'&&w.dB===ds)w.sB.forEach(s=>mv.push([s,w.b,w.a]));
+    mv.forEach(([s,f,t])=>{const o=own.get(s);if(o&&o.has(f)){o.delete(f);if(t)o.add(t)}})});
+  return own;
+}
+function cellsOf(p,ds,id){
+  const L=swMovesFor(ds);if(!L.length)return cellsOfBase(p,ds,id);
+  const own=swOwners(p,ds,L),res=cellsOfBase(p,ds,id).filter(c=>c[1]!=='w');
+  own.forEach((set,i)=>{if(set.has(id))res.push([i,'w'])});
+  return res.sort((a,b)=>a[0]-b[0]);
+}
+function staffAt(ds,h){
+  const L=swMovesFor(ds);if(!L.length)return staffAtBase(ds,h);
+  const p=planFor(ds),d=dowOf(ds),i=Math.floor((h-10)/2);if(i<0||i>=nrows(p,d))return [];
+  const o=swOwners(p,ds,L).get(i)||new Set();return S.staff.filter(s=>o.has(s.id)&&!onLeave(s.id,ds));
+}
+function swDayCells(p,d,ds){
+  if(!swMovesFor(ds).length)return p.cells[d]||{};
+  const o={};S.staff.forEach(s=>cellsOf(p,ds,s.id).forEach(([i,v])=>{(o[i]=o[i]||{})[s.id]=v}));return o;
+}
+function swShifts(id,from,days){
+  const out=[];
+  for(let k=0;k<days;k++){const ds=addDays(from,k);if(onLeave(id,ds))continue;const sl=swW(ds,id);if(sl.length)out.push({ds,sl,h:sl.length*2,lab:swLab(sl)})}
+  return out;
+}
+function swWeekH(id,ds){const f=swWeek(ds);let h=0;for(let i=0;i<7;i++){const d=addDays(f,i);h+=cellsOf(planFor(d),d,id).length*2}return h}
+
+/* ---- l'algorithme : une demande est-elle valable ? ---- */
+function swCheck(w){
+  const hard=[],warn=[],ok=[],t=today();
+  const A=w.a,B=w.b,dA=w.dA,dB=w.dB,sw=w.kind==='swap',sA=swSort(w.sA),sB=sw?swSort(w.sB):[];
+  const hA=sA.length*2,hB=sB.length*2;
+  if(!sA.length)hard.push('Aucun créneau sélectionné.');
+  if(dA<t||(sw&&dB<t))hard.push('Une des dates est déjà passée.');
+  if(onLeave(A,dA))hard.push(swFn(A)+' est en congé le '+fShort(dA)+'.');
+  else if(swW(dA,A).join()!==sA.join())hard.push(swFn(A)+' n’a plus ce shift au planning du '+fShort(dA)+'.');
+  if(B){
+    if(B===A)hard.push('Il faut choisir un autre collègue.');
+    if(onLeave(B,dA))hard.push(swFn(B)+' est en congé le '+fShort(dA)+'.');
+    const busyB=cellsOf(planFor(dA),dA,B).filter(c=>sA.includes(c[0]));
+    if(busyB.length)hard.push(swFn(B)+' est déjà planifié sur ce créneau le '+fShort(dA)+' ('+swLab(busyB.map(c=>c[0]))+').');
+    if(sw){
+      if(onLeave(B,dB))hard.push(swFn(B)+' est en congé le '+fShort(dB)+'.');
+      else if(swW(dB,B).join()!==sB.join())hard.push(swFn(B)+' n’a plus ce shift au planning du '+fShort(dB)+'.');
+      if(onLeave(A,dB))hard.push(swFn(A)+' est en congé le '+fShort(dB)+'.');
+      const busyA=cellsOf(planFor(dB),dB,A).filter(c=>sB.includes(c[0]));
+      if(busyA.length)hard.push(swFn(A)+' est déjà planifié sur ce créneau le '+fShort(dB)+' ('+swLab(busyA.map(c=>c[0]))+').');
+      if(dA===dB&&sA.some(x=>sB.includes(x)))hard.push('Ces deux shifts se chevauchent le même jour : l’échange ne changerait rien.');
+      if(hA!==hB)hard.push('Les heures ne correspondent pas : '+hA+' h contre '+hB+' h.');
+      else if(sA.length)ok.push('Heures identiques : '+hA+' h contre '+hB+' h.');
+    }
+  }
+  /* un autre échange en cours touche déjà ces créneaux */
+  const mine=[];sA.forEach(s=>mine.push(dA+'|'+A+'|'+s));if(sw&&B)sB.forEach(s=>mine.push(dB+'|'+B+'|'+s));
+  swList().forEach(o=>{
+    if(o.id===w.id||!['peer','admin'].includes(o.st))return;
+    const th=[];o.sA.forEach(s=>th.push(o.dA+'|'+o.a+'|'+s));if(o.kind==='swap'&&o.b)o.sB.forEach(s=>th.push(o.dB+'|'+o.b+'|'+s));
+    if(th.some(k=>mine.includes(k))&&!hard.includes('Un autre échange est déjà en cours sur un de ces créneaux.'))hard.push('Un autre échange est déjà en cours sur un de ces créneaux.');
+  });
+  /* heures de la semaine après l'échange */
+  const dl={};const add=(p,d,h)=>{if(!p)return;const k=p+'|'+swWeek(d);dl[k]=(dl[k]||0)+h};
+  add(A,dA,-hA);add(B,dA,hA);if(sw){add(B,dB,-hB);add(A,dB,hB)}
+  Object.keys(dl).forEach(k=>{
+    if(!dl[k])return;const [p,wk]=k.split('|'),before=swWeekH(p,wk),after=before+dl[k];
+    if(after>SW_MAXW)warn.push('Semaine du '+fdd(wk,{day:'numeric',month:'long'})+' : '+swFn(p)+' passerait à '+after+' h (maximum '+SW_MAXW+' h).');
+  });
+  /* repos entre deux jours de travail */
+  const post=(p,d)=>{const s=new Set(swW(d,p));
+    if(d===dA){if(p===A)sA.forEach(x=>s.delete(x));if(p===B)sA.forEach(x=>s.add(x))}
+    if(sw&&d===dB){if(p===B)sB.forEach(x=>s.delete(x));if(p===A)sB.forEach(x=>s.add(x))}
+    return swSort([...s])};
+  const span=sl=>sl.length?[10+2*sl[0],Math.min(24,12+2*sl[sl.length-1])]:null;
+  [A,B].forEach(p=>{if(!p)return;new Set([dA,sw?dB:''].filter(Boolean)).forEach(d=>{
+    const cur=span(post(p,d));if(!cur)return;
+    const prev=span(post(p,addDays(d,-1))),next=span(post(p,addDays(d,1)));
+    if(prev){const r=24-prev[1]+cur[0];if(r<SW_REST)warn.push(swFn(p)+' n’aurait que '+r+' h de repos entre le '+fShort(addDays(d,-1))+' et le '+fShort(d)+' (conseillé : '+SW_REST+' h).')}
+    if(next){const r=24-cur[1]+next[0];if(r<SW_REST)warn.push(swFn(p)+' n’aurait que '+r+' h de repos entre le '+fShort(d)+' et le '+fShort(addDays(d,1))+' (conseillé : '+SW_REST+' h).')}
+  })});
+  if(B&&!swHasAccount(B))warn.push(swFn(B)+' n’a pas de compte relié à sa fiche : elle ne recevra pas la notification (l’administrateur devra répondre à sa place).');
+  return {hard,warn,ok,hA,hB};
+}
+const swHasAccount=id=>{try{return accs().some(a=>a.staffId===id&&!['pending','off'].includes(a.status))}catch(e){return true}};
+
+/* propositions automatiques : mêmes heures, aucun conflit */
+function swSuggest(a,dA,sA){
+  const t=today(),out=[],hA=sA.length*2;
+  S.staff.forEach(b=>{
+    if(b.id===a)return;
+    swShifts(b.id,t,SW_DAYS).forEach(x=>{
+      if(x.h!==hA)return;
+      const w={id:'',kind:'swap',a,b:b.id,dA,sA,dB:x.ds,sB:x.sl,st:'peer'},c=swCheck(w);
+      if(c.hard.length)return;
+      out.push({b:b.id,dB:x.ds,sB:x.sl,h:x.h,lab:x.lab,warn:c.warn,gap:Math.abs(swDays(dA,x.ds))});
+    });
+  });
+  return out.sort((p,q)=>p.gap-q.gap||swNm(p.b).localeCompare(swNm(q.b))).slice(0,40);
+}
+function swTakers(a,dA,sA,id){
+  return S.staff.filter(b=>b.id!==a).map(b=>{const c=swCheck({id:id||'',kind:'give',a,b:b.id,dA,sA,dB:'',sB:[],st:'peer'});return {b:b.id,hard:c.hard,warn:c.warn}}).filter(x=>!x.hard.length);
+}
+
+/* ---- notifications ---- */
+function swExpire(){
+  const t=today();let ch=false;
+  swList().forEach(w=>{if(['peer','admin'].includes(w.st)&&(w.dA<t||(w.kind==='swap'&&w.dB&&w.dB<t))){w.st='canceled';w.exp=true;(w.log=w.log||[]).push({ts:Date.now(),t:'Expiré : la date est passée'});ch=true}});
+  if(ch)save();
+}
+function swNotify(to,text,w){
+  if(!to)return;const n=swNots();
+  n.push({id:uid(),ts:Date.now(),to,text,ref:w?w.id:'',read:false});
+  if(n.length>300)n.splice(0,n.length-300);
+}
+const swMine=()=>{const k=[swMe()];if(isAdmin())k.push('admin');return k.filter(Boolean)};
+const swUnread=()=>ME?swNots().filter(n=>!n.read&&swMine().includes(n.to)):[];
+function swDesc(w){
+  const a=swFn(w.a),b=w.b?swFn(w.b):'';
+  return w.kind==='swap'
+    ?a+' ('+fShort(w.dA)+', '+swLab(w.sA)+') ⇄ '+b+' ('+fShort(w.dB)+', '+swLab(w.sB)+') · '+w.sA.length*2+' h'
+    :a+' : '+fShort(w.dA)+', '+swLab(w.sA)+' ('+w.sA.length*2+' h)'+(b?' → '+b:'');
+}
+function swFinish(w){
+  w.st='ok';w.okTs=Date.now();(w.log=w.log||[]).push({ts:Date.now(),t:'Échange validé'});
+  const txt='Échange validé : '+swDesc(w)+'. Votre planning est à jour.';
+  swNotify(w.a,txt,w);if(w.b)swNotify(w.b,txt,w);
+}
+function swCreate(f){
+  const w={id:uid(),ts:Date.now(),kind:f.kind,a:f.a,b:f.b||'',dA:f.dA,sA:swSort(f.sA),dB:f.kind==='swap'?f.dB:'',sB:f.kind==='swap'?swSort(f.sB):[],st:'peer',note:(f.note||'').slice(0,300),by:ME?ME.id:'',log:[{ts:Date.now(),t:'Demande créée'}]};
+  const c=swCheck(w);if(c.hard.length)return {err:c.hard[0]};
+  swList().push(w);
+  if(w.kind==='swap')swNotify(w.b,swFn(w.a)+' vous propose un échange : son shift du '+fShort(w.dA)+' ('+swLab(w.sA)+') contre votre shift du '+fShort(w.dB)+' ('+swLab(w.sB)+'), '+w.sA.length*2+' h chacun. Répondez dans Staff › Échanges.',w);
+  else if(w.b)swNotify(w.b,swFn(w.a)+' vous demande de reprendre son shift du '+fShort(w.dA)+' ('+swLab(w.sA)+', '+w.sA.length*2+' h). Répondez dans Staff › Échanges.',w);
+  else swTakers(w.a,w.dA,w.sA,w.id).forEach(x=>swNotify(x.b,swFn(w.a)+' cherche quelqu’un pour reprendre son shift du '+fShort(w.dA)+' ('+swLab(w.sA)+', '+w.sA.length*2+' h). Staff › Échanges.',w));
+  save();return {w};
+}
+function swAccept(id,by){
+  const w=swList().find(x=>x.id===id);if(!w||w.st!=='peer')return {err:'Cette demande n’est plus en attente.'};
+  const prevB=w.b;
+  if(w.kind==='give'&&!w.b){const me=swMe();if(!me)return {err:'Votre compte n’est pas relié à une fiche employé.'};w.b=me}
+  const c=swCheck(w);if(c.hard.length){w.b=prevB;return {err:c.hard[0]}}
+  (w.log=w.log||[]).push({ts:Date.now(),t:swFn(w.b)+' accepte'+(by==='admin'?' (par l’administrateur)':'')});
+  if(swNeedAdmin()){
+    w.st='admin';
+    swNotify(w.a,swFn(w.b)+' a accepté : '+swDesc(w)+'. En attente de validation de l’administrateur.',w);
+    swNotify('admin','À valider : échange '+swDesc(w)+'.',w);
+  }else swFinish(w);
+  save();return {w};
+}
+function swDecline(id){
+  const w=swList().find(x=>x.id===id);if(!w||w.st!=='peer')return;
+  w.st='declined';(w.log=w.log||[]).push({ts:Date.now(),t:'Refusé par '+swFn(w.b)});
+  swNotify(w.a,swFn(w.b)+' a refusé votre proposition : '+swDesc(w)+'.',w);save();
+}
+function swCancel(id){
+  const w=swList().find(x=>x.id===id);if(!w||!['peer','admin'].includes(w.st))return;
+  w.st='canceled';(w.log=w.log||[]).push({ts:Date.now(),t:'Annulé'});
+  if(w.b)swNotify(w.b,swFn(w.a)+' a annulé sa proposition : '+swDesc(w)+'.',w);
+  if(isAdmin()&&w.a!==swMe())swNotify(w.a,'Votre demande a été annulée : '+swDesc(w)+'.',w);save();
+}
+function swApprove(id){
+  const w=swList().find(x=>x.id===id);if(!w||w.st!=='admin'||!isAdmin())return {err:'Action réservée à l’administrateur.'};
+  const c=swCheck(w);if(c.hard.length)return {err:c.hard[0]};
+  swFinish(w);save();return {w};
+}
+function swRefuse(id){
+  const w=swList().find(x=>x.id===id);if(!w||w.st!=='admin'||!isAdmin())return;
+  w.st='refused';(w.log=w.log||[]).push({ts:Date.now(),t:'Refusé par l’administrateur'});
+  const txt='L’administrateur a refusé l’échange : '+swDesc(w)+'. Le planning reste inchangé.';
+  swNotify(w.a,txt,w);swNotify(w.b,txt,w);save();
+}
+function swUndo(id){
+  const w=swList().find(x=>x.id===id);if(!w||w.st!=='ok'||!isAdmin())return;
+  w.st='canceled';(w.log=w.log||[]).push({ts:Date.now(),t:'Échange annulé par l’administrateur'});
+  const txt='L’échange a été annulé par l’administrateur : '+swDesc(w)+'. Le planning initial est rétabli.';
+  swNotify(w.a,txt,w);swNotify(w.b,txt,w);save();
+}
+
+/* ---- écran « Échanges » ---- */
+function swSide(id,ds,sl){return `<div class="sws"><span class="swn">${esc(swFn(id))}</span><b>${esc(fShort(ds))}</b><span class="muted">${swLab(sl)} · ${sl.length*2} h</span></div>`}
+function swCard(w){
+  const me=swMe(),adm=isAdmin(),act=['peer','admin'].includes(w.st),c=act?swCheck(w):null,st=SW_ST[w.st]||['',w.st];
+  const right=w.kind==='swap'?swSide(w.b,w.dB,w.sB):`<div class="sws"><span class="swn">${w.b?esc(swFn(w.b)):'Un collègue'}</span><b>reprend le shift</b><span class="muted">sans contrepartie</span></div>`;
+  const stl=w.st==='peer'?(w.b?'En attente de '+esc(swFn(w.b)):'Offre ouverte à l’équipe'):(w.exp?'Expiré':st[1]);
+  const isPeer=w.st==='peer'&&(w.b===me||(!w.b&&w.kind==='give'&&me&&me!==w.a));
+  const btn=[];
+  if(isPeer)btn.push(`<button class="btn primary" data-act="sw_accept" data-id="${w.id}" ${c&&c.hard.length?'disabled':''}>${w.b?'Accepter':'Je le prends'}</button><button class="btn" data-act="sw_decline" data-id="${w.id}">${w.b?'Refuser':'Pas pour moi'}</button>`);
+  else if(w.st==='peer'&&adm&&w.b)btn.push(`<button class="btn" data-act="sw_accept" data-id="${w.id}" data-by="admin" ${c&&c.hard.length?'disabled':''}>Accepter pour ${esc(swFn(w.b))}</button>`);
+  if(w.st==='admin'&&adm)btn.push(`<button class="btn primary" data-act="sw_ok" data-id="${w.id}" ${c&&c.hard.length?'disabled':''}>Valider l’échange</button><button class="btn danger" data-act="sw_no" data-id="${w.id}">Refuser</button>`);
+  if(act&&(w.a===me||adm))btn.push(`<button class="btn" data-act="sw_cancel" data-id="${w.id}">Annuler la demande</button>`);
+  if(w.st==='ok'&&adm&&w.dA>=today()&&(w.kind!=='swap'||w.dB>=today()))btn.push(`<button class="btn danger" data-act="sw_undo" data-id="${w.id}">Annuler l’échange</button>`);
+  const chk=c?[...c.hard.map(x=>`<li class="no">${esc(x)}</li>`),...c.warn.map(x=>`<li class="wa">${esc(x)}</li>`),...c.ok.map(x=>`<li class="yes">${esc(x)}</li>`)].join(''):'';
+  return `<div class="card swc" data-id="${w.id}"><div class="swh"><span class="swk">${ic('swap')}${w.kind==='swap'?'Échange de shifts':'Reprise de shift'}</span><span class="pill ${st[0]}">${stl}</span></div>
+   <div class="swx">${swSide(w.a,w.dA,w.sA)}<span class="swar" aria-hidden="true">${w.kind==='swap'?'⇄':'→'}</span>${right}</div>
+   ${w.note?`<p class="swnote">« ${esc(w.note)} »</p>`:''}${chk?`<ul class="swchk">${chk}</ul>`:''}
+   ${btn.length?`<div class="acts swa">${btn.join('')}</div>`:''}</div>`;
+}
+function swVisible(){
+  const me=swMe(),adm=isAdmin();
+  return swList().filter(w=>adm||w.a===me||w.b===me||(w.st==='peer'&&w.kind==='give'&&!w.b&&me)).sort((a,b)=>b.ts-a.ts);
+}
+function vSwaps(m){
+  swExpire();
+  const me=swMe(),adm=isAdmin(),L=swVisible();
+  const todo=L.filter(w=>(w.st==='peer'&&(w.b===me||(!w.b&&w.kind==='give'&&me&&w.a!==me)))||(w.st==='admin'&&adm));
+  const mine=L.filter(w=>['peer','admin'].includes(w.st)&&!todo.includes(w)&&(w.a===me||adm||w.b===me));
+  const hist=L.filter(w=>!['peer','admin'].includes(w.st)).slice(0,12);
+  const sec=(t,x,empty)=>`<h3 class="swh3">${t}</h3>${x.length?x.map(swCard).join(''):`<p class="muted swempty">${empty}</p>`}`;
+  m.innerHTML=`<div class="card swintro"><div><h3>Échanges de shifts</h3><p class="muted">Échangez un de vos shifts avec un collègue qui fait le même nombre d’heures, ou demandez à quelqu’un de le reprendre. Lago vérifie les heures, les congés, les chevauchements et le repos, puis prévient la personne concernée.${swNeedAdmin()?' L’administrateur valide ensuite l’échange.':''}</p></div>
+    <div class="acts"><button class="btn primary" data-act="sw_new">${ic('plus')}Proposer un échange</button></div>
+    ${adm?`<label class="check swauto"><input type="checkbox" id="sw_auto" ${swNeedAdmin()?'':'checked'}><span>Valider automatiquement quand le collègue accepte et que tout est conforme</span></label>`:''}
+    ${!me&&!adm?`<p class="swwarn">Votre compte n’est pas relié à une fiche employé : demandez à l’administrateur de le faire (Paramètres › Comptes).</p>`:''}</div>
+    ${sec(adm?'À traiter':'À traiter par vous',todo,adm?'Rien à valider pour le moment.':'Aucune proposition en attente pour vous.')}
+    ${sec(adm?'Demandes en cours':'Mes demandes en cours',mine,'Aucune demande en cours.')}
+    ${hist.length?`<h3 class="swh3">Historique</h3>${hist.map(swCard).join('')}`:''}
+    <p class="muted" style="font-size:13px;margin-top:12px">Un échange validé s’applique à la date choisie (visible dans « Jour » et « Mon planning ») ; la semaine type ne change pas.</p>`;
+  let ch=false;swNots().forEach(n=>{if(!n.read&&swMine().includes(n.to)){n.read=true;ch=true}});if(ch){save();swBadge()}
+}
+TABS.staff.splice(3,0,['echanges','Échanges']);SUBS.echanges=vSwaps;
+
+/* ---- fenêtre « Proposer un échange » ---- */
+let SWF={a:'',ds:'',mode:'swap'};
+function swOpen(ds){
+  SWF={a:swMe()||(isAdmin()&&S.staff[0]?S.staff[0].id:''),ds:ds||'',mode:'swap'};
+  if(!SWF.a){toast('Votre compte n’est pas relié à une fiche employé');return}
+  const sh=swShifts(SWF.a,today(),SW_DAYS);
+  if(!SWF.ds||!sh.some(x=>x.ds===SWF.ds))SWF.ds=sh[0]?sh[0].ds:'';
+  showModal(`${mh('Proposer un échange')}<form id="swform">
+   ${isAdmin()?`<div class="field"><label for="swwho">Pour quel employé ?</label><select id="swwho">${S.staff.map(s=>`<option value="${s.id}" ${s.id===SWF.a?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>`:''}
+   <div class="field"><label for="swsh">Shift à échanger</label><select id="swsh"></select></div>
+   <div class="swmode" role="radiogroup" aria-label="Type de demande"><label class="check"><input type="radio" name="swmode" value="swap" checked><span>Échanger contre le shift d’un collègue (mêmes heures)</span></label>
+    <label class="check"><input type="radio" name="swmode" value="give"><span>Chercher quelqu’un pour le reprendre</span></label></div>
+   <div id="swsug" class="swsug"></div>
+   <div class="field"><label for="swnote">Message (facultatif)</label><input id="swnote" maxlength="300" placeholder="Ex. rendez-vous médical ce jour-là"></div>
+   <p id="sweer" class="swerr" role="alert"></p>
+   <div class="acts"><button type="button" class="btn" data-act="close">Annuler</button><button class="btn primary" type="submit" id="swsend">Envoyer la proposition</button></div></form>`);
+  swFill();
+}
+function swFill(){
+  const sel=$('#swsh');if(!sel)return;const sh=swShifts(SWF.a,today(),SW_DAYS);
+  if(!sh.length){sel.innerHTML='<option value="">Aucun shift à venir</option>';$('#swsug').innerHTML='<p class="muted">Aucun shift planifié dans les '+SW_DAYS+' prochains jours.</p>';$('#swsend').disabled=true;return}
+  sel.innerHTML=sh.map(x=>`<option value="${x.ds}" ${x.ds===SWF.ds?'selected':''}>${esc(fdd(x.ds,{weekday:'long',day:'numeric',month:'long'}))} · ${x.lab} · ${x.h} h</option>`).join('');
+  swSug();
+}
+function swCurShift(){const ds=SWF.ds,sl=swW(ds,SWF.a);return {ds,sl}}
+function swSug(){
+  const box=$('#swsug'),btn=$('#swsend');if(!box)return;const {ds,sl}=swCurShift();
+  if(!sl.length){box.innerHTML='<p class="muted">Ce shift n’existe plus.</p>';btn.disabled=true;return}
+  if(SWF.mode==='swap'){
+    const L=swSuggest(SWF.a,ds,sl);
+    box.innerHTML=`<p class="swsh3">${L.length?L.length+' échange'+(L.length>1?'s':'')+' possible'+(L.length>1?'s':'')+' (mêmes '+sl.length*2+' h, aucun conflit)':'Aucun échange compatible'}</p>`+
+      (L.length?L.map((x,i)=>`<label class="swopt"><input type="radio" name="swpick" value="${i}" ${i===0?'checked':''}><span><b>${esc(swNm(x.b))}</b> · ${esc(fdd(x.dB,{weekday:'short',day:'numeric',month:'short'}))} · ${x.lab}${x.warn.length?`<em class="swwa">⚠ ${esc(x.warn[0])}</em>`:''}</span></label>`).join(''):`<p class="muted">Personne n’a un shift de ${sl.length*2} h, sans congé ni chevauchement, dans les ${SW_DAYS} prochains jours. Essayez « Chercher quelqu’un pour le reprendre ».</p>`);
+    box._L=L;btn.disabled=!L.length;btn.textContent='Envoyer la proposition';
+  }else{
+    const L=swTakers(SWF.a,ds,sl);
+    box.innerHTML=`<p class="swsh3">${L.length?'Qui peut le reprendre ?':'Personne n’est disponible ce jour-là'}</p>`+
+      (L.length?`<label class="swopt"><input type="radio" name="swpick" value="all" checked><span><b>Tout le monde</b> · ${L.length} collègue${L.length>1?'s':''} disponible${L.length>1?'s':''} sera${L.length>1?'ont':''} prévenu${L.length>1?'s':''}</span></label>`+L.map(x=>`<label class="swopt"><input type="radio" name="swpick" value="${x.b}"><span><b>${esc(swNm(x.b))}</b>${x.warn.length?`<em class="swwa">⚠ ${esc(x.warn[0])}</em>`:''}</span></label>`).join(''):'');
+    box._L=L;btn.disabled=!L.length;btn.textContent='Envoyer la demande';
+  }
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act^="sw_"]');if(!b)return;const a=b.dataset.act,id=b.dataset.id;
+  if(a==='sw_new'){swOpen(b.dataset.ds||'');return}
+  if(a==='sw_open'){tab.staff='echanges';if(location.hash!=='#staff')location.hash='#staff';else route();return}
+  if(a==='sw_read'){swNots().forEach(n=>{if(swMine().includes(n.to))n.read=true});save();swBadge();if(view==='accueil')render();return}
+  const redraw=()=>{if(view==='staff'&&tab.staff==='echanges')vSwaps($('#sub'));else if(view==='accueil')render()};
+  if(a==='sw_accept'||a==='sw_take'){const r=swAccept(id,b.dataset.by);if(r.err)toast(r.err);else toast(r.w.st==='ok'?'Échange validé, planning mis à jour':'Accepté. '+(swNeedAdmin()?'En attente de validation de l’administrateur':''));redraw()}
+  else if(a==='sw_decline'){swDecline(id);toast('Proposition refusée, votre collègue est prévenu');redraw()}
+  else if(a==='sw_cancel'){swCancel(id);toast('Demande annulée');redraw()}
+  else if(a==='sw_ok'){const r=swApprove(id);if(r.err)toast(r.err);else toast('Échange validé, les deux employés sont prévenus');redraw()}
+  else if(a==='sw_no'){swRefuse(id);toast('Échange refusé, les deux employés sont prévenus');redraw()}
+  else if(a==='sw_undo'){askYes('Annuler cet échange validé ? Le planning initial est rétabli et les deux employés sont prévenus.',()=>{swUndo(id);redraw();toast('Échange annulé')},'Annuler l’échange')}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='swwho'){SWF.a=t.value;const sh=swShifts(SWF.a,today(),SW_DAYS);SWF.ds=sh[0]?sh[0].ds:'';swFill()}
+  else if(t.id==='swsh'){SWF.ds=t.value;swSug()}
+  else if(t.name==='swmode'){SWF.mode=t.value;swSug()}
+  else if(t.id==='sw_auto'&&isAdmin()){S.settings.swAuto=t.checked;save();toast(t.checked?'Validation automatique activée':'Validation de l’administrateur requise')}
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='swform')return;e.preventDefault();
+  const box=$('#swsug'),err=$('#sweer'),{ds,sl}=swCurShift(),pick=(e.target.querySelector('input[name="swpick"]:checked')||{}).value;
+  const note=$('#swnote').value;err.textContent='';
+  let f;
+  if(SWF.mode==='swap'){const x=(box._L||[])[+pick];if(!x){err.textContent='Choisissez un échange dans la liste.';return}f={kind:'swap',a:SWF.a,b:x.b,dA:ds,sA:sl,dB:x.dB,sB:x.sB,note}}
+  else{if(!pick){err.textContent='Choisissez qui peut reprendre ce shift.';return}f={kind:'give',a:SWF.a,b:pick==='all'?'':pick,dA:ds,sA:sl,note}}
+  const r=swCreate(f);if(r.err){err.textContent=r.err;return}
+  closeModal();toast(f.kind==='swap'?swFn(f.b)+' est prévenu(e)':(f.b?swFn(f.b)+' est prévenu(e)':'Les collègues disponibles sont prévenus'));
+  if(view==='staff'&&tab.staff==='echanges')vSwaps($('#sub'));else if(view==='staff'&&tab.staff==='monplan')vMonPlan($('#sub'));
+});
+
+/* ---- « Mon planning » : bouton Échanger sur chaque shift ---- */
+function vMonPlan(m){
+  vMonPlanBase(m);
+  const sid=mpSid();if(!sid||(sid!==swMe()&&!isAdmin()))return;
+  const W=mpWeeks(sid);
+  m.querySelectorAll('.mpw').forEach((el,k)=>{
+    const its=(W[k]||{items:[]}).items,ds=el.querySelectorAll('.mpd');
+    its.forEach((i,j)=>{const d=ds[j];if(!d||i.lv||i.ds<today()||d.querySelector('[data-act="sw_new"]'))return;
+      const busy=swList().some(w=>['peer','admin'].includes(w.st)&&((w.dA===i.ds&&w.a===sid)||(w.kind==='swap'&&w.dB===i.ds&&w.b===sid)));
+      d.insertAdjacentHTML('beforeend',busy?'<span class="pill warn">Échange en cours</span>':`<button type="button" class="btn swmini" data-act="sw_new" data-ds="${i.ds}" aria-label="Échanger le shift du ${fShort(i.ds)}">${ic('swap')}Échanger</button>`)});
+  });
+}
+
+/* ---- pastille « à traiter », bandeau d'accueil, toast à l'arrivée ---- */
+function swBadge(){
+  const n=swUnread().length;
+  document.querySelectorAll('#nav a[data-v="staff"],#mnav a[data-v="staff"],#msheet a[data-v="staff"]').forEach(a=>{
+    let b=a.querySelector('.nbadge.sw');
+    if(n){if(!b){b=document.createElement('b');b.className='nbadge sw msg';a.appendChild(b)}if(b.textContent!==String(n))b.textContent=n}else if(b)b.remove();
+  });
+}
+function swHome(m){
+  if(!ME)return;swExpire();
+  const un=swUnread(),me=swMe(),adm=isAdmin();
+  const todo=swList().filter(w=>(w.st==='peer'&&(w.b===me||(!w.b&&w.kind==='give'&&me&&w.a!==me)))||(w.st==='admin'&&adm));
+  if(!un.length&&!todo.length)return;
+  const recent=un.slice().sort((a,b)=>b.ts-a.ts).slice(0,3);
+  const html=`<div class="card swhome"><div class="swh"><h3>${ic('swap')}Échanges de shifts</h3>${todo.length?`<span class="pill warn">${todo.length} à traiter</span>`:''}</div>
+    ${recent.map(n=>`<p class="swn1">${esc(n.text)}</p>`).join('')||`<p class="muted">${todo.length} demande${todo.length>1?'s':''} en attente de votre réponse.</p>`}
+    <div class="acts"><button class="btn primary" data-act="sw_open">Ouvrir les échanges</button>${un.length?'<button class="btn" data-act="sw_read">Marquer comme lu</button>':''}</div></div>`;
+  const hero=m.querySelector('.hero');if(hero)hero.insertAdjacentHTML('afterend',html);else m.insertAdjacentHTML('afterbegin',html);
+}
+let SWT=0;
+function swTick(){
+  if(!ME||document.hidden)return;
+  const k='lago-swseen-'+ME.id;let seen=0;try{seen=+localStorage.getItem(k)||0}catch(e){}
+  const un=swUnread(),mx=un.reduce((a,n)=>Math.max(a,n.ts),0);
+  if(!seen&&!SWT){try{localStorage.setItem(k,String(mx||Date.now()))}catch(e){}SWT=1;swBadge();return}
+  const fresh=un.filter(n=>n.ts>seen).sort((a,b)=>b.ts-a.ts);
+  if(fresh.length){toast(fresh.length>1?fresh.length+' nouvelles notifications d’échange de shifts':fresh[0].text);try{localStorage.setItem(k,String(mx))}catch(e){}}
+  swBadge();
+}
+setInterval(swTick,3000);
+
+/* transition douce quand on change de page (pas à chaque rafraîchissement des données) */
+addEventListener('hashchange',()=>{const m=document.getElementById('main');if(!m)return;m.classList.add('vt');clearTimeout(m._vt);m._vt=setTimeout(()=>m.classList.remove('vt'),420)});
+/* ---- v47 : mises à jour automatiques (plus besoin de réinstaller) ---- */
+IC.refresh='<path d="M20 11a8 8 0 0 0-14.5-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M20 20v-4h-4"/>';
+const AU={ver:null,busy:false,applying:false,boot:Date.now(),touch:Date.now(),resume:false,snooze:0,block:'',blockUntil:0,last:0};
+const AU_KEY='lago-upd';
+const auHttp=()=>location.protocol.startsWith('http')&&'serviceWorker' in navigator;
+const auNum=v=>{const m=/^v(\d+)/.exec(v||'');return m?+m[1]:NaN};
+const auNewer=v=>{const a=auNum(v),b=auNum(LAGO_V);return isNaN(a)||isNaN(b)?v!==LAGO_V:a>b};
+async function auRemote(){
+  if(!auHttp())return null;
+  try{
+    const r=await fetch('sw.js',{cache:'no-store'});if(!r.ok)return null;
+    const m=(await r.text()).match(/const V\s*=\s*'lago-(v[\w.-]+)'/);return m?m[1]:null;
+  }catch(e){return null}
+}
+function auSafe(){
+  if(AU.applying||document.hidden)return false;
+  if(document.querySelector('#modal .scrim'))return false;
+  if(typeof cart!=='undefined'&&cart&&cart.lines&&cart.lines.length)return false;
+  if(document.body.classList.contains('cart-open'))return false;
+  const ae=document.activeElement;
+  if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=='checkbox'&&ae.type!=='radio'&&ae.value)return false;
+  return true;
+}
+function auBar(){
+  let e=document.getElementById('aubar');
+  if(!e){e=document.createElement('div');e.id='aubar';e.className='aubar';e.setAttribute('role','status');e.hidden=true;document.body.appendChild(e)}
+  return e;
+}
+function auShow(){
+  const e=auBar();if(!AU.ver)return;
+  e.innerHTML=`<span class="au-i" aria-hidden="true">${ic('refresh')}</span><span class="au-t"><b>Nouvelle version disponible</b><small>Lago ${esc(AU.ver)} · vos données sont conservées</small></span><button type="button" class="btn primary" data-act="au_go">Mettre à jour</button><button type="button" class="au-x" data-act="au_x" aria-label="Plus tard">${ic('x')}</button>`;
+  e.hidden=false;
+}
+function auHide(){const e=document.getElementById('aubar');if(e)e.hidden=true}
+async function auApply(){
+  if(AU.applying)return;AU.applying=true;
+  const e=auBar();e.innerHTML=`<span class="au-i spin" aria-hidden="true">${ic('refresh')}</span><span class="au-t"><b>Mise à jour en cours…</b><small>Lago va redémarrer</small></span>`;e.hidden=false;
+  try{save();cloudStash()}catch(_){}
+  try{localStorage.setItem(AU_KEY,JSON.stringify({v:AU.ver,t:Date.now()}))}catch(_){}
+  const tm=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(r,ms))]);
+  try{const reg=await tm(navigator.serviceWorker.getRegistration(),2000);if(reg)await tm(reg.update(),3000)}catch(_){}
+  try{await tm(Promise.all([fetch('./',{cache:'reload'}),fetch('index.html',{cache:'reload'})]),6000)}catch(_){}
+  location.reload();
+}
+/* que faire quand une nouvelle version est détectée ? */
+function auDecide(){
+  if(!AU.ver||AU.applying)return;
+  const blocked=AU.block===AU.ver&&Date.now()<AU.blockUntil;
+  const idle=Date.now()-AU.touch,fresh=Date.now()-AU.boot<20000;
+  if(!blocked&&auSafe()&&(fresh||AU.resume||idle>45000))return auApply();
+  if(Date.now()>=AU.snooze)auShow();
+}
+async function auCheck(){
+  if(AU.busy)return AU.ver?'new':'ok';AU.busy=true;
+  try{
+    const v=await auRemote();AU.last=Date.now();
+    if(v===null)return auHttp()?'err':'off';
+    AU.ver=auNewer(v)?v:null;
+    if(AU.ver)auDecide();else auHide();
+    return AU.ver?'new':'ok';
+  }finally{AU.busy=false}
+}
+['pointerdown','keydown','touchstart','wheel'].forEach(ev=>addEventListener(ev,()=>{AU.touch=Date.now()},{passive:true,capture:true}));
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)return;
+  AU.resume=true;setTimeout(()=>{AU.resume=false},20000);
+  if(Date.now()-AU.last>45000)auCheck();else auDecide();
+});
+addEventListener('online',()=>{auCheck()});
+setInterval(()=>{if(!document.hidden&&Date.now()-AU.last>10*60*1000)auCheck();else auDecide()},10000);
+/* au démarrage : toast « mise à jour installée », ou on évite de boucler si la nouvelle version n'est pas encore diffusée */
+setTimeout(()=>{
+  let rec=null;try{rec=JSON.parse(localStorage.getItem(AU_KEY)||'null')}catch(_){}
+  if(rec){
+    try{localStorage.removeItem(AU_KEY)}catch(_){}
+    if(rec.v===LAGO_V||auNum(rec.v)<=auNum(LAGO_V))setTimeout(()=>toast('Lago est à jour : version '+LAGO_V),1200);
+    else if(Date.now()-rec.t<10*60*1000){AU.block=rec.v;AU.blockUntil=rec.t+10*60*1000}
+  }
+  auCheck();
+},3000);
+
+/* ---- « Mon compte » : version + vérification manuelle ---- */
+function accountMenu(){
+  accountMenuV0();
+  const m=document.querySelector('#modal .modal');if(!m||m.querySelector('.auv'))return;
+  m.insertAdjacentHTML('beforeend',`<div class="auv"><div><b>Lago ${esc(LAGO_V)}</b><span class="muted" id="auvs">${AU.ver?'Nouvelle version '+esc(AU.ver)+' disponible':'Les mises à jour s’installent toutes seules.'}</span></div><button type="button" class="btn" data-act="${AU.ver?'au_go':'au_check'}" id="auvb">${AU.ver?'Mettre à jour':'Rechercher une mise à jour'}</button></div>`);
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act^="au_"]');if(!b)return;const a=b.dataset.act;
+  if(a==='au_go'){auApply();return}
+  if(a==='au_x'){AU.snooze=Date.now()+30*60*1000;auHide();return}
+  if(a==='au_check'){
+    const st=document.getElementById('auvs');b.disabled=true;if(st)st.textContent='Recherche en cours…';
+    const r=await auCheck();b.disabled=false;
+    const blocked=AU.ver&&AU.block===AU.ver&&Date.now()<AU.blockUntil;
+    if(!st)return;
+    if(r==='new'){st.textContent=blocked?'La version '+AU.ver+' est en cours de diffusion : réessayez dans quelques minutes.':'Nouvelle version '+AU.ver+' disponible';if(!blocked){b.textContent='Mettre à jour';b.dataset.act='au_go'}}
+    else if(r==='ok')st.textContent='Lago est à jour ('+LAGO_V+').';
+    else if(r==='err')st.textContent='Impossible de vérifier : pas de connexion ?';
+    else st.textContent='Les mises à jour automatiques fonctionnent dans l’appli installée (lago-software.github.io).';
+  }
+});
 
 METHODS.pass='Carnet de séances';
 function openPay(){
