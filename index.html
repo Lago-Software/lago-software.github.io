@@ -1414,25 +1414,78 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--brand);outline-offs
 #main.vt>*:nth-child(n+4){animation-duration:.2s}
 
 /* ---------- plannings ---------- */
-.dcard{padding:18px 20px}
-.dch h3{font-size:19px}
-.dtw{border:1.5px solid var(--grid);border-radius:14px;background:var(--surface)}
-.dt{border-collapse:collapse;min-width:520px;width:100%}
+.dcard{padding:18px 20px 16px;scroll-margin-top:84px}
+.dch{gap:10px 14px}
+.dtl{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.dch h3{font-size:21px;letter-spacing:-.02em}
+.plcov{font-size:12px}
+.dtw{border:1.5px solid var(--grid);border-radius:16px;background:var(--surface);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.dt{border-collapse:collapse;min-width:540px;width:100%;table-layout:fixed}
 .dt th,.dt td{border:1px solid var(--grid);padding:0}
-.dt thead th{background:var(--surface-2);color:var(--ink-2);font-weight:650;border-bottom:2px solid var(--grid-2);padding:7px 3px 0}
-.dt thead th i{height:4px;margin-top:6px;border-radius:0}
-.dt .slc{background:var(--surface-2);color:var(--ink-2);font-weight:650;border-right:2px solid var(--grid-2);font-variant-numeric:tabular-nums}
-.dt tbody tr:nth-child(even) .slc{background:color-mix(in srgb,var(--surface-2) 60%,var(--grid))}
-.dt th.cv,.dt td.cv{border-left:2px solid var(--grid-2)}
+.dt thead th{background:var(--surface-2);color:var(--ink-2);font-weight:650;border-bottom:2px solid var(--grid-2);padding:9px 2px 7px;vertical-align:bottom}
+.pav{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;letter-spacing:0;flex:none}
+.dt thead .pav{margin:0 auto 5px}
+.pnm{display:block;font-size:12px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+.dt th.lv{opacity:.55}
+.dt .slc{width:66px;background:var(--surface-2);color:var(--ink-2);font-weight:650;font-size:12.5px;font-variant-numeric:tabular-nums;position:sticky;left:0;z-index:2;box-shadow:inset -2px 0 0 var(--grid-2)}
+.dt thead .slc{z-index:3}
+.dt th.cv,.dt td.cv{width:62px;border-left:2px solid var(--grid-2);background:var(--surface-2);text-align:center}
+.dt td.jn{border-top-style:hidden}
 .dt tbody tr:last-child th,.dt tbody tr:last-child td{border-bottom:0}
 .dt tr>*:first-child{border-left:0}
 .dt tr>*:last-child{border-right:0}
 .dt thead tr>*{border-top:0}
-.pc{border-radius:0;height:38px;min-height:38px;position:relative;line-height:1.15}
-.pc.w{opacity:1}
+.pc{border-radius:0;height:40px;min-height:40px;position:relative;line-height:1.15;background:transparent}
+.pc.w{background:color-mix(in srgb,var(--c) 22%,var(--surface))}
+.pc.w:hover{background:color-mix(in srgb,var(--c) 34%,var(--surface));filter:none}
+.pc.g{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--c) 12%,#fff) 0 5px,color-mix(in srgb,var(--c) 24%,#fff) 5px 10px);color:var(--ink-2);font-size:10px;letter-spacing:.01em}
+.pc.w::before,.pc.g::before{content:'';position:absolute;left:0;width:4px;top:var(--e,0%);height:calc(var(--f,100%) - var(--e,0%));background:var(--c);border-radius:0 3px 3px 0}
+.pc.g::before{opacity:.6}
+.pc:not(.w):not(.g):not(.ro):not(.off):hover{background:var(--brand-soft)}
+.pc:not(.w):not(.g):not(.ro):not(.off):hover::after{content:'+';position:absolute;inset:0;display:grid;place-items:center;font-size:20px;font-weight:600;color:var(--brand)}
 .pc:focus-visible{outline:2px solid var(--brand);outline-offset:-3px;z-index:1}
-.pc small{display:block;font-size:9.5px;font-weight:700;letter-spacing:0}
+.pc small{display:block;font-size:10.5px;font-weight:700;letter-spacing:0;color:var(--ink)}
 .pc.w small{color:var(--ink)}
+/* vue d'ensemble de la semaine */
+.wkc{margin-bottom:14px;padding:18px 20px}
+.wkh{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap;margin-bottom:8px}
+.wkh h3{margin:0}
+.wkleg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.wkleg .wn{min-width:22px;height:22px;font-size:11px;border-radius:7px;margin-left:8px}
+.wkleg .wn:first-child{margin-left:0}
+.wkw{overflow-x:auto}
+.wk{border-collapse:separate;border-spacing:4px;width:100%;table-layout:fixed;min-width:300px}
+.wk,.wk th,.wk td{border:0;background:none}
+.wk th{font-size:12px;font-weight:650;color:var(--muted);text-align:center;padding:0 0 2px;white-space:nowrap}
+.wk tbody th{text-align:left;width:56px;padding:0}
+.wkd{font:inherit;font-weight:700;color:var(--ink);padding:0 8px;border-radius:10px;min-height:32px;width:100%;text-align:left}
+.wkd:hover{background:var(--brand-soft)}
+.wk td{text-align:center;padding:0}
+.wn{display:inline-grid;place-items:center;min-width:100%;height:32px;border-radius:10px;font-weight:750;font-size:14px;font-variant-numeric:tabular-nums;font-style:normal}
+.wn.ok{background:color-mix(in srgb,var(--ok) 16%,var(--surface));color:var(--ok)}
+.wn.warn{background:color-mix(in srgb,var(--warn) 20%,var(--surface));color:var(--warn)}
+.wn.bad{background:color-mix(in srgb,var(--bad) 16%,var(--surface));color:var(--bad)}
+.wk td.no{color:var(--grid-2);font-size:18px;line-height:32px}
+.wkn{margin:10px 0 0;font-size:13px}
+/* totaux d'heures */
+.tts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tt{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:0 12px;padding:12px 14px 18px;border-radius:16px;background:var(--surface-2);border:1px solid var(--hair);color:var(--ink);text-align:left;overflow:hidden}
+.tt .pav{width:38px;height:38px;font-size:13px}
+.ttx{display:flex;flex-direction:column;min-width:0}
+.tt small{font-size:13px;font-weight:650;color:var(--ink-2)}
+.tt b{font-size:22px;line-height:1.1}
+.tt em{font-style:normal;font-size:12px;color:var(--muted);font-weight:600;opacity:1}
+.tbar{position:absolute;left:14px;right:14px;bottom:8px;height:4px;border-radius:99px;background:color-mix(in srgb,var(--ink) 9%,var(--surface))}
+.tbar::after{content:'';position:absolute;inset:0 auto 0 0;width:var(--w);border-radius:99px;background:var(--c)}
+@media (max-width:560px){
+  .dcard,.wkc{padding:14px 12px 12px}
+  .dt{min-width:500px}
+  .dt .slc{width:58px;font-size:12px}
+  .dt th.cv,.dt td.cv{width:54px}
+  .wn{height:30px;font-size:13px}
+  .wk td.no{line-height:30px}
+  .wk tbody th{width:46px}
+}
 .dch .plbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .btn.plt{padding:6px 12px;font-size:13px;min-height:0;gap:6px}
 .btn.plt svg{width:15px;height:15px}
@@ -5846,7 +5899,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v50';
+const LAGO_V='v51';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -7271,6 +7324,68 @@ document.addEventListener('click',e=>{
   else if(a==='docopen')docOpen(d.t,d.k);
   else if(a==='docpdf')docPdf(d.t,d.k);
   else if(a==='docgo'){const m=$('#modal');if(m)m.innerHTML='';tab.controle='docs';docF=d.t||'all';location.hash!=='#controle'?(location.hash='#controle'):VIEWS.controle($('#main'));renderNav();window.scrollTo(0,0)}
+});
+/* ---------- PD. nouveau design du planning staff (v51) ---------- */
+/* Cases en teinte douce + liseré de couleur, blocs continus, en-têtes avec initiales,
+   vue d'ensemble de la semaine, totaux d'heures comparés. Mêmes données, mêmes actions. */
+const PL_TINT='color-mix(in srgb,var(--c) 22%,var(--surface))';
+function plFill(p,d,ds,i,id,v){
+  if(!v)return '';
+  const g=plCellSeg(p,d,ds,i,id,v),a=10+2*i;
+  if(g[0]<=a&&g[1]>=a+2)return '';
+  const e=Math.max(0,Math.min(100,(Math.min(g[0],a+2)-a)/2*100)),f=g[1]>g[0]?Math.max(e,Math.min(100,(g[1]-a)/2*100)):e;
+  const r=n=>Math.round(n*10)/10,S0='var(--surface)';
+  const vars=`;--e:${r(e)}%;--f:${r(f)}%`;
+  if(v==='w')return `${vars};background:linear-gradient(180deg,${S0} 0 ${r(e)}%,${PL_TINT} ${r(e)}% ${r(f)}%,${S0} ${r(f)}% 100%)`;
+  return `${vars};background:linear-gradient(180deg,rgba(255,255,255,.82) 0 ${r(e)}%,transparent ${r(e)}% ${r(f)}%,rgba(255,255,255,.82) ${r(f)}% 100%),repeating-linear-gradient(135deg,color-mix(in srgb,var(--c) 12%,#fff) 0 5px,color-mix(in srgb,var(--c) 24%,#fff) 5px 10px)`;
+}
+/* créneaux sous le minimum, pour un jour du planning type */
+function plLowSlots(p,d,ds,dc){
+  const n=nrows(p,d);let low=0;
+  for(let i=0;i<n;i++){const c=(dc||p.cells[d]||{})[i]||{};if(S.staff.filter(s=>c[s.id]==='w'&&!(ds&&onLeave(s.id,ds))).length<MIN_STAFF)low++}
+  return low;
+}
+function dayCard(p,d,ds){
+  const n=nrows(p,d),dc=ds?swDayCells(p,d,ds):(p.cells[d]||{}),ro=!isAdmin();
+  const head=visStaff().map(s=>{const c=scol(s);return `<th class="${ds&&onLeave(s.id,ds)?'lv':''}"><span class="pav" style="background:${c};color:${inkOn(c)}">${esc(initials(s.name))}</span><span class="pnm">${esc(fname(s))}</span></th>`}).join('');
+  const body=Array.from({length:n},(_,i)=>{const c=dc[i]||{},prev=i?dc[i-1]||{}:{},cnt=S.staff.filter(s=>c[s.id]==='w'&&!(ds&&onLeave(s.id,ds))).length;
+    return `<tr><th class="slc">${PSL[i]}</th>${visStaff().map(s=>{const v=c[s.id]||'',lv=ds&&onLeave(s.id,ds),jn=!!v&&prev[s.id]===v;
+      let tx=plTxt(p,d,ds,i,s.id,v);if(jn&&tx==='Gestion')tx='';
+      return `<td class="${jn?'jn':''}"><button class="pc ${v} ${lv?'off':''} ${ro?'ro':''}" style="--c:${scol(s)}${plFill(p,d,ds,i,s.id,v)}" data-act="pcell" data-d="${d}" data-i="${i}" data-s="${s.id}" ${lv?'disabled':''} ${ro?'tabindex="-1"':''} aria-label="${esc(fname(s))}, ${DAYN[d]} ${PSL[i]} : ${v==='w'?'présent':v==='g'?'gestion':'libre'}">${tx}</button></td>`}).join('')}<td class="cv"><span class="pill ${cnt<MIN_STAFF?'bad':cnt===MIN_STAFF?'warn':'ok'}">${cnt}</span></td></tr>`}).join('');
+  const low=plLowSlots(p,d,ds,dc);
+  const cov=n?`<span class="pill ${low?'bad':'ok'} plcov">${low?low+' créneau'+(low>1?'x':'')+' à renforcer':'Équipe complète'}</span>`:'';
+  return `<div class="card dcard" ${ds?'':`id="pld${d}"`}><div class="dch"><div class="dtl"><h3>${DAYN[d]}</h3>${cov}</div><span class="plbar">${plBtn(p,d,ro)}${ro?(n>5?'<span class="late">Nocturne jusqu’à minuit</span>':''):`<label class="late"><input type="checkbox" data-plate="${d}" ${n>5?'checked':''}> Nocturne jusqu’à minuit</label>`}</span></div>
+    <div class="dtw"><table class="dt"><thead><tr><th class="slc"></th>${head}<th class="cv">Équipe</th></tr></thead><tbody>${body}</tbody></table></div>${plNotes(p,d,ds,dc)}</div>`;
+}
+/* vue d'ensemble : combien de personnes par créneau, sur toute la semaine */
+function plOverview(p){
+  const head=PSL.map(l=>`<th>${l.replace(/h/g,'')}</th>`).join('');
+  const rows=[0,1,2,3,4,5,6].map(d=>{const n=nrows(p,d);
+    return `<tr><th><button type="button" class="wkd" data-act="plgo" data-d="${d}">${DAYN[d].slice(0,3)}</button></th>${PSL.map((_,i)=>{
+      if(i>=n)return '<td class="no" aria-label="fermé">·</td>';
+      const c=(p.cells[d]||{})[i]||{},k=S.staff.filter(s=>c[s.id]==='w').length;
+      return `<td><span class="wn ${k<MIN_STAFF?'bad':k===MIN_STAFF?'warn':'ok'}" aria-label="${DAYN[d]} ${PSL[i]} : ${k} personne${k>1?'s':''}">${k}</span></td>`}).join('')}</tr>`}).join('');
+  return `<div class="card wkc"><div class="wkh"><h3>Vue de la semaine</h3><span class="wkleg"><i class="wn bad">0</i>sous ${MIN_STAFF}<i class="wn warn">${MIN_STAFF}</i>minimum<i class="wn ok">+</i>confortable</span></div>
+    <div class="wkw"><table class="wk"><thead><tr><th></th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="muted wkn">Nombre de personnes présentes par tranche de 2 heures. Touchez un jour pour l’ouvrir.</p></div>`;
+}
+function vTeam(m){
+  const p=curPlan();
+  const chips=plOrder().map(x=>`<button class="chip ${x.id===p.id?'on':''}" data-act="planset" data-id="${x.id}">${esc(x.name)}</button>`).join('');
+  const hs=visStaff().map(s=>({s,h:planHours(p,s.id)})),mx=Math.max(1,...hs.map(x=>x.h.w));
+  const tot=hs.map(({s,h})=>{const c=scol(s);return `<div class="tt"><span class="pav" style="background:${c};color:${inkOn(c)}">${esc(initials(s.name))}</span><div class="ttx"><small>${esc(fname(s))}</small><b class="num">${plHF(h.w)}</b>${h.g?`<em>+ ${plHF(h.g)} gestion</em>`:''}</div><i class="tbar" style="--w:${Math.round(h.w/mx*100)}%;--c:${c}"></i></div>`}).join('');
+  const low=[];for(let d=0;d<7;d++)for(let i=0;i<nrows(p,d);i++){const c=(p.cells[d]||{})[i]||{};if(S.staff.filter(s=>c[s.id]==='w').length<MIN_STAFF)low.push(DAYN[d].slice(0,3)+' '+PSL[i])}
+  m.innerHTML=`<div class="plan-h"><div><h2 class="plan-t">${esc(p.name)}</h2><p class="muted">${prange(p)}</p></div>
+     <div class="plact"><button class="btn" data-act="planpdf">PDF</button>${isAdmin()?`<button class="btn" data-act="planarch">Sauvegardes</button><button class="btn" data-act="planedit" data-id="${p.id}">Modifier</button><button class="btn primary" data-act="plannew">${ic('plus')}Nouveau planning</button>`:`<span class="pill">Consultation seule</span>`}</div></div>
+    <div class="chips" style="margin-bottom:12px">${chips}</div>
+    ${low.length?`<div class="banner"><span>${low.length} créneau${low.length>1?'x':''} sous le minimum de ${MIN_STAFF} personnes (${low.slice(0,4).join(', ')}${low.length>4?'…':''}).</span></div>`:`<div class="banner ok"><span>Tous les créneaux respectent le minimum de ${MIN_STAFF} personnes.</span></div>`}
+    ${plOverview(p)}
+    <div class="dgrid">${[0,1,2,3,4,5,6].map(d=>dayCard(p,d,null)).join('')}</div>
+    <div class="card" style="margin-top:14px"><h3>Total des heures par semaine</h3><div class="tts">${tot}</div><p class="muted" style="margin-top:12px">CP : <b>${CP_TOTAL}</b> jours par personne${isAdmin()?' · Touchez une case pour la remplir : <b>présent</b>, puis <b>gestion</b>, puis vide.':' · Seul l’administrateur peut modifier le planning.'}</p></div>`;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act="plgo"]');if(!b)return;
+  const c=document.getElementById('pld'+b.dataset.d);if(c)c.scrollIntoView({behavior:'smooth',block:'start'});
 });
 
 METHODS.pass='Carnet de séances';
