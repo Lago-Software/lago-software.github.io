@@ -954,6 +954,7 @@ body.tedit-on :is(h1,h2,h3,p,span,label,b,button,a,small,td,th,li,strong,em):hov
 .zst i{width:8px;height:8px;border-radius:50%;background:#2ecc71;display:inline-block}
 .zst[data-s="off"] i{background:#f39c12}
 .zst[data-s="sync"] i{background:#5ab0ff}
+.gstat{margin:14px 0 0;font-size:12px;text-align:center;line-height:1.45}.gstat .g-ok{color:var(--ok)}.gstat .g-off{color:var(--bad)}.gstat .gv{opacity:.55;margin-left:6px}
 @media (max-width:1080px){.pos{grid-template-columns:minmax(0,1fr) 340px}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:0}
@@ -3264,7 +3265,7 @@ const pendingCount=()=>accs().filter(a=>a.status==='pending').length;
 let ME=null;
 const curAcc=()=>ME;const curStaff=()=>ME&&ME.staffId||'';
 const gate=()=>$('#gate')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'gate'}));
-function gateShell(inner){const st=S.settings;gate().innerHTML=`<div class="gcard"><div class="glogo">${st.logo?`<img src="${st.logo}" alt="">`:`<span class="lmark">${ic('wave')}</span><span class="lt">lago</span>`}</div><p class="gname">${esc(st.name)}</p>${inner}</div>`;gate().hidden=false}
+function gateShellBase(inner){const st=S.settings;gate().innerHTML=`<div class="gcard"><div class="glogo">${st.logo?`<img src="${st.logo}" alt="">`:`<span class="lmark">${ic('wave')}</span><span class="lt">lago</span>`}</div><p class="gname">${esc(st.name)}</p>${inner}</div>`;gate().hidden=false}
 function gateStart(){
   const act=accs().filter(a=>a.status==='active');
   if(!accs().length)return gateSetup();
@@ -3278,8 +3279,8 @@ function gform(kind){
   const nw=kind==='new'||kind==='setup';
   return `<form id="gform" data-kind="${kind}">
    ${nw?`<div class="field"><label for="gn">Prénom et nom</label><input id="gn" required autocomplete="name"></div>`:''}
-   <div class="field"><label for="gi">Identifiant (e-mail ou pseudo)</label><input id="gi" required autocomplete="username" autocapitalize="none" ${kind==='pick'?'value="'+esc(gform.ident||'')+'" readonly':''}></div>
-   <div class="field"><label for="gp">Mot de passe</label><input id="gp" type="password" required minlength="6" autocomplete="${nw?'new-password':'current-password'}"></div>
+   <div class="field"><label for="gi">Identifiant (e-mail ou pseudo)</label><input id="gi" required autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" ${kind==='pick'?'value="'+esc(gform.ident||'')+'" readonly':''}></div>
+   <div class="field"><label for="gp">Mot de passe</label><input id="gp" type="password" required minlength="6" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="${nw?'new-password':'current-password'}"></div><label class="check" style="margin:-4px 0 10px"><input type="checkbox" id="gshow">Afficher le mot de passe</label>
    
    ${kind==='new'?`<div class="field"><label for="gstf">Je suis (facultatif)</label><select id="gstf"><option value="">—</option>${(S.staff||[]).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div>`:''}
    ${kind!=='new'&&kind!=='setup'?`<label class="check"><input type="checkbox" id="grem" checked>Rester connecté</label>`:''}
@@ -3304,7 +3305,7 @@ function bootGateBase(){
 document.addEventListener('submit',async e=>{
   if(e.target.id!=='gform')return;e.preventDefault();
   const f=e.target,k=f.dataset.kind,err=m=>{$('#gerr').textContent=m},btn=f.querySelector('button[type=submit]');
-  const ident=$('#gi').value.trim().toLowerCase(),pw=$('#gp').value;btn.disabled=true;
+  const ident=$('#gi').value.trim().toLowerCase(),pw=$('#gp').value.trim();btn.disabled=true;
   try{
     if(k==='new'||k==='setup'){
       
@@ -3316,11 +3317,11 @@ document.addEventListener('submit',async e=>{
       else gateShell(`<div class="gpick"><span class="avatar big ok">${ic('check')}</span><h2>Demande envoyée</h2></div><p class="muted" style="text-align:center">Votre compte sera utilisable dès que l’administrateur l’aura validé.</p><div class="gfoot"><button class="btn primary" data-act="g_back">Retour</button></div>`);
     }else{
       const a=k==='pick'?accs().find(x=>x.id===f.dataset.id):accs().find(x=>x.ident===ident);
-      if(!a){err('Compte introuvable.');return}
+      if(!a){err(cloudOn()?'Compte introuvable. Vérifiez l’identifiant, ou choisissez votre prénom dans la liste.':'Compte introuvable : cet appareil n’est pas connecté à l’équipe. Ouvrez le lien d’équipe envoyé par votre responsable.');return}
       const lk=LOCKS[a.id];if(lk&&lk.until>Date.now()){err('Trop d’essais. Réessayez dans '+Math.ceil((lk.until-Date.now())/1000)+' s.');return}
-      if(a.status==='pending'){err('Compte en attente de validation par l’administrateur.');return}
+      if(a.status==='pending'){err('Compte en attente : l’administrateur doit le valider dans Paramètres › Comptes › Demandes à valider.');return}
       if(a.status!=='active'){err('Ce compte est désactivé. Contactez l’administrateur.');return}
-      if(!a.pwd){a.pwd=await hashPw(pw,a.id);save()}else if(await hashPw(pw,a.id)!==a.pwd){const l=LOCKS[a.id]=LOCKS[a.id]||{n:0,until:0};l.n++;if(l.n>=5){l.until=Date.now()+30000;l.n=0}err('Mot de passe incorrect. Un oubli ? Demandez une réinitialisation à l’administrateur.');$('#gp').value='';$('#gp').focus();return}
+      if(!a.pwd){a.pwd=await hashPw(pw,a.id);save()}else if(await hashPw(pw,a.id)!==a.pwd&&await hashPw($('#gp').value,a.id)!==a.pwd){const l=LOCKS[a.id]=LOCKS[a.id]||{n:0,until:0};l.n++;if(l.n>=5){l.until=Date.now()+30000;l.n=0}err('Mot de passe incorrect. Un oubli ? Demandez une réinitialisation à l’administrateur.');$('#gp').value='';$('#gp').focus();return}
       delete LOCKS[a.id];login(a,$('#grem')?$('#grem').checked:true);
     }
   }finally{btn.disabled=false}
@@ -3353,7 +3354,7 @@ document.addEventListener('click',async e=>{
   else if(a==='ac_no'&&isAdmin()){accs().splice(accs().findIndex(y=>y.id===d.id),1);save();renderNav();vSetAcc($('#sub'));toast('Demande refusée')}
   else if(a==='ac_off'&&isAdmin()){const x=accs().find(y=>y.id===d.id);if(x.id===ME.id){toast('Vous ne pouvez pas vous désactiver');return}x.status=x.status==='active'?'off':'active';save();vSetAcc($('#sub'))}
   else if(a==='ac_del'&&isAdmin()){const x=accs().find(y=>y.id===d.id);if(x.id===ME.id){toast('Vous ne pouvez pas supprimer votre compte');return}askYes('Supprimer le compte de '+x.name+' ?',()=>{accs().splice(accs().indexOf(x),1);save();vSetAcc($('#sub'))},'Supprimer')}
-  else if(a==='ac_pw'&&isAdmin()){const x=accs().find(y=>y.id===d.id);askText('Mot de passe de '+x.name,'Nouveau mot de passe (6 caractères min.). ',async p=>{if(!p||p.length<6){toast('6 caractères minimum');return}x.pwd=await hashPw(p,x.id);save();vSetAcc($('#sub'));toast('Mot de passe défini')},true)}
+  else if(a==='ac_pw'&&isAdmin()){const x=accs().find(y=>y.id===d.id);askText('Mot de passe de '+x.name,'Nouveau mot de passe (6 caractères min.). ',async p=>{if(!p||p.length<6){toast('6 caractères minimum');return}x.pwd=await hashPw(p.trim(),x.id);save();vSetAcc($('#sub'));toast('Mot de passe défini')},true)}
 });
 document.addEventListener('submit',async e=>{
   if(e.target.id!=='pwform')return;e.preventDefault();
@@ -3365,7 +3366,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!isAdmin())return;
   else if(t.dataset.acstaff){accs().find(y=>y.id===t.dataset.acstaff).staffId=t.value;save()}
   else if(t.id==='lockmin'){S.settings.lockMin=Math.max(0,+t.value||0);save();armLock();toast('Réglage enregistré')}
 });
-function vSetAcc(m){
+function vSetAccBase(m){
   const L=accs(),pend=L.filter(a=>a.status==='pending'),rest=L.filter(a=>a.status!=='pending');
   const po=(sel)=>`<option value="">Aucun accès</option>${(S.profiles||[]).map(p=>`<option value="${p.id}" ${sel===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}<option value="admin" ${sel==='admin'?'selected':''}>Administrateur (accès complet)</option>`;
   m.innerHTML=`<div class="card" style="margin-bottom:14px"><h3>Demandes à valider ${pend.length?`<span class="pill warn">${pend.length}</span>`:''}</h3>
@@ -3764,7 +3765,7 @@ const stAv=s=>`<span class="avatar" style="background:${scol(s)};color:${inkOn(s
 /* ---- modales de confirmation / saisie (remplacent confirm et prompt) ---- */
 let ASK=null;
 function askYes(msg,fn,label){ASK={fn};showModal(`${mh('Confirmer')}<p style="margin:0 0 16px">${esc(msg)}</p><div class="acts"><button class="btn" data-act="close">Annuler</button><button class="btn primary" data-act="ask_ok">${esc(label||'Confirmer')}</button></div>`)}
-function askText(title,msg,fn,pw,val){ASK={fn};showModal(`${mh(esc(title))}<form id="askform"><p class="muted" style="margin:0 0 10px">${esc(msg)}</p><input id="askv" ${pw?'type="password" autocomplete="new-password"':''} value="${esc(val||'')}" style="width:100%"><div class="acts" style="margin-top:14px"><button type="button" class="btn" data-act="close">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div></form>`);setTimeout(()=>{const i=$('#askv');if(i)i.focus()},40)}
+function askText(title,msg,fn,pw,val){ASK={fn};showModal(`${mh(esc(title))}<form id="askform"><p class="muted" style="margin:0 0 10px">${esc(msg)}</p><input id="askv" ${pw?'type="password" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false"':''} value="${esc(val||'')}" style="width:100%"><div class="acts" style="margin-top:14px"><button type="button" class="btn" data-act="close">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div></form>`);setTimeout(()=>{const i=$('#askv');if(i)i.focus()},40)}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act="ask_ok"]');if(!b||!ASK)return;const f=ASK.fn;ASK=null;closeModal();f()});
 document.addEventListener('submit',e=>{if(e.target.id!=='askform'||!ASK)return;const v=$('#askv').value,f=ASK.fn;ASK=null;closeModal();f(v)});
 
@@ -5238,6 +5239,59 @@ function migrateImgs(){
     P.push({id:'p6',name:'Session 2 h',cat:'park',price:2200,tva:10,active:false,jumper:true,dur:120,img:SESS_IMG.h2});
   S.imgMig=1;save();
 }
+/* ---- comptes : création directe par l'administrateur, écran de connexion à jour ---- */
+function vSetAcc(m){
+  vSetAccBase(m);
+  if(!isAdmin())return;
+  const h=[...m.querySelectorAll('h3')].find(x=>x.textContent.trim()==='Comptes');
+  if(h&&!m.querySelector('[data-act="x4_acadd"]'))h.insertAdjacentHTML('afterend','<div class="acts" style="margin:6px 0 10px"><button class="btn primary" data-act="x4_acadd">'+ic('plus')+'Ajouter un compte</button></div><p class="muted" style="font-size:13px;margin:0 0 8px">Le compte est utilisable tout de suite, sans validation. Donnez ensuite l’identifiant et le mot de passe à la personne.</p>');
+  const p=[...m.querySelectorAll('p.muted')].find(x=>/restent sur cet appareil/.test(x.textContent));
+  if(p)p.textContent='Les accès sont définis par les profils (Paramètres › Profils). Les comptes sont partagés avec l’équipe quand « Équipe connectée » est active ; les mots de passe sont chiffrés. Un compte demandé depuis l’écran de connexion doit d’abord être validé ci-dessus.';
+}
+function x4AccModal(){
+  const pr=S.profiles||[];
+  showModal(`${mh('Ajouter un compte')}<form id="x4acform">
+   <div class="field"><label for="x4n">Prénom et nom</label><input id="x4n" required></div>
+   <div class="field"><label for="x4i">Identifiant (pseudo ou e-mail)</label><input id="x4i" required autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off"></div>
+   <div class="field"><label for="x4p">Mot de passe (6 caractères min.)</label><input id="x4p" type="text" minlength="6" required autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off"></div>
+   <div class="field"><label for="x4a">Accès</label><select id="x4a"><option value="">Aucun accès</option>${pr.map((p,i)=>`<option value="${p.id}" ${i===0?'selected':''}>${esc(p.name)}</option>`).join('')}<option value="admin">Administrateur (accès complet)</option></select></div>
+   <div class="field"><label for="x4s">Employé lié (facultatif)</label><select id="x4s"><option value="">—</option>${(S.staff||[]).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div>
+   <p id="x4err" class="gerr"></p><button class="btn primary" type="submit" style="width:100%">Créer le compte</button></form>`);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="x4_acadd"]');if(b&&isAdmin())x4AccModal()});
+document.addEventListener('submit',async e=>{
+  if(e.target.id!=='x4acform')return;e.preventDefault();
+  if(!isAdmin())return;
+  const err=m=>{$('#x4err').textContent=m};
+  const name=$('#x4n').value.trim(),ident=$('#x4i').value.trim().toLowerCase(),pw=$('#x4p').value.trim(),v=$('#x4a').value;
+  if(!name||!ident)return;
+  if(pw.length<6){err('6 caractères minimum pour le mot de passe.');return}
+  if(accs().some(a=>a.ident===ident)){err('Cet identifiant existe déjà.');return}
+  const id=uid();
+  accs().push({id,name,ident,pwd:await hashPw(pw,id),status:'active',admin:v==='admin',profileId:v==='admin'?'':v,staffId:$('#x4s').value,ts:Date.now()});
+  save();closeModal();vSetAcc($('#sub'));renderNav();toast('Compte créé : '+name);
+});
+/* l'écran « Qui êtes-vous ? » se met à jour tout seul quand un compte arrive de l'équipe */
+setInterval(()=>{
+  const g=document.getElementById('gate');if(!g||g.hidden||!g.querySelector('.gav'))return;
+  const ids=accs().filter(a=>a.status==='active').map(a=>a.id).sort().join();
+  if(g.dataset.ids===undefined){g.dataset.ids=ids;return}
+  if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
+},1500);
+/* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
+const LAGO_V='v35';
+function gateShell(inner){gateShellBase(inner);gateStat()}
+function gateStat(){
+  const g=document.getElementById('gate');if(!g||g.hidden)return;
+  const card=g.querySelector('.gcard');if(!card)return;
+  let el=card.querySelector('.gstat');if(!el){el=document.createElement('p');el.className='gstat muted';card.appendChild(el)}
+  let h;
+  if(cloudOn()){const ok=CL.state==='ok';h=`<span class="${ok?'g-ok':'g-off'}">●</span> Équipe ${ok?'connectée':'hors ligne'} · ${accs().length} compte(s)`}
+  else h='○ Cet appareil n’est pas connecté à l’équipe. Employé ? Ouvrez le lien d’équipe envoyé par votre responsable, sans créer de compte ici.';
+  el.innerHTML=h+` <span class="gv">${LAGO_V}</span>`;
+}
+setInterval(gateStat,2000);
+document.addEventListener('change',e=>{if(e.target.id==='gshow'){const p=document.getElementById('gp');if(p)p.type=e.target.checked?'text':'password'}});
 
 METHODS.pass='Carnet de séances';
 function openPay(){
