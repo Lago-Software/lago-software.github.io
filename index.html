@@ -984,6 +984,13 @@ body.is-op [data-act="pickclient"],body.is-op [data-act="noclient"]{display:none
 .pvbar{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:70;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 24px);background:var(--ink);color:#fff;padding:7px 7px 7px 16px;border-radius:999px;box-shadow:0 10px 28px rgba(10,31,77,.35);font-size:13px;font-weight:600}
 .pvbar button{flex:none;background:var(--g-pay,var(--pay));color:var(--pay-ink,#fff);border-radius:999px;padding:8px 14px;font-weight:800;font-size:13px}
 @media (max-width:900px){.pvbar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
+/* mot de passe : écran de connexion et Mon compte */
+.glink{display:block;margin:2px auto 0;background:none;border:0;color:var(--brand);font:inherit;font-weight:600;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px 10px}
+.gsub{margin:10px 0 2px;text-align:center;font-size:17px}
+.mah{margin:6px 0 8px;font-size:15px}
+#maform,#pwform2{border-top:1px solid var(--line);padding-top:10px}
+.navacc{margin-top:6px}
+@media (min-width:901px){.navacc{padding-top:8px;border-top:1px solid rgba(255,255,255,.14)}}
 @media (max-width:1080px){.pos{grid-template-columns:minmax(0,1fr) 340px}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:0}
@@ -2237,7 +2244,7 @@ function applySettings(){
   PAL.length=0;st.pal.forEach(p=>PAL.push(p));
   applyTheme();
 }
-function renderNav(){
+function renderNavV0(){
   $('#nav').innerHTML=NAV.filter(n=>(isAdmin()||n[0]!=='params')&&!opHidden(n[0])).map(([id,l,i,sh])=>{const on=id===view;
     const subs=on&&tabsFor(id).length?`<div class="subnav">${tabsFor(id).map(([t,tl])=>`<button class="${tab[id]===t?'on':''}" data-act="tab" data-id="${t}">${tl}</button>`).join('')}</div>`:'';
     return `<div class="ni"><a href="#${id}" data-v="${id}" class="${on?'on':''}">${ic(i)}<span class="lg">${l}</span><span class="sm">${sh}</span></a>${subs}</div>`}).join('');
@@ -3266,7 +3273,7 @@ function migrateSubs(){
 /* ---- C. menu latéral déroulant ---- */
 let NAVOPEN={},NAVMINI=false;try{NAVMINI=localStorage.getItem('lago-navmini')==='1'}catch(e){}
 const navLabel=(id,d)=>((S.settings.home||{}).names||{})[id]||d;
-function renderNav(){
+function renderNavV0(){
   document.body.classList.toggle('navmini',NAVMINI);
   $('#nav').innerHTML=NAV.filter(n=>(isAdmin()||n[0]!=='params')&&!opHidden(n[0])).map(([id,l,i,sh])=>{
     const on=id===view,L=tabsFor(id),has=L.length>0,open=has&&(NAVOPEN[id]!==undefined?NAVOPEN[id]:on);
@@ -3314,11 +3321,11 @@ function gform(kind){
    ${kind==='new'?`<div class="field"><label for="gstf">Je suis (facultatif)</label><select id="gstf"><option value="">—</option>${(S.staff||[]).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div>`:''}
    ${kind!=='new'&&kind!=='setup'?`<label class="check"><input type="checkbox" id="grem" checked>Rester connecté</label>`:''}
    <p id="gerr" class="gerr"></p><button class="btn primary gbtn" type="submit">${kind==='new'?'Demander mon compte':kind==='setup'?'Créer et entrer':'Se connecter'}</button>
-   <div class="gfoot">${kind==='new'||kind==='other'?'<button type="button" class="btn" data-act="g_back">Retour</button>':kind==='pick'?'<button type="button" class="btn" data-act="g_back">Changer de compte</button>':''}</div></form>`;
+   ${kind==='pick'||kind==='other'?'<button type="button" class="glink" data-act="g_forgot">Mot de passe oublié ?</button>':''}<div class="gfoot">${kind==='new'||kind==='other'?'<button type="button" class="btn" data-act="g_back">Retour</button>':kind==='pick'?'<button type="button" class="btn" data-act="g_back">Changer de compte</button>':''}</div></form>`;
 }
 function gatePick(id){const a=accs().find(x=>x.id===id);gform.ident=a.ident;
   gateShell(`<div class="gpick">${avA(a,1)}<h2>${esc(a.name)}</h2></div>${gform('pick')}`);gform.ident='';
-  const f=$('#gform');f.dataset.id=id;setTimeout(()=>$('#gp').focus(),50)}
+  const f=$('#gform');f.dataset.id=id;setTimeout(()=>{const p=$('#gp');if(p)p.focus()},50)}
 function login(a,remember){
   ME=a;ROLEMODE=a.admin?'admin':'operator';PROF=a.admin?'-':(a.profileId||'-');
   try{localStorage.setItem(LKEY,a.id);(remember===false?sessionStorage:localStorage).setItem(SKEY,a.id);if(remember===false)localStorage.removeItem(SKEY)}catch(e){}
@@ -3350,7 +3357,7 @@ document.addEventListener('submit',async e=>{
       const lk=LOCKS[a.id];if(lk&&lk.until>Date.now()){err('Trop d’essais. Réessayez dans '+Math.ceil((lk.until-Date.now())/1000)+' s.');return}
       if(a.status==='pending'){err('Compte en attente : l’administrateur doit le valider dans Paramètres › Comptes › Demandes à valider.');return}
       if(a.status!=='active'){err('Ce compte est désactivé. Contactez l’administrateur.');return}
-      if(!a.pwd){a.pwd=await hashPw(pw,a.id);save()}else if(await hashPw(pw,a.id)!==a.pwd&&await hashPw($('#gp').value,a.id)!==a.pwd){const l=LOCKS[a.id]=LOCKS[a.id]||{n:0,until:0};l.n++;if(l.n>=5){l.until=Date.now()+30000;l.n=0}err('Mot de passe incorrect. Un oubli ? Demandez une réinitialisation à l’administrateur.');$('#gp').value='';$('#gp').focus();return}
+      if(!a.pwd){a.pwd=await hashPw(pw,a.id);save()}else if(await hashPw(pw,a.id)!==a.pwd&&await hashPw($('#gp').value,a.id)!==a.pwd){const l=LOCKS[a.id]=LOCKS[a.id]||{n:0,until:0};l.n++;if(l.n>=5){l.until=Date.now()+30000;l.n=0}err('Mot de passe incorrect. Un oubli ? Touchez « Mot de passe oublié ? » ci-dessous.');$('#gp').value='';$('#gp').focus();return}
       delete LOCKS[a.id];login(a,$('#grem')?$('#grem').checked:true);
     }
   }finally{btn.disabled=false}
@@ -3400,10 +3407,10 @@ function vSetAccBase(m){
   const po=(sel)=>`<option value="">Aucun accès</option>${(S.profiles||[]).map(p=>`<option value="${p.id}" ${sel===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}<option value="admin" ${sel==='admin'?'selected':''}>Administrateur (accès complet)</option>`;
   m.innerHTML=`<div class="card" style="margin-bottom:14px"><h3>Demandes à valider ${pend.length?`<span class="pill warn">${pend.length}</span>`:''}</h3>
    ${pend.length?pend.map(a=>`<div class="row">${avA(a,0)}<span class="grow"><b>${esc(a.name)}</b><span class="muted">${esc(a.ident)} · demandé le ${new Date(a.ts).toLocaleDateString('fr-FR')}</span></span><select id="acp${a.id}">${po(((S.profiles||[])[0]||{}).id)}</select><button class="btn primary" data-act="ac_ok" data-id="${a.id}">Valider</button><button class="btn" data-act="ac_no" data-id="${a.id}">Refuser</button></div>`).join(''):'<p class="muted">Aucune demande en attente.</p>'}</div>
-   <div class="card" style="margin-bottom:14px"><h3>Comptes</h3>${rest.map(a=>`<div class="row">${avA(a,0)}<span class="grow"><b>${esc(a.name)}</b><span class="muted">${esc(a.ident)} ${a.status==='off'?'· désactivé':''} ${a.pwd?'':'· sans mot de passe'}</span></span>
+   <div class="card" style="margin-bottom:14px"><h3>Comptes</h3>${rest.map(a=>`<div class="row">${avA(a,0)}<span class="grow"><b>${esc(a.name)}</b><span class="muted">${esc(a.ident)} ${a.status==='off'?'· désactivé':''} ${a.pwd?'':'· sans mot de passe'} ${mailOf(a)?'':'· sans e-mail'}</span></span>
      <select data-acprof="${a.id}" aria-label="Accès">${po(a.admin?'admin':a.profileId)}</select>
      <select data-acstaff="${a.id}" aria-label="Employé lié"><option value="">Employé : —</option>${(S.staff||[]).map(s=>`<option value="${s.id}" ${a.staffId===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
-     <button class="btn" data-act="ac_pw" data-id="${a.id}">Mot de passe</button><button class="btn" data-act="ac_off" data-id="${a.id}">${a.status==='off'?'Réactiver':'Désactiver'}</button><button class="btn" data-act="ac_del" data-id="${a.id}">${ic('trash')}</button></div>`).join('')}</div>
+     <button class="btn" data-act="ac_mail" data-id="${a.id}">E-mail</button><button class="btn" data-act="ac_pw" data-id="${a.id}">Mot de passe</button><button class="btn" data-act="ac_off" data-id="${a.id}">${a.status==='off'?'Réactiver':'Désactiver'}</button><button class="btn" data-act="ac_del" data-id="${a.id}">${ic('trash')}</button></div>`).join('')}</div>
    <div class="card"><h3>Sécurité</h3>${accs().some(a=>a.admin&&!a.pwd)?'<div class="banner"><span>Un compte administrateur n’a pas de mot de passe : toute personne sur cet appareil peut modifier le logiciel.</span></div>':''}${ctlSelect()}${fld('Verrouillage automatique (minutes d’inactivité, 0 = jamais)',`<input id="lockmin" type="number" min="0" max="240" value="${+S.settings.lockMin||0}">`,'L’écran de connexion revient après ce délai : pratique sur une caisse partagée.')}
    <p class="muted" style="font-size:13px">Les accès sont définis par les profils (Paramètres › Profils). Les comptes et mots de passe (chiffrés) restent sur cet appareil : pour qu’ils fonctionnent entre plusieurs postes, il faudra l’hébergement avec base de données partagée.</p></div>`;
 }
@@ -3544,7 +3551,7 @@ function vHomeV0(m){
   if(hero)hero.insertAdjacentHTML('afterend',(pshow('h_board')?boardHtml():'')+(pshow('h_week')?myWeek():''));
   if(!canAll()){m.querySelectorAll('.home .card').forEach(c=>{const h=c.querySelector('h3');if(h&&/Équipe en poste/.test(h.textContent))c.remove()});
     m.querySelectorAll('.kpi').forEach(k=>{if(/Équipe en poste/.test(k.textContent))k.remove()})}
-  if(ME){setTimeout(()=>{ME.seen=Date.now();save()},3000)}
+  if(ME){setTimeout(()=>{if(ME){ME.seen=Date.now();save()}},3000)}
 }
 
 /* ---- statistiques ---- */
@@ -5293,12 +5300,14 @@ function vSetAcc(m){
   if(h&&!m.querySelector('[data-act="x4_acadd"]'))h.insertAdjacentHTML('afterend','<div class="acts" style="margin:6px 0 10px"><button class="btn primary" data-act="x4_acadd">'+ic('plus')+'Ajouter un compte</button></div><p class="muted" style="font-size:13px;margin:0 0 8px">Le compte est utilisable tout de suite, sans validation. Donnez ensuite l’identifiant et le mot de passe à la personne.</p>');
   const p=[...m.querySelectorAll('p.muted')].find(x=>/restent sur cet appareil/.test(x.textContent));
   if(p)p.textContent='Les accès sont définis par les profils (Paramètres › Profils). Les comptes sont partagés avec l’équipe quand « Équipe connectée » est active ; les mots de passe sont chiffrés. Un compte demandé depuis l’écran de connexion doit d’abord être validé ci-dessus.';
+  if(typeof mailCard==='function')mailCard(m);
 }
 function x4AccModal(){
   const pr=S.profiles||[];
   showModal(`${mh('Ajouter un compte')}<form id="x4acform">
    <div class="field"><label for="x4n">Prénom et nom</label><input id="x4n" required></div>
    <div class="field"><label for="x4i">Identifiant (pseudo ou e-mail)</label><input id="x4i" required autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off"></div>
+   <div class="field"><label for="x4m">E-mail (facultatif)</label><input id="x4m" type="email" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="Pour « Mot de passe oublié »"></div>
    <div class="field"><label for="x4p">Mot de passe (6 caractères min.)</label><input id="x4p" type="text" minlength="6" required autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off"></div>
    <div class="field"><label for="x4a">Accès</label><select id="x4a"><option value="">Aucun accès</option>${pr.map((p,i)=>`<option value="${p.id}" ${i===0?'selected':''}>${esc(p.name)}</option>`).join('')}<option value="admin">Administrateur (accès complet)</option></select></div>
    <div class="field"><label for="x4s">Employé lié (facultatif)</label><select id="x4s"><option value="">—</option>${(S.staff||[]).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div>
@@ -5313,8 +5322,10 @@ document.addEventListener('submit',async e=>{
   if(!name||!ident)return;
   if(pw.length<6){err('6 caractères minimum pour le mot de passe.');return}
   if(accs().some(a=>a.ident===ident)){err('Cet identifiant existe déjà.');return}
+  const em=($('#x4m').value||'').trim().toLowerCase();
+  if(em&&!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(em)){err('Adresse e-mail invalide.');return}
   const id=uid();
-  accs().push({id,name,ident,pwd:await hashPw(pw,id),status:'active',admin:v==='admin',profileId:v==='admin'?'':v,staffId:$('#x4s').value,ts:Date.now()});
+  accs().push({id,name,ident,...(em?{email:em}:{}),pwd:await hashPw(pw,id),status:'active',admin:v==='admin',profileId:v==='admin'?'':v,staffId:$('#x4s').value,ts:Date.now()});
   save();closeModal();vSetAcc($('#sub'));renderNav();toast('Compte créé : '+name);
 });
 /* l'écran « Qui êtes-vous ? » se met à jour tout seul quand un compte arrive de l'équipe */
@@ -5325,7 +5336,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v39';
+const LAGO_V='v40';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5449,6 +5460,199 @@ document.addEventListener('click',e=>{
   pvSet(b.dataset.act==='acc_pv');
 });
 setInterval(()=>{if(PV&&!ME){PV=false;pvBanner()}},1500);
+/* ---- mot de passe : « Mon compte » et « Mot de passe oublié » par e-mail ---- */
+const MAILRE=/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
+const mailOf=a=>{if(!a)return '';const e=String(a.email||'').trim();if(MAILRE.test(e))return e;const i=String(a.ident||'').trim();return MAILRE.test(i)?i:''};
+const maskMail=m=>{const [u,d]=String(m).split('@');return (u.length<=2?u.slice(0,1):u.slice(0,2))+'•••@'+d};
+const mailCfg=()=>{const m=(S.settings&&S.settings.mail)||{};return m.sid&&m.tid&&m.key?m:null};
+const RALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789',RST_MIN=30,RST_WAIT=60,RST_TRIES=5;
+function rstCode(){let c='';try{const b=new Uint8Array(8);crypto.getRandomValues(b);for(const x of b)c+=RALPHA[x%RALPHA.length]}catch(e){c='';for(let i=0;i<8;i++)c+=RALPHA[Math.floor(Math.random()*RALPHA.length)]}return c}
+const rstNorm=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const rstHash=(code,a)=>hashPw(rstNorm(code),a.id+'|rst');
+const rstShow=c=>c.slice(0,4)+'-'+c.slice(4);
+/* envoi par EmailJS (service gratuit, appelé directement depuis le navigateur) */
+async function mailSend(to,params){
+  const m=mailCfg();if(!m)throw new Error('config');
+  const ac=new AbortController(),to_=setTimeout(()=>ac.abort(),15000);
+  try{
+    const r=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({service_id:m.sid,template_id:m.tid,user_id:m.key,template_params:Object.assign({to_email:to,email:to,app_name:S.settings.name||'Lago'},params)})});
+    if(!r.ok){const t=await r.text().catch(()=>'');const e=new Error('http '+r.status+' '+t.slice(0,160));e.status=r.status;e.body=t;throw e}
+  }finally{clearTimeout(to_)}
+}
+function mailErr(e){
+  const t=String((e&&e.body)||(e&&e.message)||e),s=e&&e.status;
+  if(e&&e.name==='AbortError')return 'pas de réponse du service d’e-mails (connexion ?)';
+  if(/service id/i.test(t))return 'Service ID incorrect';
+  if(/template id|template.*not found/i.test(t))return 'Template ID incorrect';
+  if(/public key|user_id|account not found/i.test(t))return 'Public Key incorrecte';
+  if(s===403)return 'accès refusé par EmailJS (clé ou domaine non autorisé)';
+  if(s===429)return 'trop d’envois : quota EmailJS atteint';
+  if(/Failed to fetch|NetworkError|Load failed/i.test(t))return 'service d’e-mails injoignable (connexion ou blocage du navigateur)';
+  return t.replace(/^http \d+\s*/,'').slice(0,120)||'erreur inconnue';
+}
+/* demande de code : la clé (hachée) est écrite sur le compte, le code en clair part par e-mail */
+async function rstRequest(a){
+  if(!a)return {err:'Compte introuvable.'};
+  if(a.status==='pending')return {err:'Compte en attente : l’administrateur doit d’abord le valider.'};
+  if(a.status!=='active')return {err:'Ce compte est désactivé. Contactez l’administrateur.'};
+  const to=mailOf(a);
+  if(!to)return {err:'Aucune adresse e-mail n’est enregistrée sur ce compte. Demandez à l’administrateur de vous définir un nouveau mot de passe.'};
+  if(!mailCfg())return {err:'L’envoi d’e-mails n’est pas encore activé. Demandez à l’administrateur de vous définir un nouveau mot de passe (Paramètres › Comptes).'};
+  const w=a.rst&&a.rst.ts?Math.ceil((a.rst.ts+RST_WAIT*1000-Date.now())/1000):0;
+  if(w>0)return {wait:w,to};
+  const code=rstCode(),prev=a.rst,now=Date.now();
+  a.rst={h:await rstHash(code,a),ts:now,exp:now+RST_MIN*60000,n:0};save();
+  try{await mailSend(to,{to_name:a.name,code:rstShow(code),minutes:RST_MIN,login:a.ident})}
+  catch(e){if(prev)a.rst=prev;else delete a.rst;save();console.warn('mail',e);return {err:'L’e-mail n’a pas pu être envoyé ('+mailErr(e)+'). Réessayez plus tard ou demandez un nouveau mot de passe à l’administrateur.'}}
+  return {ok:true,to};
+}
+
+/* ---- écran de connexion ---- */
+function gateForgot(id,ident){
+  const a=id?accs().find(x=>x.id===id):null;
+  if(a){const to=mailOf(a);
+    gateShell(`<div class="gpick">${avA(a,1)}<h2>${esc(a.name)}</h2></div><h3 class="gsub">Mot de passe oublié</h3>
+     <p class="muted" style="text-align:center">${to?`Nous envoyons un code à usage unique à <b>${esc(maskMail(to))}</b>. Il est valable ${RST_MIN} minutes.`:'Aucune adresse e-mail n’est enregistrée sur ce compte : demandez à l’administrateur de vous définir un nouveau mot de passe.'}</p>
+     <form id="gfg" data-id="${a.id}"><p id="gerr" class="gerr"></p><button class="btn primary gbtn" type="submit" ${to?'':'disabled'}>Envoyer le code par e-mail</button>
+     <div class="gfoot"><button type="button" class="btn" data-act="g_hascode" data-id="${a.id}">J’ai déjà un code</button><button type="button" class="btn" data-act="g_pick" data-id="${a.id}">Retour</button></div></form>`);
+  }else gateShell(`<h2>Mot de passe oublié</h2><p class="muted">Entrez votre identifiant : nous envoyons un code à usage unique à l’adresse e-mail de votre compte.</p>
+     <form id="gfg"><div class="field"><label for="gi">Identifiant (e-mail ou pseudo)</label><input id="gi" required autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" value="${esc(ident||'')}"></div>
+     <p id="gerr" class="gerr"></p><button class="btn primary gbtn" type="submit">Envoyer le code par e-mail</button>
+     <div class="gfoot"><button type="button" class="btn" data-act="g_back">Retour</button></div></form>`);
+}
+function gateReset(id,sentTo,waited){
+  const a=accs().find(x=>x.id===id);if(!a)return gateStart();
+  const pw=`autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="new-password"`;
+  gateShell(`<div class="gpick">${avA(a,1)}<h2>${esc(a.name)}</h2></div><h3 class="gsub">Nouveau mot de passe</h3>
+   <p class="muted" style="text-align:center">${waited?'Un code vient d’être envoyé : ':sentTo?`Code envoyé à <b>${esc(maskMail(sentTo))}</b>. `:''}Saisissez-le, puis choisissez un nouveau mot de passe.<br>Pensez à regarder dans les courriers indésirables.</p>
+   <form id="grs" data-id="${a.id}"><div class="field"><label for="gc">Code reçu par e-mail</label><input id="gc" required autocomplete="one-time-code" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="XXXX-XXXX" style="letter-spacing:2px;text-transform:uppercase"></div>
+   <div class="field"><label for="gp1">Nouveau mot de passe (6 caractères min.)</label><input id="gp1" type="password" required minlength="6" ${pw}></div>
+   <div class="field"><label for="gp2">Confirmer le mot de passe</label><input id="gp2" type="password" required minlength="6" ${pw}></div>
+   <label class="check" style="margin:-4px 0 10px"><input type="checkbox" id="gshow2">Afficher les mots de passe</label>
+   <p id="gerr" class="gerr"></p><button class="btn primary gbtn" type="submit">Changer le mot de passe et entrer</button>
+   <div class="gfoot"><button type="button" class="btn" data-act="g_again" data-id="${a.id}">Renvoyer un code</button><button type="button" class="btn" data-act="g_back">Annuler</button></div></form>`);
+  setTimeout(()=>{const c=$('#gc');if(c)c.focus()},50);
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act="g_forgot"],[data-act="g_hascode"],[data-act="g_again"],a[data-act="rolesw"]');if(!b)return;
+  const a=b.dataset.act;
+  if(a==='rolesw'){e.preventDefault();return}
+  if(a==='g_forgot'){const f=$('#gform'),i=$('#gi');gateForgot(f&&f.dataset.kind==='pick'?f.dataset.id:'',i&&f.dataset.kind!=='pick'?i.value:'')}
+  else if(a==='g_hascode')gateReset(b.dataset.id,'');
+  else if(a==='g_again')gateForgot(b.dataset.id);
+});
+document.addEventListener('change',e=>{if(e.target.id==='gshow2'){['gp1','gp2'].forEach(i=>{const p=document.getElementById(i);if(p)p.type=e.target.checked?'text':'password'})}});
+document.addEventListener('submit',async e=>{
+  if(e.target.id!=='gfg')return;e.preventDefault();
+  const f=e.target,err=m=>{const x=$('#gerr');if(x)x.textContent=m},btn=f.querySelector('button[type=submit]');
+  let a=f.dataset.id?accs().find(x=>x.id===f.dataset.id):null;
+  if(!a){const q=(($('#gi')||{}).value||'').trim().toLowerCase();a=accs().find(x=>x.ident===q||String(x.email||'').toLowerCase()===q);
+    if(!a){err(cloudOn()?'Compte introuvable. Vérifiez l’identifiant.':'Compte introuvable : cet appareil n’est pas connecté à l’équipe. Ouvrez le lien d’équipe envoyé par votre responsable.');return}}
+  btn.disabled=true;err('');btn.textContent='Envoi en cours…';
+  try{const r=await rstRequest(a);if(r.ok||r.wait)gateReset(a.id,r.to,!!r.wait);else err(r.err)}
+  finally{if(btn.isConnected){btn.disabled=false;btn.textContent='Envoyer le code par e-mail'}}
+});
+document.addEventListener('submit',async e=>{
+  if(e.target.id!=='grs')return;e.preventDefault();
+  const f=e.target,a=accs().find(x=>x.id===f.dataset.id),err=m=>{const x=$('#gerr');if(x)x.textContent=m},btn=f.querySelector('button[type=submit]');
+  if(!a||!a.rst){err('Aucun code actif. Touchez « Renvoyer un code ».');return}
+  if(a.rst.exp<Date.now()){delete a.rst;save();err('Ce code a expiré. Touchez « Renvoyer un code ».');return}
+  const p1=$('#gp1').value.trim(),p2=$('#gp2').value.trim();
+  if(p1.length<6){err('6 caractères minimum pour le mot de passe.');return}
+  if(p1!==p2){err('Les deux mots de passe sont différents.');return}
+  btn.disabled=true;
+  try{
+    if(await rstHash($('#gc').value,a)!==a.rst.h){
+      a.rst.n=(a.rst.n||0)+1;
+      if(a.rst.n>=RST_TRIES){delete a.rst;save();err('Trop d’essais : ce code est annulé. Touchez « Renvoyer un code ».');return}
+      save();err('Code incorrect. Il reste '+(RST_TRIES-a.rst.n)+' essai(s).');return}
+    a.pwd=await hashPw(p1,a.id);delete a.rst;delete LOCKS[a.id];save();
+    login(a,true);toast('Mot de passe modifié');
+  }finally{if(btn.isConnected)btn.disabled=false}
+});
+
+/* ---- « Mon compte » ---- */
+function accountMenu(){
+  const a=ME;if(!a)return;
+  const em=String(a.email||'').trim()||(MAILRE.test(a.ident)?a.ident:'');
+  const pw=`autocapitalize="none" autocorrect="off" spellcheck="false"`;
+  showModal(`${mh('Mon compte')}
+   <div class="gpick">${avA(a,1)}<h2 style="margin:0">${esc(a.name)}</h2><span class="muted">${esc(a.ident)} · ${a.admin?'Administrateur':esc(curProf().name||'Opérateur')}</span>
+   <div class="acts"><label class="btn" for="photof">${ic('user')}${a.photo?'Changer la photo':'Ajouter une photo'}</label><input type="file" id="photof" accept="image/*" hidden>${a.photo?'<button class="btn" data-act="photorm">Retirer</button>':''}</div></div>
+   <form id="maform"><h3 class="mah">Mes informations</h3>
+    <div class="field"><label for="man">Prénom et nom</label><input id="man" required value="${esc(a.name)}" autocomplete="name"></div>
+    <div class="field"><label for="mae">E-mail</label><input id="mae" type="email" value="${esc(em)}" placeholder="prenom@exemple.fr" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false"><span class="muted" style="font-size:13px">Sert à recevoir un code si vous oubliez votre mot de passe.</span></div>
+    <p id="maerr" class="gerr"></p><button class="btn" type="submit">Enregistrer mes informations</button></form>
+   <form id="pwform2"><h3 class="mah">Changer mon mot de passe</h3>
+    ${a.pwd?`<div class="field"><label for="mp0">Mot de passe actuel</label><input id="mp0" type="password" required autocomplete="current-password" ${pw}></div>`:''}
+    <div class="field"><label for="mp1">Nouveau mot de passe (6 caractères min.)</label><input id="mp1" type="password" required minlength="6" autocomplete="new-password" ${pw}></div>
+    <div class="field"><label for="mp2">Confirmer le nouveau mot de passe</label><input id="mp2" type="password" required minlength="6" autocomplete="new-password" ${pw}></div>
+    <label class="check" style="margin:-4px 0 10px"><input type="checkbox" id="mashow">Afficher les mots de passe</label>
+    <p id="pwerr2" class="gerr"></p><button class="btn primary" type="submit">Changer le mot de passe</button></form>
+   <div class="acts">${isAdmin()?'<button class="btn" data-act="acc_pv">Voir comme un opérateur</button>':''}<button class="btn" data-act="acc_lock">Verrouiller</button><button class="btn" data-act="acc_out">Se déconnecter</button></div>`);
+}
+document.addEventListener('change',e=>{if(e.target.id==='mashow'){['mp0','mp1','mp2'].forEach(i=>{const p=document.getElementById(i);if(p)p.type=e.target.checked?'text':'password'})}});
+document.addEventListener('submit',async e=>{
+  if(e.target.id==='maform'){
+    e.preventDefault();if(!ME)return;
+    const n=$('#man').value.trim(),m=$('#mae').value.trim().toLowerCase(),err=t=>{$('#maerr').textContent=t};
+    if(!n){err('Le nom ne peut pas être vide.');return}
+    if(m&&!MAILRE.test(m)){err('Adresse e-mail invalide.');return}
+    ME.name=n;if(m)ME.email=m;else delete ME.email;save();closeModal();chrome();toast('Informations enregistrées');
+  }else if(e.target.id==='pwform2'){
+    e.preventDefault();if(!ME)return;
+    const err=t=>{$('#pwerr2').textContent=t},p1=$('#mp1').value.trim(),p2=$('#mp2').value.trim(),btn=e.target.querySelector('button[type=submit]');
+    btn.disabled=true;
+    try{
+      if(ME.pwd){const cur=$('#mp0').value;if(await hashPw(cur.trim(),ME.id)!==ME.pwd&&await hashPw(cur,ME.id)!==ME.pwd){err('Mot de passe actuel incorrect.');return}}
+      if(p1.length<6){err('6 caractères minimum pour le nouveau mot de passe.');return}
+      if(p1!==p2){err('Les deux nouveaux mots de passe sont différents.');return}
+      if(ME.pwd&&await hashPw(p1,ME.id)===ME.pwd){err('Choisissez un mot de passe différent de l’actuel.');return}
+      ME.pwd=await hashPw(p1,ME.id);delete ME.rst;save();closeModal();toast('Mot de passe modifié');
+    }finally{if(btn.isConnected)btn.disabled=false}
+  }
+});
+/* entrée « Mon compte » dans le menu, pour tout le monde */
+function renderNav(){
+  renderNavV0();const n=document.getElementById('nav');
+  if(n&&ME)n.insertAdjacentHTML('beforeend',`<div class="ni navacc"><div class="nrow"><a href="#" data-act="rolesw" title="Mon compte">${ic('user')}<span class="lg">Mon compte</span><span class="sm">Compte</span></a></div></div>`);
+}
+
+/* ---- administrateur : réglage de l'envoi d'e-mails + e-mail d'un compte ---- */
+function mailCard(m){
+  if(!isAdmin()||!m)return;
+  const c=S.settings.mail||{},ok=!!mailCfg(),inp=(id,v,ph)=>`<input id="${id}" value="${esc(v||'')}" placeholder="${ph}" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off">`;
+  m.insertAdjacentHTML('beforeend',`<div class="card" id="mailcard" style="margin-top:14px"><h3>E-mails · mot de passe oublié ${ok?'<span class="pill ok">Activé</span>':'<span class="pill warn">À configurer</span>'}</h3>
+   <p class="muted" style="font-size:13px;margin-bottom:8px">Quand quelqu’un oublie son mot de passe, il reçoit un code par e-mail depuis l’écran de connexion. L’envoi passe par EmailJS (gratuit, 200 e-mails par mois). Sans ce réglage, la personne doit vous demander un nouveau mot de passe.</p>
+   ${fld('Service ID',inp('mlsid',c.sid,'service_xxxxxxx'))}${fld('Template ID',inp('mltid',c.tid,'template_xxxxxxx'))}${fld('Public Key',inp('mlkey',c.key,'xxxxxxxxxxxxxxxx'))}
+   <p id="mlmsg" class="muted" style="min-height:20px;font-size:13px"></p>
+   <div class="acts"><button class="btn primary" data-act="ml_save">Enregistrer</button><button class="btn" data-act="ml_test" ${ok?'':'disabled'}>M’envoyer un e-mail de test</button></div>
+   <details style="margin-top:12px"><summary><b>Comment obtenir ces 3 codes (5 minutes)</b></summary>
+   <ol class="muted" style="font-size:13px;line-height:1.6;padding-left:18px;margin:8px 0 0">
+    <li>Créez un compte gratuit sur <b>emailjs.com</b>.</li>
+    <li><b>Email Services</b> › Add New Service › choisissez Gmail (ou votre messagerie) et connectez l’adresse qui enverra les e-mails. Copiez le <b>Service ID</b>.</li>
+    <li><b>Email Templates</b> › Create New Template. Dans <b>To Email</b>, écrivez <code>{{to_email}}</code>. Objet : <code>{{app_name}} : votre code de connexion</code>. Message : <code>Bonjour {{to_name}}, votre code pour choisir un nouveau mot de passe est : {{code}} (valable {{minutes}} minutes). Si vous n’êtes pas à l’origine de cette demande, ignorez ce message.</code> Enregistrez et copiez le <b>Template ID</b>.</li>
+    <li><b>Account</b> › General : copiez la <b>Public Key</b>.</li>
+    <li>Collez les trois codes ci-dessus, enregistrez, puis envoyez-vous un e-mail de test.</li></ol></details></div>`);
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act="ml_save"],[data-act="ml_test"],[data-act="ac_mail"]');if(!b||!isAdmin())return;
+  const a=b.dataset.act,msg=t=>{const x=$('#mlmsg');if(x)x.textContent=t};
+  if(a==='ml_save'){const v=id=>(($('#'+id)||{}).value||'').trim();S.settings.mail={sid:v('mlsid'),tid:v('mltid'),key:v('mlkey')};save();vSetAcc($('#sub'));toast(mailCfg()?'E-mails activés':'Réglage enregistré (incomplet)')}
+  else if(a==='ml_test'){
+    const to=mailOf(ME);if(!to){msg('Ajoutez d’abord votre adresse e-mail dans Mon compte.');return}
+    b.disabled=true;msg('Envoi en cours…');
+    try{await mailSend(to,{to_name:ME.name,code:'TEST-1234',minutes:RST_MIN,login:ME.ident});msg('✓ E-mail de test envoyé à '+to+'. Vérifiez votre boîte de réception.');toast('E-mail de test envoyé')}
+    catch(x){console.warn('mail',x);msg('Échec : '+mailErr(x))}
+    if(b.isConnected)b.disabled=false;
+  }else if(a==='ac_mail'){
+    const x=accs().find(y=>y.id===b.dataset.id);if(!x)return;
+    askText('E-mail de '+x.name,'Adresse utilisée si la personne oublie son mot de passe. Laissez vide pour la retirer.',v=>{
+      v=(v||'').trim().toLowerCase();if(v&&!MAILRE.test(v)){toast('Adresse e-mail invalide');return}
+      if(v)x.email=v;else delete x.email;save();vSetAcc($('#sub'));toast(v?'E-mail enregistré':'E-mail retiré')},false,String(x.email||'')||(MAILRE.test(x.ident)?x.ident:''));
+  }
+});
 
 METHODS.pass='Carnet de séances';
 function openPay(){
