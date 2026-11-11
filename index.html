@@ -5172,6 +5172,13 @@ function clearDemo(){
 }
 /* Studio : carte « Équipe connectée » */
 const rulesTxt=r=>`{\n  "rules": {\n    ".read": false,\n    ".write": false,\n    "${r}": { ".read": true, ".write": true }\n  }\n}`;
+const zInvite=link=>'Bonjour, voici Lago (caisse et planning). Ouvre ce lien une fois sur ton téléphone, puis choisis ton prénom ou clique sur « Créer mon compte » : '+link;
+const zLink=()=>{const c=cloudCfg();return c&&c.u&&!c.pending?location.origin+location.pathname+'#cloud='+btoa(JSON.stringify({u:c.u,r:c.r})):''};
+async function zCopy(t,ok){
+  try{await navigator.clipboard.writeText(t);toast(ok);return}catch(e){}
+  try{const i=$('#z_link');if(i&&t===i.value){i.select();i.setSelectionRange(0,99999)}else{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
+    if(i&&t===i.value)document.execCommand('copy');toast(ok)}catch(e){toast('Sélectionnez le lien puis copiez-le')}
+}
 function vSetStudio(m){
   vSetStudioY(m);if(!isAdmin())return;
   const c=cloudCfg();let h;
@@ -5181,7 +5188,9 @@ function vSetStudio(m){
      <div class="zst" data-s="${CL.state}" style="display:flex;margin-bottom:8px"><i></i><b>${CL.state==='ok'?'Synchronisé':CL.state==='sync'?'Synchronisation…':'Hors ligne'}</b></div>
      ${CL.state==='off'&&CL.err?`<p class="muted" style="margin:-4px 0 8px;font-size:12px">Dernière erreur : ${esc(CL.err)}</p>`:''}
      <div class="field"><label for="z_link">Lien à envoyer à vos employés (à ouvrir une fois sur leur téléphone)</label><input id="z_link" readonly onclick="this.select()" value="${esc(link)}"></div>
-     <p class="muted" style="margin:0 0 8px">Gardez ce lien privé : il donne accès aux données de l’équipe.</p>
+     <div class="acts" style="margin-bottom:10px"><button class="btn primary" data-act="z_copy">Copier le lien</button><button class="btn" data-act="z_share">Partager…</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(zInvite(link))}">WhatsApp</a></div>
+     <details style="margin-bottom:8px"><summary><b>QR code à faire scanner</b></summary><div style="margin:10px 0;display:flex;justify-content:center"><div style="background:#fff;padding:6px;border-radius:10px;line-height:0">${qrSvg(link,190)}</div></div><p class="muted" style="margin:0;text-align:center">L’employé scanne avec l’appareil photo de son téléphone.</p></details>
+     <p class="muted" style="margin:0 0 8px">Chaque employé ouvre le lien une fois sur son téléphone, puis choisit son prénom ou clique sur « Créer mon compte » (vous validez ensuite dans Paramètres › Comptes › Demandes à valider). Gardez ce lien privé : il donne accès aux données de l’équipe.</p>
      <div class="acts"><button class="btn" data-act="z_now">Synchroniser maintenant</button><button class="btn danger" data-act="z_off">Déconnecter cet appareil</button></div>`;
   }else if(c&&c.pending){
     h=`<h3>Équipe connectée : dernière étape</h3>
@@ -5215,6 +5224,12 @@ document.addEventListener('click',async e=>{
   }else if(a==='z_off'){
     askYes('Déconnecter cet appareil de la base d’équipe ? Les données déjà synchronisées restent en ligne et sur cet appareil.',()=>{if(CL.es)CL.es.close();CL.es=null;CL.ready=false;cloudSet(null);try{localStorage.removeItem(CBOX)}catch(x){}chrome();redraw();toast('Appareil déconnecté')},'Déconnecter');
   }else if(a==='z_now'){cloudKick(0);toast('Synchronisation…')}
+  else if(a==='z_copy'){const l=zLink();if(l)zCopy(l,'Lien copié : collez-le dans un message')}
+  else if(a==='z_share'){
+    const l=zLink();if(!l)return;
+    if(navigator.share){try{await navigator.share({title:'Lago',text:zInvite(''),url:l})}catch(err){if(err&&err.name!=='AbortError')zCopy(zInvite(l),'Message copié : collez-le dans une conversation')}}
+    else zCopy(zInvite(l),'Message copié : collez-le dans une conversation');
+  }
   else if(a==='z_demo'){
     if(!isAdmin())return;
     if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Confirmer : supprimer les exemples';return}
@@ -5279,7 +5294,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v35';
+const LAGO_V='v36';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
