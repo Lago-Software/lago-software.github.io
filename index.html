@@ -1060,9 +1060,19 @@ body.is-op [data-act="pickclient"],body.is-op [data-act="noclient"]{display:none
 /* plannings : barre de synchronisation */
 .plsync{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:8px 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 .plsync .pls-t{color:var(--muted);font-size:13px;flex:1;min-width:150px}
-.plsync .pls-b{display:flex;gap:8px;margin-left:auto}
+.plsync .pls-b{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
 .plsync .btn{min-height:40px}
-@media (max-width:520px){.plsync .pls-b{width:100%}.plsync .pls-b .btn{flex:1}}
+@media (max-width:520px){.plsync .pls-b{width:100%}.plsync .pls-b .btn{flex:1}.plsync .pls-b .pls-join{flex:1 1 100%}}
+
+/* tirer vers le bas pour actualiser */
+.ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:90;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:99px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 6px 20px rgba(10,31,77,.18);font-size:13px;pointer-events:none;opacity:var(--o,0);transform:translate(-50%,calc(var(--d,0px) - 56px))}
+.ptr b{font-weight:600;white-space:nowrap}
+.ptr.rel{transition:transform .22s ease,opacity .22s ease}
+.ptr-i{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--brand);transition:transform .15s}
+.ptr.rdy .ptr-i{transform:rotate(180deg);border-top-color:var(--ok)}
+.ptr.busy .ptr-i{animation:ptrspin .8s linear infinite}
+@keyframes ptrspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ptr.busy .ptr-i{animation-duration:2.4s}}
 @media (max-width:1080px){.pos{grid-template-columns:minmax(0,1fr) 340px}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:0}
@@ -5421,7 +5431,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v45';
+const LAGO_V='v46';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5858,7 +5868,7 @@ const plShown=()=>(view==='resa'&&tab.resa==='apercu')||(view==='staff'&&(tab.st
 const plAgo=()=>{if(!cloudOn())return 'Cet appareil n’est pas connecté à l’équipe';if(!CL.last)return 'en attente de la première synchronisation';const s=Math.max(0,Math.round((Date.now()-CL.last)/1000));return 'dernière synchronisation '+(s<5?'à l’instant':s<60?'il y a '+s+' s':s<3600?'il y a '+Math.round(s/60)+' min':'à '+hm(CL.last))};
 function plBarHtml(){
   const adm=isAdmin(),st=CL.state==='ok'?'Synchronisé':CL.state==='sync'?'Synchronisation…':'Hors ligne';
-  return `<div class="plsync" id="plsync"><span class="zst" data-s="${cloudOn()?CL.state:'off'}"><i></i><b>${cloudOn()?st:'Local'}</b></span><span class="pls-t" id="plsl">${esc(plAgo())}</span><span class="pls-b">${adm?`<button type="button" class="btn primary" data-act="pl_save">Sauvegarder</button>`:''}<button type="button" class="btn" data-act="pl_ref">Actualiser</button></span></div>`;
+  return `<div class="plsync" id="plsync"><span class="zst" data-s="${cloudOn()?CL.state:'off'}"><i></i><b>${cloudOn()?st:'Local'}</b></span><span class="pls-t" id="plsl">${esc(plAgo())}</span><span class="pls-b">${cloudOn()?'':`<button type="button" class="btn primary pls-join" data-act="pl_join">Rejoindre l’équipe</button>`}${adm?`<button type="button" class="btn${cloudOn()?' primary':''}" data-act="pl_save">Sauvegarder</button>`:''}<button type="button" class="btn" data-act="pl_ref">Actualiser</button></span></div>`;
 }
 function plBar(m){
   const old=document.getElementById('plsync');if(old)old.remove();
@@ -5891,6 +5901,113 @@ document.addEventListener('click',async e=>{
   if(r.local)toast(sv?'Sauvegardé sur cet appareil (non connecté à l’équipe)':'Cet appareil n’est pas connecté à l’équipe');
   else if(r.ok)toast(sv?'Planning sauvegardé et envoyé à l’équipe'+(r.made?' (point de restauration créé)':''):'Planning à jour');
   else toast(sv?'Sauvegardé sur cet appareil. Hors ligne : envoi dès le retour du réseau':'Hors ligne : impossible d’actualiser pour le moment');
+});
+/* ---- v46 : tirer vers le bas pour actualiser + « Rejoindre l'équipe » depuis l'appli ---- */
+const PTR={arm:false,on:false,id:null,x0:0,y0:0,d:0,busy:false};
+const PTR_TH=64,PTR_MAX=120;
+function ptrBox(){
+  let e=document.getElementById('ptr');
+  if(!e){e=document.createElement('div');e.id='ptr';e.className='ptr';e.setAttribute('role','status');e.setAttribute('aria-live','polite');e.innerHTML='<span class="ptr-i" aria-hidden="true"></span><b></b>';document.body.appendChild(e)}
+  return e;
+}
+function ptrDraw(d,st){
+  const e=ptrBox();
+  e.style.setProperty('--d',d+'px');e.style.setProperty('--o',String(Math.min(1,d/36)));
+  e.classList.toggle('rdy',st==='rdy');e.classList.toggle('busy',st==='busy');
+  e.querySelector('b').textContent=st==='busy'?'Actualisation…':st==='rdy'?'Relâcher pour actualiser':'Tirer pour actualiser';
+}
+function ptrReset(anim){
+  const e=document.getElementById('ptr');PTR.d=0;if(!e)return;
+  e.classList.toggle('rel',!!anim);e.classList.remove('rdy','busy');
+  e.style.setProperty('--d','0px');e.style.setProperty('--o','0');
+}
+const ptrTop=()=>(document.scrollingElement||document.documentElement).scrollTop<=0;
+function ptrBlocked(t){
+  if(PTR.busy||!ptrTop())return true;
+  if(document.querySelector('#modal .scrim,#gate:not([hidden]),.msheet.open'))return true;
+  if(document.body.classList.contains('cart-open'))return true;
+  const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return true;
+  for(let n=t;n&&n.nodeType===1&&n!==document.body&&n!==document.documentElement;n=n.parentElement){
+    if(n.matches('input,textarea,select,[contenteditable="true"],[data-noptr]'))return true;
+    if(/(auto|scroll)/.test(getComputedStyle(n).overflowY)&&n.scrollHeight>n.clientHeight+1)return true;
+  }
+  return false;
+}
+addEventListener('touchstart',e=>{
+  PTR.arm=false;PTR.on=false;
+  if(e.touches.length!==1||ptrBlocked(e.target))return;
+  const t=e.touches[0];PTR.id=t.identifier;PTR.x0=t.clientX;PTR.y0=t.clientY;PTR.arm=true;
+},{passive:true});
+addEventListener('touchmove',e=>{
+  if(!PTR.arm)return;
+  const t=[...e.touches].find(x=>x.identifier===PTR.id);if(!t)return;
+  const dy=t.clientY-PTR.y0,dx=t.clientX-PTR.x0;
+  if(!PTR.on){
+    if(dy<-4||(Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)*1.2)){PTR.arm=false;return}
+    if(dy<10)return;
+    if(!ptrTop()){PTR.arm=false;return}
+    PTR.on=true;ptrBox().classList.remove('rel');
+  }
+  if(e.cancelable)e.preventDefault();
+  PTR.d=Math.max(0,Math.min(PTR_MAX,dy*0.6));
+  ptrDraw(PTR.d,PTR.d>=PTR_TH?'rdy':'pull');
+},{passive:false});
+function ptrEnd(cancel){
+  const was=PTR.on,d=PTR.d;PTR.arm=false;PTR.on=false;
+  if(!was)return;
+  if(!cancel&&d>=PTR_TH)ptrRun();else ptrReset(true);
+}
+addEventListener('touchend',()=>ptrEnd(false));
+addEventListener('touchcancel',()=>ptrEnd(true));
+
+/* une nouvelle version de l'appli est-elle en ligne ? (sw.js contient le numéro) */
+async function ptrNewVersion(){
+  try{
+    const r=await fetch('sw.js',{cache:'no-store'});if(!r.ok)return false;
+    const m=(await r.text()).match(/const V\s*=\s*'lago-(v[\w.-]+)'/);
+    return !!m&&m[1]!==LAGO_V;
+  }catch(e){return false}
+}
+async function ptrRun(){
+  if(PTR.busy)return;PTR.busy=true;
+  const e=ptrBox();e.classList.add('rel');ptrDraw(56,'busy');
+  let msg='';
+  try{
+    if(await ptrNewVersion()){
+      e.querySelector('b').textContent='Mise à jour de l’appli…';
+      try{save();cloudStash()}catch(_){}
+      try{await Promise.all([fetch('./',{cache:'reload'}),fetch('index.html',{cache:'reload'})])}catch(_){}
+      location.reload();return;
+    }
+    if(!cloudOn())msg='Cet appareil n’est pas connecté à l’équipe : rien à actualiser';
+    else{const r=await plSync(false);msg=r.ok?'À jour':'Hors ligne : impossible d’actualiser pour le moment'}
+  }catch(x){msg='Actualisation impossible pour le moment'}
+  PTR.busy=false;ptrReset(true);if(msg)toast(msg);
+}
+
+/* ---- Rejoindre l'équipe depuis l'appli (appareil resté en « Local ») ---- */
+function joinModal(){
+  showModal(`${mh('Rejoindre l’équipe')}<form id="mjoin"><p class="muted" style="margin:0 0 10px">Collez le lien d’équipe de votre responsable. Les données de cet appareil seront remplacées par celles de l’équipe (planning, comptes, caisse…).</p>
+   <div class="field"><label for="mjl">Lien d’équipe</label><input id="mjl" required inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="https://…#cloud=…" style="width:100%"></div>
+   <button type="button" class="btn" data-act="mj_paste" style="width:100%;margin:8px 0">Coller depuis le presse-papiers</button>
+   <p id="mjerr" style="margin:0 0 8px;color:var(--bad);font-size:13px;min-height:1em"></p>
+   <div class="acts"><button type="button" class="btn" data-act="close">Annuler</button><button class="btn primary" type="submit">Rejoindre l’équipe</button></div></form>`);
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act="pl_join"],[data-act="mj_paste"]');if(!b)return;
+  if(b.dataset.act==='pl_join'){joinModal();return}
+  const i=document.getElementById('mjl'),er=document.getElementById('mjerr');if(!i)return;
+  try{const t=await navigator.clipboard.readText();if(t){i.value=t.trim();if(er)er.textContent=''}else if(er)er.textContent='Le presse-papiers est vide : copiez d’abord le lien.'}
+  catch(x){if(er)er.textContent='Collage automatique refusé : appuyez longuement dans le champ puis choisissez « Coller ».'}
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='mjoin')return;e.preventDefault();
+  const er=document.getElementById('mjerr'),x=joinParse(document.getElementById('mjl').value);
+  if(!x){if(er)er.textContent='Ce lien n’est pas reconnu. Copiez le lien complet (il contient « #cloud= »).';return}
+  try{localStorage.setItem(KEY+'-avant-equipe',JSON.stringify(S))}catch(_){}
+  cloudSet({u:x.u,r:x.r,fresh:true});
+  const bt=e.target.querySelector('button[type=submit]');if(bt){bt.disabled=true;bt.textContent='Connexion à l’équipe…'}
+  setTimeout(()=>location.reload(),150);
 });
 /* ---- Chat d'équipe : un seul salon, pour tout le monde ---- */
 IC.chat='<path d="M4 5.500h16v10.500H10.500L6 19.500V16H4z"/>';
