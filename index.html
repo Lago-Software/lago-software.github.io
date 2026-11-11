@@ -1057,6 +1057,12 @@ body.is-op [data-act="pickclient"],body.is-op [data-act="noclient"]{display:none
   .ms-t .nbadge{position:absolute;top:8px;right:8px;margin:0;animation:none}
   body:has(.msheet.open){overflow:hidden}
 }
+/* plannings : barre de synchronisation */
+.plsync{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:8px 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.plsync .pls-t{color:var(--muted);font-size:13px;flex:1;min-width:150px}
+.plsync .pls-b{display:flex;gap:8px;margin-left:auto}
+.plsync .btn{min-height:40px}
+@media (max-width:520px){.plsync .pls-b{width:100%}.plsync .pls-b .btn{flex:1}}
 @media (max-width:1080px){.pos{grid-template-columns:minmax(0,1fr) 340px}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:0}
@@ -1282,7 +1288,7 @@ const TABS={resa:[['apercu','Planning'],['resas','Réservations'],['events','Év
 const tab={resa:'apercu',staff:'equipe',clients:'fiches',gestion:'produits',params:'pgen'};
 const SUBS={apercu:vDay,resas:vResas,events:vEvents,bracelets:vBracelets,sjour:vStaffDay,equipe:vTeam,conges:vLeaves,fiches:vClients,fidelite:vLoyalty,mailing:vMailing,produits:vProducts,rapports:vReports,caisse:vCashbox,pgen:vSetGen,ppark:vSetPark,pteam:vSetTeam,ploy:vSetLoy,papp:vSetApp};
 const bar=a=>a?`<div class="top-actions" style="margin-bottom:12px">${a}</div>`:'';
-function tabbed(m,title){
+function tabbedBase(m,title){
   {const L=tabsFor(view);if(L.length&&!L.some(x=>x[0]===tab[view]))tab[view]=L[0][0]}
   m.innerHTML=head(title)+`<div class="tabs" role="tablist">${tabsFor(view).map(([id,l])=>`<button role="tab" class="${tab[view]===id?'on':''}" data-act="tab" data-id="${id}">${l}</button>`).join('')}</div><div id="sub"></div>`;
   SUBS[tab[view]]($('#sub'));
@@ -5119,7 +5125,7 @@ function diffT(r,m,path,out){
   }
 }
 /* état de la synchronisation */
-const CL={R:undefined,B:undefined,fetched:false,ready:false,busy:false,again:false,es:null,state:'off',t:null,ui:false,err:''};
+const CL={R:undefined,B:undefined,fetched:false,ready:false,busy:false,again:false,es:null,state:'off',t:null,ui:false,err:'',last:0,ev:0,ka:75000,away:10000,hid:0};
 function setCS(s){CL.state=s;if(s==='ok')CL.err='';document.querySelectorAll('.zst').forEach(e=>{e.dataset.s=s;const t=e.querySelector('b');if(t)t.textContent=s==='ok'?'Synchronisé':s==='sync'?'Synchronisation…':'Hors ligne'})}
 const cUrl=p=>{const c=cloudCfg();return c.u.replace(/\/+$/,'')+'/'+c.r+(p?'/'+p:'')+'.json'};
 async function cFetch(ms){
@@ -5168,7 +5174,7 @@ async function cloudStep(){
     CL.R=R;CL.B=R;
     try{localStorage.removeItem(CBOX)}catch(e){}
   }
-  setCS('ok');
+  CL.last=Date.now();setCS('ok');
 }
 async function cloudSync(){
   if(!cloudOn()||!CL.ready)return;
@@ -5188,15 +5194,25 @@ function cloudStash(){
 }
 function cloudListen(){
   const c=cloudCfg();if(!c)return;if(CL.es)CL.es.close();
-  const es=new EventSource(cUrl(''));CL.es=es;
+  const es=new EventSource(cUrl(''));CL.es=es;CL.ev=Date.now();
   const on=(t,ev)=>{let d;try{d=JSON.parse(ev.data)}catch(e){return}
     const parts=String(d.path||'/').split('/').filter(Boolean);
     if(t==='put')CL.R=setAt(CL.R,parts,d.data===null?undefined:fixArr(d.data));
     else Object.entries(d.data||{}).forEach(([k,v])=>{CL.R=setAt(CL.R,parts.concat(k.split('/')),v===null?undefined:fixArr(v))});
-    CL.fetched=true;cloudKick(120)};
+    CL.ev=Date.now();CL.fetched=true;cloudKick(120)};
   es.addEventListener('put',ev=>on('put',ev));es.addEventListener('patch',ev=>on('patch',ev));
-  es.onopen=()=>{if(CL.state==='off')setCS('ok')};es.onerror=()=>setCS('off');
+  es.addEventListener('keep-alive',()=>{CL.ev=Date.now()});
+  es.onopen=()=>{CL.ev=Date.now();if(CL.state==='off')setCS('ok')};es.onerror=()=>setCS('off');
 }
+/* flux endormi (veille du téléphone, changement de réseau…) : on le rouvre et on relit la base */
+function cloudWake(force,away){
+  if(!cloudOn()||!CL.ready)return;
+  const es=CL.es,stale=!es||es.readyState===2||!!away||Date.now()-CL.ev>(force?Math.min(40000,CL.ka):CL.ka);
+  if(stale){cloudListen();CL.fetched=false;cloudKick(0)}else if(force)cloudKick(300);
+}
+setInterval(()=>{if(!document.hidden)cloudWake(false)},5000);
+addEventListener('focus',()=>cloudWake(true));
+addEventListener('pageshow',e=>{if(e.persisted)cloudWake(true)});
 async function cloudBoot(){
   const c=cloudCfg();
   await cFetch(7000);
@@ -5236,12 +5252,12 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act="reset
 setInterval(()=>{
   if(!CL.ui||!cloudOn())return;
   const g=$('#gate'),ae=document.activeElement;
-  if(document.querySelector('#modal .modal')||(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))||(g&&!g.hidden))return;
+  if(document.querySelector('#modal .modal')||(ae&&ae.id!=='gbq'&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))||(g&&!g.hidden))return;
   CL.ui=false;const y=scrollY;
   try{applySettings();chrome();VIEWS[view]($('#main'));scrollTo(0,y)}catch(e){}
 },1500);
-addEventListener('online',()=>cloudKick(200));
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')cloudStash();else cloudKick(300)});
+addEventListener('online',()=>cloudWake(true));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){CL.hid=Date.now();cloudStash()}else cloudWake(true,CL.hid&&Date.now()-CL.hid>CL.away)});
 addEventListener('pagehide',cloudStash);
 /* données de démonstration : repérage précis (signature des exemples), pour ne jamais toucher aux vraies données */
 const DEMO_CL=['Camille Martin','Lucas Bernard','Inès Dubois','Hugo Petit','Léa Moreau','Nathan Roux'];
@@ -5405,7 +5421,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v44';
+const LAGO_V='v45';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5837,6 +5853,45 @@ document.addEventListener('keydown',e=>{
   if(sh&&!sh.hidden){mnClose();const m=document.querySelector('#mnav .mn-more');if(m)m.focus({preventScroll:true})}
 });
 window.addEventListener('hashchange',()=>{mnClose(true);const sh=document.getElementById('msheet');if(sh)sh.classList.remove('open');mnavDraw()});
+/* ---- plannings : barre « Synchronisé · Sauvegarder / Actualiser » ---- */
+const plShown=()=>(view==='resa'&&tab.resa==='apercu')||(view==='staff'&&(tab.staff==='equipe'||tab.staff==='sjour'));
+const plAgo=()=>{if(!cloudOn())return 'Cet appareil n’est pas connecté à l’équipe';if(!CL.last)return 'en attente de la première synchronisation';const s=Math.max(0,Math.round((Date.now()-CL.last)/1000));return 'dernière synchronisation '+(s<5?'à l’instant':s<60?'il y a '+s+' s':s<3600?'il y a '+Math.round(s/60)+' min':'à '+hm(CL.last))};
+function plBarHtml(){
+  const adm=isAdmin(),st=CL.state==='ok'?'Synchronisé':CL.state==='sync'?'Synchronisation…':'Hors ligne';
+  return `<div class="plsync" id="plsync"><span class="zst" data-s="${cloudOn()?CL.state:'off'}"><i></i><b>${cloudOn()?st:'Local'}</b></span><span class="pls-t" id="plsl">${esc(plAgo())}</span><span class="pls-b">${adm?`<button type="button" class="btn primary" data-act="pl_save">Sauvegarder</button>`:''}<button type="button" class="btn" data-act="pl_ref">Actualiser</button></span></div>`;
+}
+function plBar(m){
+  const old=document.getElementById('plsync');if(old)old.remove();
+  if(!plShown())return;const t=(m||document).querySelector('.tabs');if(t)t.insertAdjacentHTML('afterend',plBarHtml());
+}
+function tabbed(m,title){tabbedBase(m,title);plBar(m)}
+setInterval(()=>{const e=document.getElementById('plsl');if(e&&e.textContent!==plAgo())e.textContent=plAgo()},1000);
+const plSleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function plSync(snap){
+  let made=false;
+  if(snap&&view==='staff'){
+    const last=archive()[0],cur=JSON.stringify(S.plans);
+    if(!last||JSON.stringify(last.plans)!==cur){snapPlans('Planning du '+nowFr(),false);made=true}
+  }
+  save();
+  if(!cloudOn())return {ok:true,local:true,made};
+  const t0=Date.now();clearTimeout(CL.t);CL.fetched=false;
+  await cloudSync();
+  while(CL.busy&&Date.now()-t0<15000)await plSleep(100);
+  CL.ui=true;
+  return {ok:CL.state==='ok'&&CL.last>=t0,made};
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act="pl_save"],[data-act="pl_ref"]');if(!b||b.disabled)return;
+  const sv=b.dataset.act==='pl_save';if(sv&&!isAdmin())return;
+  const old=b.textContent;b.disabled=true;b.textContent=sv?'Sauvegarde…':'Actualisation…';
+  let r;try{r=await plSync(sv)}catch(x){r={ok:false}}
+  const nb=document.querySelector('#plsync [data-act="'+b.dataset.act+'"]');if(nb){nb.disabled=false;nb.textContent=old}
+  const el=document.getElementById('plsl');if(el)el.textContent=plAgo();
+  if(r.local)toast(sv?'Sauvegardé sur cet appareil (non connecté à l’équipe)':'Cet appareil n’est pas connecté à l’équipe');
+  else if(r.ok)toast(sv?'Planning sauvegardé et envoyé à l’équipe'+(r.made?' (point de restauration créé)':''):'Planning à jour');
+  else toast(sv?'Sauvegardé sur cet appareil. Hors ligne : envoi dès le retour du réseau':'Hors ligne : impossible d’actualiser pour le moment');
+});
 /* ---- Chat d'équipe : un seul salon, pour tout le monde ---- */
 IC.chat='<path d="M4 5.500h16v10.500H10.500L6 19.500V16H4z"/>';
 const CHSEND='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L3 10.500l7 2.500 2.500 7z"/><path d="M10 13L21 3"/></svg>';
