@@ -1015,6 +1015,8 @@ body.is-op [data-act="pickclient"],body.is-op [data-act="noclient"]{display:none
 .tk-adm{margin-top:10px;font-size:13px}.tk-adm .glink{display:inline;margin:0;padding:0 4px}
 .tkcard{flex:none}
 @media (max-width:900px){.tk-list{height:calc(100vh - 390px);height:calc(100dvh - 390px);min-height:240px}}
+/* compte établissement */
+.gu.etab b{white-space:normal;text-align:center;line-height:1.15;font-size:13px}
 @media (max-width:1080px){.pos{grid-template-columns:minmax(0,1fr) 340px}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:0}
@@ -3136,7 +3138,7 @@ function fileToData(file,max,cb){
 }
 const logoHtml=(cls='')=>{const l=S.settings.logo;return l?`<img class="brandlogo ${cls}" src="${l}" alt="${esc(S.settings.name)}">`:''};
 const OPM=[['resa','Planning clients'],['staff','Planning staff'],['clients','Clients'],['controle','Contrôle'],['gestion','Gestion']];
-const opHidden=id=>(noPos()&&POS_NAV.includes(id))||(!isAdmin()&&(id==='clients'||id==='resa'))||(id!=='accueil'&&id!=='params'&&!!(S.settings.off&&S.settings.off[id]))||(!isAdmin()&&id!=='accueil'&&id!=='params'&&id!=='controle'&&id!=='chat'&&!perm(id));
+const opHidden=id=>(noPos()&&POS_NAV.includes(id))||(!isAdmin()&&(id==='clients'||id==='resa'))||(!!ME&&ME.kind==='etab'&&id==='staff'&&!canAll())||(id!=='accueil'&&id!=='params'&&!!(S.settings.off&&S.settings.off[id]))||(!isAdmin()&&id!=='accueil'&&id!=='params'&&id!=='controle'&&id!=='chat'&&!perm(id));
 const CATDEF=CATS.map(c=>c.name);
 const LISTDEF={mpts:MPTS.slice(),itypes:ITYPES.slice(),meq:MEQ.slice(),isec:ISECOURS.slice()};
 function applyCustom(){
@@ -3208,7 +3210,7 @@ function defaultProfiles(){const h=(S.settings&&S.settings.opHide)||{},p={};
   return[{id:'op1',name:'Opérateur',pin:'',perms:p}]}
 function curProf(){const L=S.profiles||[];return L.find(x=>x.id===PROF)||L[0]||{name:'Opérateur',perms:{}}}
 function perm(k){return !!curProf().perms[k]}
-function tabsFor(id){const off=S.settings.offT||{};let L=(TABS[id]||[]).filter(([t])=>!(noPos()&&POS_TABS.includes(id+':'+t))&&(id==='params'||!off[id+':'+t]));if(id==='staff'&&!canAll())L=L.filter(([t])=>t!=='equipe'&&t!=='sjour');return isAdmin()||!['gestion','resa'].includes(id)?L:L.filter(([t])=>perm(id+':'+t))}
+function tabsFor(id){const off=S.settings.offT||{};let L=(TABS[id]||[]).filter(([t])=>!(noPos()&&POS_TABS.includes(id+':'+t))&&(id==='params'||!off[id+':'+t]));if(id==='staff'&&!canAll())L=L.filter(([t])=>t!=='equipe'&&t!=='sjour');if(id==='staff'&&ME&&ME.kind==='etab')L=L.filter(([t])=>t!=='monplan'&&t!=='conges');return isAdmin()||!['gestion','resa'].includes(id)?L:L.filter(([t])=>perm(id+':'+t))}
 function subOk(v,t){return isAdmin()||!['gestion','resa'].includes(v)||perm(v+':'+t)}
 function setProf(id){PROF=id;try{localStorage.setItem(PKEY,id)}catch(e){}}
 function rolePill(){const a=isAdmin();return `<button class="rolepill ${a?'adm':''}" data-act="rolesw" aria-label="Changer de profil">${ic(a?'shield':'users')}${a?'Administrateur':esc(curProf().name)}</button>`}
@@ -3331,7 +3333,7 @@ function gateStart(){
   if(!accs().length)return gateSetup();
   const last=(()=>{try{return localStorage.getItem(LKEY)}catch(e){return null}})();
   act.sort((a,b)=>(b.id===last)-(a.id===last));
-  gateShell(`<h2>Qui êtes-vous ?</h2><div class="gav">${act.map(a=>`<button class="gu" data-act="g_pick" data-id="${a.id}">${avA(a,0)}<b>${esc(a.name.split(' ')[0])}</b></button>`).join('')}</div>
+  gateShell(`<h2>Qui êtes-vous ?</h2><div class="gav">${act.map(a=>`<button class="gu${a.kind==='etab'?' etab':''}" data-act="g_pick" data-id="${a.id}">${avA(a,0)}<b>${esc(a.kind==='etab'?a.name:a.name.split(' ')[0])}</b></button>`).join('')}</div>
    <div class="gfoot"><button class="btn" data-act="g_other">Autre compte</button><button class="btn" data-act="g_new">${ic('plus')}Créer mon compte</button></div>`);
 }
 function gateSetup(){gateShell(`<h2>Bienvenue sur Lago</h2><p class="muted">Créez le compte administrateur. Il validera ensuite les comptes de l’équipe.</p>${gform('setup')}`)}
@@ -3351,7 +3353,7 @@ function gatePick(id){const a=accs().find(x=>x.id===id);gform.ident=a.ident;
   gateShell(`<div class="gpick">${avA(a,1)}<h2>${esc(a.name)}</h2></div>${gform('pick')}`);gform.ident='';
   const f=$('#gform');f.dataset.id=id;setTimeout(()=>{const p=$('#gp');if(p)p.focus()},50)}
 function login(a,remember){
-  ME=a;ROLEMODE=a.admin?'admin':'operator';PROF=a.admin?'-':(a.profileId||'-');
+  if(a.kind==='etab'){a.admin=false;a.staffId=''}ME=a;ROLEMODE=a.admin?'admin':'operator';PROF=a.admin?'-':(a.profileId||'-');
   try{localStorage.setItem(LKEY,a.id);(remember===false?sessionStorage:localStorage).setItem(SKEY,a.id);if(remember===false)localStorage.removeItem(SKEY)}catch(e){}
   gate().hidden=true;tab.staff=(a.admin||perm('staff:all'))?tab.staff:'monplan';chrome();if(location.hash!=='#accueil'){location.hash='accueil'}else route();chrome();armLock();noteNew();
   if(a.admin&&pendingCount())toast(pendingCount()+' demande(s) de compte à valider');
@@ -3403,7 +3405,7 @@ function accountMenu(){
   showModal(`${mh('Mon compte')}<div class="gpick" style="margin-bottom:12px">${avA(a,1)}<h2 style="margin:0">${esc(a.name)}</h2><span class="muted">${esc(a.ident)} · ${a.admin?'Administrateur':esc(curProf().name||'Opérateur')}</span></div>
    <div class="acts">${isAdmin()?'<button class="btn" data-act="acc_pv">Voir comme un opérateur</button>':''}<button class="btn" data-act="acc_pw">Changer mon mot de passe</button><button class="btn" data-act="acc_lock">Verrouiller</button><button class="btn primary" data-act="acc_out">Se déconnecter</button></div>`);
 }
-function rolePill(){const a=ME,adm=isAdmin(),n=pendingCount();return `<button class="rolepill ${adm?'adm':''}" data-act="rolesw" aria-label="Mon compte">${ic(adm?'shield':'users')}${a?esc(a.name.split(' ')[0]):'Compte'}${adm&&n?`<b class="nbadge">${n}</b>`:''}</button>`}
+function rolePill(){const a=ME,adm=isAdmin(),n=pendingCount();return `<button class="rolepill ${adm?'adm':''}" data-act="rolesw" aria-label="Mon compte">${ic(adm?'shield':'users')}${a?esc(a.kind==='etab'?'Établissement':a.name.split(' ')[0]):'Compte'}${adm&&n?`<b class="nbadge">${n}</b>`:''}</button>`}
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act,d=b.dataset;
   if(a==='rolesw')accountMenu();
@@ -3538,7 +3540,7 @@ function saveBytes(name,bytes,type){
   })();
 }
 /* ---- avatars / photos ---- */
-function avA(a,big){const cl='avatar'+(big?' big':'');return a&&a.photo?`<span class="${cl} ph"><img src="${a.photo}" alt=""></span>`:`<span class="${cl}">${esc(initials(a?a.name:'?'))}</span>`}
+function avAV0(a,big){const cl='avatar'+(big?' big':'');return a&&a.photo?`<span class="${cl} ph"><img src="${a.photo}" alt=""></span>`:`<span class="${cl}">${esc(initials(a?a.name:'?'))}</span>`}
 document.addEventListener('change',e=>{const t=e.target;
   if(t.id==='photof'&&t.files[0]&&ME){fileToData(t.files[0],220,r=>{ME.photo=r.jpg;save();chrome();accountMenu();toast('Photo enregistrée')});t.value=''}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act="photorm"]');if(!b||!ME)return;delete ME.photo;save();chrome();accountMenu()});
@@ -3754,7 +3756,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act="aiq"]
 });
 document.addEventListener('submit',e=>{if(e.target.id==='aiqf'){e.preventDefault();aiAsk($('#aiqin').value)}});
 function aiBtn(){return false?`<button class="btn aisearch" data-act="aiq">${ic('wave')}<span>Demander à l’IA</span></button>`:''}
-function rolePill(){const a=ME,adm=isAdmin(),n=pendingCount()+(adm?0:0);return aiBtn()+`<button class="rolepill ${adm?'adm':''}" data-act="rolesw" aria-label="Mon compte">${a&&a.photo?`<span class="pp"><img src="${a.photo}" alt=""></span>`:ic(adm?'shield':'users')}${a?esc(a.name.split(' ')[0]):'Compte'}${adm&&n?`<b class="nbadge">${n}</b>`:''}${unreadN()?`<b class="nbadge msg">${unreadN()}</b>`:''}</button>`}
+function rolePill(){const a=ME,adm=isAdmin(),n=pendingCount()+(adm?0:0);return aiBtn()+`<button class="rolepill ${adm?'adm':''}" data-act="rolesw" aria-label="Mon compte">${a&&a.photo?`<span class="pp"><img src="${a.photo}" alt=""></span>`:ic(adm?'shield':'users')}${a?esc(a.kind==='etab'?'Établissement':a.name.split(' ')[0]):'Compte'}${adm&&n?`<b class="nbadge">${n}</b>`:''}${unreadN()?`<b class="nbadge msg">${unreadN()}</b>`:''}</button>`}
 function accountMenu(){
   const a=ME;if(!a)return;
   showModal(`${mh('Mon compte')}<div class="gpick" style="margin-bottom:12px">${avA(a,1)}<h2 style="margin:0">${esc(a.name)}</h2><span class="muted">${esc(a.ident)} · ${a.admin?'Administrateur':esc(curProf().name||'Opérateur')}</span>
@@ -5325,10 +5327,12 @@ function vSetAcc(m){
   const p=[...m.querySelectorAll('p.muted')].find(x=>/restent sur cet appareil/.test(x.textContent));
   if(p)p.textContent='Les accès sont définis par les profils (Paramètres › Profils). Les comptes sont partagés avec l’équipe quand « Équipe connectée » est active ; les mots de passe sont chiffrés. Un compte demandé depuis l’écran de connexion doit d’abord être validé ci-dessus.';
   if(typeof mailCard==='function')mailCard(m);
+  if(typeof etabRows==='function')etabRows(m);
 }
 function x4AccModal(){
   const pr=S.profiles||[];
   showModal(`${mh('Ajouter un compte')}<form id="x4acform">
+   <div class="field"><label for="x4k">Type de compte</label><select id="x4k"><option value="">Employé : une personne de l’équipe</option><option value="etab">Établissement : compte partagé du parc (accueil, caisse…)</option></select><span class="muted" id="x4kh" style="font-size:13px" hidden>Ni employé ni administrateur : il n’apparaît pas dans les plannings du personnel et ne peut pas recevoir l’accès complet.</span></div>
    <div class="field"><label for="x4n">Prénom et nom</label><input id="x4n" required></div>
    <div class="field"><label for="x4i">Identifiant (pseudo ou e-mail)</label><input id="x4i" required autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off"></div>
    <div class="field"><label for="x4m">E-mail (facultatif)</label><input id="x4m" type="email" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="Pour « Mot de passe oublié »"></div>
@@ -5342,14 +5346,15 @@ document.addEventListener('submit',async e=>{
   if(e.target.id!=='x4acform')return;e.preventDefault();
   if(!isAdmin())return;
   const err=m=>{$('#x4err').textContent=m};
-  const name=$('#x4n').value.trim(),ident=$('#x4i').value.trim().toLowerCase(),pw=$('#x4p').value.trim(),v=$('#x4a').value;
+  const et=$('#x4k').value==='etab',name=$('#x4n').value.trim()||(et?String(S.settings.name||'').trim():''),ident=$('#x4i').value.trim().toLowerCase(),pw=$('#x4p').value.trim(),v=$('#x4a').value;
   if(!name||!ident)return;
+  if(et&&v==='admin'){err('Un compte établissement ne peut pas être administrateur.');return}
   if(pw.length<6){err('6 caractères minimum pour le mot de passe.');return}
   if(accs().some(a=>a.ident===ident)){err('Cet identifiant existe déjà.');return}
   const em=($('#x4m').value||'').trim().toLowerCase();
   if(em&&!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(em)){err('Adresse e-mail invalide.');return}
   const id=uid();
-  accs().push({id,name,ident,...(em?{email:em}:{}),pwd:await hashPw(pw,id),status:'active',admin:v==='admin',profileId:v==='admin'?'':v,staffId:$('#x4s').value,ts:Date.now()});
+  accs().push({id,name,ident,...(et?{kind:'etab'}:{}),...(em?{email:em}:{}),pwd:await hashPw(pw,id),status:'active',admin:!et&&v==='admin',profileId:v==='admin'?'':v,staffId:et?'':$('#x4s').value,ts:Date.now()});
   save();closeModal();vSetAcc($('#sub'));renderNav();toast('Compte créé : '+name);
 });
 /* l'écran « Qui êtes-vous ? » se met à jour tout seul quand un compte arrive de l'équipe */
@@ -5360,7 +5365,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v41';
+const LAGO_V='v42';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5602,7 +5607,7 @@ function accountMenu(){
   const em=String(a.email||'').trim()||(MAILRE.test(a.ident)?a.ident:'');
   const pw=`autocapitalize="none" autocorrect="off" spellcheck="false"`;
   showModal(`${mh('Mon compte')}
-   <div class="gpick">${avA(a,1)}<h2 style="margin:0">${esc(a.name)}</h2><span class="muted">${esc(a.ident)} · ${a.admin?'Administrateur':esc(curProf().name||'Opérateur')}</span>
+   <div class="gpick">${avA(a,1)}<h2 style="margin:0">${esc(a.name)}</h2><span class="muted">${esc(a.ident)} · ${a.admin?'Administrateur':a.kind==='etab'?'Établissement · '+esc(curProf().name||'Accès limité'):esc(curProf().name||'Opérateur')}</span>
    <div class="acts"><label class="btn" for="photof">${ic('user')}${a.photo?'Changer la photo':'Ajouter une photo'}</label><input type="file" id="photof" accept="image/*" hidden>${a.photo?'<button class="btn" data-act="photorm">Retirer</button>':''}</div></div>
    <form id="maform"><h3 class="mah">Mes informations</h3>
     <div class="field"><label for="man">Prénom et nom</label><input id="man" required value="${esc(a.name)}" autocomplete="name"></div>
@@ -5677,6 +5682,27 @@ document.addEventListener('click',async e=>{
       if(v)x.email=v;else delete x.email;save();vSetAcc($('#sub'));toast(v?'E-mail enregistré':'E-mail retiré')},false,String(x.email||'')||(MAILRE.test(x.ident)?x.ident:''));
   }
 });
+
+/* ---- compte « Établissement » : un compte partagé du parc, ni employé ni administrateur ---- */
+const isEtab=a=>!!a&&a.kind==='etab';
+function avA(a,big){return isEtab(a)&&!a.photo&&S.settings.logo?avAV0(Object.assign({},a,{photo:S.settings.logo}),big):avAV0(a,big)}
+document.addEventListener('change',e=>{
+  if(e.target.id!=='x4k')return;
+  const et=e.target.value==='etab',f=document.getElementById('x4acform'),n=document.getElementById('x4n'),sel=document.getElementById('x4a'),st=document.getElementById('x4s'),h=document.getElementById('x4kh');
+  f.querySelector('label[for="x4n"]').textContent=et?'Nom affiché':'Prénom et nom';
+  if(et&&!n.value.trim())n.value=String(S.settings.name||'');if(!et&&n.value===String(S.settings.name||''))n.value='';
+  const adm=[...sel.options].find(o=>o.value==='admin');if(adm){adm.hidden=et;adm.disabled=et}if(et&&sel.value==='admin')sel.selectedIndex=0;
+  if(st){st.closest('.field').hidden=et;if(et)st.value=''}
+  if(h)h.hidden=!et;
+});
+function etabRows(m){
+  if(!isAdmin()||!m)return;
+  accs().filter(isEtab).forEach(a=>{
+    const p=m.querySelector(`select[data-acprof="${a.id}"]`),s=m.querySelector(`select[data-acstaff="${a.id}"]`);
+    if(p){const o=[...p.options].find(x=>x.value==='admin');if(o)o.remove();const b=p.closest('.row')&&p.closest('.row').querySelector('.grow b');if(b&&!b.parentNode.querySelector('.pill.etab'))b.insertAdjacentHTML('afterend',' <span class="pill ok etab">Établissement</span>')}
+    if(s)s.remove();
+  });
+}
 /* ---- Chat d'équipe : un seul salon, pour tout le monde ---- */
 IC.chat='<path d="M4 5.500h16v10.500H10.500L6 19.500V16H4z"/>';
 const CHSEND='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L3 10.500l7 2.500 2.500 7z"/><path d="M10 13L21 3"/></svg>';
