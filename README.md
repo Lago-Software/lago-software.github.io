@@ -11,4 +11,6 @@ Mise en ligne : GitHub Pages publie automatiquement ce dépôt à chaque modific
 
 L'appli installée se met à jour toute seule : elle compare son numéro de version à celui de `sw.js` au démarrage, à chaque retour au premier plan et toutes les 10 minutes. Si rien n'est en cours (ticket vide, aucune fenêtre ouverte), elle se recharge sans rien perdre ; sinon une bannière propose « Mettre à jour ». « Mon compte » permet aussi de lancer la vérification à la main, et on peut tirer l'écran vers le bas pour actualiser.
 
+Un simple rafraîchissement de la page (ou la réouverture de l'appli) charge toujours la dernière version : `sw.js` revalide les fichiers auprès du serveur à chaque chargement, sans attendre le cache du navigateur.
+
 Pour publier une version : changer `LAGO_V` dans `index.html` et `V` dans `sw.js` (même numéro), puis pousser sur `main`.

@@ -1205,6 +1205,8 @@ a.btn.primary{color:#fff}
 :root{
   --canvas:color-mix(in srgb,var(--bg) 95.5%,var(--brand));
   --hair:color-mix(in srgb,var(--line) 62%,transparent);
+  --grid:color-mix(in srgb,var(--ink) 30%,var(--surface));
+  --grid-2:color-mix(in srgb,var(--ink) 52%,var(--surface));
   --ink-2:color-mix(in srgb,var(--ink) 72%,var(--bg));
   --sh-1:0 1px 2px rgba(12,22,48,.05);
   --sh-2:0 1px 2px rgba(12,22,48,.04),0 8px 26px rgba(12,22,48,.06);
@@ -1414,13 +1416,41 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--brand);outline-offs
 /* ---------- plannings ---------- */
 .dcard{padding:18px 20px}
 .dch h3{font-size:19px}
-.dt{border-collapse:separate;border-spacing:3px;min-width:520px}
-.dt th,.dt td{border:0}
-.dt thead th{border:0;background:none;color:var(--ink-2);font-weight:650}
-.dt .slc{border:0;background:none;color:var(--muted);font-weight:600}
-.dt td{border-radius:9px;overflow:hidden}
-.pc{border-radius:9px;min-height:32px}
-.pc.w{opacity:.92}
+.dtw{border:1.5px solid var(--grid);border-radius:14px;background:var(--surface)}
+.dt{border-collapse:collapse;min-width:520px;width:100%}
+.dt th,.dt td{border:1px solid var(--grid);padding:0}
+.dt thead th{background:var(--surface-2);color:var(--ink-2);font-weight:650;border-bottom:2px solid var(--grid-2);padding:7px 3px 0}
+.dt thead th i{height:4px;margin-top:6px;border-radius:0}
+.dt .slc{background:var(--surface-2);color:var(--ink-2);font-weight:650;border-right:2px solid var(--grid-2);font-variant-numeric:tabular-nums}
+.dt tbody tr:nth-child(even) .slc{background:color-mix(in srgb,var(--surface-2) 60%,var(--grid))}
+.dt th.cv,.dt td.cv{border-left:2px solid var(--grid-2)}
+.dt tbody tr:last-child th,.dt tbody tr:last-child td{border-bottom:0}
+.dt tr>*:first-child{border-left:0}
+.dt tr>*:last-child{border-right:0}
+.dt thead tr>*{border-top:0}
+.pc{border-radius:0;height:38px;min-height:38px;position:relative;line-height:1.15}
+.pc.w{opacity:1}
+.pc:focus-visible{outline:2px solid var(--brand);outline-offset:-3px;z-index:1}
+.pc small{display:block;font-size:9.5px;font-weight:700;letter-spacing:0}
+.pc.w small{color:var(--ink)}
+.dch .plbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn.plt{padding:6px 12px;font-size:13px;min-height:0;gap:6px}
+.btn.plt svg{width:15px;height:15px}
+.plcuts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.plcut{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--grid);font-size:13px}
+.plcut i{width:10px;height:10px;border-radius:50%;flex:none}
+.plcut em{font-style:normal;color:var(--muted);font-weight:600}
+.pltf .plr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px 10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--hair)}
+.pltf .plr:last-of-type{border-bottom:0}
+.pltf .plr .plwho{display:flex;align-items:center;gap:9px;min-width:0;font-weight:650}
+.pltf .plr .plwho span.plnm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pltf .plr .plwho i{width:12px;height:12px;border-radius:50%;flex:none}
+.pltf .plr label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted);font-weight:600}
+.pltf .plr select{min-width:92px;padding:8px 10px}
+.pltf .plr .plph{grid-column:1/-1;font-size:13px;color:var(--muted)}
+.pltf .plr .plph b{color:var(--ink)}
+.pltf .plr .plph.cut b{color:var(--brand)}
+@media (max-width:560px){.pltf .plr{grid-template-columns:1fr 1fr}.pltf .plr .plwho{grid-column:1/-1}.pltf .plr select{width:100%}}
 .phead{background:color-mix(in srgb,var(--canvas) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .mpd{border:1px solid var(--hair);border-radius:16px;box-shadow:var(--sh-1)}
 .mpw .mpwh b{font-size:15px}
@@ -2982,20 +3012,20 @@ function shiftLabel(ds,id){const c=cellsOf(planFor(ds),ds,id);if(!c.length)retur
 function planHours(p,id){let w=0,g=0;Object.entries(p.cells).forEach(([d,rows])=>Object.entries(rows).forEach(([i,c])=>{if(+i<nrows(p,d)){if(c[id]==='w')w+=2;else if(c[id]==='g')g+=2}}));return{w,g}}
 const prange=p=>p.from?'Du '+new Date(p.from+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long'})+' au '+new Date(p.to+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long'}):'Appliquée en dehors des périodes spéciales';
 let planSel=null;
-function curPlan(){let p=S.plans.find(x=>x.id===planSel);if(!p){p=planFor(today());planSel=p.id}return p}
+function curPlan(){let p=S.plans.find(x=>x.id===planSel);if(!p){p=S.plans.find(x=>x.base)||planFor(today());planSel=p.id}return p}
 function dayCard(p,d,ds){
   const n=nrows(p,d),dc=ds?swDayCells(p,d,ds):(p.cells[d]||{}),ro=!isAdmin();
   const head=visStaff().map(s=>`<th class="${ds&&onLeave(s.id,ds)?'lv':''}"><span>${esc(fname(s))}</span><i style="background:${scol(s)}"></i></th>`).join('');
   const body=Array.from({length:n},(_,i)=>{const c=dc[i]||{},cnt=S.staff.filter(s=>c[s.id]==='w'&&!(ds&&onLeave(s.id,ds))).length;
     return `<tr><th class="slc">${PSL[i]}</th>${visStaff().map(s=>{const v=c[s.id]||'',lv=ds&&onLeave(s.id,ds);
-      return `<td><button class="pc ${v} ${lv?'off':''} ${ro?'ro':''}" style="--c:${scol(s)}" data-act="pcell" data-d="${d}" data-i="${i}" data-s="${s.id}" ${lv?'disabled':''} ${ro?'tabindex="-1"':''} aria-label="${esc(fname(s))}, ${DAYN[d]} ${PSL[i]} : ${v==='w'?'présent':v==='g'?'gestion':'libre'}">${v==='g'?'Gestion':''}</button></td>`}).join('')}<td class="cv"><span class="pill ${cnt<MIN_STAFF?'bad':cnt===MIN_STAFF?'warn':'ok'}">${cnt}</span></td></tr>`}).join('');
-  return `<div class="card dcard"><div class="dch"><h3>${DAYN[d]}</h3>${ro?(n>5?'<span class="late">Nocturne jusqu’à minuit</span>':''):`<label class="late"><input type="checkbox" data-plate="${d}" ${n>5?'checked':''}> Nocturne jusqu’à minuit</label>`}</div>
-    <div class="dtw"><table class="dt"><thead><tr><th></th>${head}<th class="cv">Équipe</th></tr></thead><tbody>${body}</tbody></table></div></div>`;
+      return `<td><button class="pc ${v} ${lv?'off':''} ${ro?'ro':''}" style="--c:${scol(s)}${plFill(p,d,ds,i,s.id,v)}" data-act="pcell" data-d="${d}" data-i="${i}" data-s="${s.id}" ${lv?'disabled':''} ${ro?'tabindex="-1"':''} aria-label="${esc(fname(s))}, ${DAYN[d]} ${PSL[i]} : ${v==='w'?'présent':v==='g'?'gestion':'libre'}">${plTxt(p,d,ds,i,s.id,v)}</button></td>`}).join('')}<td class="cv"><span class="pill ${cnt<MIN_STAFF?'bad':cnt===MIN_STAFF?'warn':'ok'}">${cnt}</span></td></tr>`}).join('');
+  return `<div class="card dcard"><div class="dch"><h3>${DAYN[d]}</h3><span class="plbar">${plBtn(p,d,ro)}${ro?(n>5?'<span class="late">Nocturne jusqu’à minuit</span>':''):`<label class="late"><input type="checkbox" data-plate="${d}" ${n>5?'checked':''}> Nocturne jusqu’à minuit</label>`}</span></div>
+    <div class="dtw"><table class="dt"><thead><tr><th></th>${head}<th class="cv">Équipe</th></tr></thead><tbody>${body}</tbody></table></div>${plNotes(p,d,ds,dc)}</div>`;
 }
 function vTeam(m){
   const p=curPlan();
-  const chips=S.plans.map(x=>`<button class="chip ${x.id===p.id?'on':''}" data-act="planset" data-id="${x.id}">${esc(x.name)}</button>`).join('');
-  const tot=visStaff().map(s=>{const h=planHours(p,s.id),c=scol(s);return `<div class="tt" style="background:${c};color:${inkOn(c)}"><small>${esc(fname(s))}</small><b class="num">${h.w} h</b>${h.g?`<em>+ ${h.g} h gestion</em>`:''}</div>`}).join('');
+  const chips=plOrder().map(x=>`<button class="chip ${x.id===p.id?'on':''}" data-act="planset" data-id="${x.id}">${esc(x.name)}</button>`).join('');
+  const tot=visStaff().map(s=>{const h=planHours(p,s.id),c=scol(s);return `<div class="tt" style="background:${c};color:${inkOn(c)}"><small>${esc(fname(s))}</small><b class="num">${plHF(h.w)}</b>${h.g?`<em>+ ${plHF(h.g)} gestion</em>`:''}</div>`}).join('');
   const low=[];for(let d=0;d<7;d++)for(let i=0;i<nrows(p,d);i++){const c=(p.cells[d]||{})[i]||{};if(S.staff.filter(s=>c[s.id]==='w').length<MIN_STAFF)low.push(DAYN[d].slice(0,3)+' '+PSL[i])}
   m.innerHTML=`<div class="plan-h"><div><h2 class="plan-t">${esc(p.name)}</h2><p class="muted">${prange(p)}</p></div>
      <div class="plact"><button class="btn" data-act="planpdf">PDF</button>${isAdmin()?`<button class="btn" data-act="planarch">Sauvegardes</button><button class="btn" data-act="planedit" data-id="${p.id}">Modifier</button><button class="btn primary" data-act="plannew">${ic('plus')}Nouveau planning</button>`:`<span class="pill">Consultation seule</span>`}</div></div>
@@ -3007,9 +3037,9 @@ function vTeam(m){
 function vStaffDay(m){
   if(slotDay<today())slotDay=today();
   const ds=slotDay,p=planFor(ds),d=dowOf(ds),duty=onDuty(ds),lv=visStaff().filter(s=>onLeave(s.id,ds));
-  const hrs=duty.reduce((a,s)=>a+cellsOf(p,ds,s.id).filter(c=>c[1]==='w').length*2,0);
+  const hrs=duty.reduce((a,s)=>a+plDayH(ds,s.id).w,0);
   const low=[];for(let i=0;i<nrows(p,d);i++){const c=(p.cells[d]||{})[i]||{};if(S.staff.filter(s=>c[s.id]==='w'&&!onLeave(s.id,ds)).length<MIN_STAFF)low.push(PSL[i])}
-  m.innerHTML=dayChips(ds)+`<div class="pst" style="margin-bottom:12px"><span><b class="num">${duty.length}</b> en poste</span><span><b class="num">${hrs}</b> h planifiées</span><span><b class="num">${lv.length}</b> en congé</span><span>${esc(p.name)}</span></div>
+  m.innerHTML=dayChips(ds)+`<div class="pst" style="margin-bottom:12px"><span><b class="num">${duty.length}</b> en poste</span><span><b class="num">${plHn(hrs)}</b> h planifiées</span><span><b class="num">${lv.length}</b> en congé</span><span>${esc(p.name)}</span></div>
     ${low.length?`<div class="banner"><span>Moins de ${MIN_STAFF} personnes sur : ${low.join(', ')}.</span><button class="btn" data-act="tab" data-id="equipe">Ouvrir le planning</button></div>`:`<div class="banner ok"><span>Équipe suffisante sur toute la journée.</span></div>`}
     <div class="dgrid one">${dayCard(p,d,ds)}</div>
     ${lv.length?`<div class="card" style="margin-top:14px"><h3>En congé payé</h3>${lv.map(s=>`<div class="row"><span class="avatar" style="background:${scol(s)};color:${inkOn(scol(s))}">${esc(initials(s.name))}</span><span class="grow"><b>${esc(s.name)}</b></span></div>`).join('')}</div>`:''}`;
@@ -4423,10 +4453,10 @@ document.addEventListener('change',e=>{
 function pdfPlanning(p){
   const bytes=pdfBuild('Planning de l’équipe',p.name+(p.from?' · '+prange(p):''),'Planning équipe',w=>{
     w.sec('Heures par semaine');
-    S.staff.forEach(s=>{const h=planHours(p,s.id);w.kv(s.name,h.w+' h'+(h.g?' + '+h.g+' h de gestion':''))});
+    S.staff.forEach(s=>{const h=planHours(p,s.id);w.kv(s.name,plHn(h.w)+' h'+(h.g?' + '+plHn(h.g)+' h de gestion':''))});
     for(let d=0;d<7;d++){
       w.sec(DAYN[d]+(nrows(p,d)>5?' (nocturne)':''));
-      for(let i=0;i<nrows(p,d);i++){const c=(p.cells[d]||{})[i]||{},wl=S.staff.filter(s=>c[s.id]==='w').map(fname),gl=S.staff.filter(s=>c[s.id]==='g').map(fname);
+      for(let i=0;i<nrows(p,d);i++){const c=(p.cells[d]||{})[i]||{},wl=S.staff.filter(s=>c[s.id]==='w'&&plLen(plTmplSeg(p,d,i,s.id))>0).map(s=>fname(s)+plTag(p,d,i,s.id)),gl=S.staff.filter(s=>c[s.id]==='g').map(fname);
         w.kv(PSL[i],(wl.join(', ')||'-')+(gl.length?'   |   Gestion : '+gl.join(', '):''))}
     }
   });
@@ -4448,7 +4478,7 @@ function mpWeeks(sid){
     for(let i=0;i<7;i++){
       const ds=addDays(f,i),lv=!!onLeave(sid,ds),c=lv?[]:cellsOf(planFor(ds),ds,sid);
       if(lv){lvd++;const last=items[items.length-1];if(last&&last.lv&&addDays(last.to,1)===ds)last.to=ds;else items.push({lv:true,ds,to:ds})}
-      else if(c.length){const hw=c.filter(x=>x[1]==='w').length*2,hg=c.filter(x=>x[1]==='g').length*2;h+=hw+hg;wd++;items.push({lv:false,ds,c,hw,hg,span:shiftLabel(ds,sid),mates:canAll()?mates(ds,sid,c):null})}
+      else if(c.length){const dh=plDayH(ds,sid),hw=dh.w,hg=dh.g;h+=hw+hg;wd++;items.push({lv:false,ds,c,hw,hg,span:shiftLabel(ds,sid),mates:canAll()?mates(ds,sid,c):null})}
     }
     W.push({f,t:addDays(f,6),items,h,wd,lvd});
   }
@@ -4457,9 +4487,9 @@ function mpWeeks(sid){
 const fShort=ds=>fdd(ds,{weekday:'short',day:'numeric',month:'short'});
 function mpText(sid){
   const s=S.staff.find(x=>x.id===sid);let o='Planning de '+(s?s.name:'')+'\n';
-  mpWeeks(sid).forEach(w=>{o+='\nSemaine du '+fdd(w.f,{day:'numeric',month:'long'})+' ('+w.h+' h)\n';
+  mpWeeks(sid).forEach(w=>{o+='\nSemaine du '+fdd(w.f,{day:'numeric',month:'long'})+' ('+plHn(w.h)+' h)\n';
     if(!w.items.length)o+='  Aucun jour prévu\n';
-    w.items.forEach(i=>{o+='  '+(i.lv?fShort(i.ds)+(i.to!==i.ds?' au '+fShort(i.to):'')+' : congé payé':fShort(i.ds)+' : '+i.span+' ('+(i.hw+i.hg)+' h'+(i.hg?', dont '+i.hg+' h de gestion':'')+')')+'\n'})});
+    w.items.forEach(i=>{o+='  '+(i.lv?fShort(i.ds)+(i.to!==i.ds?' au '+fShort(i.to):'')+' : congé payé':fShort(i.ds)+' : '+i.span+' ('+plHn(i.hw+i.hg)+' h'+(i.hg?', dont '+plHn(i.hg)+' h de gestion':'')+')')+'\n'})});
   return o;
 }
 function vMonPlanBase(m){
@@ -4470,11 +4500,11 @@ function vMonPlanBase(m){
   const dateBox=i=>`<div class="mpdate"><small>${fdd(i.ds,{weekday:'short'})}</small><b class="num">${new Date(i.ds+'T12:00').getDate()}</b><small>${fdd(i.ds,{month:'short'})}</small></div>`;
   m.innerHTML=`<div class="plan-h"><div style="display:flex;align-items:center;gap:12px">${stAv(s)}<div><h2 class="plan-t">${canAll()?'Planning de '+esc(s.name):'Mon planning'}</h2><p class="muted">Du ${fdd(W[0].f,{day:'numeric',month:'long'})} au ${fdd(W[3].t,{day:'numeric',month:'long'})} · uniquement les jours travaillés</p></div></div>
     <div class="plact">${canAll()?`<select data-mpsel="1" aria-label="Employé">${S.staff.map(x=>`<option value="${x.id}" ${x.id===sid?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}<button class="btn" data-act="mp_pdf">PDF</button><button class="btn" data-act="mp_txt">Copier</button></div></div>
-   <div class="pst" style="margin-bottom:12px"><span><b class="num">${tot}</b> h sur 4 semaines</span><span><b class="num">${days}</b> jour${days>1?'s':''} travaillé${days>1?'s':''}</span><span><b class="num">${lv}</b> jour${lv>1?'s':''} de congé</span>${nxt?`<span>Prochain : <b>${fShort(nxt.ds)}</b>, ${nxt.span}</span>`:''}</div>
+   <div class="pst" style="margin-bottom:12px"><span><b class="num">${plHn(tot)}</b> h sur 4 semaines</span><span><b class="num">${days}</b> jour${days>1?'s':''} travaillé${days>1?'s':''}</span><span><b class="num">${lv}</b> jour${lv>1?'s':''} de congé</span>${nxt?`<span>Prochain : <b>${fShort(nxt.ds)}</b>, ${nxt.span}</span>`:''}</div>
    <div class="mpnav"><button class="btn" data-act="mp_prev">${ic('left')}Avant</button><button class="btn" data-act="mp_now">Cette semaine</button><button class="btn" data-act="mp_next">Après${ic('right')}</button></div>
-   ${W.map(w=>`<div class="mpw"><div class="mpwh"><b>Semaine du ${fdd(w.f,{day:'numeric',month:'long'})}</b><span class="pill ${w.h?'':'warn'}">${w.h} h</span></div>
+   ${W.map(w=>`<div class="mpw"><div class="mpwh"><b>Semaine du ${fdd(w.f,{day:'numeric',month:'long'})}</b><span class="pill ${w.h?'':'warn'}">${plHF(w.h)}</span></div>
      ${w.items.length?w.items.map(i=>i.lv?`<div class="mpd lv">${dateBox(i)}<div class="mpb"><b>Congé payé</b><span class="muted">${i.to!==i.ds?'Jusqu’au '+fShort(i.to):'Journée de repos'}</span></div></div>`
-       :`<div class="mpd ${i.ds===today()?'mpnow':''}">${dateBox(i)}<div class="mpb"><b>${i.span}</b><span class="muted">${i.hw} h en poste${i.hg?' · '+i.hg+' h de gestion':''}${i.mates?(i.mates.length?' · Avec '+esc(i.mates.join(', ')):' · Aucun collègue prévu'):''}</span></div>${i.ds===today()?'<span class="pill ok">Aujourd’hui</span>':''}</div>`).join(''):'<p class="muted" style="margin:6px 0 2px">Aucun jour de travail prévu cette semaine.</p>'}</div>`).join('')}`;
+       :`<div class="mpd ${i.ds===today()?'mpnow':''}">${dateBox(i)}<div class="mpb"><b>${i.span}</b><span class="muted">${plHn(i.hw)} h en poste${i.hg?' · '+plHn(i.hg)+' h de gestion':''}${i.mates?(i.mates.length?' · Avec '+esc(i.mates.join(', ')):' · Aucun collègue prévu'):''}</span></div>${i.ds===today()?'<span class="pill ok">Aujourd’hui</span>':''}</div>`).join(''):'<p class="muted" style="margin:6px 0 2px">Aucun jour de travail prévu cette semaine.</p>'}</div>`).join('')}`;
 }
 TABS.staff=[['equipe','Planning'],['sjour','Jour'],['monplan','Mon planning'],['conges','Congés']];
 SUBS.monplan=vMonPlan;
@@ -4489,10 +4519,10 @@ document.addEventListener('click',e=>{
   else if(a==='mp_pdf'){
     const s=S.staff.find(x=>x.id===sid);if(!s)return;const W=mpWeeks(sid);
     const bytes=pdfBuild('Planning de '+s.name,'Du '+fdd(W[0].f,{day:'numeric',month:'long',year:'numeric'})+' au '+fdd(W[3].t,{day:'numeric',month:'long',year:'numeric'}),'Planning perso',w=>{
-      w.sec('Résumé');w.kv('Heures sur 4 semaines',W.reduce((a,x)=>a+x.h,0)+' h');w.kv('Jours travaillés',String(W.reduce((a,x)=>a+x.wd,0)));w.kv('Jours de congé',String(W.reduce((a,x)=>a+x.lvd,0)));
-      W.forEach(x=>{w.sec('Semaine du '+fdd(x.f,{day:'numeric',month:'long'})+' - '+x.h+' h');
+      w.sec('Résumé');w.kv('Heures sur 4 semaines',plHn(W.reduce((a,x)=>a+x.h,0))+' h');w.kv('Jours travaillés',String(W.reduce((a,x)=>a+x.wd,0)));w.kv('Jours de congé',String(W.reduce((a,x)=>a+x.lvd,0)));
+      W.forEach(x=>{w.sec('Semaine du '+fdd(x.f,{day:'numeric',month:'long'})+' - '+plHn(x.h)+' h');
         if(!x.items.length)w.p('Aucun jour de travail prévu.');
-        x.items.forEach(i=>i.lv?w.row(fShort(i.ds)+(i.to!==i.ds?' au '+fShort(i.to):'')+' : congé payé','CP'):w.row(fShort(i.ds)+' : '+i.span+(i.hg?' (dont '+i.hg+' h de gestion)':'')+(i.mates&&i.mates.length?'  -  avec '+i.mates.join(', '):''),(i.hw+i.hg)+' h'))})
+        x.items.forEach(i=>i.lv?w.row(fShort(i.ds)+(i.to!==i.ds?' au '+fShort(i.to):'')+' : congé payé','CP'):w.row(fShort(i.ds)+' : '+i.span+(i.hg?' (dont '+plHn(i.hg)+' h de gestion)':'')+(i.mates&&i.mates.length?'  -  avec '+i.mates.join(', '):''),plHn(i.hw+i.hg)+' h'))})
     });
     saveBytes('Planning-'+fname(s)+'-'+today()+'.pdf',bytes,'application/pdf');
   }
@@ -4525,18 +4555,18 @@ function vTrophy(m){
   const badges=r=>{const tr=tierOf(r.h,trk),o=[];if(tr.cur)o.push(`<span class="pill ok">${esc(tr.cur.n)}</span>`);if(r.days&&r.days===mostDays&&R.filter(x=>x.days===mostDays).length===1)o.push('<span class="pill">Le plus régulier</span>');if(r.max&&r.max===longest&&longest>=8&&R.filter(x=>x.max===longest).length===1)o.push('<span class="pill">Grosse journée</span>');return o.join('')};
   const given=r=>awards().find(a=>a.key===label+'|'+r);
   const pod=i=>{const x=top[i-1];if(!x)return'<div></div>';const pz=er['t'+i],g=given(i);
-    return `<div class="pod p${i}">${stAv(x.s)}<b>${esc(fname(x.s))}</b><span class="num">${x.h} h</span>${pz?`<small class="muted">${esc(pz)}</small>`:(adm?'<small class="muted">Récompense à définir</small>':'')}
+    return `<div class="pod p${i}">${stAv(x.s)}<b>${esc(fname(x.s))}</b><span class="num">${plHn(x.h)} h</span>${pz?`<small class="muted">${esc(pz)}</small>`:(adm?'<small class="muted">Récompense à définir</small>':'')}
       ${g?`<span class="pill ok">Remis</span>`:(adm?`<button class="btn sm" data-act="tr_give" data-r="${i}">Marquer remis</button>`:'')}<div class="pdb">${i}</div></div>`};
   const hall=[];for(let i=1;i<=6;i++){const d=new Date(today()+'T12:00'),pm=new Date(d.getFullYear(),d.getMonth()-i,1),a=dkey(pm),b=dkey(new Date(pm.getFullYear(),pm.getMonth()+1,0));
     const best=S.staff.map(s=>({s,...hoursIn(s.id,a,b)})).sort((x,y)=>y.h-x.h)[0];if(best&&best.h>0)hall.push([MOIS[pm.getMonth()]+' '+pm.getFullYear(),best])}
   let me='';
   if(sid){const mr=R.find(r=>r.s.id===sid);if(mr){const tr=tierOf(mr.h,trk),pc=tr.nxt?Math.min(100,Math.round(mr.h/(tr.nxt.h*tr.f)*100)):100;
-    me=`<div class="card tr-me" style="margin-bottom:14px"><h3>Mon score · ${esc(label)}</h3><div class="tr-big"><b class="num">${mr.h} h</b><span class="muted">${mr.days} jour${mr.days>1?'s':''} travaillé${mr.days>1?'s':''}${all&&mr.h>0?' · rang '+(R.indexOf(mr)+1)+' sur '+top.length:''}</span></div>
+    me=`<div class="card tr-me" style="margin-bottom:14px"><h3>Mon score · ${esc(label)}</h3><div class="tr-big"><b class="num">${plHn(mr.h)} h</b><span class="muted">${mr.days} jour${mr.days>1?'s':''} travaillé${mr.days>1?'s':''}${all&&mr.h>0?' · rang '+(R.indexOf(mr)+1)+' sur '+top.length:''}</span></div>
       <div class="hbl"><div class="hbb"><i style="width:${pc}%"></i></div></div><p class="muted" style="margin:8px 0 0;font-size:13px">${tr.cur?'Palier atteint : <b>'+esc(tr.cur.n)+'</b>. ':''}${tr.nxt?'Prochain palier « '+esc(tr.nxt.n)+' » à '+Math.round(tr.nxt.h*tr.f)+' h.':'Tous les paliers sont atteints, bravo !'}</p></div>`}}
   const board=!er.on?`<div class="banner"><span>Les trophées sont désactivés par l’administrateur.</span></div>`
     :me+(all?(top.length?`<div class="card"><h3>Podium</h3><div class="podium">${pod(2)}${pod(1)}${pod(3)}</div></div>
-      <div class="card" style="margin-top:14px"><h3>Classement</h3>${R.map((r,i)=>`<div class="row"><b class="rk num">${r.h?i+1:'–'}</b>${stAv(r.s)}<span class="grow"><b>${esc(r.s.name)}</b><div class="hbl"><div class="hbb"><i style="width:${Math.round(r.h/maxH*100)}%"></i></div></div></span><span class="tr-b">${badges(r)}</span><b class="num">${r.h} h</b></div>`).join('')}</div>
-      ${hall.length?`<div class="card" style="margin-top:14px"><h3>Employés du mois</h3>${hall.map(([l,b])=>`<div class="row">${stAv(b.s)}<span class="grow"><b>${esc(b.s.name)}</b><span class="muted">${l}</span></span><b class="num">${b.h} h</b></div>`).join('')}</div>`:''}`
+      <div class="card" style="margin-top:14px"><h3>Classement</h3>${R.map((r,i)=>`<div class="row"><b class="rk num">${r.h?i+1:'–'}</b>${stAv(r.s)}<span class="grow"><b>${esc(r.s.name)}</b><div class="hbl"><div class="hbb"><i style="width:${Math.round(r.h/maxH*100)}%"></i></div></div></span><span class="tr-b">${badges(r)}</span><b class="num">${plHn(r.h)} h</b></div>`).join('')}</div>
+      ${hall.length?`<div class="card" style="margin-top:14px"><h3>Employés du mois</h3>${hall.map(([l,b])=>`<div class="row">${stAv(b.s)}<span class="grow"><b>${esc(b.s.name)}</b><span class="muted">${l}</span></span><b class="num">${plHn(b.h)} h</b></div>`).join('')}</div>`:''}`
       :`<div class="card"><p class="muted">Pas encore d’heures sur cette période : le classement apparaîtra dès les premiers jours terminés.</p></div>`):'');
   m.innerHTML=`<div class="plan-h"><div><h2 class="plan-t">Trophées de l’équipe</h2><p class="muted">Heures planifiées sur les jours terminés, congés exclus · ${esc(label)}</p></div></div>
    <div class="chips" style="margin-bottom:12px">${chips}</div>${board}
@@ -5782,7 +5812,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v47';
+const LAGO_V='v48';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -6493,7 +6523,8 @@ const SW_MAXW=48,SW_REST=11,SW_DAYS=28;
 const swList=()=>S.swaps||(S.swaps=[]);
 const swNots=()=>S.notifs||(S.notifs=[]);
 const swMe=()=>(ME&&ME.staffId)||'';
-const swLab=sl=>{if(!sl.length)return'';const a=Math.min(...sl),b=Math.max(...sl),e=12+2*b;return (10+2*a)+'h–'+(e>=24?'00':e)+'h'};
+const swLab=(sl,ds,id)=>{if(!sl.length)return'';if(ds&&id){const r=plRange(sl.map(i=>plSeg(ds,id,i,'w')));if(r)return plF(r[0])+'–'+plF(r[1])}const a=Math.min(...sl),b=Math.max(...sl),e=12+2*b;return (10+2*a)+'h–'+(e>=24?'00':e)+'h'};
+const swHA=w=>plHn(plHs(w.dA,w.a,w.sA));
 const swFn=id=>{const s=S.staff.find(x=>x.id===id);return s?fname(s):'?'};
 const swNm=id=>{const s=S.staff.find(x=>x.id===id);return s?s.name:'?'};
 const swSort=a=>a.slice().sort((x,y)=>x-y);
@@ -6518,27 +6549,22 @@ function cellsOf(p,ds,id){
   own.forEach((set,i)=>{if(set.has(id))res.push([i,'w'])});
   return res.sort((a,b)=>a[0]-b[0]);
 }
-function staffAt(ds,h){
-  const L=swMovesFor(ds);if(!L.length)return staffAtBase(ds,h);
-  const p=planFor(ds),d=dowOf(ds),i=Math.floor((h-10)/2);if(i<0||i>=nrows(p,d))return [];
-  const o=swOwners(p,ds,L).get(i)||new Set();return S.staff.filter(s=>o.has(s.id)&&!onLeave(s.id,ds));
-}
 function swDayCells(p,d,ds){
   if(!swMovesFor(ds).length)return p.cells[d]||{};
   const o={};S.staff.forEach(s=>cellsOf(p,ds,s.id).forEach(([i,v])=>{(o[i]=o[i]||{})[s.id]=v}));return o;
 }
 function swShifts(id,from,days){
   const out=[];
-  for(let k=0;k<days;k++){const ds=addDays(from,k);if(onLeave(id,ds))continue;const sl=swW(ds,id);if(sl.length)out.push({ds,sl,h:sl.length*2,lab:swLab(sl)})}
+  for(let k=0;k<days;k++){const ds=addDays(from,k);if(onLeave(id,ds))continue;const sl=swW(ds,id);if(sl.length)out.push({ds,sl,h:plHs(ds,id,sl),lab:swLab(sl,ds,id)})}
   return out;
 }
-function swWeekH(id,ds){const f=swWeek(ds);let h=0;for(let i=0;i<7;i++){const d=addDays(f,i);h+=cellsOf(planFor(d),d,id).length*2}return h}
+function swWeekH(id,ds){const f=swWeek(ds);let h=0;for(let i=0;i<7;i++){const d=addDays(f,i);const x=plDayH(d,id);h+=x.w+x.g}return h}
 
 /* ---- l'algorithme : une demande est-elle valable ? ---- */
 function swCheck(w){
   const hard=[],warn=[],ok=[],t=today();
   const A=w.a,B=w.b,dA=w.dA,dB=w.dB,sw=w.kind==='swap',sA=swSort(w.sA),sB=sw?swSort(w.sB):[];
-  const hA=sA.length*2,hB=sB.length*2;
+  const hA=plHs(dA,A,sA),hB=sw?plHs(dB,B,sB):0;
   if(!sA.length)hard.push('Aucun créneau sélectionné.');
   if(dA<t||(sw&&dB<t))hard.push('Une des dates est déjà passée.');
   if(onLeave(A,dA))hard.push(swFn(A)+' est en congé le '+fShort(dA)+'.');
@@ -6547,16 +6573,16 @@ function swCheck(w){
     if(B===A)hard.push('Il faut choisir un autre collègue.');
     if(onLeave(B,dA))hard.push(swFn(B)+' est en congé le '+fShort(dA)+'.');
     const busyB=cellsOf(planFor(dA),dA,B).filter(c=>sA.includes(c[0]));
-    if(busyB.length)hard.push(swFn(B)+' est déjà planifié sur ce créneau le '+fShort(dA)+' ('+swLab(busyB.map(c=>c[0]))+').');
+    if(busyB.length)hard.push(swFn(B)+' est déjà planifié sur ce créneau le '+fShort(dA)+' ('+swLab(busyB.map(c=>c[0]),dA,B)+').');
     if(sw){
       if(onLeave(B,dB))hard.push(swFn(B)+' est en congé le '+fShort(dB)+'.');
       else if(swW(dB,B).join()!==sB.join())hard.push(swFn(B)+' n’a plus ce shift au planning du '+fShort(dB)+'.');
       if(onLeave(A,dB))hard.push(swFn(A)+' est en congé le '+fShort(dB)+'.');
       const busyA=cellsOf(planFor(dB),dB,A).filter(c=>sB.includes(c[0]));
-      if(busyA.length)hard.push(swFn(A)+' est déjà planifié sur ce créneau le '+fShort(dB)+' ('+swLab(busyA.map(c=>c[0]))+').');
+      if(busyA.length)hard.push(swFn(A)+' est déjà planifié sur ce créneau le '+fShort(dB)+' ('+swLab(busyA.map(c=>c[0]),dB,A)+').');
       if(dA===dB&&sA.some(x=>sB.includes(x)))hard.push('Ces deux shifts se chevauchent le même jour : l’échange ne changerait rien.');
-      if(hA!==hB)hard.push('Les heures ne correspondent pas : '+hA+' h contre '+hB+' h.');
-      else if(sA.length)ok.push('Heures identiques : '+hA+' h contre '+hB+' h.');
+      if(hA!==hB)hard.push('Les heures ne correspondent pas : '+plHn(hA)+' h contre '+plHn(hB)+' h.');
+      else if(sA.length)ok.push('Heures identiques : '+plHn(hA)+' h contre '+plHn(hB)+' h.');
     }
   }
   /* un autre échange en cours touche déjà ces créneaux */
@@ -6571,7 +6597,7 @@ function swCheck(w){
   add(A,dA,-hA);add(B,dA,hA);if(sw){add(B,dB,-hB);add(A,dB,hB)}
   Object.keys(dl).forEach(k=>{
     if(!dl[k])return;const [p,wk]=k.split('|'),before=swWeekH(p,wk),after=before+dl[k];
-    if(after>SW_MAXW)warn.push('Semaine du '+fdd(wk,{day:'numeric',month:'long'})+' : '+swFn(p)+' passerait à '+after+' h (maximum '+SW_MAXW+' h).');
+    if(after>SW_MAXW)warn.push('Semaine du '+fdd(wk,{day:'numeric',month:'long'})+' : '+swFn(p)+' passerait à '+plHn(after)+' h (maximum '+SW_MAXW+' h).');
   });
   /* repos entre deux jours de travail */
   const post=(p,d)=>{const s=new Set(swW(d,p));
@@ -6592,7 +6618,7 @@ const swHasAccount=id=>{try{return accs().some(a=>a.staffId===id&&!['pending','o
 
 /* propositions automatiques : mêmes heures, aucun conflit */
 function swSuggest(a,dA,sA){
-  const t=today(),out=[],hA=sA.length*2;
+  const t=today(),out=[],hA=plHs(dA,a,sA);
   S.staff.forEach(b=>{
     if(b.id===a)return;
     swShifts(b.id,t,SW_DAYS).forEach(x=>{
@@ -6624,8 +6650,8 @@ const swUnread=()=>ME?swNots().filter(n=>!n.read&&swMine().includes(n.to)):[];
 function swDesc(w){
   const a=swFn(w.a),b=w.b?swFn(w.b):'';
   return w.kind==='swap'
-    ?a+' ('+fShort(w.dA)+', '+swLab(w.sA)+') ⇄ '+b+' ('+fShort(w.dB)+', '+swLab(w.sB)+') · '+w.sA.length*2+' h'
-    :a+' : '+fShort(w.dA)+', '+swLab(w.sA)+' ('+w.sA.length*2+' h)'+(b?' → '+b:'');
+    ?a+' ('+fShort(w.dA)+', '+swLab(w.sA,w.dA,w.a)+') ⇄ '+b+' ('+fShort(w.dB)+', '+swLab(w.sB,w.dB,w.b)+') · '+swHA(w)+' h'
+    :a+' : '+fShort(w.dA)+', '+swLab(w.sA,w.dA,w.a)+' ('+swHA(w)+' h)'+(b?' → '+b:'');
 }
 function swFinish(w){
   w.st='ok';w.okTs=Date.now();(w.log=w.log||[]).push({ts:Date.now(),t:'Échange validé'});
@@ -6636,9 +6662,9 @@ function swCreate(f){
   const w={id:uid(),ts:Date.now(),kind:f.kind,a:f.a,b:f.b||'',dA:f.dA,sA:swSort(f.sA),dB:f.kind==='swap'?f.dB:'',sB:f.kind==='swap'?swSort(f.sB):[],st:'peer',note:(f.note||'').slice(0,300),by:ME?ME.id:'',log:[{ts:Date.now(),t:'Demande créée'}]};
   const c=swCheck(w);if(c.hard.length)return {err:c.hard[0]};
   swList().push(w);
-  if(w.kind==='swap')swNotify(w.b,swFn(w.a)+' vous propose un échange : son shift du '+fShort(w.dA)+' ('+swLab(w.sA)+') contre votre shift du '+fShort(w.dB)+' ('+swLab(w.sB)+'), '+w.sA.length*2+' h chacun. Répondez dans Staff › Échanges.',w);
-  else if(w.b)swNotify(w.b,swFn(w.a)+' vous demande de reprendre son shift du '+fShort(w.dA)+' ('+swLab(w.sA)+', '+w.sA.length*2+' h). Répondez dans Staff › Échanges.',w);
-  else swTakers(w.a,w.dA,w.sA,w.id).forEach(x=>swNotify(x.b,swFn(w.a)+' cherche quelqu’un pour reprendre son shift du '+fShort(w.dA)+' ('+swLab(w.sA)+', '+w.sA.length*2+' h). Staff › Échanges.',w));
+  if(w.kind==='swap')swNotify(w.b,swFn(w.a)+' vous propose un échange : son shift du '+fShort(w.dA)+' ('+swLab(w.sA,w.dA,w.a)+') contre votre shift du '+fShort(w.dB)+' ('+swLab(w.sB,w.dB,w.b)+'), '+swHA(w)+' h chacun. Répondez dans Staff › Échanges.',w);
+  else if(w.b)swNotify(w.b,swFn(w.a)+' vous demande de reprendre son shift du '+fShort(w.dA)+' ('+swLab(w.sA,w.dA,w.a)+', '+swHA(w)+' h). Répondez dans Staff › Échanges.',w);
+  else swTakers(w.a,w.dA,w.sA,w.id).forEach(x=>swNotify(x.b,swFn(w.a)+' cherche quelqu’un pour reprendre son shift du '+fShort(w.dA)+' ('+swLab(w.sA,w.dA,w.a)+', '+swHA(w)+' h). Staff › Échanges.',w));
   save();return {w};
 }
 function swAccept(id,by){
@@ -6684,7 +6710,7 @@ function swUndo(id){
 }
 
 /* ---- écran « Échanges » ---- */
-function swSide(id,ds,sl){return `<div class="sws"><span class="swn">${esc(swFn(id))}</span><b>${esc(fShort(ds))}</b><span class="muted">${swLab(sl)} · ${sl.length*2} h</span></div>`}
+function swSide(id,ds,sl){return `<div class="sws"><span class="swn">${esc(swFn(id))}</span><b>${esc(fShort(ds))}</b><span class="muted">${swLab(sl,ds,id)} · ${plHn(plHs(ds,id,sl))} h</span></div>`}
 function swCard(w){
   const me=swMe(),adm=isAdmin(),act=['peer','admin'].includes(w.st),c=act?swCheck(w):null,st=SW_ST[w.st]||['',w.st];
   const right=w.kind==='swap'?swSide(w.b,w.dB,w.sB):`<div class="sws"><span class="swn">${w.b?esc(swFn(w.b)):'Un collègue'}</span><b>reprend le shift</b><span class="muted">sans contrepartie</span></div>`;
@@ -6746,7 +6772,7 @@ function swOpen(ds){
 function swFill(){
   const sel=$('#swsh');if(!sel)return;const sh=swShifts(SWF.a,today(),SW_DAYS);
   if(!sh.length){sel.innerHTML='<option value="">Aucun shift à venir</option>';$('#swsug').innerHTML='<p class="muted">Aucun shift planifié dans les '+SW_DAYS+' prochains jours.</p>';$('#swsend').disabled=true;return}
-  sel.innerHTML=sh.map(x=>`<option value="${x.ds}" ${x.ds===SWF.ds?'selected':''}>${esc(fdd(x.ds,{weekday:'long',day:'numeric',month:'long'}))} · ${x.lab} · ${x.h} h</option>`).join('');
+  sel.innerHTML=sh.map(x=>`<option value="${x.ds}" ${x.ds===SWF.ds?'selected':''}>${esc(fdd(x.ds,{weekday:'long',day:'numeric',month:'long'}))} · ${x.lab} · ${plHn(x.h)} h</option>`).join('');
   swSug();
 }
 function swCurShift(){const ds=SWF.ds,sl=swW(ds,SWF.a);return {ds,sl}}
@@ -6755,8 +6781,8 @@ function swSug(){
   if(!sl.length){box.innerHTML='<p class="muted">Ce shift n’existe plus.</p>';btn.disabled=true;return}
   if(SWF.mode==='swap'){
     const L=swSuggest(SWF.a,ds,sl);
-    box.innerHTML=`<p class="swsh3">${L.length?L.length+' échange'+(L.length>1?'s':'')+' possible'+(L.length>1?'s':'')+' (mêmes '+sl.length*2+' h, aucun conflit)':'Aucun échange compatible'}</p>`+
-      (L.length?L.map((x,i)=>`<label class="swopt"><input type="radio" name="swpick" value="${i}" ${i===0?'checked':''}><span><b>${esc(swNm(x.b))}</b> · ${esc(fdd(x.dB,{weekday:'short',day:'numeric',month:'short'}))} · ${x.lab}${x.warn.length?`<em class="swwa">⚠ ${esc(x.warn[0])}</em>`:''}</span></label>`).join(''):`<p class="muted">Personne n’a un shift de ${sl.length*2} h, sans congé ni chevauchement, dans les ${SW_DAYS} prochains jours. Essayez « Chercher quelqu’un pour le reprendre ».</p>`);
+    box.innerHTML=`<p class="swsh3">${L.length?L.length+' échange'+(L.length>1?'s':'')+' possible'+(L.length>1?'s':'')+' (mêmes '+plHn(plHs(ds,SWF.a,sl))+' h, aucun conflit)':'Aucun échange compatible'}</p>`+
+      (L.length?L.map((x,i)=>`<label class="swopt"><input type="radio" name="swpick" value="${i}" ${i===0?'checked':''}><span><b>${esc(swNm(x.b))}</b> · ${esc(fdd(x.dB,{weekday:'short',day:'numeric',month:'short'}))} · ${x.lab}${x.warn.length?`<em class="swwa">⚠ ${esc(x.warn[0])}</em>`:''}</span></label>`).join(''):`<p class="muted">Personne n’a un shift de ${plHn(plHs(ds,SWF.a,sl))} h, sans congé ni chevauchement, dans les ${SW_DAYS} prochains jours. Essayez « Chercher quelqu’un pour le reprendre ».</p>`);
     box._L=L;btn.disabled=!L.length;btn.textContent='Envoyer la proposition';
   }else{
     const L=swTakers(SWF.a,ds,sl);
@@ -6843,6 +6869,178 @@ setInterval(swTick,3000);
 
 /* transition douce quand on change de page (pas à chaque rafraîchissement des données) */
 addEventListener('hashchange',()=>{const m=document.getElementById('main');if(!m)return;m.classList.add('vt');clearTimeout(m._vt);m._vt=setTimeout(()=>m.classList.remove('vt'),420)});
+/* ---- v48 : planning staff — horaires personnalisés (arrivée / départ par personne et par jour) ---- */
+/* Modèle : p.cut[jour][idEmployé] = [arrivée, départ] en heures (ex. [10,17] ; 30 minutes possibles).
+   Les cases (créneaux de 2 h) restent inchangées ; le « cut » rogne seulement les heures effectives. */
+const plHn=h=>String(Math.round(h*100)/100).replace('.',',');
+const plHF=h=>plHn(h)+' h';
+const plF=h=>{const H=Math.floor(h+1e-9),m=Math.round((h-H)*60);return (H>=24?'00':H)+'h'+(m?String(m).padStart(2,'0'):'')};
+function plSpan(p,d,id){
+  const n=nrows(p,d),dc=p.cells[d]||{};let a=null,b=null;
+  for(let i=0;i<n;i++)if((dc[i]||{})[id]){const s=10+2*i;if(a===null)a=s;b=s+2}
+  return a===null?null:[a,b];
+}
+/* horaire effectif de la personne ce jour-là (ou null = journée complète) */
+function plCut(p,d,id){
+  const c=p.cut&&p.cut[d]&&p.cut[d][id];if(!Array.isArray(c)||c.length<2)return null;
+  const sp=plSpan(p,d,id);if(!sp)return null;
+  const x=Math.max(+c[0],sp[0]),y=Math.min(+c[1],sp[1]);
+  if(!(y-x>=.5)||(x<=sp[0]&&y>=sp[1]))return null;
+  return [x,y];
+}
+/* qui possédait à l'origine chaque créneau (les échanges validés déplacent le shift ET son horaire) */
+function plProv(p,ds){
+  const d=dowOf(ds),n=nrows(p,d),own=new Map();
+  for(let i=0;i<n;i++){const m=new Map();S.staff.forEach(s=>{if((((p.cells[d]||{})[i])||{})[s.id]==='w')m.set(s.id,s.id)});own.set(i,m)}
+  swMovesFor(ds).forEach(w=>{
+    const mv=[];if(w.dA===ds)w.sA.forEach(s=>mv.push([s,w.a,w.b]));if(w.kind==='swap'&&w.dB===ds)w.sB.forEach(s=>mv.push([s,w.b,w.a]));
+    mv.forEach(([s,f,t])=>{const o=own.get(s);if(o&&o.has(f)){const orig=o.get(f);o.delete(f);if(t)o.set(t,orig)}});
+  });
+  return own;
+}
+function plWho(ds,id,i,v){
+  if(v!=='w'||!swMovesFor(ds).length)return id;
+  const o=plProv(planFor(ds),ds).get(i);return o&&o.has(id)?o.get(id):id;
+}
+const plClamp=(i,c)=>{const a=10+2*i,b=a+2;return c?[Math.max(a,c[0]),Math.min(b,c[1])]:[a,b]};
+/* segment [début, fin] effectif d'une case, pour une date précise */
+function plSeg(ds,id,i,v){return plClamp(i,plCut(planFor(ds),dowOf(ds),plWho(ds,id,i,v)))}
+/* segment d'une case dans le planning type (sans date) */
+const plTmplSeg=(p,d,i,id)=>plClamp(i,plCut(p,d,id));
+const plLen=g=>Math.max(0,g[1]-g[0]);
+function plDayH(ds,id){
+  let w=0,g=0;
+  cellsOf(planFor(ds),ds,id).forEach(([i,v])=>{const h=plLen(plSeg(ds,id,i,v));if(v==='w')w+=h;else if(v==='g')g+=h});
+  return {w,g};
+}
+const plHs=(ds,id,sl)=>sl.reduce((a,i)=>a+plLen(plSeg(ds,id,i,'w')),0);
+function plSegs(ds,id){return cellsOf(planFor(ds),ds,id).map(([i,v])=>plSeg(ds,id,i,v)).filter(g=>g[1]>g[0])}
+function plRange(segs){let a=99,b=0;segs.forEach(g=>{if(g[1]>g[0]){a=Math.min(a,g[0]);b=Math.max(b,g[1])}});return b?[a,b]:null}
+
+/* ---- remplacements des fonctions de calcul d'heures ---- */
+function planHours(p,id){
+  let w=0,g=0;
+  Object.entries(p.cells).forEach(([d,rows])=>Object.entries(rows).forEach(([i,c])=>{
+    if(+i<nrows(p,d)&&c[id]){const h=plLen(plTmplSeg(p,+d,+i,id));if(c[id]==='w')w+=h;else if(c[id]==='g')g+=h}
+  }));
+  return {w,g};
+}
+function shiftLabel(ds,id){
+  const r=plRange(plSegs(ds,id));return r?plF(r[0])+'–'+plF(r[1]):'';
+}
+function mates(ds,sid,c){
+  const mine=plSegs(ds,sid);
+  return S.staff.filter(s=>s.id!==sid&&!onLeave(s.id,ds)&&plSegs(ds,s.id).some(y=>mine.some(x=>x[0]<y[1]&&y[0]<x[1]))).map(fname);
+}
+function hoursIn(sid,from,to){
+  const lim=today();let h=0,days=0,max=0;
+  for(let ds=from;ds<=to&&ds<lim;ds=addDays(ds,1)){if(onLeave(sid,ds))continue;const c=cellsOf(planFor(ds),ds,sid);if(c.length){const dh=plDayH(ds,sid),x=dh.w+dh.g;h+=x;days++;if(x>max)max=x}}
+  return {h,days,max};
+}
+function staffAt(ds,h){
+  const p=planFor(ds),d=dowOf(ds),i=Math.floor((h-10)/2);if(i<0||i>=nrows(p,d))return [];
+  return S.staff.filter(s=>!onLeave(s.id,ds)&&cellsOf(p,ds,s.id).some(([j,v])=>{if(j!==i||v!=='w')return false;const g=plSeg(ds,s.id,j,v);return g[0]<=h&&g[1]>=h+1}));
+}
+
+/* ---- affichage de la grille ---- */
+function plCellSeg(p,d,ds,i,id,v){return ds?plSeg(ds,id,i,v):plTmplSeg(p,d,i,id)}
+function plFill(p,d,ds,i,id,v){
+  if(!v)return '';
+  const g=plCellSeg(p,d,ds,i,id,v),a=10+2*i;
+  if(g[0]<=a&&g[1]>=a+2)return '';
+  const e=Math.max(0,Math.min(100,(Math.min(g[0],a+2)-a)/2*100)),f=g[1]>g[0]?Math.max(e,Math.min(100,(g[1]-a)/2*100)):e;
+  const r=n=>Math.round(n*10)/10;
+  if(v==='w'){const T='color-mix(in srgb,var(--c) 14%,#fff)';return `;background:linear-gradient(180deg,${T} 0 ${r(e)}%,var(--c) ${r(e)}% ${r(f)}%,${T} ${r(f)}% 100%)`}
+  const T='rgba(255,255,255,.8)';
+  return `;background:linear-gradient(180deg,${T} 0 ${r(e)}%,transparent ${r(e)}% ${r(f)}%,${T} ${r(f)}% 100%),repeating-linear-gradient(135deg,#F8D4D4 0 6px,#F2BFBF 6px 12px)`;
+}
+function plTxt(p,d,ds,i,id,v){
+  if(!v)return '';
+  const g=plCellSeg(p,d,ds,i,id,v),a=10+2*i,b=a+2,full=g[0]<=a&&g[1]>=b;
+  if(full)return v==='g'?'Gestion':'';
+  if(g[1]<=g[0])return '';
+  const t=g[0]>a&&g[1]<b?plF(g[0])+'–'+plF(g[1]):g[0]>a?'dès '+plF(g[0]):'→ '+plF(g[1]);
+  return `<small>${t}</small>`;
+}
+function plBtn(p,d,ro){
+  return ro?'':`<button type="button" class="btn plt" data-act="pltime" data-d="${d}" data-p="${p.id}">${ic('clock')}Horaires</button>`;
+}
+function plNotes(p,d,ds,dc){
+  const n=nrows(p,d),out=[];
+  visStaff().forEach(s=>{
+    if(ds&&onLeave(s.id,ds))return;
+    let full=0,hrs=0;const segs=[];
+    for(let i=0;i<n;i++){const v=(dc[i]||{})[s.id];if(!v)continue;full+=2;const g=plCellSeg(p,d,ds,i,s.id,v);hrs+=plLen(g);segs.push(g)}
+    if(full&&hrs<full){const r=plRange(segs);
+      out.push(`<span class="plcut"><i style="background:${scol(s)}"></i><b>${esc(fname(s))}</b>${r?' '+plF(r[0])+'–'+plF(r[1]):' hors horaires'}<em>${plHF(hrs)}</em></span>`)}
+  });
+  return out.length?`<div class="plcuts" role="note" aria-label="Horaires particuliers">${out.join('')}</div>`:'';
+}
+
+/* ---- fenêtre « Horaires » ---- */
+function plHoursFor(p,d,id,x,y){
+  let h=0;for(let i=0;i<nrows(p,d);i++){if(((p.cells[d]||{})[i]||{})[id]){const a=10+2*i;h+=Math.max(0,Math.min(a+2,y)-Math.max(a,x))}}return h;
+}
+function plFull(p,d,id){let h=0;for(let i=0;i<nrows(p,d);i++)if(((p.cells[d]||{})[i]||{})[id])h+=2;return h}
+function plRead(r,p,d){
+  const id=r.dataset.s,si=r.querySelector('[data-pl="in"]'),so=r.querySelector('[data-pl="out"]'),a=+r.dataset.a,b=+r.dataset.b;
+  return {id,si,so,a,b,x:+si.value,y:+so.value,p,d};
+}
+function plShow(r,p,d){
+  const o=plRead(r,p,d),ph=r.querySelector('.plph'),h=plHoursFor(p,d,o.id,o.x,o.y),full=plFull(p,d,o.id),cut=o.x>o.a||o.y<o.b;
+  ph.className='plph'+(cut?' cut':'');
+  ph.innerHTML=cut?`<b>${plHF(h)}</b> au lieu de ${plHF(full)}`:`Journée complète · <b>${plHF(full)}</b>`;
+}
+function plTimeForm(d,pid){
+  const p=S.plans.find(x=>x.id===pid)||curPlan(),rows=visStaff().map(s=>({s,sp:plSpan(p,d,s.id)})).filter(x=>x.sp);
+  const opts=(a,b,sel)=>{let o='';for(let h=a;h<=b+1e-9;h+=.5)o+=`<option value="${h}" ${Math.abs(h-sel)<1e-9?'selected':''}>${plF(h)}</option>`;return o};
+  const body=rows.length?rows.map(({s,sp})=>{
+    const c=plCut(p,d,s.id)||sp;
+    return `<div class="plr" data-s="${s.id}" data-a="${sp[0]}" data-b="${sp[1]}"><div class="plwho"><i style="background:${scol(s)}"></i><span class="plnm">${esc(s.name)}</span></div>
+      <label>Arrive à<select data-pl="in" aria-label="Arrivée de ${esc(fname(s))}">${opts(sp[0],sp[1]-.5,c[0])}</select></label>
+      <label>Part à<select data-pl="out" aria-label="Départ de ${esc(fname(s))}">${opts(sp[0]+.5,sp[1],c[1])}</select></label><div class="plph"></div></div>`}).join('')
+    :`<p class="muted">Personne n’est planifié ce jour-là. Touchez d’abord les cases du planning pour placer les employés.</p>`;
+  showModal(`${mh('Horaires · '+DAYN[d])}<form id="plform" class="pltf" data-d="${d}" data-p="${p.id}">
+    <p class="muted" style="margin:0 0 6px">${esc(p.name)}. Choisissez l’arrivée et le départ de chaque personne : les heures sont recalculées partout (totaux, Mon planning, PDF, échanges).</p>
+    ${body}
+    <div class="acts" style="margin-top:14px">${rows.length?'<button type="button" class="btn" data-act="plreset">Journées complètes</button>':''}<button type="button" class="btn" data-act="close">Annuler</button>${rows.length?'<button class="btn primary" type="submit">Enregistrer</button>':''}</div></form>`);
+  document.querySelectorAll('#plform .plr').forEach(r=>plShow(r,p,d));
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act="pltime"],[data-act="plreset"]');if(!b)return;
+  if(!isAdmin()){toast('Réservé à l’administrateur');return}
+  if(b.dataset.act==='pltime'){plTimeForm(+b.dataset.d,b.dataset.p);return}
+  const f=$('#plform');if(!f)return;const p=S.plans.find(x=>x.id===f.dataset.p)||curPlan(),d=+f.dataset.d;
+  f.querySelectorAll('.plr').forEach(r=>{const o=plRead(r,p,d);o.si.value=String(o.a);o.so.value=String(o.b);plShow(r,p,d)});
+});
+document.addEventListener('change',e=>{
+  const t=e.target;if(!t.dataset||!t.dataset.pl)return;
+  const f=t.closest('#plform'),r=t.closest('.plr');if(!f||!r)return;
+  const p=S.plans.find(x=>x.id===f.dataset.p)||curPlan(),d=+f.dataset.d,o=plRead(r,p,d);let x=o.x,y=o.y;
+  if(y<=x){
+    if(t.dataset.pl==='in'){y=x+.5;if(y>o.b){y=o.b;x=o.b-.5}}else{x=y-.5;if(x<o.a){x=o.a;y=o.a+.5}}
+    o.si.value=String(x);o.so.value=String(y);
+  }
+  plShow(r,p,d);
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='plform')return;e.preventDefault();if(!isAdmin())return;
+  const f=e.target,p=S.plans.find(x=>x.id===f.dataset.p)||curPlan(),d=+f.dataset.d;
+  try{autoSnap()}catch(_){}
+  p.cut=p.cut||{};const cd=p.cut[d]=p.cut[d]||{};
+  f.querySelectorAll('.plr').forEach(r=>{const o=plRead(r,p,d);if(o.x>o.a||o.y<o.b)cd[o.id]=[o.x,o.y];else delete cd[o.id]});
+  /* nettoie les horaires devenus sans objet (case retirée du planning) */
+  Object.keys(cd).forEach(id=>{if(!plSpan(p,d,id))delete cd[id]});
+  if(!Object.keys(cd).length)delete p.cut[d];if(!Object.keys(p.cut).length)delete p.cut;
+  save();closeModal();redrawStaff();toast('Horaires enregistrés');
+});
+/* mention d'horaire dans le PDF du planning : « Sarah (dès 11h) » */
+function plTag(p,d,i,id){
+  const g=plTmplSeg(p,d,i,id),a=10+2*i,b=a+2;if(g[0]<=a&&g[1]>=b)return '';
+  return ' ('+(g[0]>a&&g[1]<b?plF(g[0])+'–'+plF(g[1]):g[0]>a?'dès '+plF(g[0]):'jusqu’à '+plF(g[1]))+')';
+}
+/* la « Semaine type » passe en premier (et s'ouvre par défaut), puis les périodes spéciales par date */
+function plOrder(){return S.plans.slice().sort((a,b)=>(b.base?1:0)-(a.base?1:0)||String(a.from||'').localeCompare(String(b.from||'')))}
 /* ---- v47 : mises à jour automatiques (plus besoin de réinstaller) ---- */
 IC.refresh='<path d="M20 11a8 8 0 0 0-14.5-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M20 20v-4h-4"/>';
 const AU={ver:null,busy:false,applying:false,boot:Date.now(),touch:Date.now(),resume:false,snooze:0,block:'',blockUntil:0,last:0};
@@ -6922,7 +7120,7 @@ setTimeout(()=>{
     else if(Date.now()-rec.t<10*60*1000){AU.block=rec.v;AU.blockUntil=rec.t+10*60*1000}
   }
   auCheck();
-},3000);
+},600);
 
 /* ---- « Mon compte » : version + vérification manuelle ---- */
 function accountMenu(){
@@ -7038,5 +7236,5 @@ init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();migrateImgs();h
 })();
 </script>
 
-<script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
+<script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>
