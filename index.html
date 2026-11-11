@@ -981,6 +981,9 @@ body.tedit-on :is(h1,h2,h3,p,span,label,b,button,a,small,td,th,li,strong,em):hov
 }
 @media (max-width:900px){.gbar{padding-top:8px;padding-bottom:8px}.gb-go{padding:0 10px}}
 body.is-op [data-act="pickclient"],body.is-op [data-act="noclient"]{display:none!important}
+.pvbar{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:70;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 24px);background:var(--ink);color:#fff;padding:7px 7px 7px 16px;border-radius:999px;box-shadow:0 10px 28px rgba(10,31,77,.35);font-size:13px;font-weight:600}
+.pvbar button{flex:none;background:var(--g-pay,var(--pay));color:var(--pay-ink,#fff);border-radius:999px;padding:8px 14px;font-weight:800;font-size:13px}
+@media (max-width:900px){.pvbar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
 @media (max-width:1080px){.pos{grid-template-columns:minmax(0,1fr) 340px}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:0}
@@ -3367,7 +3370,7 @@ function armLock(){clearTimeout(lockT);const m=+S.settings.lockMin||0;if(!m||!ME
 function accountMenu(){
   const a=ME;if(!a)return;
   showModal(`${mh('Mon compte')}<div class="gpick" style="margin-bottom:12px">${avA(a,1)}<h2 style="margin:0">${esc(a.name)}</h2><span class="muted">${esc(a.ident)} · ${a.admin?'Administrateur':esc(curProf().name||'Opérateur')}</span></div>
-   <div class="acts"><button class="btn" data-act="acc_pw">Changer mon mot de passe</button><button class="btn" data-act="acc_lock">Verrouiller</button><button class="btn primary" data-act="acc_out">Se déconnecter</button></div>`);
+   <div class="acts">${isAdmin()?'<button class="btn" data-act="acc_pv">Voir comme un opérateur</button>':''}<button class="btn" data-act="acc_pw">Changer mon mot de passe</button><button class="btn" data-act="acc_lock">Verrouiller</button><button class="btn primary" data-act="acc_out">Se déconnecter</button></div>`);
 }
 function rolePill(){const a=ME,adm=isAdmin(),n=pendingCount();return `<button class="rolepill ${adm?'adm':''}" data-act="rolesw" aria-label="Mon compte">${ic(adm?'shield':'users')}${a?esc(a.name.split(' ')[0]):'Compte'}${adm&&n?`<b class="nbadge">${n}</b>`:''}</button>`}
 document.addEventListener('click',async e=>{
@@ -3725,7 +3728,7 @@ function accountMenu(){
   const a=ME;if(!a)return;
   showModal(`${mh('Mon compte')}<div class="gpick" style="margin-bottom:12px">${avA(a,1)}<h2 style="margin:0">${esc(a.name)}</h2><span class="muted">${esc(a.ident)} · ${a.admin?'Administrateur':esc(curProf().name||'Opérateur')}</span>
    <div class="acts"><label class="btn" for="photof">${ic('user')}${a.photo?'Changer la photo':'Ajouter une photo'}</label><input type="file" id="photof" accept="image/*" hidden>${a.photo?'<button class="btn" data-act="photorm">Retirer</button>':''}</div></div>
-   <div class="acts"><button class="btn" data-act="acc_pw">Changer mon mot de passe</button><button class="btn" data-act="acc_lock">Verrouiller</button><button class="btn primary" data-act="acc_out">Se déconnecter</button></div>`);
+   <div class="acts">${isAdmin()?'<button class="btn" data-act="acc_pv">Voir comme un opérateur</button>':''}<button class="btn" data-act="acc_pw">Changer mon mot de passe</button><button class="btn" data-act="acc_lock">Verrouiller</button><button class="btn primary" data-act="acc_out">Se déconnecter</button></div>`);
 }
 
 /* ---- import Qweekle (CSV) ---- */
@@ -5321,7 +5324,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v37';
+const LAGO_V='v38';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5426,6 +5429,25 @@ function opHomeClean(m){
   const hp=m.querySelector('.hero > div > p:not(.eyebrow):not(.wel)');if(hp)hp.textContent=S.settings.name;
 }
 gbarDraw(true);
+
+/* aperçu « comme un opérateur » pour l'administrateur (non enregistré : un rechargement revient en administrateur) */
+let PV=false;
+function pvBanner(){
+  let el=$('#pvbar');if(!PV){if(el)el.remove();return}
+  if(!el){el=document.createElement('div');el.id='pvbar';el.className='pvbar';document.body.appendChild(el)}
+  el.innerHTML='<span>Aperçu : ce que voit un opérateur</span><button type="button" data-act="pv_exit">Quitter l’aperçu</button>';
+}
+function pvSet(on){
+  if(on&&!isAdmin())return;
+  PV=on;
+  if(on){ROLEMODE='operator';PROF=((S.profiles||[])[0]||{}).id||'-'}else{ROLEMODE='admin';PROF='-'}
+  closeModal();pvBanner();chrome();route();
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act="acc_pv"],[data-act="pv_exit"]');if(!b)return;
+  pvSet(b.dataset.act==='acc_pv');
+});
+setInterval(()=>{if(PV&&!ME){PV=false;pvBanner()}},1500);
 
 METHODS.pass='Carnet de séances';
 function openPay(){
