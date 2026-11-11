@@ -1017,6 +1017,7 @@ body.is-op [data-act="pickclient"],body.is-op [data-act="noclient"]{display:none
 @media (max-width:900px){.tk-list{height:calc(100vh - 390px);height:calc(100dvh - 390px);min-height:240px}}
 /* compte établissement */
 .gu.etab b{white-space:normal;text-align:center;line-height:1.15;font-size:13px}
+.gjoinb{display:block;width:100%;margin:12px 0 0;min-height:44px}
 @media (max-width:1080px){.pos{grid-template-columns:minmax(0,1fr) 340px}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:0}
@@ -5236,7 +5237,7 @@ function clearDemo(){
 }
 /* Studio : carte « Équipe connectée » */
 const rulesTxt=r=>`{\n  "rules": {\n    ".read": false,\n    ".write": false,\n    "${r}": { ".read": true, ".write": true }\n  }\n}`;
-const zInvite=link=>'Bonjour, voici Lago (caisse et planning). Ouvre ce lien une fois sur ton téléphone, puis choisis ton prénom ou clique sur « Créer mon compte » : '+link;
+const zInvite=link=>'Bonjour, voici Lago (caisse et planning). Ouvre ce lien une fois sur ton téléphone, puis choisis ton prénom ou clique sur « Créer mon compte ». Si tu as ajouté Lago sur ton écran d’accueil : ouvre l’appli, touche « Rejoindre l’équipe » et colle ce lien : '+link;
 const zLink=()=>{const c=cloudCfg();return c&&c.u&&!c.pending?location.origin+location.pathname+'#cloud='+btoa(JSON.stringify({u:c.u,r:c.r})):''};
 async function zCopy(t,ok){
   try{await navigator.clipboard.writeText(t);toast(ok);return}catch(e){}
@@ -5254,7 +5255,7 @@ function vSetStudio(m){
      <div class="field"><label for="z_link">Lien à envoyer à vos employés (à ouvrir une fois sur leur téléphone)</label><input id="z_link" readonly onclick="this.select()" value="${esc(link)}"></div>
      <div class="acts" style="margin-bottom:10px"><button class="btn primary" data-act="z_copy">Copier le lien</button><button class="btn" data-act="z_share">Partager…</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(zInvite(link))}">WhatsApp</a></div>
      <details style="margin-bottom:8px"><summary><b>QR code à faire scanner</b></summary><div style="margin:10px 0;display:flex;justify-content:center"><div style="background:#fff;padding:6px;border-radius:10px;line-height:0">${qrSvg(link,190)}</div></div><p class="muted" style="margin:0;text-align:center">L’employé scanne avec l’appareil photo de son téléphone.</p></details>
-     <p class="muted" style="margin:0 0 8px">Chaque employé ouvre le lien une fois sur son téléphone, puis choisit son prénom ou clique sur « Créer mon compte » (vous validez ensuite dans Paramètres › Comptes › Demandes à valider). Gardez ce lien privé : il donne accès aux données de l’équipe.</p>
+     <p class="muted" style="margin:0 0 8px">Chaque employé ouvre le lien une fois sur son téléphone (ou, si Lago est installé sur l’écran d’accueil, touche « Rejoindre l’équipe » dans l’appli et colle le lien), puis choisit son prénom ou clique sur « Créer mon compte » (vous validez ensuite dans Paramètres › Comptes › Demandes à valider). Gardez ce lien privé : il donne accès aux données de l’équipe.</p>
      <div class="acts"><button class="btn" data-act="z_now">Synchroniser maintenant</button><button class="btn danger" data-act="z_off">Déconnecter cet appareil</button></div>`;
   }else if(c&&c.pending){
     h=`<h3>Équipe connectée : dernière étape</h3>
@@ -5365,7 +5366,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v42';
+const LAGO_V='v43';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5373,11 +5374,48 @@ function gateStat(){
   let el=card.querySelector('.gstat');if(!el){el=document.createElement('p');el.className='gstat muted';card.appendChild(el)}
   let h;
   if(cloudOn()){const ok=CL.state==='ok';h=`<span class="${ok?'g-ok':'g-off'}">●</span> Équipe ${ok?'connectée':'hors ligne'} · ${accs().length} compte(s)`}
-  else h='○ Cet appareil n’est pas connecté à l’équipe. Employé ? Ouvrez le lien d’équipe envoyé par votre responsable, sans créer de compte ici.';
+  else h='○ Cet appareil n’est pas connecté à l’équipe. Employé ? Utilisez le lien d’équipe envoyé par votre responsable, sans créer de compte ici.';
+  const jb=card.querySelector('.gjoinb');
+  if(!cloudOn()&&!card.querySelector('#gjoin')){if(!jb){const b=document.createElement('button');b.type='button';b.className='btn primary gjoinb';b.dataset.act='g_join';b.textContent='Rejoindre l’équipe avec un lien';card.insertBefore(b,el)}}
+  else if(jb)jb.remove();
   el.innerHTML=h+` <span class="gv">${LAGO_V}</span>`;
 }
 setInterval(gateStat,2000);
 document.addEventListener('change',e=>{if(e.target.id==='gshow'){const p=document.getElementById('gp');if(p)p.type=e.target.checked?'text':'password'}});
+
+/* ---- rejoindre l'équipe en collant le lien (appli installée sur l'écran d'accueil) ---- */
+function joinParse(t){
+  t=String(t||'').trim();
+  try{t=decodeURIComponent(t)}catch(e){}
+  const i=t.indexOf('cloud=');let b=i>=0?t.slice(i+6):t;
+  b=b.replace(/[^A-Za-z0-9+\/=_-].*$/s,'').replace(/-/g,'+').replace(/_/g,'/');
+  while(b.length%4)b+='=';
+  try{const x=JSON.parse(atob(b));if(x&&typeof x.u==='string'&&typeof x.r==='string'&&/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])[^\s]+/.test(x.u)&&x.r)return{u:x.u,r:x.r}}catch(e){}
+  return null;
+}
+function gateJoin(){
+  gateShell(`<h2>Rejoindre l’équipe</h2><p class="muted" style="text-align:center">Collez ici le lien d’équipe envoyé par votre responsable (message, WhatsApp, e-mail…). Vous retrouverez ensuite les comptes et les données de l’équipe.</p>
+   <form id="gjoin"><div class="field"><label for="gjl">Lien d’équipe</label><input id="gjl" required inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="https://…#cloud=…"></div>
+   <button type="button" class="glink" data-act="g_paste" style="margin:-2px auto 10px">Coller depuis le presse-papiers</button>
+   <p id="gerr" class="gerr"></p><button class="btn primary gbtn" type="submit">Rejoindre l’équipe</button>
+   <div class="gfoot"><button type="button" class="btn" data-act="g_back">Retour</button></div></form>`);
+  setTimeout(()=>{const i=document.getElementById('gjl');if(i&&matchMedia('(pointer:fine)').matches)i.focus()},50);
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act="g_join"],[data-act="g_paste"]');if(!b)return;
+  if(b.dataset.act==='g_join'){gateJoin();return}
+  const i=document.getElementById('gjl'),er=document.getElementById('gerr');if(!i)return;
+  try{const t=await navigator.clipboard.readText();if(t){i.value=t.trim();if(er)er.textContent=''}else if(er)er.textContent='Le presse-papiers est vide : copiez d’abord le lien.'}
+  catch(x){if(er)er.textContent='Collage automatique refusé : appuyez longuement dans le champ puis choisissez « Coller ».'}
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='gjoin')return;e.preventDefault();
+  const er=document.getElementById('gerr'),x=joinParse(document.getElementById('gjl').value);
+  if(!x){if(er)er.textContent='Ce lien n’est pas reconnu. Copiez le lien complet reçu (il contient « #cloud= »).';return}
+  cloudSet({u:x.u,r:x.r,fresh:true});
+  const bt=e.target.querySelector('button[type=submit]');if(bt){bt.disabled=true;bt.textContent='Connexion à l’équipe…'}
+  setTimeout(()=>location.reload(),150);
+});
 
 /* ---------- T. barre de recherche IA tout en haut ; opérateurs sans clients ni planning clients ---------- */
 const GB_MIC='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
