@@ -1018,6 +1018,45 @@ body.is-op [data-act="pickclient"],body.is-op [data-act="noclient"]{display:none
 /* compte établissement */
 .gu.etab b{white-space:normal;text-align:center;line-height:1.15;font-size:13px}
 .gjoinb{display:block;width:100%;margin:12px 0 0;min-height:44px}
+/* menu mobile : barre du bas + feuille « Menu » */
+.mnav,.msheet{display:none}
+@media (max-width:900px){
+  .side{display:none}
+  main{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+  .mnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;gap:2px;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(10,20,50,.07);
+    padding:6px max(6px,env(safe-area-inset-left,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-right,0px))}
+  .mnav[hidden]{display:none}
+  .mn{flex:1 1 0;min-width:0;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:54px;padding:3px 1px;border:0;background:none;color:var(--muted);
+    font:inherit;font-size:12px;font-weight:600;line-height:1.1;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .mn .mi{display:grid;place-items:center;width:56px;height:30px;border-radius:15px;transition:background .15s,color .15s}
+  .mn .mi svg{width:24px;height:24px}
+  .mn .mt{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mn.on{color:var(--ink);font-weight:700}
+  .mn.on .mi{background:var(--g-pay,var(--pay));color:var(--pay-ink)}
+  .mn .nbadge{position:absolute;top:0;left:calc(50% + 8px);margin:0;min-width:18px;height:18px;padding:0 5px;font-size:11px;animation:none}
+  .mn .nbadge,.ms-t .nbadge{background:#E04646;color:#fff}
+  .msheet{display:block;position:fixed;inset:0;z-index:62}
+  .msheet[hidden]{display:none}
+  .ms-scrim{position:absolute;inset:0;background:rgba(4,18,20,.5);opacity:0;transition:opacity .2s}
+  .ms-panel{position:absolute;left:0;right:0;bottom:0;max-height:min(84vh,680px);max-height:min(84dvh,680px);overflow-y:auto;overscroll-behavior:contain;background:var(--surface);color:var(--ink);
+    border-radius:24px 24px 0 0;padding:10px 16px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .22s ease;box-shadow:0 -12px 40px rgba(0,0,0,.28)}
+  .msheet.open .ms-scrim{opacity:1}.msheet.open .ms-panel{transform:none}
+  .ms-grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 12px}
+  .ms-head{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+  .ms-me{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:16px;background:var(--surface-2);border:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;min-height:56px}
+  .ms-who{min-width:0;display:flex;flex-direction:column}
+  .ms-who b{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ms-who small{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ms-x{flex:none;width:48px;height:48px;border-radius:50%;border:0;background:var(--surface-2);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+  .ms-x svg{width:22px;height:22px}
+  .ms-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .ms-t{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:96px;padding:12px 6px;border-radius:18px;background:var(--surface-2);color:var(--ink);
+    font-weight:600;font-size:14px;text-align:center;text-decoration:none;line-height:1.15;-webkit-tap-highlight-color:transparent}
+  .ms-t svg{width:28px;height:28px;color:var(--brand)}
+  .ms-t.on{background:var(--brand);color:var(--brand-ink)}.ms-t.on svg{color:inherit}
+  .ms-t .nbadge{position:absolute;top:8px;right:8px;margin:0;animation:none}
+  body:has(.msheet.open){overflow:hidden}
+}
 @media (max-width:1080px){.pos{grid-template-columns:minmax(0,1fr) 340px}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:0}
@@ -5366,7 +5405,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v43';
+const LAGO_V='v44';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5741,6 +5780,63 @@ function etabRows(m){
     if(s)s.remove();
   });
 }
+/* ---- menu mobile : barre du bas (4 entrées + Menu) et feuille « Menu » avec toutes les sections ---- */
+IC.mgrid='<path d="M4.500 4.500h5v5h-5zM14.500 4.500h5v5h-5zM4.500 14.500h5v5h-5zM14.500 14.500h5v5h-5z"/>';
+const MN_PRI=['accueil','caisse','resa','staff','chat'];
+const mnLabel=(id,d)=>((S.settings.home||{}).names||{})[id]||d;
+function mnEnsure(){
+  if(document.getElementById('mnav'))return;
+  document.body.insertAdjacentHTML('beforeend',`<nav id="mnav" class="mnav" aria-label="Navigation principale" hidden></nav>
+   <div id="msheet" class="msheet" hidden><div class="ms-scrim" data-act="mn_close"></div>
+    <div class="ms-panel" role="dialog" aria-modal="true" aria-label="Menu"><div class="ms-grab" aria-hidden="true"></div>
+     <div class="ms-head"><button type="button" class="ms-me" data-act="rolesw" id="msme"></button><button type="button" class="ms-x" data-act="mn_close" id="msx" aria-label="Fermer le menu">${ic('x')}</button></div>
+     <div class="ms-grid" id="msgrid"></div></div></div>`);
+}
+function mnItems(){return NAV.filter(n=>(isAdmin()||n[0]!=='params')&&!opHidden(n[0]))}
+function mnavDraw(){
+  mnEnsure();
+  const bar=document.getElementById('mnav'),sh=document.getElementById('msheet');
+  if(!ME){bar.hidden=true;bar.innerHTML='';mnClose(true);return}
+  const L=mnItems(),max=5;let show=L,more=false;
+  if(L.length>max){
+    more=true;const ids=[];
+    MN_PRI.forEach(id=>{if(ids.length<4&&L.some(n=>n[0]===id))ids.push(id)});
+    L.forEach(n=>{if(ids.length<4&&!ids.includes(n[0]))ids.push(n[0])});
+    show=L.filter(n=>ids.includes(n[0]));
+  }
+  const inBar=show.some(n=>n[0]===view),moreOn=more&&!inBar&&!!L.some(n=>n[0]===view),chatHid=more&&L.some(n=>n[0]==='chat')&&!show.some(n=>n[0]==='chat'),open=sh&&!sh.hidden;
+  bar.innerHTML=show.map(([id,l,i,s])=>`<a href="#${id}" data-v="${id}" class="mn${id===view?' on':''}"${id===view?' aria-current="page"':''}><span class="mi">${ic(i)}</span><span class="mt">${esc(mnLabel(id,s))}</span></a>`).join('')
+    +(more?`<button type="button" class="mn mn-more${moreOn||open?' on':''}" data-act="mn_more" data-chat="${chatHid?1:0}" aria-haspopup="dialog" aria-expanded="${open?'true':'false'}"><span class="mi">${ic('mgrid')}</span><span class="mt">Menu</span></button>`:'');
+  bar.hidden=false;
+  const pc=isAdmin()&&typeof pendingCount==='function'?pendingCount():0;
+  document.getElementById('msgrid').innerHTML=L.map(([id,l,i])=>`<a href="#${id}" data-v="${id}" class="ms-t${id===view?' on':''}"${id===view?' aria-current="page"':''}>${ic(i)}<span>${esc(mnLabel(id,l))}</span>${id==='params'&&pc?`<b class="nbadge">${pc}</b>`:''}</a>`).join('');
+  const role=isAdmin()?'Administrateur':(ME.kind==='etab'?'Établissement':((S.profiles||[]).find(p=>p.id===ME.profileId)||{}).name||'');
+  document.getElementById('msme').innerHTML=`${avA(ME,0)}<span class="ms-who"><b>${esc(ME.name)}</b><small>${esc(role?role+' · ':'')}Mon compte</small></span>`;
+  chBadge();
+}
+function mnOpen(){
+  mnEnsure();const sh=document.getElementById('msheet');if(!sh||!sh.hidden)return;
+  mnavDraw();sh.hidden=false;requestAnimationFrame(()=>{sh.classList.add('open');const x=document.getElementById('msx');if(x)x.focus({preventScroll:true})});
+  const m=document.querySelector('#mnav .mn-more');if(m){m.setAttribute('aria-expanded','true');m.classList.add('on')}
+}
+let mnT=0;
+function mnClose(quick){
+  const sh=document.getElementById('msheet');if(!sh||sh.hidden)return;
+  sh.classList.remove('open');clearTimeout(mnT);
+  const fin=()=>{sh.hidden=true;const m=document.querySelector('#mnav .mn-more');if(m){m.setAttribute('aria-expanded','false')}mnavDraw()};
+  if(quick===true){sh.hidden=true;return}
+  mnT=setTimeout(fin,200);
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act="mn_more"],[data-act="mn_close"]');
+  if(b){e.preventDefault();if(b.dataset.act==='mn_more'){const sh=document.getElementById('msheet');sh&&!sh.hidden?mnClose():mnOpen()}else{mnClose();const m=document.querySelector('#mnav .mn-more');if(m)m.focus({preventScroll:true})}return}
+  if(e.target.closest('#msheet a[href], #msheet [data-act="rolesw"]'))mnClose();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;const sh=document.getElementById('msheet');
+  if(sh&&!sh.hidden){mnClose();const m=document.querySelector('#mnav .mn-more');if(m)m.focus({preventScroll:true})}
+});
+window.addEventListener('hashchange',()=>{mnClose(true);const sh=document.getElementById('msheet');if(sh)sh.classList.remove('open');mnavDraw()});
 /* ---- Chat d'équipe : un seul salon, pour tout le monde ---- */
 IC.chat='<path d="M4 5.500h16v10.500H10.500L6 19.500V16H4z"/>';
 const CHSEND='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L3 10.500l7 2.500 2.500 7z"/><path d="M10 13L21 3"/></svg>';
@@ -5823,8 +5919,8 @@ document.addEventListener('click',e=>{
 });
 /* pastille de messages non lus, alerte discrète, suivi en direct */
 function chBadge(){
-  const n=chUnread(),a=document.querySelector('#nav a[data-v="chat"]');
-  if(a){let b=a.querySelector('.nbadge');if(n){if(!b){b=document.createElement('b');b.className='nbadge';a.appendChild(b)}if(b.textContent!==String(n))b.textContent=n}else if(b)b.remove()}
+  const n=chUnread();
+  document.querySelectorAll('#nav a[data-v="chat"],#mnav a[data-v="chat"],#msheet a[data-v="chat"],#mnav .mn-more[data-chat="1"]').forEach(a=>{let b=a.querySelector('.nbadge');if(n){if(!b){b=document.createElement('b');b.className='nbadge';a.appendChild(b)}if(b.textContent!==String(n))b.textContent=n}else if(b)b.remove()});
   if(n!==CHB){CHB=n;document.title=(n?'('+n+') ':'')+'Lago';try{if(navigator.setAppBadge){n?navigator.setAppBadge(n):navigator.clearAppBadge()}}catch(x){}}
 }
 function chTick(){
@@ -5844,7 +5940,7 @@ function chTick(){
   chBadge();
 }
 setInterval(chTick,1000);
-function renderNav(){renderNavM();chBadge()}
+function renderNav(){renderNavM();mnavDraw();chBadge()}
 
 METHODS.pass='Carnet de séances';
 function openPay(){
