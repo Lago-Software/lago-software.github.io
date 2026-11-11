@@ -1503,6 +1503,40 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--brand);outline-offs
 .btn.primary.gjoinb{background:var(--surface);color:var(--brand);border:1px solid color-mix(in srgb,var(--brand) 35%,var(--line));box-shadow:none}
 .btn.primary.gjoinb:hover{background:var(--brand-soft);filter:none}
 .plact{display:flex;flex-wrap:wrap;gap:8px}
+
+/* ---------- contrôle quotidien : deux pressions d'airbag ---------- */
+.chk .prs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.chk .prl{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:650;color:var(--ink-2)}
+.chk .prl input{margin-top:0;width:100%;min-width:0}
+
+/* ---------- documents de contrôle ---------- */
+.bacts{display:flex;gap:8px;flex-wrap:wrap}
+.docs{padding:4px 18px 18px}
+.dgm{margin:20px 0 2px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:0;text-transform:none}
+.docrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--hair)}
+.dti{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none}
+.dti svg{width:20px;height:20px}
+.dk-daily{background:color-mix(in srgb,var(--ok) 15%,var(--surface));color:var(--ok)}
+.dk-monthly{background:color-mix(in srgb,var(--brand) 14%,var(--surface));color:var(--brand)}
+.dk-inc{background:color-mix(in srgb,var(--bad) 14%,var(--surface));color:var(--bad)}
+.dk-mnt{background:color-mix(in srgb,var(--warn) 18%,var(--surface));color:var(--warn)}
+.docmain{display:flex;flex-direction:column;gap:2px;text-align:left;min-width:0;background:none;border:0;padding:2px 0;font:inherit;color:inherit;cursor:pointer;border-radius:8px}
+.docmain b{font-size:15px}
+.docmain .muted{font-size:13px;line-height:1.35}
+.docmain .dsub{color:var(--ink-2)}
+.docmain:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.docrow .btn.docpdf{padding:7px 16px;min-height:38px}
+.dn{opacity:.6;font-variant-numeric:tabular-nums;margin-left:2px}
+.docv .kv{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--hair);font-size:14px}
+.docv .kv>span{color:var(--muted)}
+.docv .kv b{text-align:right;font-weight:650}
+.dlines{margin:14px 0 0;padding-left:18px;font-size:14px;display:grid;gap:5px}
+@media (max-width:560px){
+  .docrow{grid-template-columns:auto minmax(0,1fr) auto;row-gap:6px}
+  .docrow .dti{grid-row:1/3;align-self:start}
+  .docrow .pill{grid-column:2;grid-row:2;justify-self:start}
+  .docrow .btn.docpdf{grid-column:3;grid-row:1/3}
+}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -2086,9 +2120,9 @@ function leaveInfo(){
 }
 
 /* ---------- contrôle quotidien ---------- */
-function ensureCheck(){const t=CHKDAY||today();if(!S.checks[t])S.checks[t]={items:{},press:'',by:'',ts:0,done:false};return S.checks[t]}
+function ensureCheck(){const t=CHKDAY||today();if(!S.checks[t])S.checks[t]={items:{},press:'',press2:'',by:'',ts:0,done:false};return S.checks[t]}
 function ctrlReady(c){
-  return CHECK_IDS.every(k=>c.items[k]&&(c.items[k].s==='ok'||c.items[k].note.trim()))&&c.press.trim()&&c.by;
+  return CHECK_IDS.every(k=>c.items[k]&&(c.items[k].s==='ok'||c.items[k].note.trim()))&&String(c.press||'').trim()&&String(c.press2||'').trim()&&c.by;
 }
 function vVisuelOld(m){
   const c=ensureCheck(),done=c.done,n=CHECK_IDS.filter(k=>c.items[k]).length,tot=CHECK_IDS.length;
@@ -2097,16 +2131,16 @@ function vVisuelOld(m){
   const issues=Object.entries(S.checks).filter(([d,x])=>x.done).sort((a,b)=>b[0].localeCompare(a[0])).flatMap(([d,x])=>Object.entries(x.items).filter(([k,i])=>i.s==='ko').map(([k,i])=>[d,k,i.note])).slice(0,4);
   const label=k=>CHECKS.flatMap(g=>g.items).find(i=>i[0]===k)[1];
   m.innerHTML=head('Contrôle quotidien')+
-  (done?`<div class="banner ok"><span>Contrôle du ${dfr(CHKDAY||today())} validé par ${esc(staffOf(c.by).name)} le ${new Date(c.ts).toLocaleDateString('fr-FR')} à ${hm(c.ts)}.</span><button class="btn" data-act="chkopen">Modifier</button></div>`
+  (done?`<div class="banner ok"><span>Contrôle du ${dfr(CHKDAY||today())} validé par ${esc(staffOf(c.by).name)} le ${new Date(c.ts).toLocaleDateString('fr-FR')} à ${hm(c.ts)}.</span><div class="bacts"><button class="btn" data-act="m_pdf" data-k="daily">PDF</button><button class="btn" data-act="docgo" data-t="daily">Voir dans Documents</button><button class="btn" data-act="chkopen">Modifier</button></div></div>`
    :`<div class="prog"><div class="bar"><i style="width:${Math.round(n/tot*100)}%"></i></div><b class="num">${n}/${tot}</b><button class="btn" data-act="allok">Tout est conforme</button></div>`)+
   CHECKS.map(g=>`<div class="card" style="margin-bottom:14px"><h3><span class="gic">${gIcon(g.g)}</span>${g.g}</h3>${g.items.map(([k,l,t])=>{const a=c.items[k];
     return `<div class="chk"><div class="q">${l}</div><div class="yn"><button class="ok ${a&&a.s==='ok'?'on':''}" data-act="chk" data-k="${k}" data-s="ok" ${done?'disabled':''}>Conforme</button>
     <button class="ko ${a&&a.s==='ko'?'on':''}" data-act="chk" data-k="${k}" data-s="ko" ${done?'disabled':''}>Anomalie</button></div>
-    ${t==='val'?`<input id="press" inputmode="decimal" placeholder="Pression relevée" value="${esc(c.press)}" ${done?'disabled':''} aria-label="Pression relevée">`:''}
+    ${t==='val'?`<div class="prs"><label class="prl"><span>Airbag 1 (hPa)</span><input id="press" inputmode="decimal" placeholder="Pression" value="${esc(c.press)}" ${done?'disabled':''} aria-label="Pression de l’airbag 1 en hPa"></label><label class="prl"><span>Airbag 2 (hPa)</span><input id="press2" inputmode="decimal" placeholder="Pression" value="${esc(c.press2||'')}" ${done?'disabled':''} aria-label="Pression de l’airbag 2 en hPa"></label></div>`:''}
     ${a&&a.s==='ko'?`<input data-note="${k}" placeholder="Décrivez l’anomalie" value="${esc(a.note)}" ${done?'disabled':''} aria-label="Anomalie">`:''}</div>`}).join('')}</div>`).join('')+
   (done?'':`<div class="card" style="margin-bottom:14px"><h3>Validation</h3><p class="muted" style="margin:-6px 0 10px">Contrôle du ${chkLong(CHKDAY||today())}</p><div class="field"><label for="chkby">Contrôle réalisé par</label><select id="chkby"><option value="">Choisir</option>${S.staff.map(s=>`<option value="${s.id}" ${c.by===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
     <button class="btn-pay" id="chkok" data-act="chkdone" ${ctrlReady(c)?'':'disabled'}>Valider le contrôle</button>
-    <p class="muted" style="margin-top:8px;font-size:13px">Tous les points, la pression et le nom sont nécessaires. Une anomalie demande une description.</p></div>`)+
+    <p class="muted" style="margin-top:8px;font-size:13px">Tous les points, les deux pressions d’airbag et le nom sont nécessaires. Une anomalie demande une description.</p></div>`)+
   `<div class="card"><h3>7 derniers jours</h3><div class="hist">${hist}</div>
     ${issues.length?`<div style="margin-top:12px">${issues.map(([d,k,nt])=>`<div class="row"><span class="grow"><b>${esc(label(k))}</b><span class="muted">${esc(nt)}</span></span><span class="pill bad">${dshort(d)}</span></div>`).join('')}</div>`:''}</div>`;
 }
@@ -2123,7 +2157,7 @@ document.addEventListener('click',e=>{
     case 'lvok':case 'lvno':{const l=S.leaves.find(x=>x.id===d.id);if(l){l.status=a==='lvok'?'ok':'no';save();vLeaves($('#sub'));toast(a==='lvok'?'Congés validés':'Demande refusée')}break}
     case 'chk':{const c=ensureCheck(),o=c.items[d.k];c.items[d.k]={s:d.s,note:d.s==='ko'&&o?o.note:''};save();vControl($('#main'));break}
     case 'allok':{const c=ensureCheck();CHECK_IDS.forEach(k=>{if(!c.items[k])c.items[k]={s:'ok',note:''}});save();vControl($('#main'));break}
-    case 'chkdone':{const c=ensureCheck();if(!ctrlReady(c))break;c.done=true;c.ts=Date.now();c.date=CHKDAY||today();if(c.date!==today())c.late=true;save();vControl($('#main'));toast(CHKDAY&&CHKDAY!==today()?'Contrôle du '+dfr(CHKDAY)+' validé':'Contrôle du jour validé');break}
+    case 'chkdone':{const c=ensureCheck();if(!ctrlReady(c))break;c.done=true;c.ts=Date.now();c.date=CHKDAY||today();if(c.date!==today())c.late=true;save();vControl($('#main'));toast((CHKDAY&&CHKDAY!==today()?'Contrôle du '+dfr(CHKDAY)+' validé':'Contrôle du jour validé')+' · ajouté aux Documents');break}
     case 'chkopen':{ensureCheck().done=false;save();vControl($('#main'));break}
   }
 });
@@ -2133,7 +2167,7 @@ document.addEventListener('input',e=>{
   if(view!=='controle'||tab.controle!=='visuel')return;
   const c=ensureCheck();
   if(t.dataset.note){c.items[t.dataset.note].note=t.value}
-  else if(t.id==='press'){c.press=t.value}
+  else if(t.id==='press'){c.press=t.value}else if(t.id==='press2'){c.press2=t.value}
   else return;
   save();const ok=$('#chkok');if(ok)ok.disabled=!ctrlReady(c);
 });
@@ -3315,16 +3349,16 @@ function vVisuel(m){
   const issues=Object.entries(S.checks).filter(([d,x])=>x.done).sort((a,b)=>b[0].localeCompare(a[0])).flatMap(([d,x])=>Object.entries(x.items).filter(([k,i])=>i.s==='ko').map(([k,i])=>[d,k,i.note])).slice(0,4);
   const label=k=>CHECKS.flatMap(g=>g.items).find(i=>i[0]===k)[1];
   m.innerHTML=chkDayBar()+`<div class="impo"><span class="pill warn">Important</span><span>À réaliser chaque jour avant l’ouverture.</span><button class="btn" data-act="m_pdf" data-k="daily">${ic('check')}PDF du jour</button></div>`+
-  (done?`<div class="banner ok"><span>Contrôle du ${dfr(CHKDAY||today())} validé par ${esc(staffOf(c.by).name)} le ${new Date(c.ts).toLocaleDateString('fr-FR')} à ${hm(c.ts)}.</span><button class="btn" data-act="chkopen">Modifier</button></div>`
+  (done?`<div class="banner ok"><span>Contrôle du ${dfr(CHKDAY||today())} validé par ${esc(staffOf(c.by).name)} le ${new Date(c.ts).toLocaleDateString('fr-FR')} à ${hm(c.ts)}.</span><div class="bacts"><button class="btn" data-act="m_pdf" data-k="daily">PDF</button><button class="btn" data-act="docgo" data-t="daily">Voir dans Documents</button><button class="btn" data-act="chkopen">Modifier</button></div></div>`
    :`<div class="prog"><div class="bar"><i style="width:${Math.round(n/tot*100)}%"></i></div><b class="num">${n}/${tot}</b><button class="btn" data-act="allok">Tout est conforme</button></div>`)+
   CHECKS.map(g=>`<div class="card" style="margin-bottom:14px"><h3><span class="gic">${gIcon(g.g)}</span>${g.g}</h3>${g.items.map(([k,l,t])=>{const a=c.items[k];
     return `<div class="chk"><div class="q">${l}</div><div class="yn"><button class="ok ${a&&a.s==='ok'?'on':''}" data-act="chk" data-k="${k}" data-s="ok" ${done?'disabled':''}>Conforme</button>
     <button class="ko ${a&&a.s==='ko'?'on':''}" data-act="chk" data-k="${k}" data-s="ko" ${done?'disabled':''}>Anomalie</button></div>
-    ${t==='val'?`<input id="press" inputmode="decimal" placeholder="Pression relevée" value="${esc(c.press)}" ${done?'disabled':''} aria-label="Pression relevée">`:''}
+    ${t==='val'?`<div class="prs"><label class="prl"><span>Airbag 1 (hPa)</span><input id="press" inputmode="decimal" placeholder="Pression" value="${esc(c.press)}" ${done?'disabled':''} aria-label="Pression de l’airbag 1 en hPa"></label><label class="prl"><span>Airbag 2 (hPa)</span><input id="press2" inputmode="decimal" placeholder="Pression" value="${esc(c.press2||'')}" ${done?'disabled':''} aria-label="Pression de l’airbag 2 en hPa"></label></div>`:''}
     ${a&&a.s==='ko'?`<input data-note="${k}" placeholder="Décrivez l’anomalie" value="${esc(a.note)}" ${done?'disabled':''} aria-label="Anomalie">`:''}</div>`}).join('')}</div>`).join('')+
   (done?'':`<div class="card" style="margin-bottom:14px"><h3>Validation</h3><p class="muted" style="margin:-6px 0 10px">Contrôle du ${chkLong(CHKDAY||today())}</p><div class="field"><label for="chkby">Contrôle réalisé par</label><select id="chkby"><option value="">Choisir</option>${S.staff.map(s=>`<option value="${s.id}" ${c.by===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
     <button class="btn-pay" id="chkok" data-act="chkdone" ${ctrlReady(c)?'':'disabled'}>Valider le contrôle</button>
-    <p class="muted" style="margin-top:8px;font-size:13px">Tous les points, la pression et le nom sont nécessaires. Une anomalie demande une description.</p></div>`)+
+    <p class="muted" style="margin-top:8px;font-size:13px">Tous les points, les deux pressions d’airbag et le nom sont nécessaires. Une anomalie demande une description.</p></div>`)+
   `<div class="card"><h3>7 derniers jours</h3><div class="hist">${hist}</div>
     ${issues.length?`<div style="margin-top:12px">${issues.map(([d,k,nt])=>`<div class="row"><span class="grow"><b>${esc(label(k))}</b><span class="muted">${esc(nt)}</span></span><span class="pill bad">${dshort(d)}</span></div>`).join('')}</div>`:''}</div>`;
 }
@@ -3499,7 +3533,7 @@ function pdfBuild(title,sub,foot,fn){
 }
 function pdfFor(k,id){
   if(k==='daily'){const c=ensureCheck();return['Contrôle visuel quotidien-'+(CHKDAY||today()),pdfBuild('CONTRÔLE VISUEL QUOTIDIEN',dfr(CHKDAY||today()),'REGISTRE DES CONTRÔLES QUOTIDIENS',w=>{
-    w.kv('Réalisé par',c.by?sname(c.by):'-');w.kv('Pression relevée',c.press?c.press+' hPa':'-');w.kv('Statut',c.done?'Validé à '+hm(c.ts):'En cours');w.gap(6);
+    w.kv('Réalisé par',c.by?sname(c.by):'-');if(c.press2!==undefined){w.kv('Pression airbag 1',c.press?c.press+' hPa':'-');w.kv('Pression airbag 2',c.press2?c.press2+' hPa':'-')}else w.kv('Pression relevée',c.press?c.press+' hPa':'-');w.kv('Statut',c.done?'Validé à '+hm(c.ts):'En cours');w.gap(6);
     CHECKS.forEach(g=>{w.sec(g.g);g.items.forEach(([kk,l])=>{const a=c.items[kk];w.row(l+(a&&a.s==='ko'&&a.note?' - '+a.note:''),a?(a.s==='ok'?'C':'NC'):'-')})});w.sig('Contrôleur',c.by?sname(c.by):'')})]}
   if(k==='monthly'){const r=monRec(),y=monLabel(ctl.mon);return['Controle mensuel-'+ctl.mon,pdfBuild(y.toUpperCase()+' – CONTRÔLE MENSUEL DES ÉQUIPEMENTS',dfr(r.date),'REGISTRE DES CONTRÔLES MENSUELS',w=>{
     w.kv('Date du contrôle',dfr(r.date));w.kv('Contrôle réalisé par',sname(r.by));w.gap(6);w.sec('Points de contrôle (C conforme / NC non conforme / SO sans objet)');
@@ -5373,7 +5407,7 @@ function sheetItem(kind,rec,key){
     const ko=Object.entries(rec.items||{}).filter(([k,v])=>v&&v.s==='ko'),nc=ko.length;
     return{id:'visuel-'+key,type:'Contrôle quotidien',date:key,time:rec.ts?hm(rec.ts):'',author:rec.by||'',
       summary:nc?nc+' point'+(nc>1?'s':'')+' non conforme'+(nc>1?'s':''):'Tout conforme',
-      details:(ko.length?ko.map(([k,v])=>ckLabel(k)+' : '+(v.note||'')).join(' | ')+' | ':'')+(rec.press?'Pression airbags : '+rec.press:''),status:rec.done?'Validé':'En cours'};
+      details:(ko.length?ko.map(([k,v])=>ckLabel(k)+' : '+(v.note||'')).join(' | ')+' | ':'')+(rec.press||rec.press2?(rec.press2!==undefined?'Pression airbag 1 : '+(rec.press||'-')+' hPa | Pression airbag 2 : '+(rec.press2||'-')+' hPa':'Pression airbags : '+rec.press):''),status:rec.done?'Validé':'En cours'};
   }
   if(kind==='mensuel'){
     const nc=MPTS.map((p,i)=>rec.items&&rec.items[i]==='NC'?p:null).filter(Boolean);
@@ -5812,7 +5846,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v49';
+const LAGO_V='v50';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -6400,7 +6434,7 @@ function chkDayBar(){
    <button type="button" class="btn${d===t?' primary':''}" data-act="chkday" data-d="${t}">Aujourd’hui</button><button type="button" class="btn${d===addDays(t,-1)?' primary':''}" data-act="chkday" data-d="${addDays(t,-1)}">Hier</button></div></div>
    ${late?`<p class="chkd-note">Vous remplissez le contrôle du <b>${chkLong(d)}</b> (rattrapage). La validation sera enregistrée avec cette date.</p>`:`<p class="chkd-note muted">${chkLong(d)}</p>`}</div>`;
 }
-function chkPrune(d){const c=S.checks&&S.checks[d];if(c&&!c.done&&!Object.keys(c.items||{}).length&&!c.press&&!c.by)delete S.checks[d]}
+function chkPrune(d){const c=S.checks&&S.checks[d];if(c&&!c.done&&!Object.keys(c.items||{}).length&&!c.press&&!c.press2&&!c.by)delete S.checks[d]}
 function chkSetDay(d){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(d||''))return;
   const t=today();if(d>t)d=t;
@@ -7142,6 +7176,101 @@ document.addEventListener('click',async e=>{
     else if(r==='err')st.textContent='Impossible de vérifier : pas de connexion ?';
     else st.textContent='Les mises à jour automatiques fonctionnent dans l’appli installée (lago-software.github.io).';
   }
+});
+/* ---------- D. registre des documents de contrôle (v50) ---------- */
+/* Chaque contrôle validé (quotidien, mensuel), chaque rapport d'incident signé et chaque
+   intervention de maintenance devient un document : liste par mois, aperçu, export PDF. */
+(function(){
+  if(!TABS.controle.some(x=>x[0]==='docs'))TABS.controle.push(['docs','Documents']);
+  ['docopen','docpdf','docgo','docf','docmore'].forEach(a=>{if(!CTL_OK.includes(a))CTL_OK.push(a)});
+  SUBS.docs=vDocs;
+})();
+let docF='all',docN=40;
+const docDay=(d,short)=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',short?{weekday:'short',day:'numeric',month:'short',year:'numeric'}:{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const docPr=c=>c.press2!==undefined?[c.press,c.press2].map((x,i)=>'airbag '+(i+1)+' : '+(x||'-')).join(' · ')+' hPa':(c.press?'pression '+c.press+' hPa':'');
+function docList(){
+  const L=[];
+  Object.entries(S.checks||{}).forEach(([k,c])=>{
+    if(!c||!c.done)return;
+    const ko=Object.values(c.items||{}).filter(i=>i&&i.s==='ko').length;
+    L.push({t:'daily',key:k,date:k,ts:c.ts||0,title:'Contrôle quotidien',time:c.ts?hm(c.ts):'',by:sname(c.by),
+      sub:docPr(c),status:ko?ko+' anomalie'+(ko>1?'s':''):'Conforme',tone:ko?'bad':'ok'});
+  });
+  Object.entries(S.monthly||{}).forEach(([k,r])=>{
+    if(!r||!r.signed)return;
+    const nc=Object.values(r.items||{}).filter(v=>v==='NC').length;
+    L.push({t:'monthly',key:k,date:r.date||k+'-01',ts:r.signed,title:'Contrôle mensuel · '+monLabel(k),time:hm(r.signed),by:sname(r.writer||r.by),
+      sub:[r.p1||r.p2?'gonflables : '+(r.p1||'-')+' / '+(r.p2||'-')+' hPa':'',r.zone?'zone condamnée : '+r.zone:''].filter(Boolean).join(' · '),
+      status:nc?nc+' non conforme'+(nc>1?'s':''):'Conforme',tone:nc?'bad':'ok'});
+  });
+  (S.incidents||[]).forEach(x=>{
+    if(!x||!x.signed)return;
+    L.push({t:'inc',key:x.id,date:x.date,ts:x.signed,title:'Rapport d’incident',time:x.time||'',by:sname(x.writer),
+      sub:[[x.prenom,x.nom].filter(Boolean).join(' '),(x.types||[]).join(', ')].filter(Boolean).join(' · '),status:'Signé',tone:'ok'});
+  });
+  (S.maint||[]).forEach(x=>{
+    if(!x)return;
+    L.push({t:'mnt',key:x.id,date:x.date,ts:x.ts||0,title:'Intervention · '+(x.equip||'équipement'),time:x.ts?hm(x.ts):'',by:x.tech||'',
+      sub:[x.type,x.pb].filter(Boolean).join(' · '),status:x.statut||'Enregistré',tone:/termin|fait|clos/i.test(x.statut||'')?'ok':'warn'});
+  });
+  return L.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.ts-a.ts);
+}
+const docIco=t=>ic(t==='inc'?'shield':t==='mnt'?'gear':'check');
+function docRow(x){
+  return `<div class="docrow"><span class="dti dk-${x.t}">${docIco(x.t)}</span>
+    <button type="button" class="docmain" data-act="docopen" data-t="${x.t}" data-k="${esc(x.key)}"><b>${esc(x.title)}</b><span class="muted">${esc(docDay(x.date,1))}${x.time?' · '+esc(x.time):''}${x.by?' · '+esc(x.by):''}</span>${x.sub?`<span class="muted dsub">${esc(x.sub)}</span>`:''}</button>
+    <span class="pill ${x.tone}">${esc(x.status)}</span>
+    <button type="button" class="btn docpdf" data-act="docpdf" data-t="${x.t}" data-k="${esc(x.key)}" aria-label="Exporter en PDF : ${esc(x.title)}, ${esc(docDay(x.date))}">PDF</button></div>`;
+}
+function vDocs(m){
+  const all=docList(),L=docF==='all'?all:all.filter(x=>x.t===docF),show=L.slice(0,docN),n=t=>all.filter(x=>x.t===t).length;
+  const chips=[['all','Tous',all.length],['daily','Quotidiens',n('daily')],['monthly','Mensuels',n('monthly')],['inc','Incidents',n('inc')],['mnt','Maintenance',n('mnt')]]
+    .map(([k,l,c])=>`<button type="button" class="chip ${docF===k?'on':''}" data-act="docf" data-k="${k}">${l} <span class="dn">${c}</span></button>`).join('');
+  let last='',rows='';
+  show.forEach(x=>{const g=MOIS[+x.date.slice(5,7)-1]+' '+x.date.slice(0,4);if(g!==last){rows+=`<h4 class="dgm">${g}</h4>`;last=g}rows+=docRow(x)});
+  m.innerHTML=`<div class="impo"><span class="pill ok">Registre</span><span>Chaque contrôle validé ou signé crée un document ici. Touchez-le pour le relire, ou exportez-le en PDF.</span></div>
+    <div class="chips" style="margin-bottom:12px">${chips}</div>
+    <div class="card docs">${rows||`<p class="muted" style="margin:0">${all.length?'Aucun document de ce type.':'Aucun document pour le moment. Validez un contrôle quotidien : il apparaîtra ici.'}</p>${all.length?'':`<button type="button" class="btn primary" data-act="tab" data-id="visuel" style="margin-top:12px">Faire le contrôle du jour</button>`}`}
+    ${L.length>docN?`<button type="button" class="btn" data-act="docmore" style="width:100%;margin-top:12px">Afficher plus (${L.length-docN} restants)</button>`:''}</div>`;
+}
+function docRec(t,k){return t==='daily'?S.checks[k]:t==='monthly'?S.monthly[k]:t==='inc'?(S.incidents||[]).find(y=>y.id===k):(S.maint||[]).find(y=>y.id===k)}
+function docOpen(t,k){
+  const x=docList().find(y=>y.t===t&&String(y.key)===k),rec=docRec(t,k);if(!x||!rec)return;
+  const it=sheetItem(t==='daily'?'visuel':t==='monthly'?'mensuel':t==='inc'?'incident':'maint',rec,t==='daily'||t==='monthly'?k:undefined);
+  const lines=(it.details||'').split(' | ').filter(Boolean);
+  showModal(`${mh(esc(x.title))}<div class="docv">
+    <div class="kv"><span>Date</span><b>${esc(docDay(x.date))}${x.time?' à '+esc(x.time):''}</b></div>
+    ${x.by?`<div class="kv"><span>${t==='daily'?'Réalisé par':t==='mnt'?'Technicien':'Rédigé par'}</span><b>${esc(x.by)}</b></div>`:''}
+    <div class="kv"><span>Résultat</span><b><span class="pill ${x.tone}">${esc(x.status)}</span></b></div>
+    ${it.summary&&t!=='daily'&&t!=='monthly'?`<div class="kv"><span>Résumé</span><b>${esc(it.summary)}</b></div>`:''}
+    ${lines.length?`<ul class="dlines">${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`:''}
+    <div class="acts" style="margin-top:16px"><button type="button" class="btn" data-act="close">Fermer</button><button type="button" class="btn primary" data-act="docpdf" data-t="${t}" data-k="${esc(k)}">Exporter en PDF</button></div></div>`);
+}
+function docPdfBuild(t,k){
+  if(t==='daily'){const o=CHKDAY;CHKDAY=k;try{return pdfFor('daily')}finally{CHKDAY=o}}
+  if(t==='monthly'){const o=ctl.mon;ctl.mon=k;try{return pdfFor('monthly')}finally{ctl.mon=o}}
+  return pdfFor(t,k);
+}
+/* noms de fichier sans accents : acceptés partout (téléphones, Windows, mails) */
+const docFile=n=>String(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+async function docPdf(t,k){
+  let r=null;try{r=docPdfBuild(t,k)}catch(e){r=null}
+  if(!r){toast('Rien à exporter');return}
+  await saveBytes(docFile(r[0])+'.pdf',r[1],'application/pdf');
+}
+/* le bouton « PDF » des écrans de contrôle passe aussi par l'export commun (téléchargement direct dans l'appli installée) */
+async function doPdf(k,id){
+  const r=pdfFor(k,id);if(!r){toast('Rien à exporter');return}
+  await saveBytes(docFile(r[0])+'.pdf',r[1],'application/pdf');
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act^="doc"]');if(!b||b.disabled)return;
+  const a=b.dataset.act,d=b.dataset;
+  if(a==='docf'){docF=d.k;docN=40;vDocs($('#sub'))}
+  else if(a==='docmore'){docN+=40;vDocs($('#sub'))}
+  else if(a==='docopen')docOpen(d.t,d.k);
+  else if(a==='docpdf')docPdf(d.t,d.k);
+  else if(a==='docgo'){const m=$('#modal');if(m)m.innerHTML='';tab.controle='docs';docF=d.t||'all';location.hash!=='#controle'?(location.hash='#controle'):VIEWS.controle($('#main'));renderNav();window.scrollTo(0,0)}
 });
 
 METHODS.pass='Carnet de séances';
