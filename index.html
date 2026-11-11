@@ -865,10 +865,10 @@ body.vin #main>*:nth-child(2){animation-delay:.05s}body.vin #main>*:nth-child(3)
 .qline{display:flex;gap:6px;margin-bottom:6px}.qline input:first-child{flex:1;min-width:0}
 .qtot{text-align:right;font-size:18px;margin:6px 0 12px}.qtot b{font-size:24px;color:var(--brand)}
 .chero{display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:20px;background:var(--surface);border:1px solid var(--line);margin-bottom:14px;animation:rise .4s both}
-.chero svg.cart{width:132px;height:88px;flex:none;border-radius:16px}.chero h2{margin:0 0 4px;font-size:22px}.chero p{margin:0;color:var(--muted)}
+.chero svg.cillu{width:132px;height:88px;flex:none;border-radius:16px}.chero h2{margin:0 0 4px;font-size:22px}.chero p{margin:0;color:var(--muted)}
 .streak{margin-left:auto;display:flex;flex-direction:column;align-items:center;padding:10px 16px;border-radius:16px;background:var(--g-pay);color:var(--pay-ink)}.streak b{font-size:28px;font-family:var(--f-display)}.streak span{font-size:12px;font-weight:700}
 .gic{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--g-brand);color:#fff;margin-right:10px;vertical-align:middle}.gic svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8}
-@media (max-width:700px){.chero svg.cart{width:84px;height:56px}.mws{gap:4px}.hbr{grid-template-columns:1fr auto}.hbb{grid-column:1/-1}}
+@media (max-width:700px){.chero svg.cillu{width:84px;height:56px}.mws{gap:4px}.hbr{grid-template-columns:1fr auto}.hbb{grid-column:1/-1}}
 /* R. studio, planning perso, trophées */
 .grem0{justify-content:center;margin:14px 0 0}
 .stgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
@@ -4225,7 +4225,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act="qwgo"
 TABS.params.push(['pqw','Qweekle']);SUBS.pqw=vQweekle;
 
 /* ---- contrôle ludique ---- */
-const SV=(b,i)=>`<svg viewBox="0 0 120 80" class="cart" aria-hidden="true"><rect width="120" height="80" rx="14" fill="${b}"/>${i}</svg>`;
+const SV=(b,i)=>`<svg viewBox="0 0 120 80" class="cillu" aria-hidden="true"><rect width="120" height="80" rx="14" fill="${b}"/>${i}</svg>`;
 const CART={
  visuel:SV('#DCE6FC','<circle cx="96" cy="20" r="9" fill="#FFB23F"/><path d="M10 62h100" stroke="#1D4FD7" stroke-width="3"/><path d="M20 62l10-14h26l10 14" fill="#1D4FD7"/><circle cx="43" cy="30" r="5" fill="#0A1F4D"/><path d="M43 35v8l-7 5M43 43l7 5M43 38l-8-3M43 38l8-3" stroke="#0A1F4D" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M78 56l7 7 14-16" stroke="#1F9D55" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'),
  mensuel:SV('#FFE9D2','<rect x="30" y="12" width="54" height="58" rx="7" fill="#fff" stroke="#FF7A1A" stroke-width="3"/><rect x="44" y="8" width="26" height="10" rx="4" fill="#FF7A1A"/><path d="M40 32h8M40 44h8M40 56h8" stroke="#1D4FD7" stroke-width="3" stroke-linecap="round"/><path d="M54 32h22M54 44h22M54 56h16" stroke="#C9D5EF" stroke-width="4" stroke-linecap="round"/><circle cx="92" cy="58" r="13" fill="#1F9D55"/><path d="M86 58l5 5 8-10" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>'),
@@ -5812,7 +5812,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v48';
+const LAGO_V='v49';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
