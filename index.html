@@ -955,6 +955,32 @@ body.tedit-on :is(h1,h2,h3,p,span,label,b,button,a,small,td,th,li,strong,em):hov
 .zst[data-s="off"] i{background:#f39c12}
 .zst[data-s="sync"] i{background:#5ab0ff}
 .gstat{margin:14px 0 0;font-size:12px;text-align:center;line-height:1.45}.gstat .g-ok{color:var(--ok)}.gstat .g-off{color:var(--bad)}.gstat .gv{opacity:.55;margin-left:6px}
+:root{--gbh:67px}
+.gbar{position:sticky;top:0;z-index:48;margin:-16px calc(-1*max(16px,env(safe-area-inset-right,0px))) 14px calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--bg) 92%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.gb-in{position:relative;max-width:1360px;margin:0 auto}
+.gbox{display:flex;align-items:center;gap:6px;min-height:46px;padding:0 5px 0 12px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface)}
+.gbox:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+.gb-lead{display:grid;place-items:center;color:var(--muted);flex:none}
+.gbox input{flex:1;min-width:0;border:0;outline:0;background:none;padding:0 4px;min-height:42px;font-size:16px;border-radius:0;width:auto}
+.gbox input:focus-visible{outline:none}
+.gb-ic,.gb-go{flex:none;display:grid;place-items:center;min-width:38px;height:38px;border-radius:12px;color:var(--muted)}
+.gb-ic.rec{background:var(--bad);color:#fff;animation:pulse 1s infinite}
+.gb-go{padding:0 14px;font-weight:800;font-size:13px;color:#fff;background:linear-gradient(135deg,#6A4DF0,#FF7A1A)}
+.gb-res{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:49;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 14px 36px rgba(10,31,77,.22);padding:8px;max-height:min(70vh,520px);overflow:auto}
+.gb-res[hidden]{display:none}
+.gb-ri{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--surface-2);flex:none}
+.gb-ai .gb-ri{background:linear-gradient(135deg,#6A4DF0,#FF7A1A);color:#fff}
+.gb-q{font-weight:700;padding:6px 8px 2px}
+.gb-ans{padding:6px 8px 10px;white-space:pre-wrap;line-height:1.5}
+.gb-note{padding:8px 10px;font-size:13px}
+.gb-sug{padding:6px 6px 2px}
+.phead{top:var(--gbh,67px)}
+@media (min-width:901px){
+  .side{top:calc(var(--gbh,67px) + 12px);height:calc(100vh - var(--gbh,67px) - 28px);max-height:calc(100vh - var(--gbh,67px) - 28px)}
+  .cart{top:calc(var(--gbh,67px) + 12px);max-height:calc(100vh - var(--gbh,67px) - 28px)}
+}
+@media (max-width:900px){.gbar{padding-top:8px;padding-bottom:8px}.gb-go{padding:0 10px}}
+body.is-op [data-act="pickclient"],body.is-op [data-act="noclient"]{display:none!important}
 @media (max-width:1080px){.pos{grid-template-columns:minmax(0,1fr) 340px}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:0}
@@ -1008,6 +1034,7 @@ a.btn.primary{color:#fff}
 .cpick{width:40px;height:40px;border:0;padding:0;background:none;border-radius:10px;cursor:pointer}
 </style>
 
+<div class="gbar" id="gbar"></div>
 <div class="app">
   <aside class="side">
     <div class="logo" id="logo"></div>
@@ -2711,11 +2738,10 @@ const MTL=[['Réservations','calendar','resa','apercu',[['Planning','resa','aper
  ['Produits','box','gestion','produits',[['Produits','gestion','produits'],['Rapports','gestion','rapports']]],
  ['Clients','users','clients','fiches',[['Fiches','clients','fiches'],['Fidélité','clients','fidelite'],['Mailing','clients','mailing']]],
  ['Équipe','clock','staff','equipe',[['Planning','staff','equipe'],['Jour','staff','sjour'],['Congés','staff','conges']]],
- ['Contrôle','shield','controle','visuel',[['Contrôle quotidien','controle','visuel'],['Contrôle mensuel','controle','mensuel'],['Maintenance','controle','maint'],['Assistant IA','controle','ia']]],
+ ['Contrôle','shield','controle','visuel',[['Contrôle quotidien','controle','visuel'],['Contrôle mensuel','controle','mensuel'],['Maintenance','controle','maint']]],
  ['Paramètres','gear','params','pgen',[['Général','params','pgen'],['Parc','params','ppark'],['Équipe','params','pteam'],['Fidélité','params','ploy']]]];
 function homeTiles(){
-  return `<div class="gsearch">${ic('search')}<input id="gs" type="search" placeholder="Recherche : client, ticket, événement" autocomplete="off"><div id="gsr"></div></div>
-  <div class="mtiles">${homeList().filter(t=>(isAdmin()||t[2]!=='params')&&!opHidden(t[2])).map(([l,i,v,t,sub])=>`<div class="mt ${sub.length?'has':''}"><button class="mt-main" data-act="goto" data-v="${v}" data-t="${t}"><span class="mt-ic">${ic(i)}</span><span>${l}</span></button>${sub.length?`<div class="mt-sub">${sub.filter(x=>subOk(x[1],x[2])).map(([sl,sv,st])=>`<button data-act="goto" data-v="${sv}" data-t="${st}"><span class="si">${ic(SIC[sv+':'+st]||'plus')}</span><span class="sl2">${sl}</span><span class="sa"></span></button>`).join('')}</div>`:''}</div>`).join('')}</div>`;
+  return `<div class="mtiles">${homeList().filter(t=>(isAdmin()||t[2]!=='params')&&!opHidden(t[2])).map(([l,i,v,t,sub])=>`<div class="mt ${sub.length?'has':''}"><button class="mt-main" data-act="goto" data-v="${v}" data-t="${t}"><span class="mt-ic">${ic(i)}</span><span>${l}</span></button>${sub.length?`<div class="mt-sub">${sub.filter(x=>subOk(x[1],x[2])).map(([sl,sv,st])=>`<button data-act="goto" data-v="${sv}" data-t="${st}"><span class="si">${ic(SIC[sv+':'+st]||'plus')}</span><span class="sl2">${sl}</span><span class="sa"></span></button>`).join('')}</div>`:''}</div>`).join('')}</div>`;
 }
 document.addEventListener('input',e=>{
   if(e.target.id!=='gs')return;const n=norm(e.target.value);const box=$('#gsr');
@@ -2789,7 +2815,7 @@ const IWHO=['Client','Enfant','Accompagnant','Employé','Autre'];
 const MEQ=['Trampolines','Filets','Mousses / fosse','Airtrack','Ninja / escalade','Sols','Éclairage','Sono','Autre'];
 let ctl={mon:today().slice(0,7),inc:null,mnt:null,chat:[],aiOut:'',busy:false};
 tab.controle='visuel';
-const CSUB=[['visuel','Contrôle quotidien'],['mensuel','Contrôle mensuel'],['maint','Maintenance'],['ia','Assistant IA'],['incident','Rapport d’incident']];
+const CSUB=[['visuel','Contrôle quotidien'],['mensuel','Contrôle mensuel'],['maint','Maintenance'],['incident','Rapport d’incident']];
 TABS.controle=CSUB;
 SUBS.visuel=vVisuel;SUBS.mensuel=vMensuel;SUBS.maint=vMaint;SUBS.incident=vIncident;SUBS.ia=vIA;
 function vControl(m){tabbed(m,'Contrôle')}
@@ -3076,7 +3102,7 @@ function fileToData(file,max,cb){
 }
 const logoHtml=(cls='')=>{const l=S.settings.logo;return l?`<img class="brandlogo ${cls}" src="${l}" alt="${esc(S.settings.name)}">`:''};
 const OPM=[['resa','Planning clients'],['staff','Planning staff'],['clients','Clients'],['controle','Contrôle'],['gestion','Gestion']];
-const opHidden=id=>(noPos()&&POS_NAV.includes(id))||(id!=='accueil'&&id!=='params'&&!!(S.settings.off&&S.settings.off[id]))||(!isAdmin()&&id!=='accueil'&&id!=='params'&&id!=='controle'&&!perm(id));
+const opHidden=id=>(noPos()&&POS_NAV.includes(id))||(!isAdmin()&&(id==='clients'||id==='resa'))||(id!=='accueil'&&id!=='params'&&!!(S.settings.off&&S.settings.off[id]))||(!isAdmin()&&id!=='accueil'&&id!=='params'&&id!=='controle'&&!perm(id));
 const CATDEF=CATS.map(c=>c.name);
 const LISTDEF={mpts:MPTS.slice(),itypes:ITYPES.slice(),meq:MEQ.slice(),isec:ISECOURS.slice()};
 function applyCustom(){
@@ -3141,7 +3167,7 @@ document.addEventListener('click',e=>{
 const PKEY='lago-prof';
 let PROF='';try{PROF=localStorage.getItem(PKEY)||''}catch(e){}
 const PMODS=[['caisse','Caisse'],['resa','Planning clients',[['apercu','Planning'],['resas','Réservations'],['events','Événements'],['bracelets','Bracelets'],['horaires','Ouverture'],['devis','Devis']]],['staff','Planning staff (consultation)',[['all','Voir le planning de toute l’équipe (sinon : le sien seulement)']]],['clients','Clients'],
-  ['controle','Contrôle',[['visuel','Contrôle quotidien'],['mensuel','Contrôle mensuel'],['maint','Maintenance'],['incident','Rapport d’incident'],['ia','Assistant IA']]],
+  ['controle','Contrôle',[['visuel','Contrôle quotidien'],['mensuel','Contrôle mensuel'],['maint','Maintenance'],['incident','Rapport d’incident']]],
   ['gestion','Gestion',[['produits','Produits'],['rapports','Rapports et chiffre d’affaires'],['caisse','Tiroir-caisse'],['inventaire','Inventaire'],['edit','Modifier produits et prix']]],['stats','Statistiques']];
 function defaultProfiles(){const h=(S.settings&&S.settings.opHide)||{},p={};
   PMODS.forEach(([k,l,subs])=>{p[k]=k==='caisse'?true:!h[k];(subs||[]).forEach(([t])=>p[k+':'+t]=true)});
@@ -3667,7 +3693,7 @@ function aiCtx2(){
   let o=`Utilisateur connecté : ${ME?ME.name:'?'}${me?' (fiche employé : '+me.name+')':''}, ${isAdmin()?'administrateur':'opérateur'}. Aujourd’hui : ${dlong(t)} (${t}).\nÉtablissement : ${S.settings.name}.\n`;
   o+='Horaires et planning de l’équipe sur 8 jours :\n';
   for(let i=0;i<8;i++){const d=addDays(t,i),h=hoursFor(d),eq=S.staff.filter(s=>all||(me&&s.id===me.id)).map(s=>{const lv=onLeave(s.id,d),l=lv?'en congé':shiftLabel(d,s.id);return l?s.name+' '+l:''}).filter(Boolean);
-    o+=`- ${dlong(d)} (${d}) : ${h.closed?'établissement fermé':'ouvert '+hmm(h.o)+'-'+hmm(h.c)}${h.label?' ('+h.label+')':''} ; équipe : ${eq.join(', ')||'personne de prévu'}${evOn(d).length?' ; événements : '+evOn(d).map(e=>e.title+' '+e.guests+' invités').join(', '):''}\n`}
+    o+=`- ${dlong(d)} (${d}) : ${h.closed?'établissement fermé':'ouvert '+hmm(h.o)+'-'+hmm(h.c)}${h.label?' ('+h.label+')':''} ; équipe : ${eq.join(', ')||'personne de prévu'}${isAdmin()&&evOn(d).length?' ; événements : '+evOn(d).map(e=>e.title+' '+e.guests+' invités').join(', '):''}\n`}
   if(!all)o+='(Cet utilisateur ne peut voir que son propre planning : ne communique pas les horaires des autres.)\n';
   o+='Messages récents de l’équipe : '+(boardL().slice(-5).map(x=>x.name+' : '+x.text).join(' | ')||'aucun')+'\n';
   return o;
@@ -3693,7 +3719,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act="aiq"]
     r.onend=()=>{b.classList.remove('rec');if(fin.trim())aiAsk(fin)};r.start()}catch(x){toast('Micro indisponible')}}
 });
 document.addEventListener('submit',e=>{if(e.target.id==='aiqf'){e.preventDefault();aiAsk($('#aiqin').value)}});
-function aiBtn(){return aiOk()?`<button class="btn aisearch" data-act="aiq">${ic('wave')}<span>Demander à l’IA</span></button>`:''}
+function aiBtn(){return false?`<button class="btn aisearch" data-act="aiq">${ic('wave')}<span>Demander à l’IA</span></button>`:''}
 function rolePill(){const a=ME,adm=isAdmin(),n=pendingCount()+(adm?0:0);return aiBtn()+`<button class="rolepill ${adm?'adm':''}" data-act="rolesw" aria-label="Mon compte">${a&&a.photo?`<span class="pp"><img src="${a.photo}" alt=""></span>`:ic(adm?'shield':'users')}${a?esc(a.name.split(' ')[0]):'Compte'}${adm&&n?`<b class="nbadge">${n}</b>`:''}${unreadN()?`<b class="nbadge msg">${unreadN()}</b>`:''}</button>`}
 function accountMenu(){
   const a=ME;if(!a)return;
@@ -3739,7 +3765,7 @@ const CART={
 const CTX={visuel:['Avant l’ouverture','Faites le tour du parc : quelques minutes pour une journée en sécurité.'],mensuel:['Le grand check-up','Un contrôle complet des équipements, une fois par mois.'],maint:['L’atelier','Chaque réparation notée, rien n’est oublié.'],incident:['Rapport d’incident','Décrivez les faits simplement. Merci pour votre vigilance.'],ia:['Votre assistant','Posez vos questions sur le parc, en quelques mots.']};
 function cHero(k){const [t,s]=CTX[k]||['',''];let streak=0;if(k==='visuel'){for(let i=0;i<60;i++){const d=addDays(today(),-i-(S.checks[today()]&&S.checks[today()].done?0:1));if(S.checks[d]&&S.checks[d].done)streak++;else break}}
   return `<div class="chero">${CART[k]||''}<div><h2>${t}</h2><p>${s}</p></div>${k==='visuel'&&streak?`<div class="streak" title="Jours consécutifs avec contrôle validé"><b class="num">${streak}</b><span>jour${streak>1?'s':''} d’affilée</span></div>`:''}</div>`}
-['visuel','mensuel','maint','incident','ia'].forEach(k=>{const f=SUBS[k];SUBS[k]=m=>{f(m);m.insertAdjacentHTML('afterbegin',cHero(k))}});
+['visuel','mensuel','maint','incident'].forEach(k=>{const f=SUBS[k];SUBS[k]=m=>{f(m);m.insertAdjacentHTML('afterbegin',cHero(k))}});
 const GICO={Zones:'<path d="M3 17h18M6 17l3-8h6l3 8" fill="none"/><circle cx="12" cy="5" r="2"/>',Airbags:'<circle cx="12" cy="12" r="7"/><path d="M12 9v6M9 12h6"/>',Accueil:'<path d="M12 3l7 3v5c0 4-3 7-7 8-4-1-7-4-7-8V6z"/><path d="M9 11.500l2 2 4-4"/>'};
 const gIcon=g=>{const k=Object.keys(GICO).find(x=>g.startsWith(x));return `<svg class="i" viewBox="0 0 24 24">${GICO[k]||GICO.Accueil}</svg>`};
 function confetti(){const c=document.createElement('div');c.className='confetti';const col=['#1D4FD7','#FF7A1A','#1F9D55','#FFB23F','#6A4DF0'];
@@ -4831,6 +4857,7 @@ const POS_NAV=['caisse','stats','gestion'];
 const POS_TABS=['clients:fidelite','clients:carnets','resa:entrees','params:ploy','params:pcat'];
 function vHome(m){
   vHomeV0(m);
+  if(!isAdmin())opHomeClean(m);
   if(!noPos())return;
   m.querySelectorAll('.kpi').forEach(k=>{if(/Ventes du jour/.test(k.textContent))k.remove()});
   m.querySelectorAll('[data-act="sellslot"]').forEach(b=>b.remove());
@@ -5126,7 +5153,7 @@ function bootGate(){
 const saveV0=saveBase;
 function save(){saveV0();cloudKick()}
 /* indicateur et verrous */
-function chrome(){chromeV0();if(cloudOn()){const f=$('#sidefoot');if(f){f.querySelectorAll('[data-act="reset"]').forEach(b=>b.remove());f.insertAdjacentHTML('beforeend',`<span class="zst" data-s="${CL.state}"><i></i><b>${CL.state==='ok'?'Synchronisé':CL.state==='sync'?'Synchronisation…':'Hors ligne'}</b></span>`)}}}
+function chrome(){chromeV0();gbarDraw();if(cloudOn()){const f=$('#sidefoot');if(f){f.querySelectorAll('[data-act="reset"]').forEach(b=>b.remove());f.insertAdjacentHTML('beforeend',`<span class="zst" data-s="${CL.state}"><i></i><b>${CL.state==='ok'?'Synchronisé':CL.state==='sync'?'Synchronisation…':'Hors ligne'}</b></span>`)}}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act="reset"]');if(b&&cloudOn()){e.stopImmediatePropagation();e.preventDefault();toast('Désactivé : la base en ligne est active')}},true);
 /* rafraîchir l’écran quand un collègue modifie quelque chose */
 setInterval(()=>{
@@ -5294,7 +5321,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v36';
+const LAGO_V='v37';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5307,6 +5334,98 @@ function gateStat(){
 }
 setInterval(gateStat,2000);
 document.addEventListener('change',e=>{if(e.target.id==='gshow'){const p=document.getElementById('gp');if(p)p.type=e.target.checked?'text':'password'}});
+
+/* ---------- T. barre de recherche IA tout en haut ; opérateurs sans clients ni planning clients ---------- */
+const GB_MIC='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+const GB_AI='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M19 15l.7 2.3 2.3.7-2.3.7L19 21l-.7-2.3-2.3-.7 2.3-.7z"/></svg>';
+const GB={key:'',busy:false,rec:null};
+const gbKey=()=>[isAdmin()?'a':'o',aiOk()?1:0,SR?1:0].join('|');
+function gbH(){const el=$('#gbar');if(el&&el.offsetHeight)document.documentElement.style.setProperty('--gbh',el.offsetHeight+'px')}
+function gbarDraw(force){
+  const el=$('#gbar');if(!el)return;
+  document.body.classList.toggle('is-op',!isAdmin());
+  const k=gbKey();if(!force&&k===GB.key&&el.firstChild)return;
+  GB.key=k;const ai=aiOk();
+  el.innerHTML=`<div class="gb-in"><form id="gbf" autocomplete="off" role="search"><div class="gbox"><span class="gb-lead">${ai?GB_AI:ic('search')}</span><input id="gbq" type="search" enterkeyhint="search" placeholder="${ai?'Demandez à l’IA ou cherchez…':'Rechercher dans l’app…'}" aria-label="${ai?'Recherche et assistant IA':'Recherche'}" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">${SR?`<button type="button" class="gb-ic" data-act="gb_mic" aria-label="Dicter la question">${GB_MIC}</button>`:''}<button class="gb-go" type="submit" aria-label="${ai?'Demander à l’IA':'Chercher'}">${ai?'Demander':ic('search')}</button></div></form><div class="gb-res" id="gbr" hidden></div></div>`;
+  requestAnimationFrame(gbH);
+}
+const gbPanel=h=>{const p=$('#gbr');if(!p)return;p.innerHTML=h||'';p.hidden=!h};
+const gbClear=()=>{gbPanel('');const i=$('#gbq');if(i)i.value=''};
+function gbSections(n){
+  const out=[];
+  homeList().filter(t=>(isAdmin()||t[2]!=='params')&&!opHidden(t[2])).forEach(([l,i,v,t,sub])=>{
+    if(norm(l).includes(n))out.push([l,i,v,t]);
+    sub.filter(x=>subOk(x[1],x[2])&&!opHidden(x[1])&&(!x[2]||tabsFor(x[1]).some(y=>y[0]===x[2]))).forEach(([sl,sv,st])=>{if(norm(sl).includes(n)&&norm(sl)!==norm(l))out.push([l+' › '+sl,i,sv,st])})
+  });
+  return out.slice(0,6);
+}
+function gbLocal(q){
+  const n=norm(q);if(n.length<2)return '';
+  const rows=gbSections(n).map(([l,i,v,t])=>`<button class="row rowbtn" data-act="goto" data-v="${v}" data-t="${t}"><span class="gb-ri">${ic(i)}</span><span class="grow"><b>${esc(l)}</b><span class="muted">Ouvrir</span></span></button>`);
+  if(isAdmin()){
+    S.clients.filter(c=>norm(c.name+' '+(c.phone||'')+' '+(c.email||'')).includes(n)).slice(0,5).forEach(c=>rows.push(`<button class="row rowbtn" data-act="gsclient" data-id="${c.id}"><span class="gb-ri">${ic('user')}</span><span class="grow"><b>${esc(c.name)}</b><span class="muted">Client · ${esc(c.phone||c.email||'')}</span></span></button>`));
+    S.sales.filter(s=>norm(s.no+' '+(s.clientId?clientName(s.clientId):'')).includes(n)).slice(-5).reverse().forEach(s=>rows.push(`<button class="row rowbtn" data-act="ticket" data-id="${s.id}"><span class="gb-ri">${ic('ticket')}</span><span class="grow"><b>${s.no}</b><span class="muted">Ticket · ${s.clientId?esc(clientName(s.clientId)):'comptoir'}</span></span><b class="num">${eur(s.total)}</b></button>`));
+    S.events.filter(x=>norm(x.title).includes(n)).slice(0,5).forEach(x=>rows.push(`<button class="row rowbtn" data-act="evinfo" data-id="${x.id}"><span class="gb-ri">${ic('calendar')}</span><span class="grow"><b>${esc(x.title)}</b><span class="muted">Événement · ${dshort(x.date)}</span></span></button>`));
+  }
+  return rows.join('');
+}
+const gbChips=()=>(isAdmin()?['Fais le bilan de la journée','Avec qui je travaille demain ?','Quels événements cette semaine ?','Quand est-on fermé ?']:['Avec qui je travaille demain ?','Qui travaille ce week-end ?','Quand est-on fermé ?']);
+function gbShow(){
+  const i=$('#gbq');if(!i)return;const q=i.value;
+  if(!q.trim()){gbPanel(aiOk()?`<div class="gb-sug"><p class="muted">Posez une question à l’IA :</p><div class="iachips" style="margin:8px 0 2px">${gbChips().map(s=>`<button class="btn" type="button" data-act="gb_ex" data-v="${esc(s)}">${esc(s)}</button>`).join('')}</div></div>`:'');return}
+  const L=gbLocal(q);
+  const top=aiOk()?`<button class="row rowbtn gb-ai" type="button" data-act="gb_ask"><span class="gb-ri">${GB_AI}</span><span class="grow"><b>Demander à l’IA</b><span class="muted">« ${esc(q.trim().slice(0,90))} »</span></span></button>`
+    :`<p class="muted gb-note">L’IA n’est disponible que lorsque Lago est ouvert depuis Claude. Recherche dans l’app :</p>`;
+  gbPanel(top+(L||(aiOk()?'':'<p class="muted gb-note">Aucun résultat.</p>')));
+}
+async function gbAsk(q){
+  q=String(q||'').trim();if(!q)return;
+  if(!aiOk()){gbShow();return}
+  if(GB.busy)return;GB.busy=true;
+  gbPanel(`<div class="gb-q">${esc(q)}</div><div class="gb-ans" id="gbans">…</div><div class="acts" style="margin:6px 8px 2px"><button class="btn" type="button" data-act="gb_close">Fermer</button></div>`);
+  let ctx='';try{ctx=(isAdmin()?aiCtx()+'\n':'')+aiCtx2()}catch(e){ctx=''}
+  try{await SAMPLE(AIRULES+'\nRéponds uniquement d’après ces données, de façon courte et claire (une ou deux phrases ; davantage seulement pour un bilan ou une rédaction). Si l’utilisateur dit « je suis X », X est la personne concernée. Si l’information manque, dis-le. N’invente rien.\n\n'+ctx+'\nQuestion : '+q,{cache:false,modelTier:'default',onText:({text})=>{const o=$('#gbans');if(o)o.textContent=text}})}
+  catch(e){const o=$('#gbans');if(o)o.textContent=e.text||AIERR[e.code]||'L’assistant est indisponible.';if(e.code==='not_granted'||e.code==='sampling_disabled')SAMPLE=null}
+  GB.busy=false;
+}
+function gbMic(b){
+  if(!SR)return;if(GB.rec){try{GB.rec.stop()}catch(e){}return}
+  try{const r=new SR();GB.rec=r;r.lang='fr-FR';r.interimResults=true;b.classList.add('rec');let fin='';
+    r.onresult=ev=>{fin=Array.from(ev.results).map(x=>x[0].transcript).join('');const i=$('#gbq');if(i)i.value=fin};
+    r.onerror=()=>{b.classList.remove('rec');GB.rec=null;toast('Micro indisponible : autorisez-le ou écrivez votre question')};
+    r.onend=()=>{b.classList.remove('rec');GB.rec=null;if(fin.trim()){aiOk()?gbAsk(fin):gbShow()}};r.start()}catch(x){GB.rec=null;toast('Micro indisponible')}
+}
+document.addEventListener('input',e=>{if(e.target.id==='gbq')gbShow()});
+document.addEventListener('focusin',e=>{if(e.target.id==='gbq'){const p=$('#gbr');if(p&&p.hidden)gbShow()}});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='gbf')return;e.preventDefault();const q=($('#gbq')||{}).value||'';
+  if(aiOk()&&q.trim())gbAsk(q);else{const b=document.querySelector('#gbr .rowbtn[data-act]:not([data-act^="gb_"])');if(b)b.click()}
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act^="gb_"]');
+  if(b){const a=b.dataset.act,i=$('#gbq');
+    if(a==='gb_ask')gbAsk(i?i.value:'');
+    else if(a==='gb_ex'){if(i)i.value=b.dataset.v;gbAsk(b.dataset.v)}
+    else if(a==='gb_mic')gbMic(b);
+    else if(a==='gb_close')gbClear();
+    return}
+  const p=$('#gbr');if(!p||p.hidden)return;
+  if(e.target.closest('#gbr [data-act]'))gbClear();
+  else if(!e.target.closest('#gbar'))gbPanel('');
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const p=$('#gbr');if(p&&!p.hidden)gbPanel('')}});
+window.addEventListener('resize',gbH);
+setInterval(()=>{const p=$('#gbr');if(p&&p.hidden&&document.activeElement!==$('#gbq'))gbarDraw()},1500);
+/* opérateurs : plus de planning clients ni de données clients */
+for(let i=PMODS.length-1;i>=0;i--)if(PMODS[i][0]==='resa'||PMODS[i][0]==='clients')PMODS.splice(i,1);
+function opHomeClean(m){
+  m.querySelectorAll('.hero-actions').forEach(x=>x.remove());
+  m.querySelectorAll('.kpi').forEach(k=>{if(/Réservations|Présents|Ventes du jour/.test(k.textContent))k.remove()});
+  m.querySelectorAll('.kpis').forEach(k=>{if(!k.children.length)k.remove()});
+  m.querySelectorAll('.home .card').forEach(c=>{const h=c.querySelector('h3');if(h&&/Prochains départs/.test(h.textContent))c.remove()});
+  const hp=m.querySelector('.hero > div > p:not(.eyebrow):not(.wel)');if(hp)hp.textContent=S.settings.name;
+}
+gbarDraw(true);
 
 METHODS.pass='Carnet de séances';
 function openPay(){
