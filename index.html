@@ -4855,7 +4855,8 @@ TABS.clients.push(['carnets','Carnets']);SUBS.carnets=vPasses;
 TABS.resa.push(['entrees','Entrées']);SUBS.entrees=vEntrees;
 {const g=PMODS.find(x=>x[0]==='gestion');if(g&&g[2])g[2].push(['promos','Codes promo']);const r=PMODS.find(x=>x[0]==='resa');if(r&&r[2])r[2].push(['entrees','Entrées'])}
 /* ---------- Y. mode sans caisse, envoi des rapports vers Google Sheets ---------- */
-const noPos=()=>S.settings.noPos!==false;
+const posOpOff=()=>S.settings.noPos!==false;
+const noPos=()=>posOpOff()&&!isAdmin();
 const POS_NAV=['caisse','stats','gestion'];
 const POS_TABS=['clients:fidelite','clients:carnets','resa:entrees','params:ploy','params:pcat'];
 function vHome(m){
@@ -4869,8 +4870,8 @@ function vSetStudioY(m){
   vSetStudioBase(m);if(!isAdmin())return;
   const st=S.settings,q=(S.sheetQ||[]).length;
   m.insertAdjacentHTML('afterbegin',`<div class="card" style="margin-bottom:14px"><h3>Fonctions de caisse</h3>
-   <label class="check"><input type="checkbox" id="y_pos" ${noPos()?'':'checked'}><span>Afficher la caisse, les statistiques de vente, la gestion des produits, les cartes cadeaux, les codes promo, les carnets et la fidélité</span></label>
-   <p class="muted" style="margin:8px 0 0">Décoché : tout cela est masqué pour tout le monde. Il reste le planning, les contrôles, le staff, les clients et les décharges.</p></div>
+   <label class="check"><input type="checkbox" id="y_pos" ${posOpOff()?'':'checked'}><span>Afficher aussi la caisse et les fonctions de vente aux opérateurs</span></label>
+   <p class="muted" style="margin:8px 0 0">La caisse, les statistiques de vente, la gestion des produits, les cartes cadeaux, les codes promo, les carnets et la fidélité sont toujours disponibles pour l’administrateur. Décoché : les opérateurs ne les voient pas. Coché : ils les voient selon les accès de leur profil.</p></div>
    <div class="card" style="margin-bottom:14px"><h3>Envoi des rapports vers Google Sheets</h3>
    <p class="muted" style="margin:0 0 8px">Après chaque contrôle quotidien, contrôle mensuel, rapport d’incident ou rapport d’intervention, une ligne est ajoutée à votre feuille Google (un onglet par type de rapport).</p>
    <div class="field"><label for="y_url">Adresse de l’application Google Apps Script</label><input id="y_url" type="url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(st.sheetUrl||'')}"></div>
@@ -4963,7 +4964,7 @@ document.addEventListener('click',e=>{
   else if(a==='y_retry'){sheetFlush();toast('Nouvel essai')}
 });
 document.addEventListener('change',e=>{
-  if(e.target.id==='y_pos'){S.settings.noPos=!e.target.checked;save();renderNav();toast(e.target.checked?'Fonctions de caisse affichées':'Fonctions de caisse masquées')}
+  if(e.target.id==='y_pos'){S.settings.noPos=!e.target.checked;save();renderNav();toast(e.target.checked?'Caisse affichée aussi pour les opérateurs':'Caisse réservée à l’administrateur')}
   else if(e.target.id==='y_url'){S.settings.sheetUrl=e.target.value.trim();save();toast('Adresse enregistrée')}
 });
 addEventListener('online',()=>{try{sheetFlush()}catch(e){}});
@@ -5324,7 +5325,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v38';
+const LAGO_V='v39';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
