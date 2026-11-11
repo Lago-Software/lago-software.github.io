@@ -991,6 +991,30 @@ body.is-op [data-act="pickclient"],body.is-op [data-act="noclient"]{display:none
 #maform,#pwform2{border-top:1px solid var(--line);padding-top:10px}
 .navacc{margin-top:6px}
 @media (min-width:901px){.navacc{padding-top:8px;border-top:1px solid rgba(255,255,255,.14)}}
+/* chat d'équipe */
+.tkcard{padding:0!important;display:flex;flex-direction:column;overflow:hidden}
+.tk-list{height:calc(100vh - 340px);height:calc(100dvh - 340px);min-height:260px;max-height:720px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;background:var(--surface-2);overscroll-behavior:contain}
+.tk-day,.tk-new{display:flex;justify-content:center;margin:12px 0 6px;position:relative}
+.tk-day span{font-size:12px;font-weight:700;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:3px 12px}
+.tk-new:before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px solid var(--pay)}
+.tk-new span{position:relative;background:var(--surface-2);color:var(--pay);font-size:12px;font-weight:700;padding:0 10px}
+.tk-m{display:flex;gap:8px;align-items:flex-end;margin-top:9px}.tk-m.grp{margin-top:2px}
+.tk-av{width:34px;flex:none}.tk-av .avatar{width:34px;height:34px;font-size:13px}
+.tk-b{max-width:min(78%,560px);display:flex;flex-direction:column;gap:2px;min-width:0}
+.tk-n{font-size:12px;color:var(--muted);padding-left:6px}
+.tk-t{background:var(--surface);border:1px solid var(--line);border-radius:16px 16px 16px 4px;padding:8px 12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.4}
+.tk-t a{color:inherit;text-decoration:underline}
+.tk-i{font-size:11px;color:var(--muted);padding:0 6px}
+.tk-del{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer}
+.tk-m.me{flex-direction:row-reverse}.tk-m.me .tk-b{align-items:flex-end}
+.tk-m.me .tk-t{background:linear-gradient(135deg,var(--brand),color-mix(in srgb,var(--brand) 72%,#5b8cff));color:var(--brand-ink);border-color:transparent;border-radius:16px 16px 4px 16px}
+.tk-comp{display:flex;gap:8px;align-items:flex-end;padding:10px;border-top:1px solid var(--line);background:var(--surface)}
+.tk-comp textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:14px;padding:10px 12px;font:inherit;font-size:16px;max-height:120px;min-height:44px;background:var(--surface);color:var(--ink)}
+.tk-send{width:44px;height:44px;padding:0;border-radius:50%;display:grid;place-items:center;flex:none}.tk-send svg{width:20px;height:20px}
+.tk-empty{margin:auto;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:6px;align-items:center}.tk-empty svg{width:40px;height:40px;color:var(--brand)}
+.tk-adm{margin-top:10px;font-size:13px}.tk-adm .glink{display:inline;margin:0;padding:0 4px}
+.tkcard{flex:none}
+@media (max-width:900px){.tk-list{height:calc(100vh - 390px);height:calc(100dvh - 390px);min-height:240px}}
 @media (max-width:1080px){.pos{grid-template-columns:minmax(0,1fr) 340px}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:0}
@@ -3112,7 +3136,7 @@ function fileToData(file,max,cb){
 }
 const logoHtml=(cls='')=>{const l=S.settings.logo;return l?`<img class="brandlogo ${cls}" src="${l}" alt="${esc(S.settings.name)}">`:''};
 const OPM=[['resa','Planning clients'],['staff','Planning staff'],['clients','Clients'],['controle','Contrôle'],['gestion','Gestion']];
-const opHidden=id=>(noPos()&&POS_NAV.includes(id))||(!isAdmin()&&(id==='clients'||id==='resa'))||(id!=='accueil'&&id!=='params'&&!!(S.settings.off&&S.settings.off[id]))||(!isAdmin()&&id!=='accueil'&&id!=='params'&&id!=='controle'&&!perm(id));
+const opHidden=id=>(noPos()&&POS_NAV.includes(id))||(!isAdmin()&&(id==='clients'||id==='resa'))||(id!=='accueil'&&id!=='params'&&!!(S.settings.off&&S.settings.off[id]))||(!isAdmin()&&id!=='accueil'&&id!=='params'&&id!=='controle'&&id!=='chat'&&!perm(id));
 const CATDEF=CATS.map(c=>c.name);
 const LISTDEF={mpts:MPTS.slice(),itypes:ITYPES.slice(),meq:MEQ.slice(),isec:ISECOURS.slice()};
 function applyCustom(){
@@ -5336,7 +5360,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v40';
+const LAGO_V='v41';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5614,7 +5638,7 @@ document.addEventListener('submit',async e=>{
   }
 });
 /* entrée « Mon compte » dans le menu, pour tout le monde */
-function renderNav(){
+function renderNavM(){
   renderNavV0();const n=document.getElementById('nav');
   if(n&&ME)n.insertAdjacentHTML('beforeend',`<div class="ni navacc"><div class="nrow"><a href="#" data-act="rolesw" title="Mon compte">${ic('user')}<span class="lg">Mon compte</span><span class="sm">Compte</span></a></div></div>`);
 }
@@ -5653,6 +5677,110 @@ document.addEventListener('click',async e=>{
       if(v)x.email=v;else delete x.email;save();vSetAcc($('#sub'));toast(v?'E-mail enregistré':'E-mail retiré')},false,String(x.email||'')||(MAILRE.test(x.ident)?x.ident:''));
   }
 });
+/* ---- Chat d'équipe : un seul salon, pour tout le monde ---- */
+IC.chat='<path d="M4 5.500h16v10.500H10.500L6 19.500V16H4z"/>';
+const CHSEND='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L3 10.500l7 2.500 2.500 7z"/><path d="M10 13L21 3"/></svg>';
+const talkL=()=>S.talk||(S.talk=[]);
+const TK_MAX=500;
+let CHD='',CHA=false,CHDIV=null,CHN=null,CHME=null,CHSIG='',CHB=-1;
+const chKey=()=>'lago-chatseen-'+(ME?ME.id:'');
+const chSeenRaw=()=>{try{const v=localStorage.getItem(chKey());return v===null?null:+v||0}catch(e){return 0}};
+const chSeen=()=>chSeenRaw()||0;
+const chSetSeen=t=>{try{localStorage.setItem(chKey(),String(t))}catch(e){}};
+const chOff=()=>!!(S.settings.off&&S.settings.off.chat);
+const chMax=()=>talkL().reduce((m,x)=>Math.max(m,x.ts||0),0);
+const chUnread=()=>ME&&!chOff()?talkL().filter(x=>x.ts>chSeen()&&x.accId!==ME.id).length:0;
+const chSorted=()=>[...talkL()].sort((a,b)=>a.ts-b.ts||(a.id<b.id?-1:1));
+const chSig=L=>L.length+':'+(L.length?L[L.length-1].id:'')+':'+(L.length?L[0].id:'');
+function chText(t){
+  return esc(t).replace(/https?:\/\/[^\s<]+/g,u=>{let tail='';const m=u.match(/[.,;:!?)\]]+$/);if(m){tail=m[0];u=u.slice(0,-tail.length)}return `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>${tail}`});
+}
+function chDay(dk){
+  if(dk===today())return 'Aujourd’hui';if(dk===addDays(today(),-1))return 'Hier';
+  return dlong(dk);
+}
+function chHtml(){
+  const L=chSorted();
+  if(!L.length)return `<div class="tk-empty">${ic('chat')}<b>Aucun message pour le moment</b><span>Écrivez le premier : toute l’équipe le verra.</span></div>`;
+  const me=ME&&ME.id;let out='',lastDay='',prev=null,divDone=false;
+  for(const x of L){
+    const dk=dkey(new Date(x.ts));
+    if(dk!==lastDay){out+=`<div class="tk-day"><span>${esc(chDay(dk))}</span></div>`;lastDay=dk;prev=null}
+    if(CHDIV!=null&&!divDone&&x.ts>CHDIV&&x.accId!==me){out+='<div class="tk-new"><span>Nouveaux messages</span></div>';divDone=true;prev=null}
+    const mine=x.accId===me,grp=!!prev&&prev.accId===x.accId&&x.ts-prev.ts<5*60000,a=accs().find(y=>y.id===x.accId);
+    out+=`<div class="tk-m ${mine?'me':''} ${grp?'grp':''}">${mine?'':`<span class="tk-av">${grp?'':avA(a||{name:x.name})}</span>`}<div class="tk-b">${!mine&&!grp?`<b class="tk-n">${esc(a?a.name:x.name)}</b>`:''}<div class="tk-t">${chText(x.text)}</div><span class="tk-i">${hm(x.ts)}${(isAdmin()||mine)?` · <button type="button" class="tk-del" data-act="ch_del" data-id="${esc(x.id)}">Supprimer</button>`:''}</span></div></div>`;
+    prev=x;
+  }
+  return out;
+}
+function chatDraw(force){
+  const el=document.getElementById('chlist');if(!el)return;
+  const near=el.scrollHeight-el.clientHeight-el.scrollTop<90,top=el.scrollTop;
+  el.innerHTML=chHtml();CHSIG=chSig(chSorted());
+  if(force||near)el.scrollTop=el.scrollHeight;else el.scrollTop=top;
+}
+const chSize=t=>{t.style.height='auto';t.style.height=Math.min(t.scrollHeight,120)+'px'};
+function vChat(m){
+  if(!ME){m.innerHTML='';return}
+  const old=document.getElementById('chlist'),keep=old?{top:old.scrollTop,bot:old.scrollHeight-old.clientHeight-old.scrollTop<90}:null;
+  if(!CHA){CHA=true;CHDIV=chSeenRaw()===null?chMax():chSeen()}
+  m.innerHTML=head('Chat d’équipe')+`<section class="tkcard card"><div class="tk-list" id="chlist" role="log" aria-live="polite" aria-label="Messages de l’équipe"></div>
+   <form id="chform" class="tk-comp"><textarea id="chtext" rows="1" maxlength="600" placeholder="Écrire à toute l’équipe…" enterkeyhint="send" aria-label="Votre message"></textarea><button class="btn primary tk-send" type="submit" aria-label="Envoyer">${CHSEND}</button></form></section>
+   ${isAdmin()?`<p class="muted tk-adm">Administrateur : vous pouvez supprimer n’importe quel message. <button type="button" class="glink" data-act="ch_clear">Vider la conversation</button></p>`:''}`;
+  const ta=document.getElementById('chtext');ta.value=CHD;chSize(ta);
+  chatDraw(!keep||keep.bot);
+  if(keep&&!keep.bot)document.getElementById('chlist').scrollTop=keep.top;
+  if(!keep&&matchMedia('(pointer:fine)').matches)ta.focus();
+  chSetSeen(chMax());chBadge();
+}
+VIEWS.chat=vChat;
+NAV.splice(NAV.findIndex(n=>n[0]==='staff')+1,0,['chat','Chat','chat','Chat']);
+/* saisie, envoi, suppression */
+document.addEventListener('input',e=>{if(e.target.id==='chtext'){CHD=e.target.value;chSize(e.target)}});
+document.addEventListener('keydown',e=>{
+  if(e.target.id==='chtext'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();const f=document.getElementById('chform');if(f.requestSubmit)f.requestSubmit();else f.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}))}
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='chform')return;e.preventDefault();if(!ME)return;
+  const ta=document.getElementById('chtext'),t=(ta.value||'').trim().slice(0,600);if(!t)return;
+  const L=talkL(),ts=Math.max(Date.now(),chMax()+1);
+  L.push({id:uid(),accId:ME.id,name:ME.name,text:t,ts});
+  L.sort((a,b)=>a.ts-b.ts);while(L.length>TK_MAX)L.shift();
+  ta.value='';CHD='';chSize(ta);save();chSetSeen(ts);chatDraw(true);ta.focus();
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act="ch_del"],[data-act="ch_clear"]');if(!b||!ME)return;
+  if(b.dataset.act==='ch_del'){
+    const id=b.dataset.id,x=talkL().find(y=>y.id===id);if(!x||!(isAdmin()||x.accId===ME.id))return;
+    askYes('Supprimer ce message pour toute l’équipe ?',()=>{const i=talkL().findIndex(y=>y.id===id);if(i>=0){talkL().splice(i,1);save();chatDraw()}},'Supprimer');
+  }else if(isAdmin()){
+    askYes('Vider toute la conversation ? Tous les messages seront supprimés pour toute l’équipe.',()=>{S.talk=[];save();chatDraw(true)},'Tout supprimer');
+  }
+});
+/* pastille de messages non lus, alerte discrète, suivi en direct */
+function chBadge(){
+  const n=chUnread(),a=document.querySelector('#nav a[data-v="chat"]');
+  if(a){let b=a.querySelector('.nbadge');if(n){if(!b){b=document.createElement('b');b.className='nbadge';a.appendChild(b)}if(b.textContent!==String(n))b.textContent=n}else if(b)b.remove()}
+  if(n!==CHB){CHB=n;document.title=(n?'('+n+') ':'')+'Lago';try{if(navigator.setAppBadge){n?navigator.setAppBadge(n):navigator.clearAppBadge()}}catch(x){}}
+}
+function chTick(){
+  if(!ME){CHME=null;CHA=false;return}
+  const L=talkL(),mx=chMax();
+  if(CHME!==ME.id){CHME=ME.id;CHN=mx;CHA=false;if(chSeenRaw()===null)chSetSeen(mx)}
+  if(chOff()){chBadge();if(view==='chat')location.hash='#accueil';return}
+  const vis=!document.hidden;
+  if(view==='chat'){
+    if(vis){chSetSeen(mx);CHN=Math.max(CHN,mx)}
+    if(chSig(chSorted())!==CHSIG&&document.getElementById('chlist'))chatDraw();
+  }else{
+    CHA=false;
+    if(mx>CHN){const f=L.filter(x=>x.ts>CHN&&x.accId!==ME.id).sort((a,b)=>a.ts-b.ts).pop();CHN=mx;
+      if(f&&vis){const a=accs().find(y=>y.id===f.accId);toast((a?a.name.split(' ')[0]:f.name.split(' ')[0])+' : '+f.text.replace(/\s+/g,' ').slice(0,70)+' (Chat)')}}
+  }
+  chBadge();
+}
+setInterval(chTick,1000);
+function renderNav(){renderNavM();chBadge()}
 
 METHODS.pass='Carnet de séances';
 function openPay(){
