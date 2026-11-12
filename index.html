@@ -6324,12 +6324,35 @@ function diffT(r,m,path,out){
 }
 /* état de la synchronisation */
 const CL={R:undefined,B:undefined,fetched:false,ready:false,busy:false,again:false,es:null,state:'off',t:null,ui:false,err:'',last:0,ev:0,ka:75000,away:10000,hid:0};
-function setCS(s){CL.state=s;if(s==='ok')CL.err='';document.querySelectorAll('.zst').forEach(e=>{e.dataset.s=s;const t=e.querySelector('b');if(t)t.textContent=s==='ok'?'Synchronisé':s==='sync'?'Synchronisation…':'Hors ligne'})}
-const cUrl=p=>{const c=cloudCfg();return c.u.replace(/\/+$/,'')+'/'+c.r+(p?'/'+p:'')+'.json'};
+function setCS(s){CL.state=s;if(s==='ok')CL.err='';document.querySelectorAll('.zst').forEach(e=>{e.dataset.s=s;e.title=s==='ok'?'':(CL.err||'');const t=e.querySelector('b');if(t)t.textContent=s==='ok'?'Synchronisé':s==='sync'?'Synchronisation…':'Hors ligne'})}
+/* v64 : si la route réseau principale vers la base ne répond plus (connexion bloquée dans le navigateur : erreur 503 ou attente sans fin),
+   on essaie la route équivalente « nom de serveur. » (même base, même adresse) et on la garde tant qu'elle marche. */
+const cAltOk=c=>!!c&&/^https:\/\/[^\/:]+\.(firebasedatabase\.app|firebaseio\.com)\/?$/i.test(c.u||'');
+const cHostFor=(c,alt)=>c.u.replace(/\/+$/,'')+(alt&&cAltOk(c)?'.':'');
+const cBaseFor=(c,alt)=>cHostFor(c,alt)+'/'+c.r;
+const cUrl=p=>{const c=cloudCfg();return cBaseFor(c,c.alt)+(p?'/'+p:'')+'.json'};
+function cAltSet(alt){const c=cloudCfg();if(c&&!!c.alt!==!!alt){c.alt=!!alt;cloudSet(c);if(CL.ready)setTimeout(cloudListen,0)}}
 async function cFetch(ms){
-  const ac=new AbortController(),to=setTimeout(()=>ac.abort(),ms||8000);
-  try{const r=await fetch(cUrl(''),{signal:ac.signal});if(!r.ok)throw new Error('http '+r.status);const j=await r.json();CL.R=j===null?undefined:fixArr(j);CL.fetched=true}
-  finally{clearTimeout(to)}
+  ms=ms||8000;const c=cloudCfg(),alts=cAltOk(c),first=!!c.alt;
+  const get=(alt,sig)=>fetch(cBaseFor(c,alt)+'.json',{signal:sig}).then(async r=>{if(!r.ok)throw new Error('http '+r.status);return{j:await r.json(),alt}});
+  /* route principale d'abord ; sans réponse après 2,5 s (ou en cas d'erreur), on lance la route alternative en parallèle : la première qui répond gagne */
+  const out=await new Promise((resolve,reject)=>{
+    const acs=[],errs=[];let done=false,n=0,t2=0,tt=0;
+    const end=(f,v)=>{if(done)return;done=true;clearTimeout(t2);clearTimeout(tt);acs.forEach(a=>{try{a.abort()}catch(e){}});f(v)};
+    const run=alt=>{n++;const a=new AbortController();acs.push(a);get(alt,a.signal).then(v=>end(resolve,v),e=>{if(done)return;errs.push(e);if(alts&&n<2){clearTimeout(t2);run(!first)}else if(errs.length>=n)end(reject,errs[0])})};
+    tt=setTimeout(()=>end(reject,errs[0]||new Error('délai dépassé')),ms);
+    run(first);
+    if(alts)t2=setTimeout(()=>{if(!done&&n<2)run(!first)},Math.min(2500,ms/3));
+  });
+  CL.R=out.j===null?undefined:fixArr(out.j);CL.fetched=true;
+  if(!!out.alt!==!!c.alt)cAltSet(out.alt);
+}
+/* envoi des modifications : 10 s maximum par essai, puis l'autre route (sauf refus explicite de la base) */
+async function cPatch(patch){
+  const c=cloudCfg(),alts=cAltOk(c);
+  const send=async alt=>{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),10000);try{const r=await fetch(cBaseFor(c,alt)+'.json',{method:'PATCH',body:JSON.stringify(patch),signal:ac.signal});if(!r.ok)throw new Error('http '+r.status)}finally{clearTimeout(to)}};
+  try{await send(!!c.alt)}
+  catch(e){if(!alts||/^http 4/.test(String((e&&e.message)||'')))throw e;await send(!c.alt);cAltSet(!c.alt)}
 }
 function treeToS(T,full){
   if(full)for(const k of Object.keys(S))if(!CLOUD_SKIP.includes(k))delete S[k];
@@ -6366,8 +6389,7 @@ async function cloudStep(){
   CL.B=CL.R;
   if(Object.keys(patch).length){
     setCS('sync');
-    const r=await fetch(cUrl(''),{method:'PATCH',body:JSON.stringify(patch)});
-    if(!r.ok)throw new Error('http '+r.status);
+    await cPatch(patch);
     let R=CL.R;for(const p in patch)R=setAt(R,p.split('/'),patch[p]===null?undefined:patch[p]);
     CL.R=R;CL.B=R;
     try{localStorage.removeItem(CBOX)}catch(e){}
@@ -6401,6 +6423,7 @@ function cloudListen(){
   es.addEventListener('put',ev=>on('put',ev));es.addEventListener('patch',ev=>on('patch',ev));
   es.addEventListener('keep-alive',()=>{CL.ev=Date.now()});
   es.onopen=()=>{CL.ev=Date.now();if(CL.state==='off')setCS('ok')};es.onerror=()=>setCS('off');
+  if(cAltOk(c))setTimeout(()=>{if(CL.es===es&&es.readyState===0&&!CL.busy){CL.fetched=false;cloudKick(0)}},7000);
 }
 /* flux endormi (veille du téléphone, changement de réseau…) : on le rouvre et on relit la base */
 function cloudWake(force,away){
@@ -6414,6 +6437,7 @@ addEventListener('pageshow',e=>{if(e.persisted)cloudWake(true)});
 async function cloudBoot(){
   const c=cloudCfg();
   await cFetch(7000);
+  c.alt=(cloudCfg()||{}).alt;
   if(c.fresh&&CL.R!==undefined){treeToS(CL.R,true);cloudNormalize();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}CL.B=CL.R;c.fresh=false;cloudSet(c);CL.ui=true}
   else if(c.fresh){c.fresh=false;cloudSet(c)}
   else{
@@ -6623,7 +6647,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v63';
+const LAGO_V='v64';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -9454,7 +9478,8 @@ async function webOpen(r){
   return JSON.parse(new TextDecoder().decode(pt));
 }
 const webDb=()=>{const c=cloudCfg();return c&&c.u?c.u.replace(/\/+$/,''):''};
-const webU=p=>webDb()+'/pub/'+webCfg().k+'/'+p+'.json';
+const webDbNow=()=>{const c=cloudCfg();return c&&c.u?cHostFor(c,c.alt):''};
+const webU=p=>webDbNow()+'/pub/'+webCfg().k+'/'+p+'.json';
 const webReady=()=>{const w=webCfg();return !!(w.on&&w.k&&w.pub&&w.priv&&cloudOn())};
 function webEmbedParam(){const w=webCfg();return wb64(new TextEncoder().encode(JSON.stringify({u:webDb(),k:w.k,p:w.pub})))}
 const webLink=()=>WEB_PAGE+'?c='+webEmbedParam();
