@@ -4335,7 +4335,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v65';
+const LAGO_V='v66';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -7201,7 +7201,7 @@ function webCfgOut(w){
   const P=(ids,adds)=>ids.map(webProd).filter(p=>p&&p.active!==false&&(adds||(p.jumper&&p.dur))).map(p=>{const o={id:p.id,n:p.name,d:(w.desc&&w.desc[p.id])||'',p:p.price};if(!adds)o.dur=p.dur;return o});
   return{v:1,on:true,name:S.settings.name||'',tel:S.settings.phone||'',mail:S.settings.mail||'',addr:S.settings.addr||'',brand:S.settings.brand||'#1D4FD7',accent:S.settings.accent||'#FF7A1A',
     cap:S.settings.cap,wcap:Math.min(S.settings.cap,w.cap),lead:w.lead,days:w.days,max:w.max,tz:(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Paris'}catch(e){return 'Europe/Paris'}})(),
-    info:w.info||'',cgv:w.cgv||'',pre:(w.pre||'RES').slice(0,4),br:BR.map(b=>[b[0],b[1]]),prods:P(w.prods||[],false),adds:P(w.adds||[],true),upd:Date.now()};
+    info:w.info||'',cgv:w.cgv||'',...(()=>{const lg=S.settings.legal||{},c=cnf();return{lg:{r:lg.raison||'',f:lg.forme||'',a:lg.adr||'',s:lg.siret||'',t:lg.franchise?'':(lg.tva||''),fr:!!lg.franchise,m:lg.mail||S.settings.mail||''},med:{n:c.med.n||'',u:c.med.u||''},ret:c.ret.y,cv:'T1-'+cfSha(JSON.stringify([w.cgv||'',lg.raison,lg.siret,lg.adr,c.med.n,c.med.u])).slice(0,8)}})(),pre:(w.pre||'RES').slice(0,4),br:BR.map(b=>[b[0],b[1]]),prods:P(w.prods||[],false),adds:P(w.adds||[],true),upd:Date.now()};
 }
 async function webPublish(force){
   const w=webCfg();if(!webReady())return false;
@@ -7264,7 +7264,7 @@ async function webIngest(id,r){
   if(!people||people>w.max)return null;
   const clean=(s,n)=>String(s==null?'':s).replace(/[\u0000-\u001f]/g,' ').trim().slice(0,n);
   const b={id,ref:clean(p.ref,14)||('WEB-'+id.slice(0,5).toUpperCase()),ts:+r.ts||Date.now(),date:p.date,start:p.start,items,people,total:items.reduce((a,x)=>a+x.q*x.price,0),
-    name:clean(p.name,80),mail:clean(p.mail,120),phone:clean(p.phone,20),note:clean(p.note,300),optin:!!p.optin,st:'ok'};
+    name:clean(p.name,80),mail:clean(p.mail,120),phone:clean(p.phone,20),note:clean(p.note,300),optin:!!p.optin,cv:clean(p.cv,16),st:'ok'};
   /* places encore libres ? (la page a déjà réservé les places, ce contrôle est un filet de sécurité) */
   const longest=Math.max(...items.filter(x=>x.dur).map(x=>x.dur));
   for(let m=b.start;m<b.start+longest;m+=15){
@@ -7553,11 +7553,13 @@ function hOffline(){
 }
 function healthQuick(){
   const out=[];for(const f of [hStorage,hSync,hBackup,hAccounts,hLegal,hErrors,hOffline]){try{out.push(f())}catch(e){out.push({id:f.name,lv:'warn',t:f.name,d:'Contrôle impossible : '+e.message})}}
+  try{if(typeof hExtra==='function')out.push(...hExtra())}catch(e){out.push({id:'extra',lv:'warn',t:'Conformité',d:'Contrôle impossible : '+e.message})}
   return out;
 }
 async function hClock(){
+  if(!location.protocol.startsWith('http'))return{id:'clock',lv:'ok',t:'Heure de l’appareil',d:'Contrôle indisponible dans cet affichage.'};
   try{
-    const t0=Date.now(),r=await fetch(location.protocol.startsWith('http')?'sw.js':'https://www.gstatic.com/generate_204',{cache:'no-store',mode:location.protocol.startsWith('http')?'same-origin':'no-cors'});
+    const t0=Date.now(),r=await fetch('sw.js',{cache:'no-store',mode:'same-origin'});
     const d=r.headers.get('date');if(!d)return{id:'clock',lv:'warn',t:'Heure de l’appareil',d:'Impossible de comparer avec un serveur.'};
     const drift=Math.round((Date.now()-new Date(d).getTime())/1000);
     return{id:'clock',lv:Math.abs(drift)>120?'bad':Math.abs(drift)>30?'warn':'ok',t:'Heure de l’appareil',d:Math.abs(drift)<=30?'Exacte (écart '+drift+' s). Les tickets sont datés à la seconde près.':'Écart de '+drift+' s avec l’heure réelle : corrigez l’heure de l’appareil, elle date les tickets et les clôtures.'}
@@ -7576,7 +7578,7 @@ async function healthFull(){
   HEALTH.res=q;HEALTH.at=Date.now();return q;
 }
 const lvTxt={ok:'En ordre',warn:'À surveiller',bad:'À corriger'};
-function healthRows(l){return l.map(x=>`<div class="row hrow" data-lv="${x.lv}"><span class="pill ${x.lv==='ok'?'ok':x.lv==='warn'?'warn':'danger'}">${lvTxt[x.lv]}</span><span class="grow"><b>${esc(x.t)}</b><span class="muted">${x.d}</span></span></div>`).join('')}
+function healthRows(l){return l.map(x=>`<div class="row hlt" data-lv="${x.lv}"><span class="pill ${x.lv==='ok'?'ok':x.lv==='warn'?'warn':'danger'}">${lvTxt[x.lv]}</span><span class="grow"><b>${esc(x.t)}</b><span class="muted">${x.d}</span></span></div>`).join('')}
 async function vSetHealth(m){
   if(!isAdmin()){m.innerHTML='<p class="muted">Réservé à l’administrateur.</p>';return}
   m.innerHTML='<div class="card"><h3>Santé du système</h3><p class="muted">Contrôle en cours…</p></div>';
@@ -7629,6 +7631,355 @@ function vHome(m){
     m.querySelector('.hero').insertAdjacentHTML('afterend',`<div class="banner sfban" role="status"><span><b>Santé du système :</b> ${l.slice(0,2).map(x=>esc(x.t)).join(', ')}${l.length>2?' et '+(l.length-2)+' autre(s)':''}.</span><button type="button" class="btn ${bad.length?'primary':''}" data-act="goto" data-v="params" data-t="psante">Voir</button></div>`);
   }catch(e){}
 }
+/* ---- v66 : conformité étendue — données personnelles (RGPD), obligations réglementaires, tableau de conformité ----
+   Tout est stocké dans S.settings.conf (synchronisé avec l'équipe). Aucune donnée personnelle n'est écrite dans le journal scellé :
+   il ne contient que des identifiants techniques. */
+CF_T.rgpd='Données personnelles';
+const CN_DAY=864e5;
+const cnFr=ds=>ds?new Date(ds+'T12:00:00').toLocaleDateString('fr-FR'):'—';
+const cnTs=ts=>ts?new Date(ts).toLocaleDateString('fr-FR'):'jamais';
+const cnAddM=(ds,m)=>{const d=new Date(ds+'T12:00:00');const day=d.getDate();d.setMonth(d.getMonth()+m);if(d.getDate()!==day)d.setDate(0);return ymd(d.getTime())};
+const cnAns=y=>y+' an'+(y>1?'s':'');
+const cnDiff=(a,b)=>Math.round((new Date(a+'T12:00:00')-new Date(b+'T12:00:00'))/CN_DAY);
+const cnRe=()=>{const m=document.getElementById('sub');if(m&&view==='params'&&SUBS[tab.params])SUBS[tab.params](m)};
+
+/* obligations courantes d'un parc de loisirs : suggestions, à confirmer avec l'assureur, la commission de sécurité et la DDPP */
+const CN_PRE=[
+ {k:'elec',t:'Vérification des installations électriques',m:12,s:'Organisme agréé ou accrédité · arrêté du 25 juin 1980 (EC 15), Code du travail R4226-16'},
+ {k:'eclair',t:'Éclairage de sécurité',m:12,s:'Arrêté du 25 juin 1980 (EC 14, EC 15)'},
+ {k:'extinct',t:'Extincteurs et dispositifs d’extinction',m:12,s:'Arrêté du 25 juin 1980 (MS 73)'},
+ {k:'ssi',t:'Alarme incendie (système de sécurité incendie)',m:12,s:'Arrêté du 25 juin 1980 (MS 73)'},
+ {k:'deseno',t:'Désenfumage (si le local en est équipé)',m:12,s:'Arrêté du 25 juin 1980 (DF 10)'},
+ {k:'gaz',t:'Chauffage, gaz et ventilation (selon vos équipements)',m:12,s:'Arrêté du 25 juin 1980 (GZ 29-30, CH 57-58) · Code du travail R4222-20'},
+ {k:'portes',t:'Portes et portails automatiques (si équipé)',m:6,s:'Arrêté du 21 décembre 1993 · R125-5 du code de la construction'},
+ {k:'evac',t:'Exercice d’évacuation avec l’équipe',m:6,s:'Code du travail R4227-39'},
+ {k:'jeux',t:'Inspection des trampolines et structures par une personne compétente',m:12,s:'Normes XP S52-370 et notice du fabricant : usage courant, à confirmer avec votre assureur'},
+ {k:'mousse',t:'Brassage et renouvellement des cubes de mousse',m:3,s:'Selon la notice du fabricant (point relevé par la DGCCRF) : ajustez la périodicité'},
+ {k:'rc',t:'Assurance responsabilité civile : renouvellement et attestation',m:12,s:'Votre contrat d’assurance'},
+ {k:'duerp',t:'Document unique d’évaluation des risques : mise à jour',m:12,s:'Code du travail R4121-2 (annuelle dès 11 salariés, recommandée avant)'},
+ {k:'sst',t:'Secourisme : formation et recyclage de l’équipe',m:24,s:'Usage courant (INRS)'},
+ {k:'registre',t:'Registre de sécurité : relecture et rapports de vérification classés',m:12,s:'Code de la construction R123-51'},
+ {k:'a_zip',t:'Archive fiscale annuelle des tickets',m:12,auto:'zip',s:'Livre des procédures fiscales L102 B · Paramètres › Conformité'},
+ {k:'a_chain',t:'Vérification de l’intégrité des tickets',m:1,auto:'chain',s:'Module de conformité de la caisse · Paramètres › Conformité'},
+ {k:'a_rgpd',t:'Registre des traitements de données personnelles : révision',m:12,auto:'rgpd',s:'RGPD, article 30 · Paramètres › Données personnelles'},
+ {k:'a_bk',t:'Copie de sauvegarde téléchargée hors de l’appareil',m:3,auto:'bk',s:'Bonne pratique · Paramètres › Santé'}
+];
+/* actions à faire hors de Lago : cochées à la main */
+const CN_EXT=[
+ ['mfa','Double authentification activée sur le compte GitHub et sur le compte Google (Firebase)'],
+ ['rules','Règles Firebase publiées (Paramètres › Réservation en ligne)'],
+ ['med','Adhésion à un médiateur de la consommation (obligatoire pour vendre aux particuliers)'],
+ ['ass','Contrat d’assurance responsabilité civile couvrant l’activité trampoline (attestation à jour)'],
+ ['reg','Règlement intérieur et consignes de sécurité affichés à l’entrée'],
+ ['prix','Tarifs TTC affichés à l’accueil (arrêté du 3 décembre 1987)'],
+ ['acc','Registre public d’accessibilité tenu à disposition du public (établissement recevant du public)'],
+ ['cam','Caméras : information du public et des salariés par affichage (si vous en avez)'],
+ ['csp','Dossier de l’établissement et procès-verbaux de la commission de sécurité classés dans le registre de sécurité'],
+ ['fe','Facturation électronique : plateforme agréée choisie pour recevoir les factures de vos fournisseurs (obligatoire pour toutes les entreprises depuis le 1er septembre 2026), puis pour émettre les vôtres (petites entreprises : 1er septembre 2027). Demandez conseil à votre expert-comptable'],
+ ['vit','Site vitrine : mentions légales et politique de confidentialité publiées, polices hébergées sur le site (pas de chargement depuis Google), aucun traceur sans consentement']
+];
+const CN_REQ={acces:'Accès à mes données',eff:'Effacement',rect:'Rectification',opp:'Opposition / désinscription',port:'Portabilité'};
+
+function cnf(){
+  const s=S.settings;let c=s.conf,ch=false;
+  /* un appareil non administrateur ne modifie jamais les réglages partagés */
+  if(!isAdmin()&&(!c||typeof c!=='object'||Array.isArray(c)||!Array.isArray(c.ech)||!c.med||!c.ret||!c.reg||!Array.isArray(c.viol)||!Array.isArray(c.dem)||!c.ext))return{since:Date.now(),med:{n:'',u:''},ret:{y:3},reg:{at:0},viol:[],dem:[],ext:{},ech:[]};
+  if(!c||typeof c!=='object'||Array.isArray(c)){c=s.conf={};ch=true}
+  if(!c.since){c.since=Date.now();ch=true}
+  if(!c.med||typeof c.med!=='object'){c.med={n:'',u:''};ch=true}
+  if(!c.ret||typeof c.ret!=='object'){c.ret={y:3};ch=true}
+  if(!c.reg||typeof c.reg!=='object'){c.reg={at:0};ch=true}
+  if(!Array.isArray(c.viol)){c.viol=[];ch=true}
+  if(!Array.isArray(c.dem)){c.dem=[];ch=true}
+  if(!c.ext||typeof c.ext!=='object'){c.ext={};ch=true}
+  if(!Array.isArray(c.ech)){c.ech=[];ch=true}
+  CN_PRE.forEach(p=>{if(!c.ech.some(e=>e.k===p.k)){c.ech.push({k:p.k,on:true,last:'',who:''});ch=true}});
+  if(ch&&isAdmin())setTimeout(()=>{try{save()}catch(e){}},0);
+  return c;
+}
+const cnPre=k=>CN_PRE.find(p=>p.k===k);
+function cnItems(){
+  const c=cnf(),t=today();
+  return c.ech.map(e=>{
+    const p=cnPre(e.k)||{t:e.t||'Échéance',m:e.m||12,s:e.s||'Échéance ajoutée par vos soins'},m=+(e.m||p.m)||12;
+    let last=e.last||'';
+    if(p.auto==='zip'){const x=S.cf&&S.cf.lastExport;last=x?ymd(x.ts):''}
+    else if(p.auto==='chain'){const x=S.cf&&S.cf.lastVerify;last=x?ymd(x.ts):''}
+    else if(p.auto==='rgpd')last=c.reg.at?ymd(c.reg.at):'';
+    else if(p.auto==='bk')last=c.bkdl?ymd(c.bkdl):'';
+    const next=last?cnAddM(last,m):'',d=next?cnDiff(next,t):null;
+    let lv='warn',st='À renseigner';
+    if(!e.on){lv='off';st='Non concerné'}
+    else if(next){if(d<0){lv='bad';st='En retard de '+(-d)+' jour'+(-d>1?'s':'')}else if(d<=30){lv='warn';st='À faire avant le '+cnFr(next)}else{lv='ok';st='À jour · prochaine : '+cnFr(next)}}
+    return{e,p,t:e.t||p.t,s:p.s,m,last,next,d,lv,st,auto:p.auto||'',unset:e.on&&!next};
+  });
+}
+/* ---------- contrôles de conformité ---------- */
+function cnChecks(){
+  const lg=S.settings.legal||{},c=cnf(),w=S.settings.web||{},out=[],y=new Date().getFullYear(),now=Date.now();
+  const add=(id,lv,t,d,go)=>out.push({id,lv,t,d,go});
+  const miss=[];if(!lg.raison)miss.push('nom');if(!lg.siret)miss.push('SIRET');if(!(lg.franchise||lg.tva))miss.push('régime de TVA');if(!lg.adr)miss.push('adresse');if(!lg.mail)miss.push('e-mail de contact');
+  add('id',miss.length?'warn':'ok','Identité de l’exploitant',miss.length?'À compléter : '+miss.join(', ')+'.':'Nom, SIRET, TVA, adresse et e-mail renseignés.','pcf');
+  add('att',c.att?'ok':'warn','Attestation de l’éditeur du logiciel de caisse',c.att?'PDF généré le '+cnTs(c.att)+'. Relisez-le, signez-le et conservez-le : c’est le justificatif en cas de contrôle (attestation individuelle de l’éditeur, de nouveau admise depuis le 21 février 2026).':'À générer, relire et signer (Paramètres › Conformité › Attestation de l’éditeur).','pcf');
+  const sealedY=new Set(S.sales.filter(s=>cfSealed(s)).map(s=>new Date(s.ts).getFullYear()));
+  const lastY=S.cf&&S.cf.lastExport?+S.cf.lastExport.y:0,prevY=[...sealedY].filter(v=>v<y);
+  const needZ=prevY.length&&lastY<Math.max(...prevY);
+  add('zip',needZ?'warn':'ok','Archive fiscale des années écoulées',needZ?'L’archive '+Math.max(...prevY)+' n’est pas encore faite (Paramètres › Conformité). À conserver 6 ans.':'À jour.','pcf');
+  const lv0=S.cf&&S.cf.lastVerify;
+  add('chain',!lv0?'warn':!lv0.ok?'bad':now-lv0.ts>32*CN_DAY?'warn':'ok','Intégrité des tickets',!lv0?'Jamais vérifiée.':(lv0.ok?'Aucune anomalie':'Anomalies détectées')+' le '+cnTs(lv0.ts)+'.','pcf');
+  const bkAge=typeof BK!=='undefined'&&BK.last?now-BK.last:Infinity;
+  add('bk',bkAge<36*3600e3?'ok':bkAge<4*CN_DAY?'warn':'bad','Sauvegarde automatique',BK&&BK.last?'Dernière copie : '+new Date(BK.last).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})+'.':'Aucune copie pour le moment.','psante');
+  const regAge=c.reg.at?now-c.reg.at:Infinity;
+  add('reg',regAge<366*CN_DAY?'ok':'warn','Registre des traitements (RGPD)',c.reg.at?'Révisé le '+cnTs(c.reg.at)+'.':'À générer et à relire (Paramètres › Données personnelles).','prgpd');
+  const webOn=!!w.on;
+  add('med',c.med.n?'ok':webOn?'bad':'warn','Médiateur de la consommation',c.med.n?esc(c.med.n)+' : mentionné sur la page de réservation.':'À renseigner : tout professionnel qui vend à des particuliers doit en proposer un. Il est indiqué dans les conditions de réservation.','pobl');
+  if(webOn){const m2=[];if(!lg.raison||!lg.siret||!lg.adr)m2.push('identité du vendeur');if(!lg.mail)m2.push('e-mail de contact');if(!c.med.n)m2.push('médiateur');
+    add('webl',m2.length?'bad':'ok','Page de réservation : mentions obligatoires',m2.length?'Manque : '+m2.join(', ')+'. Elles s’affichent dans les conditions de réservation.':'Vendeur, prix TTC, absence de rétractation pour une activité datée, médiateur, données personnelles : tout est affiché.','pcf')}
+  const ov=cnItems().filter(i=>i.lv==='bad'),soon=cnItems().filter(i=>i.lv==='warn'&&i.next),unset=cnItems().filter(i=>i.unset);
+  add('obl',ov.length?'bad':(soon.length||unset.length)?'warn':'ok','Contrôles périodiques',ov.length?ov.length+' en retard : '+ov.slice(0,2).map(i=>esc(i.t)).join(' · ')+(ov.length>2?'…':'')+'.':soon.length?soon.length+' à prévoir dans les 30 jours.':unset.length?unset.length+' échéance(s) sans date : renseignez la dernière fois que c’est fait.':'Toutes les échéances sont à jour.','pobl');
+  const late=c.dem.filter(d=>!d.done&&now-d.ts>30*CN_DAY),pend=c.dem.filter(d=>!d.done);
+  add('dem',late.length?'bad':pend.length?'warn':'ok','Demandes de personnes (accès, effacement…)',late.length?late.length+' demande(s) sans réponse depuis plus d’un mois.':pend.length?pend.length+' demande(s) à traiter sous un mois.':'Aucune demande en attente.','prgpd');
+  const vb=c.viol.filter(v=>v.risk!=='aucun'&&!v.cnil&&now-v.ts>72*3600e3);
+  add('viol',vb.length?'bad':c.viol.some(v=>v.risk!=='aucun'&&!v.cnil)?'warn':'ok','Violations de données',vb.length?vb.length+' à notifier à la CNIL (délai de 72 h dépassé).':c.viol.length?c.viol.length+' enregistrée(s), aucune en attente de notification.':'Aucune violation enregistrée.','prgpd');
+  const ext=CN_EXT.filter(x=>!c.ext[x[0]]);
+  add('ext',ext.length?'warn':'ok','Actions à faire hors de Lago',ext.length?ext.length+' sur '+CN_EXT.length+' à cocher une fois faites.':'Toutes cochées.','pobl');
+  const ad=(S.accounts||[]).filter(a=>a.status==='active'&&a.admin).length;
+  add('adm',ad>=2?'ok':'warn','Administrateurs',ad>=2?ad+' administrateurs actifs (un second est indispensable en cas d’oubli de mot de passe).':'Prévoyez un second administrateur de secours.','pacc');
+  add('trk','ok','Aucun traceur, aucune publicité','Lago n’utilise ni cookie de suivi, ni statistiques tierces, ni police chargée depuis Internet : aucun bandeau de consentement n’est nécessaire.','');
+  return out;
+}
+function hExtra(){
+  const l=cnChecks(),ov=l.find(x=>x.id==='obl'),dm=l.find(x=>x.id==='dem'),vi=l.find(x=>x.id==='viol'),wl=l.find(x=>x.id==='webl');
+  const out=[];
+  if(ov&&ov.lv!=='ok'&&!/sans date/.test(ov.d))out.push({id:'obl',lv:ov.lv,t:'Contrôles périodiques obligatoires',d:ov.d+' Voir Paramètres › Obligations.'});
+  if(dm&&dm.lv!=='ok')out.push({id:'dem',lv:dm.lv,t:'Demandes des personnes (RGPD)',d:dm.d});
+  if(vi&&vi.lv!=='ok')out.push({id:'viol',lv:vi.lv,t:'Violations de données',d:vi.d});
+  if(wl&&wl.lv!=='ok')out.push({id:'webl',lv:wl.lv,t:'Page de réservation : mentions légales',d:wl.d});
+  return out;
+}
+
+/* ---------- registre des traitements ---------- */
+function cnRegistre(){
+  const lg=S.settings.legal||{},w=S.settings.web||{},ret=cnf().ret.y;
+  const R=[
+   {t:'Gestion de la clientèle et de la fidélité',f:'Tenir les fiches clients, les points de fidélité, les carnets de séances et les cartes cadeaux.',b:'Exécution du contrat ; consentement pour les offres commerciales.',d:'Nom, téléphone, e-mail, historique d’achats, points, enfant (prénom).',p:'Clients et prospects.',r:'Équipe habilitée de l’établissement.',c:'Tant que la relation dure, puis '+cnAns(ret)+' sans activité : la fiche est ensuite anonymisée.'},
+   {t:'Caisse, facturation et comptabilité',f:'Encaisser, éditer les tickets, tenir la comptabilité et respecter les obligations fiscales.',b:'Obligation légale (code général des impôts, code de commerce).',d:'Tickets (articles, montants, mode de règlement). Aucun numéro de carte bancaire. Le ticket ne porte pas l’identité du client.',p:'Clients.',r:'Expert-comptable, administration fiscale.',c:'6 ans (article L102 B du livre des procédures fiscales).'},
+   {t:'Décharges et sécurité des participants',f:'Prouver l’information sur les risques et l’acceptation du règlement ; assurer la sécurité.',b:'Intérêt légitime (obligation de sécurité de l’exploitant).',d:'Identité, date de naissance, coordonnées, mineurs placés sous responsabilité (nom, date de naissance), signature.',p:'Clients adultes et mineurs.',r:'Équipe habilitée, assureur en cas de sinistre.',c:'Validité de la décharge, puis conservation probatoire à définir avec votre assureur (l’action en dommage corporel se prescrit par 10 ans, article 2226 du code civil).'},
+   {t:'Incidents et accidents',f:'Consigner les incidents, informer l’assureur, prévenir les accidents.',b:'Intérêt légitime ; obligation de sécurité.',d:'Identité de la personne, circonstances, nature de la blessure (donnée de santé), témoins.',p:'Clients, salariés.',r:'Responsables habilités, assureur, autorités en cas d’accident grave.',c:'À définir avec votre assureur. Accès limité aux responsables.'},
+   {t:'Planning, congés et suivi du personnel',f:'Organiser les équipes, les congés et le registre de présence.',b:'Exécution du contrat de travail ; obligations légales.',d:'Identité, fonction, horaires, congés.',p:'Salariés, apprentis, stagiaires.',r:'Responsables habilités, expert-comptable pour la paie.',c:'Durée de la relation de travail, puis durées légales (voir votre expert-comptable).'},
+   {t:'Comptes utilisateurs et sécurité de l’application',f:'Identifier les utilisateurs, limiter les accès, journaliser les actions sensibles.',b:'Intérêt légitime (sécurité) ; obligation légale pour le journal de caisse.',d:'Identifiant, mot de passe (stocké sous forme d’empreinte), rôle, journal des événements de caisse.',p:'Utilisateurs de l’application.',r:'Administrateurs.',c:'Durée du compte ; journal de caisse 6 ans.'}
+  ];
+  if(w.on)R.splice(1,0,{t:'Réservation en ligne',f:'Recevoir et gérer les réservations faites par les clients sur le site.',b:'Exécution du contrat (mesures précontractuelles) ; consentement pour les offres.',d:'Nom, e-mail, téléphone, message, créneau choisi. La demande est chiffrée avant son envoi et déchiffrée uniquement par l’établissement.',p:'Clients.',r:'Équipe habilitée ; hébergeur technique (Google Firebase) qui ne voit que des données chiffrées.',c:'Demande chiffrée supprimée du serveur après 8 jours ; réservation conservée '+cnAns(ret)+' après la dernière visite.'});
+  if(S.clients.some(x=>x.optin)||w.on)R.push({t:'Offres et actualités (prospection)',f:'Envoyer des offres aux clients qui l’ont accepté.',b:'Consentement (case non cochée par défaut, retrait possible à tout moment).',d:'Nom, e-mail, téléphone.',p:'Clients ayant donné leur accord.',r:'Équipe habilitée ; prestataire d’envoi d’e-mails si utilisé (EmailJS).',c:'Jusqu’au retrait du consentement, ou '+cnAns(ret)+' sans interaction.'});
+  return R;
+}
+const CN_SUB=[
+ ['GitHub, Inc. (GitHub Pages)','Héberge l’application (fichiers statiques). Ne reçoit aucune donnée de l’établissement.','États-Unis · clauses contractuelles types'],
+ ['Google Ireland Ltd. (Firebase Realtime Database)','Héberge les données partagées de l’équipe (région Europe, Belgique).','Union européenne · contrat de sous-traitance Google Cloud'],
+ ['EmailJS (seulement si vous activez l’envoi d’e-mails)','Envoie les e-mails demandés depuis l’application.','Voir leur politique de confidentialité'],
+ ['Anthropic (seulement si vous activez l’assistance par IA)','Traite le texte envoyé à l’assistant. N’y mettez aucune donnée de client.','Voir leur politique de confidentialité'],
+ ['Google Apps Script (seulement si vous reliez une feuille de calcul)','Reçoit les exports que vous lui envoyez.','Voir les conditions Google']
+];
+function cnRegPdf(){
+  const lg=S.settings.legal||{},c=cnf(),d=new Date().toLocaleDateString('fr-FR');
+  const bytes=pdfBuild('Registre des activités de traitement',lg.raison||S.settings.name,'Registre RGPD',w=>{
+    w.p('Document établi avec Lago d’après le modèle de registre de la CNIL (article 30 du RGPD). À relire et compléter par le responsable de traitement. Mis à jour le '+d+'.',9);
+    w.sec('Responsable de traitement');
+    w.kv('Établissement',(lg.raison||S.settings.name||'')+(lg.forme?' · '+lg.forme:''));w.kv('Adresse',lg.adr||'............');w.kv('SIRET',lg.siret||'............');w.kv('Contact données personnelles',lg.mail||'............');
+    cnRegistre().forEach((r,i)=>{
+      w.sec('Traitement '+(i+1)+' : '+r.t);
+      w.kv('Finalité',r.f);w.kv('Base légale',r.b);w.kv('Données traitées',r.d);w.kv('Personnes concernées',r.p);w.kv('Destinataires',r.r);w.kv('Durée de conservation',r.c);
+      w.kv('Sécurité','Comptes individuels, mots de passe sous forme d’empreinte, accès selon le rôle, données chiffrées en transit, copies de sauvegarde, journal des incidents.');
+    });
+    w.sec('Prestataires (sous-traitants)');CN_SUB.forEach(s=>{w.kv(s[0],s[1]+' '+s[2])});
+    w.sec('Droits des personnes');
+    w.p('Accès, rectification, effacement, opposition, limitation et portabilité : réponse sous un mois. Réclamation possible auprès de la CNIL (cnil.fr).',10);
+    w.sec('Violations de données');
+    w.p('Une violation présentant un risque pour les personnes est notifiée à la CNIL dans les 72 heures. Le registre des violations est tenu dans Lago (Paramètres › Données personnelles).',10);
+  });
+  saveBytes('registre-rgpd-'+ymd(Date.now())+'.pdf',bytes,'application/pdf');
+}
+function cnNoticePdf(){
+  const lg=S.settings.legal||{},ret=cnf().ret.y;
+  const bytes=pdfBuild('Vos données personnelles',lg.raison||S.settings.name,'Information RGPD',w=>{
+    w.p('À afficher à l’accueil, près de la caisse et du poste d’inscription.',9);
+    w.sec('Qui est responsable ?');w.p((lg.raison||S.settings.name||'L’établissement')+(lg.adr?', '+lg.adr:'')+(lg.mail?'. Contact : '+lg.mail:'')+'.',11);
+    w.sec('Pourquoi collectons-nous vos données ?');
+    w.p('Pour gérer vos réservations, vos achats, votre carte de fidélité et votre décharge de sécurité, et pour respecter nos obligations comptables et fiscales. Avec votre accord seulement, pour vous envoyer nos offres.',11);
+    w.sec('Combien de temps les gardons-nous ?');
+    w.p('Votre fiche client : '+cnAns(ret)+' après votre dernière visite. Les tickets de caisse : 6 ans (obligation fiscale). Votre décharge : pendant sa validité, puis le temps nécessaire à notre défense en cas d’accident.',11);
+    w.sec('Quels sont vos droits ?');
+    w.p('Consulter vos données, les faire corriger ou effacer, vous opposer à leur usage, retirer votre accord à tout moment, les récupérer dans un format lisible. Demandez-le à l’accueil'+(lg.mail?' ou par e-mail à '+lg.mail:'')+' : nous répondons sous un mois.',11);
+    w.sec('Une difficulté ?');
+    w.p('Vous pouvez adresser une réclamation à la CNIL (cnil.fr, Commission nationale de l’informatique et des libertés).',11);
+    w.gap(8);w.p('Vos données ne sont jamais vendues et ne sont transmises à aucun annonceur.',10);
+  });
+  saveBytes('information-rgpd-affichage.pdf',bytes,'application/pdf');
+}
+/* ---------- droits des personnes ---------- */
+const CNS={q:'',cid:'',dr:{}};
+function cnLastActs(){
+  const last={};const bump=(id,t)=>{if(id&&t&&(!last[id]||t>last[id]))last[id]=t};
+  for(const s of S.sales)if(s.clientId&&!s.qw)bump(s.clientId,s.ts);
+  for(const b of (S.web||[]))bump(b.clientId,b.ts);
+  for(const e of (S.events||[]))if(e.clientId){const t=Date.parse(e.date+'T12:00:00');bump(e.clientId,isNaN(t)?0:t)}
+  const t=today();for(const p of (S.passes||[]))if(p.clientId)bump(p.clientId,p.left>0&&p.exp>=t?Date.now():p.ts);
+  for(const g of (S.gifts||[]))if(g.clientId)bump(g.clientId,g.bal>0?Date.now():g.ts);
+  return last;
+}
+function cnInactive(years){
+  const lim=Date.now()-years*365.25*CN_DAY,last=cnLastActs(),since=cnf().since;
+  return S.clients.filter(c=>!c.anon&&(last[c.id]||since)<lim);
+}
+function cnWaivers(c){
+  const nn=norm(c.name||''),ph=(c.phone||'').replace(/\D/g,''),em=(c.email||'').trim().toLowerCase();
+  if(!nn||nn==='client anonymise')return[];
+  return(S.waivers||[]).filter(w=>norm(w.name||'')===nn||(ph.length>=8&&(w.phone||'').replace(/\D/g,'')===ph)||(em&&(w.mail||'').trim().toLowerCase()===em));
+}
+function cnPersonData(c){
+  const sales=S.sales.filter(s=>s.clientId===c.id&&!s.qw&&!s.demo),bk=(S.web||[]).filter(b=>b.clientId===c.id),wv=cnWaivers(c),
+    ps=(S.passes||[]).filter(p=>p.clientId===c.id),ev=(S.events||[]).filter(e=>e.clientId===c.id);
+  return{sales,bk,wv,ps,ev};
+}
+function cnExportJson(c){
+  const d=cnPersonData(c),lg=S.settings.legal||{};
+  return{export_donnees_personnelles:1,genere:new Date().toISOString(),responsable_de_traitement:lg.raison||S.settings.name||'',
+   fiche_client:{nom:c.name,telephone:c.phone||'',email:c.email||'',points_fidelite:c.pts||0,offres_commerciales_acceptees:!!c.optin,note:c.note||'',enfant:c.kid||''},
+   achats:d.sales.map(s=>({ticket:s.no,date:new Date(s.ts).toISOString(),total_ttc_centimes:s.total,articles:(s.lines||[]).map(l=>({article:l.name,quantite:l.qty,prix_ttc_centimes:l.price})),reglements:(s.pay||[]).map(p=>({mode:p.m,montant_centimes:p.amt}))})),
+   reservations_en_ligne:d.bk.map(b=>({code:b.ref,date:b.date,heure_minutes:b.start,participants:b.people,nom:b.name,email:b.mail,telephone:b.phone,message:b.note,offres_commerciales_acceptees:!!b.optin})),
+   decharges:d.wv.map(w=>({signee_le:new Date(w.ts).toISOString(),nom:w.name,date_naissance:w.birth||'',telephone:w.phone||'',email:w.mail||'',mineurs:(w.kids||[]).map(k=>({nom:k.name,date_naissance:k.birth})),valable_jusqu_au:w.exp})),
+   carnets:d.ps.map(p=>({code:p.code,offre:p.name,seances:p.n,restantes:p.left,expire_le:p.exp})),
+   evenements:d.ev.map(e=>({date:e.date,titre:e.title,invites:e.guests}))};
+}
+function cnAnon(c,withWaivers){
+  const ws=cnWaivers(c),id=c.id;
+  c.name='Client anonymisé';c.phone='';c.email='';c.note='';c.kid='';c.optin=false;c.anon=Date.now();
+  (S.web||[]).forEach(b=>{if(b.clientId===id){b.name='Anonymisé';b.mail='';b.phone='';b.note='';b.optin=false}});
+  let nw=0;
+  if(withWaivers&&ws.length){const set=new Set(ws.map(w=>w.id));const n0=S.waivers.length;S.waivers=S.waivers.filter(w=>!set.has(w.id));nw=n0-S.waivers.length}
+  return nw;
+}
+function cnReqAdd(type,ref){const c=cnf();c.dem.push({id:uid(),ts:Date.now(),type,ref:String(ref||'').slice(0,60),done:false});save()}
+function cnReqDone(cid,type){const c=cnf();let n=0;c.dem.forEach(d=>{if(!d.done&&d.type===type&&(!cid||d.cid===cid)){d.done=true;d.doneAt=Date.now();n++}});return n}
+
+/* ---------- Paramètres › Données personnelles ---------- */
+function vSetRgpd(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const c=cnf(),reg=cnRegistre(),yrs=c.ret.y,inact=cnInactive(yrs);
+  const q=norm(CNS.q||''),found=q.length>=2?S.clients.filter(x=>!x.anon&&norm(x.name+' '+(x.phone||'')+' '+(x.email||'')).includes(q)).slice(0,6):[];
+  const cur=CNS.cid&&S.clients.find(x=>x.id===CNS.cid&&!x.anon);
+  const dd=cur?cnPersonData(cur):null;
+  const dem=c.dem.slice().sort((a,b)=>b.ts-a.ts).slice(0,8),vio=c.viol.slice().sort((a,b)=>b.ts-a.ts);
+  const sel=(id,opts,v)=>`<select id="${id}">${opts.map(o=>`<option value="${o[0]}" ${v===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>`;
+  m.innerHTML=`<div class="card cnc"><h3>Registre des traitements</h3>
+   <p class="muted" style="margin:0 0 8px">Obligatoire pour toute entreprise qui traite des données personnelles (RGPD, article 30). Généré d’après la configuration de votre Lago : relisez-le puis marquez-le révisé.</p>
+   ${reg.map(r=>`<div class="row"><span class="grow"><b>${esc(r.t)}</b><span class="muted">${esc(r.c)}</span></span></div>`).join('')}
+   <p class="muted" style="margin:8px 0 0">${c.reg.at?'Dernière révision : <b>'+cnTs(c.reg.at)+'</b>.':'Jamais révisé.'} À reprendre au moins une fois par an.</p>
+   <div class="acts" style="margin-top:10px"><button type="button" class="btn primary" data-act="cn_regpdf">Télécharger le registre (PDF)</button><button type="button" class="btn" data-act="cn_regok">Marquer comme révisé aujourd’hui</button><button type="button" class="btn" data-act="cn_notice">Affiche d’information (PDF)</button></div></div>
+   <div class="card cnc"><h3>Droits des personnes</h3>
+   <p class="muted" style="margin:0 0 8px">Accès, rectification, effacement, opposition, portabilité : vous répondez sous un mois. Les tickets de caisse ne portent pas l’identité du client et restent conservés 6 ans.</p>
+   <div class="field"><label for="cn_q">Rechercher un client</label><input id="cn_q" data-cn="q" value="${esc(CNS.q||'')}" placeholder="Nom, téléphone ou e-mail" autocomplete="off"></div>
+   ${found.map(x=>`<button type="button" class="row rowbtn" data-act="cn_pick" data-id="${x.id}"><span class="grow"><b>${esc(x.name)}</b><span class="muted">${esc(x.phone||'')} ${esc(x.email||'')}</span></span></button>`).join('')}
+   ${cur?`<div class="cnsel"><b>${esc(cur.name)}</b><p class="muted" style="margin:4px 0 8px">${dd.sales.length} achat(s) · ${dd.bk.length} réservation(s) en ligne · ${dd.wv.length} décharge(s) · ${dd.ps.length} carnet(s) · ${dd.ev.length} événement(s)</p>
+    <label class="check"><input type="checkbox" id="cn_wv" ${CNS.dr.wv?'checked':''}>Effacer aussi ses décharges signées (à ne cocher que si vous n’avez plus de raison de les garder : preuve en cas d’accident, assurance)</label>
+    <div class="acts" style="margin-top:8px"><button type="button" class="btn" data-act="cn_export">Exporter ses données (JSON)</button><button type="button" class="btn danger" data-act="cn_erase">Anonymiser ce client</button></div></div>`:''}
+   <h4 style="margin:14px 0 6px">Demandes reçues</h4>
+   ${dem.length?dem.map(d=>{const late=!d.done&&Date.now()-d.ts>30*CN_DAY;return `<div class="row"><span class="grow"><b>${esc(CN_REQ[d.type]||d.type)}</b><span class="muted">reçue le ${cnTs(d.ts)}${d.ref?' · '+esc(d.ref):''} · ${d.done?'traitée le '+cnTs(d.doneAt):'<b style="color:var(--'+(late?'bad':'warn')+',inherit)">à traiter avant le '+cnTs(d.ts+30*CN_DAY)+'</b>'}</span></span>${d.done?'':'<button type="button" class="btn" data-act="cn_reqdone" data-id="'+d.id+'">Traitée</button>'}</div>`}).join(''):'<p class="muted">Aucune demande enregistrée.</p>'}
+   <div class="g2" style="margin-top:8px"><div class="field"><label for="cn_rt">Nouvelle demande</label>${sel('cn_rt',Object.entries(CN_REQ),'acces')}</div><div class="field"><label for="cn_rr">Référence (initiales, n° de ticket…)</label><input id="cn_rr" maxlength="60" placeholder="Pas de nom complet"></div></div>
+   <div class="acts"><button type="button" class="btn" data-act="cn_reqadd">Enregistrer la demande</button></div></div>
+   <div class="card cnc"><h3>Durée de conservation</h3>
+   <p class="muted" style="margin:0 0 8px">Une fiche client sans aucune activité depuis ${cnAns(yrs)} est anonymisée : nom, téléphone, e-mail et notes sont effacés ; les achats et les points restent pour les statistiques.</p>
+   <div class="field"><label for="cn_yrs">Conserver une fiche inactive pendant</label>${sel('cn_yrs',[[1,'1 an'],[2,'2 ans'],[3,'3 ans (recommandé)'],[4,'4 ans'],[5,'5 ans']],yrs)}</div>
+   <p style="margin:0 0 8px"><b>${inact.length}</b> fiche${inact.length>1?'s':''} inactive${inact.length>1?'s':''} sur ${S.clients.length}.</p>
+   <div class="acts"><button type="button" class="btn ${inact.length?'primary':''}" data-act="cn_purge" ${inact.length?'':'disabled'}>${inact.length?'Anonymiser '+(inact.length>1?'les '+inact.length+' fiches':'la fiche'):'Aucune fiche à anonymiser'}</button></div></div>
+   <div class="card cnc"><h3>Violations de données</h3>
+   <p class="muted" style="margin:0 0 8px">Perte, vol ou accès non autorisé à des données personnelles : à inscrire ici dans tous les cas. Si les personnes risquent un préjudice, la CNIL doit être prévenue dans les 72 heures après la découverte.</p>
+   ${vio.length?vio.map(v=>{const due=!v.cnil&&v.risk!=='aucun';const late=due&&Date.now()-v.ts>72*3600e3;return `<div class="row"><span class="grow"><b>${esc(v.what)}</b><span class="muted">découverte le ${cnTs(v.ts)} · ${v.n||'?'} personne(s) · risque ${esc(v.risk)} · ${v.cnil?'notifiée à la CNIL le '+cnTs(v.cnil):due?'<b style="color:var(--'+(late?'bad':'warn')+',inherit)">à notifier avant le '+new Date(v.ts+72*3600e3).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})+'</b>':'pas de notification nécessaire'}</span></span>${due?'<button type="button" class="btn" data-act="cn_vnotif" data-id="'+v.id+'">Notifiée</button>':''}</div>`}).join(''):'<p class="muted">Aucune violation enregistrée.</p>'}
+   <div class="field" style="margin-top:8px"><label for="cn_vw">Ce qui s’est passé, données concernées, mesures prises</label><textarea id="cn_vw" rows="3" maxlength="500" placeholder="Ex. : téléphone d’accueil perdu, accès déverrouillé, fiches clients consultables"></textarea></div>
+   <div class="g2"><div class="field"><label for="cn_vn">Personnes concernées (environ)</label><input id="cn_vn" type="number" min="0" value="0"></div><div class="field"><label for="cn_vr">Risque pour ces personnes</label>${sel('cn_vr',[['aucun','Aucun risque'],['faible','Faible'],['élevé','Élevé']],'faible')}</div></div>
+   <div class="acts"><button type="button" class="btn" data-act="cn_vadd">Enregistrer la violation</button><a class="btn" target="_blank" rel="noopener" href="https://www.cnil.fr/fr/notifier-une-violation-de-donnees-personnelles">Notifier à la CNIL</a></div></div>`;
+}
+TABS.params.splice(Math.max(1,TABS.params.findIndex(x=>x[0]==='pcf')+1),0,['prgpd','Données personnelles']);SUBS.prgpd=vSetRgpd;
+
+/* ---------- Paramètres › Obligations ---------- */
+function vSetObl(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const c=cnf(),ck=cnChecks(),its=cnItems(),pill=lv=>lv==='ok'?'ok':lv==='warn'?'warn':lv==='off'?'':'danger';
+  const okN=ck.filter(x=>x.lv==='ok').length,bad=ck.filter(x=>x.lv==='bad').length,warn=ck.filter(x=>x.lv==='warn').length;
+  const order={bad:0,warn:1,ok:2,off:3};its.sort((a,b)=>order[a.lv]-order[b.lv]||(a.next||'9').localeCompare(b.next||'9'));
+  m.innerHTML=`<div class="card cnc"><div class="cfwh"><div><h3>Tableau de conformité <span class="pill ${bad?'danger':warn?'warn':'ok'}">${okN} / ${ck.length} en ordre</span></h3><p class="muted">Caisse, données personnelles, vente en ligne, contrôles obligatoires : ce qu’il reste à faire, en un coup d’œil.</p></div></div>
+   ${ck.map(x=>`<div class="row hlt" data-lv="${x.lv}"><span class="pill ${pill(x.lv)}">${lvTxt[x.lv]}</span><span class="grow"><b>${esc(x.t)}</b><span class="muted">${x.d}</span></span>${x.go&&x.lv!=='ok'?'<button type="button" class="btn" data-act="goto" data-v="params" data-t="'+x.go+'">Ouvrir</button>':''}</div>`).join('')}</div>
+   <div class="card cnc"><h3>Contrôles périodiques</h3>
+   <p class="muted" style="margin:0 0 8px">Les périodicités sont les usages courants pour un établissement recevant du public. Elles dépendent de votre local, de votre catégorie et de votre assureur : confirmez-les avec la commission de sécurité et la DDPP, puis ajustez. Les contrôles du quotidien (état des trampolines, mousses, filets) sont dans Contrôle › Maintenance.</p>
+   ${its.map(i=>`<div class="row cnrow" data-lv="${i.lv}"><span class="pill ${pill(i.lv)}">${i.lv==='off'?'Non concerné':i.lv==='ok'?'À jour':i.lv==='bad'?'En retard':i.unset?'À renseigner':'Bientôt'}</span><span class="grow"><b>${esc(i.t)}</b><span class="muted">${esc(i.s)}</span><span class="muted">${esc(i.st)}${i.last?' · fait le '+cnFr(i.last):''}</span></span>
+     <span class="cnact">${i.auto?'<small class="muted">automatique</small>':`<input type="date" data-cn="last" data-id="${i.e.k}" value="${i.e.last||''}" max="${today()}" aria-label="Dernière fois : ${esc(i.t)}"><button type="button" class="btn" data-act="cn_done" data-id="${i.e.k}">Fait aujourd’hui</button>`}
+     <label class="check"><input type="checkbox" data-cn="on" data-id="${i.e.k}" ${i.e.on?'checked':''}>Concerné</label></span></div>`).join('')}
+   <h4 style="margin:14px 0 6px">Ajouter une échéance</h4>
+   <div class="g2"><div class="field"><label for="cn_nt">Intitulé</label><input id="cn_nt" maxlength="90" placeholder="Ex. : Contrôle des filets de la zone ninja"></div><div class="field"><label for="cn_nm">Tous les (mois)</label><input id="cn_nm" type="number" min="1" max="120" value="12"></div></div>
+   <div class="acts"><button type="button" class="btn" data-act="cn_eadd">Ajouter</button></div></div>
+   <div class="card cnc"><h3>Médiation de la consommation</h3>
+   <p class="muted" style="margin:0 0 8px">Tout professionnel qui vend à des particuliers doit leur garantir l’accès à un médiateur de la consommation et leur communiquer ses coordonnées. Elles s’affichent dans les conditions de réservation en ligne.</p>
+   <div class="field"><label for="cn_mn">Nom du médiateur</label><input id="cn_mn" data-cn="mn" value="${esc(c.med.n)}" maxlength="90" placeholder="Celui auquel vous avez adhéré"></div>
+   <div class="field"><label for="cn_mu">Site ou adresse postale du médiateur</label><input id="cn_mu" data-cn="mu" value="${esc(c.med.u)}" maxlength="160" placeholder="https://…"></div></div>
+   <div class="card cnc"><h3>À faire hors de Lago</h3><p class="muted" style="margin:0 0 8px">Cochez quand c’est fait.</p>
+   ${CN_EXT.map(x=>`<label class="check cnext"><input type="checkbox" data-cn="ext" data-id="${x[0]}" ${c.ext[x[0]]?'checked':''}>${esc(x[1])}</label>`).join('')}
+   <p class="muted" style="margin:10px 0 0;font-size:12.5px">Ce tableau est une aide à l’organisation, pas un avis juridique. Faites valider vos obligations par votre assureur, la commission de sécurité, la DDPP et votre expert-comptable.</p></div>`;
+}
+TABS.params.splice(Math.max(1,TABS.params.findIndex(x=>x[0]==='pcf')+1),0,['pobl','Obligations']);SUBS.pobl=vSetObl;
+
+/* ---------- actions ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act^="cn_"],[data-act="cf_att"],[data-act="sf_dl"]');if(!b)return;const a=b.dataset.act;
+  if(a==='cf_att'){if(isAdmin()){cnf().att=Date.now();save()}return}
+  if(a==='sf_dl'){if(isAdmin()){cnf().bkdl=Date.now();save()}return}
+  if(!isAdmin())return;
+  const c=cnf();
+  if(a==='cn_regpdf')cnRegPdf();
+  else if(a==='cn_notice')cnNoticePdf();
+  else if(a==='cn_regok'){c.reg.at=Date.now();cfLog('rgpd','Registre des traitements révisé');save();toast('Registre marqué comme révisé');cnRe()}
+  else if(a==='cn_pick'){CNS.cid=b.dataset.id;CNS.dr={};cnRe()}
+  else if(a==='cn_export'){
+    const x=S.clients.find(y=>y.id===CNS.cid);if(!x)return;
+    const j=cnExportJson(x);saveBytes('donnees-personnelles-'+ymd(Date.now())+'.json',new TextEncoder().encode(JSON.stringify(j,null,1)),'application/json');
+    cfLog('rgpd','Export des données d’une personne (fiche '+x.id+')');cnReqDone('', 'acces');cnReqDone('', 'port');save();
+  }
+  else if(a==='cn_erase'){
+    const x=S.clients.find(y=>y.id===CNS.cid);if(!x)return;
+    const wv=!!($('#cn_wv')&&$('#cn_wv').checked);
+    askYes('Anonymiser définitivement « '+x.name+' » ? Nom, téléphone, e-mail et notes sont effacés'+(wv?', ainsi que ses décharges signées':'')+'. Les tickets restent conservés sans identité. Cette action est irréversible.',()=>{
+      const id=x.id,n=cnAnon(x,wv);cnReqDone('', 'eff');cfLog('rgpd','Effacement des données d’une personne (fiche '+id+(n?', '+n+' décharge(s)':'')+')');save();CNS.cid='';CNS.q='';cnRe();toast('Client anonymisé')},'Anonymiser');
+  }
+  else if(a==='cn_reqadd'){cnReqAdd(($('#cn_rt')||{}).value||'acces',($('#cn_rr')||{}).value);cnRe();toast('Demande enregistrée')}
+  else if(a==='cn_reqdone'){const d=c.dem.find(x=>x.id===b.dataset.id);if(d){d.done=true;d.doneAt=Date.now();save();cnRe()}}
+  else if(a==='cn_purge'){
+    const L=cnInactive(c.ret.y);if(!L.length)return;
+    askYes('Anonymiser '+L.length+' fiche(s) client sans activité depuis plus de '+c.ret.y+' an(s) ? Nom, téléphone, e-mail et notes seront effacés. Les décharges signées sont conservées. Irréversible.',()=>{
+      L.forEach(x=>cnAnon(x,false));cfLog('rgpd','Anonymisation de '+L.length+' fiche(s) inactive(s) (durée de conservation : '+c.ret.y+' ans)');save();cnRe();toast(L.length+' fiche(s) anonymisée(s)')},'Anonymiser');
+  }
+  else if(a==='cn_vadd'){
+    const what=(($('#cn_vw')||{}).value||'').trim();if(what.length<5){toast('Décrivez ce qui s’est passé');return}
+    c.viol.push({id:uid(),ts:Date.now(),what:what.slice(0,500),n:Math.max(0,Math.floor(+($('#cn_vn')||{}).value||0)),risk:($('#cn_vr')||{}).value||'faible',cnil:0});
+    cfLog('rgpd','Violation de données enregistrée');save();cnRe();toast('Violation enregistrée')}
+  else if(a==='cn_vnotif'){const v=c.viol.find(x=>x.id===b.dataset.id);if(v){v.cnil=Date.now();cfLog('rgpd','Violation notifiée à la CNIL');save();cnRe()}}
+  else if(a==='cn_done'){const i=c.ech.find(x=>x.k===b.dataset.id);if(i){i.last=today();save();cnRe();toast('Enregistré')}}
+  else if(a==='cn_eadd'){
+    const t=(($('#cn_nt')||{}).value||'').trim(),mm=Math.max(1,Math.min(120,Math.floor(+($('#cn_nm')||{}).value||12)));
+    if(t.length<3){toast('Donnez un intitulé');return}
+    c.ech.push({k:'x'+uid(),on:true,last:'',who:'',t:t.slice(0,90),m:mm,s:'Échéance ajoutée par vos soins'});save();cnRe();toast('Échéance ajoutée')}
+});
+document.addEventListener('change',e=>{
+  const t=e.target,k=t.dataset&&t.dataset.cn;if(!k&&t.id!=='cn_yrs')return;if(!isAdmin())return;
+  const c=cnf();
+  if(t.id==='cn_yrs'){c.ret.y=Math.max(1,Math.min(5,+t.value||3));save();cnRe();return}
+  if(k==='q'){CNS.q=t.value;CNS.cid='';cnRe();return}
+  if(k==='last'){const i=c.ech.find(x=>x.k===t.dataset.id);if(i){i.last=/^\d{4}-\d{2}-\d{2}$/.test(t.value)?t.value:'';save();cnRe()}}
+  else if(k==='on'){const i=c.ech.find(x=>x.k===t.dataset.id);if(i){i.on=t.checked;save();cnRe()}}
+  else if(k==='ext'){c.ext[t.dataset.id]=t.checked;save();cnRe()}
+  else if(k==='mn'){c.med.n=t.value.trim();save();toast('Enregistré')}
+  else if(k==='mu'){c.med.u=t.value.trim();save();toast('Enregistré')}
+});
+document.addEventListener('input',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.cn==='q'){CNS.q=t.value;clearTimeout(cnTm);cnTm=setTimeout(()=>{if(isAdmin()&&view==='params'&&tab.params==='prgpd'){const p=t.selectionStart;cnRe();const n=$('#cn_q');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}}},250)}});
+let cnTm=0;
 
 METHODS.pass='Carnet de séances';
 function openPay(){

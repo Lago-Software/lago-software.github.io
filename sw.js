@@ -1,5 +1,5 @@
-const V='lago-v65';
-const CORE=['./','index.html','app.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'];
+const V='lago-v66';
+const CORE=['./','index.html','fonts/display-700.woff','fonts/body-400.woff','fonts/body-700.woff','app.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 /* Réseau d'abord pour l'appli (mises à jour automatiques), cache en secours hors connexion.

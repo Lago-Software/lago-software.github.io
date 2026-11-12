@@ -78,6 +78,7 @@ h2{margin:0 0 4px;font-size:19px}
 .ln span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
 .note{background:var(--mist);border-radius:12px;padding:11px 13px;font-size:14px;color:var(--mut);margin:0 0 12px}
 .note b{color:var(--ink)}
+.note summary{cursor:pointer}.note .lgl{margin-top:8px;font-size:13.5px;line-height:1.5}.note .lgl p{margin:0 0 8px}
 .bar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:5}
 .bar .in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:12px}
 .bar .sum{flex:1;min-width:0;font-size:13.5px;color:var(--mut);line-height:1.3}
@@ -190,18 +191,46 @@ function v2(){
    <div id="grid">${grid}</div>`,barHtml('Continuer',st.start==null,'next'));
 }
 function dayHas(ds){const m0=BASE[ds]?BASE[ds].o:0;for(let m=m0;BASE[ds]&&m+15<=BASE[ds].c;m+=15)if(startOk(ds,m).ok)return true;return false}
+const lgf=()=>CFG.lg||{};
+function legalHtml(){
+  const l=lgf(),n=[];
+  n.push(`<p><b>${esc(l.r||CFG.name||'')}</b>${l.f?' · '+esc(l.f):''}${l.a?'<br>'+esc(l.a):''}${l.s?'<br>SIRET '+esc(l.s):''}${l.t?'<br>TVA intracommunautaire '+esc(l.t):l.fr?'<br>TVA non applicable, article 293 B du CGI':''}</p>`);
+  n.push(`<p>Contact : ${l.m||CFG.mail?esc(l.m||CFG.mail):''}${CFG.tel?' · '+esc(CFG.tel):''}</p>`);
+  return n.join('');
+}
+function cgvHtml(){
+  const l=lgf(),m=CFG.med||{},custom=(CFG.cgv||'').trim();
+  return `<p><b>Vendeur.</b> ${esc(l.r||CFG.name||'L’établissement')}${l.a?', '+esc(l.a):''}${l.s?' · SIRET '+esc(l.s):''}.</p>
+   <p><b>Prix et paiement.</b> Les prix sont en euros, toutes taxes comprises. Le règlement se fait sur place, à l’accueil, le jour de votre venue : aucun paiement n’est demandé en ligne.</p>
+   <p><b>Votre réservation.</b> Elle est confirmée à l’écran avec un code : notez-le ou faites une capture d’écran, il vous sera demandé à l’accueil.</p>
+   ${custom?`<p><b>Conditions du parc.</b></p><div style="white-space:pre-wrap">${esc(custom)}</div>`:'<p><b>Modification ou annulation.</b> Contactez-nous dès que possible en indiquant votre code.</p>'}
+   <p><b>Droit de rétractation.</b> Conformément à l’article L221-28, 12° du code de la consommation, le droit de rétractation de 14 jours ne s’applique pas aux activités de loisirs fournies à une date déterminée. Les conditions de modification ou d’annulation sont celles indiquées ci-dessus.</p>
+   <p><b>Règlement et sécurité.</b> Les conditions d’accès (âge, taille, accompagnement des mineurs, tenue) sont celles du règlement du parc, affiché à l’accueil. Chaque participant signe une décharge à son arrivée.</p>
+   ${m.n?`<p><b>Médiation de la consommation.</b> En cas de litige non résolu avec nous, vous pouvez saisir gratuitement le médiateur : ${esc(m.n)}${m.u?' ('+esc(m.u)+')':''}.</p>`:''}`;
+}
+function rgpdHtml(){
+  const l=lgf(),y=CFG.ret||3;
+  return `<p><b>Responsable :</b> ${esc(l.r||CFG.name||'')}${l.m?' · '+esc(l.m):''}.</p>
+   <p><b>Pourquoi ?</b> Gérer votre réservation et vous accueillir (exécution du contrat). Si vous cochez la case facultative, vous envoyer nos offres (votre consentement, retirable à tout moment).</p>
+   <p><b>Quelles données ?</b> Nom, e-mail, téléphone, message facultatif, créneau et formules choisis. Elles sont chiffrées dans votre navigateur avant l’envoi : seul ${esc(CFG.name||'le parc')} peut les lire. L’hébergeur technique (Google Firebase, Union européenne) ne voit que des données chiffrées.</p>
+   <p><b>Combien de temps ?</b> La demande est effacée du serveur sous 8 jours. Votre fiche est conservée ${y} an${y>1?'s':''} après votre dernière visite ; les tickets de caisse, 6 ans (obligation fiscale).</p>
+   <p><b>Vos droits.</b> Accès, rectification, effacement, opposition, limitation, portabilité : écrivez-nous${l.m?' à '+esc(l.m):''}, nous répondons sous un mois. Vous pouvez aussi saisir la CNIL (cnil.fr).</p>
+   <p><b>Cookies.</b> Cette page n’en utilise aucun et ne contient ni traceur ni publicité.</p>`;
+}
 function v3(){
   const f=st.f;
-  shell(`<h2>Vos coordonnées</h2><p class="sub">Elles servent uniquement à vous envoyer la confirmation et à vous accueillir.</p>
+  shell(`<h2>Vos coordonnées</h2><p class="sub">Elles servent à gérer votre réservation et à vous accueillir.</p>
    <form id="frm" novalidate autocomplete="on">
    <div class="f" data-f="name"><label for="fn">Nom et prénom</label><input id="fn" name="name" autocomplete="name" value="${esc(f.name)}" maxlength="80" required><div class="er">Indiquez votre nom.</div></div>
    <div class="g2"><div class="f" data-f="mail"><label for="fe">E-mail</label><input id="fe" name="mail" type="email" inputmode="email" autocomplete="email" value="${esc(f.mail)}" maxlength="120" required><div class="er">Adresse e-mail non valide.</div></div>
    <div class="f" data-f="phone"><label for="fp">Téléphone</label><input id="fp" name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(f.phone)}" maxlength="20" required><div class="er">Numéro non valide.</div></div></div>
    <div class="f"><label for="fo">Message pour l’équipe (facultatif)</label><textarea id="fo" name="note" rows="2" maxlength="300">${esc(f.note)}</textarea></div>
    <input class="hp" id="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-   <label class="ck" data-f="cgv"><input type="checkbox" id="fc" ${f.cgv?'checked':''}><span>J’ai lu et j’accepte le règlement du parc et les conditions de réservation. Chaque participant devra signer la décharge à l’arrivée.</span></label>
+   <label class="ck" data-f="cgv"><input type="checkbox" id="fc" ${f.cgv?'checked':''}><span>J’ai lu et j’accepte les conditions de réservation (ci-dessous) et le règlement du parc. Chaque participant devra signer la décharge à l’arrivée.</span></label>
    <label class="ck"><input type="checkbox" id="fk" ${f.opt?'checked':''}><span>Je souhaite recevoir les offres et actualités du parc (facultatif).</span></label>
-   ${CFG.cgv?`<details class="note"><summary><b>Conditions de réservation</b></summary><div style="margin-top:8px;white-space:pre-wrap">${esc(CFG.cgv)}</div></details>`:''}
+   <details class="note"><summary><b>Conditions de réservation</b></summary><div class="lgl">${cgvHtml()}</div></details>
+   <details class="note"><summary><b>Vos données personnelles</b></summary><div class="lgl">${rgpdHtml()}</div></details>
+   <details class="note"><summary><b>Informations légales</b></summary><div class="lgl">${legalHtml()}</div></details>
    <p class="mt">Vos données sont chiffrées avant leur envoi et ne sont lisibles que par ${esc(CFG.name||'le parc')}.</p></form>`,barHtml('Vérifier',false,'next'));
 }
 function lineHtml(){return [...prods(),...adds()].filter(p=>q(p.id)).map(p=>`<div class="ln"><span>${q(p.id)} × ${esc(p.n)}${p.dur?' ('+durL(p.dur)+')':''}</span><span>${eur(q(p.id)*p.p)}</span></div>`).join('')}
@@ -267,7 +296,7 @@ async function confirm(){
     }
     if(!got){await refresh().catch(()=>{});return taken('Ce créneau vient d’être pris par un autre client. Choisissez un autre horaire.')}
     const ref=refCode(),first=(st.f.name.trim().split(/\s+/)[0]||'');
-    const payload={v:1,ref,date:ds,start,items:[...prods(),...adds()].filter(p=>q(p.id)).map(p=>({id:p.id,q:q(p.id)})),name:st.f.name.trim(),mail:st.f.mail.trim(),phone:st.f.phone.trim(),note:st.f.note.trim(),optin:!!st.f.opt,tos:true};
+    const payload={v:1,ref,date:ds,start,items:[...prods(),...adds()].filter(p=>q(p.id)).map(p=>({id:p.id,q:q(p.id)})),name:st.f.name.trim(),mail:st.f.mail.trim(),phone:st.f.phone.trim(),note:st.f.note.trim(),optin:!!st.f.opt,tos:true,cv:String(CFG.cv||'')};
     const box=await seal(payload);
     const r=await fetch(url('req/'+id),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({ts:Date.now(),...box})});
     if(!r.ok)throw new Error('http '+r.status);
