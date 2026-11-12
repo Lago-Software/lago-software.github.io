@@ -17,6 +17,6 @@ Pour publier une version : changer `LAGO_V` dans `index.html` et `V` dans `sw.js
 
 ## Propriété et licence
 
-© 2026 — Tous droits réservés. Logiciel propriétaire : voir [LICENSE](LICENSE). Ce dépôt est public uniquement pour l'hébergement sur GitHub Pages ; sa visibilité ne donne aucun droit de réutilisation, de copie ni de modification.
+© 2026 Hugo Lehéricé — Tous droits réservés. Logiciel propriétaire : voir [LICENSE](LICENSE). Ce dépôt est public uniquement pour l'hébergement sur GitHub Pages ; sa visibilité ne donne aucun droit de réutilisation, de copie ni de modification.
 
 Conformité de la caisse : le module « Conformité » (Paramètres › Conformité) met en œuvre les exigences de l'article 286 I 3° bis du CGI (inaltérabilité, sécurisation, conservation, archivage). Il ne remplace pas l'attestation individuelle de l'éditeur, que le titulaire doit signer lui-même après relecture avec son expert-comptable.

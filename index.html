@@ -13,8 +13,8 @@
 </head><body>
 <title>Lago</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="copyright" content="© 2026 Lago — Tous droits réservés. Logiciel propriétaire, toute reproduction ou réutilisation sans autorisation écrite du titulaire est interdite.">
-<!-- Lago — © 2026 — Tous droits réservés. Code source propriétaire : voir LICENSE. Consultation autorisée, copie, modification et redistribution interdites sans accord écrit du titulaire. -->
+<meta name="copyright" content="© 2026 Hugo Lehéricé — Lago — Tous droits réservés. Logiciel propriétaire, toute reproduction ou réutilisation sans autorisation écrite du titulaire est interdite.">
+<!-- Lago — © 2026 Hugo Lehéricé — Tous droits réservés. Code source propriétaire : voir LICENSE. Consultation autorisée, copie, modification et redistribution interdites sans accord écrit du titulaire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400;500;600;700&display=swap">
@@ -6099,7 +6099,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v57';
+const LAGO_V='v58';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -8037,7 +8037,9 @@ document.addEventListener('change',e=>{
    Conservation   : toutes les lignes sont conservées ; clôtures journalière, mensuelle, annuelle avec grand total et total perpétuel.
    Archivage      : export annuel en formats ouverts (CSV, JSON) avec notice en français, dans une archive ZIP. */
 const CF_V='1.0';
-const CF_LG={raison:'Nom ou raison sociale',forme:'Forme juridique',adr:'Adresse',siret:'SIRET',tva:'N° de TVA intracommunautaire',mail:'E-mail de contact',franchise:'Franchise en base de TVA'};
+const CF_LG={raison:'Nom ou raison sociale',forme:'Forme juridique',adr:'Adresse',siret:'SIRET',tva:'N° de TVA intracommunautaire',mail:'E-mail de contact',franchise:'Franchise en base de TVA',editeur:'Éditeur du logiciel'};
+const CF_ED='Hugo Lehéricé';
+const cfEditor=()=>{const l=S.settings&&S.settings.legal;return(l&&l.editeur)||CF_ED};
 const CF_T={init:'Mise en service',cloture:'Clôture',avoir:'Avoir',duplicata:'Duplicata',export:'Archive',verif:'Vérification',param:'Réglage légal',abandon:'Ticket abandonné',remise:'Remise',restore:'Restauration',purge:'Tickets de test supprimés',seal:'Reprise de tickets'};
 const cfReal=s=>!s.demo&&!s.qw;
 const cfSealed=s=>cfReal(s)&&!!s.h;
@@ -8405,7 +8407,7 @@ function cfArchiveFiles(year){
   const readme=
 'ARCHIVE FISCALE DES DONNÉES DE CAISSE - '+(S.settings.name||'')+' - année '+year+'\r\n'+
 'Générée le '+new Date().toLocaleString('fr-FR')+' par Lago '+LAGO_V+' (module de conformité '+CF_V+').\r\n'+
-(lg.raison?'Exploitant : '+lg.raison+(lg.siret?' · SIRET '+lg.siret:'')+'\r\n':'')+
+(lg.raison?'Exploitant : '+lg.raison+(lg.siret?' · SIRET '+lg.siret:'')+'\r\n':'')+'Éditeur du logiciel : '+cfEditor()+'\r\n'+
 '\r\nPour le contrôle de l\'administration fiscale (article 286, I, 3° bis du Code général des impôts ; BOI-TVA-DECLA-30-10-30).\r\n'+
 'À conserver 6 ans (article L102 B du Livre des procédures fiscales).\r\n\r\n'+
 'CONTENU\r\n'+
@@ -8434,11 +8436,11 @@ function cfExport(year){
 
 /* --- attestation de l'éditeur (modèle BOI-LETTRE-000242, deux volets) --- */
 function cfAttPdf(){
-  const lg=S.settings.legal||{},ed=lg.raison||'............',d=new Date().toLocaleDateString('fr-FR');
+  const lg=S.settings.legal||{},ed=cfEditor(),d=new Date().toLocaleDateString('fr-FR');
   const bytes=pdfBuild('Attestation individuelle de l’éditeur',S.settings.name,'Attestation logiciel de caisse',w=>{
     w.p('Projet généré par Lago d’après le modèle officiel BOI-LETTRE-000242. À relire, compléter et signer avant tout usage. Les deux volets doivent être présentés en cas de contrôle.',9);
     w.sec('Volet 1 - à remplir par l’éditeur');
-    w.kv('Représentant légal','............');w.kv('Raison sociale de l’éditeur',ed);
+    w.kv('Représentant légal',ed);w.kv('Raison sociale de l’éditeur',lg.editeur?ed:ed+' (en nom propre)');
     w.kv('Logiciel','Lago (logiciel de gestion et de caisse pour parcs de loisirs)');
     w.kv('Version',LAGO_V+' (module de conformité '+CF_V+')');w.kv('Numéro de licence','Sans objet');
     w.kv('Périmètre','Logiciel entier, dont les fonctionnalités de caisse');
@@ -8461,8 +8463,9 @@ function cfAttPdf(){
 
 /* --- mentions légales --- */
 function cfLegalModal(){
-  const l=(S.settings&&S.settings.legal)||{},own=l.raison||'le propriétaire de l’application (à renseigner dans Paramètres › Conformité)',y=new Date().getFullYear();
-  showModal(mh('Mentions légales')+'<div class="cfleg"><h4>Éditeur et propriétaire</h4><p>Lago est un logiciel édité et détenu par <b>'+esc(own)+'</b>'+(l.adr?', '+esc(l.adr):'')+(l.siret?' · SIRET '+esc(l.siret):'')+(l.mail?' · '+esc(l.mail):'')+'. © '+y+', tous droits réservés. Le logiciel, son code, ses interfaces, ses textes et son nom ne peuvent être copiés, adaptés, diffusés ou réutilisés sans l’autorisation écrite du propriétaire.</p>'+
+  const l=(S.settings&&S.settings.legal)||{},own=cfEditor(),y=new Date().getFullYear();
+  showModal(mh('Mentions légales')+'<div class="cfleg"><h4>Éditeur et propriétaire</h4><p>Lago est un logiciel édité et détenu par <b>'+esc(own)+'</b>'+(l.mail?' · '+esc(l.mail):'')+'. © '+y+', tous droits réservés. Le logiciel, son code, ses interfaces, ses textes et son nom ne peuvent être copiés, adaptés, diffusés ou réutilisés sans l’autorisation écrite du propriétaire.</p>'+
+    (l.raison?'<h4>Établissement exploitant</h4><p>'+esc(l.raison)+(l.forme?' · '+esc(l.forme):'')+(l.adr?', '+esc(l.adr):'')+(l.siret?' · SIRET '+esc(l.siret):'')+'.</p>':'')+
     '<h4>Hébergement</h4><p>Application : GitHub Pages (GitHub, Inc., San Francisco, États-Unis). Données partagées de l’équipe : Google Firebase Realtime Database, région Europe (Belgique).</p>'+
     '<h4>Données personnelles</h4><p>Les données des clients (nom, téléphone, e-mail, historique d’achats) sont saisies par l’établissement, responsable du traitement. Elles servent à gérer les réservations, la fidélité et les obligations comptables et fiscales. Les données de caisse sont conservées 6 ans. Pour exercer vos droits d’accès, de rectification ou d’effacement, contactez '+(l.mail?esc(l.mail):'l’établissement')+'.</p></div><button class="btn primary" data-act="close">Fermer</button>');
 }
@@ -8484,9 +8487,9 @@ function vSetCF(m){
    '<div class="acts cfacts"><button class="btn primary" data-act="cf_verify">'+ic('shield')+'Vérifier l’intégrité</button><button class="btn" data-act="cf_export" data-y="'+yr+'">'+ic('box')+'Archive '+yr+'</button>'+(new Date().getMonth()<3?'<button class="btn" data-act="cf_export" data-y="'+(yr-1)+'">'+ic('box')+'Archive '+(yr-1)+'</button>':'')+'</div>'+
    '<p class="muted cfnote">Un ticket validé ne peut plus être modifié ni supprimé : on l’annule par un avoir. L’archive (ZIP : CSV et JSON, avec une notice) est à conserver 6 ans ; faites-la au moins une fois par an.</p></div>'+
    '<div class="card cfcard"><h3>Informations légales</h3>'+
-   inp('raison','Nom ou raison sociale','Apparaît sur les tickets, l’attestation et les mentions légales. C’est aussi le propriétaire du logiciel.')+inp('forme','Forme juridique','','SAS, SARL, entreprise individuelle…')+inp('adr','Adresse complète')+inp('siret','SIRET')+
+   inp('raison','Nom ou raison sociale','Celui de l’établissement qui encaisse. Apparaît sur les tickets, sur le volet « entreprise » de l’attestation et dans les mentions légales.')+inp('forme','Forme juridique','','SAS, SARL, entreprise individuelle…')+inp('adr','Adresse complète')+inp('siret','SIRET')+
    (lg.franchise?'':inp('tva','N° de TVA intracommunautaire','','FR00000000000'))+
-   '<label class="check" style="margin:6px 0"><input type="checkbox" data-lg="franchise" '+(lg.franchise?'checked':'')+'>Franchise en base de TVA (art. 293 B du CGI)</label>'+inp('mail','E-mail de contact légal')+
+   '<label class="check" style="margin:6px 0"><input type="checkbox" data-lg="franchise" '+(lg.franchise?'checked':'')+'>Franchise en base de TVA (art. 293 B du CGI)</label>'+inp('mail','E-mail de contact légal')+inp('editeur','Éditeur du logiciel (titulaire des droits)','Signe l’attestation de l’éditeur. Laissez vide pour « '+CF_ED+' ».',CF_ED)+
    (miss?'<p class="cfwarn" style="margin-top:10px">Complétez le nom, le SIRET et le régime de TVA : ces mentions s’impriment sur chaque ticket.</p>':'')+'</div></div>'+
    '<div class="card cfcard"><h3>Documents</h3><p class="muted" style="margin:0 0 10px;font-size:13.5px">L’attestation de l’éditeur (modèle officiel BOI-LETTRE-000242) est le justificatif à présenter en cas de contrôle. Relisez-la avec votre expert-comptable avant de la signer.</p><div class="acts cfacts"><button class="btn" data-act="cf_att">Attestation de l’éditeur (PDF)</button><button class="btn" data-act="cf_legal">Mentions légales</button></div></div>'+
    '<div class="card cfcard"><h3>Journal des événements</h3>'+(S.jrn.length?'<div class="cflist">'+S.jrn.slice().sort((a,b)=>b.sq-a.sq).slice(0,40).map(e=>'<div class="cfj"><span class="cft">'+esc(CF_T[e.t]||e.t)+'</span><span class="grow">'+esc(e.x)+'</span><small class="muted">'+new Date(e.ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' · '+esc(e.by)+'</small></div>').join('')+'</div>':'<p class="muted">Aucun événement pour le moment.</p>')+'</div>';
