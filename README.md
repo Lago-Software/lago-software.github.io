@@ -14,3 +14,9 @@ L'appli installée se met à jour toute seule : elle compare son numéro de vers
 Un simple rafraîchissement de la page (ou la réouverture de l'appli) charge toujours la dernière version : `sw.js` revalide les fichiers auprès du serveur à chaque chargement, sans attendre le cache du navigateur.
 
 Pour publier une version : changer `LAGO_V` dans `index.html` et `V` dans `sw.js` (même numéro), puis pousser sur `main`.
+
+## Propriété et licence
+
+© 2026 — Tous droits réservés. Logiciel propriétaire : voir [LICENSE](LICENSE). Ce dépôt est public uniquement pour l'hébergement sur GitHub Pages ; sa visibilité ne donne aucun droit de réutilisation, de copie ni de modification.
+
+Conformité de la caisse : le module « Conformité » (Paramètres › Conformité) met en œuvre les exigences de l'article 286 I 3° bis du CGI (inaltérabilité, sécurisation, conservation, archivage). Il ne remplace pas l'attestation individuelle de l'éditeur, que le titulaire doit signer lui-même après relecture avec son expert-comptable.

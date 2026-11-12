@@ -13,6 +13,8 @@
 </head><body>
 <title>Lago</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="copyright" content="© 2026 Lago — Tous droits réservés. Logiciel propriétaire, toute reproduction ou réutilisation sans autorisation écrite du titulaire est interdite.">
+<!-- Lago — © 2026 — Tous droits réservés. Code source propriétaire : voir LICENSE. Consultation autorisée, copie, modification et redistribution interdites sans accord écrit du titulaire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400;500;600;700&display=swap">
@@ -1736,6 +1738,47 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--brand);outline-offs
   .mt-main,.mt:hover>.mt-main,.mt:focus-within>.mt-main{flex-direction:column;justify-content:center;text-align:center;gap:6px;min-height:84px;font-size:13px}
   .mt-main>span:last-child{overflow-wrap:normal}
 }
+
+/* ---- conformité de la caisse (v55) ---- */
+.cfdup{margin:0 0 10px;padding:8px 10px;border:2px dashed color-mix(in srgb,var(--pay) 70%,#7a2c00);border-radius:12px;text-align:center;font-weight:800;letter-spacing:.08em;color:color-mix(in srgb,var(--pay) 80%,#7a2c00);background:color-mix(in srgb,var(--pay) 8%,var(--surface))}
+.cfdup small{display:block;margin-top:2px;font-weight:600;letter-spacing:0;font-size:12px;color:var(--muted)}
+.cfdup.cfcx{border-color:#c43b3b;color:#a02828;background:color-mix(in srgb,#c43b3b 7%,var(--surface))}
+.cfseal{font-size:11px;line-height:1.5;color:var(--muted);word-break:break-all}
+.cfleg1{font-size:12px;color:var(--muted)}
+.cfacts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+.cfacts .btn{display:inline-flex;align-items:center;gap:8px}
+.cfacts .btn svg{width:18px;height:18px}
+.cfno{color:#a02828;border-color:color-mix(in srgb,#c43b3b 40%,var(--line))}
+.cfcols{align-items:start}
+.cfcard h3{margin-bottom:10px}
+.cfst{padding:10px 12px;border-radius:12px;background:var(--surface-2);font-weight:650;font-size:14px;margin-bottom:10px}
+.cfst.ok{background:color-mix(in srgb,var(--ok,#1f9d55) 12%,var(--surface));color:color-mix(in srgb,var(--ok,#1f9d55) 85%,#0b3b20)}
+.cfst.bad{background:color-mix(in srgb,#c43b3b 12%,var(--surface));color:#a02828}
+.cfk{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--hair);font-size:14px}
+.cfk:last-of-type{border-bottom:0}
+.cfk span{color:var(--muted)}
+.cfwarn{margin-top:12px;padding:10px 12px;border-radius:12px;font-size:13.5px;background:color-mix(in srgb,var(--pay) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--pay) 35%,var(--line))}
+.cfnote{font-size:13px;margin:12px 0 0}
+.cflist{display:flex;flex-direction:column;max-height:360px;overflow:auto}
+.cfj{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:8px 0;border-bottom:1px solid var(--hair);font-size:13.5px}
+.cfj:last-child{border-bottom:0}
+.cfj.bad{color:#a02828}.cfj.warn{color:color-mix(in srgb,var(--pay) 80%,#7a2c00)}
+.cft{flex:none;padding:2px 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-size:12px;font-weight:700}
+.cfj small{flex-basis:100%}
+.cfvr{display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:14px;margin-bottom:10px}
+.cfvr.ok{background:color-mix(in srgb,var(--ok,#1f9d55) 12%,var(--surface))}
+.cfvr.bad{background:color-mix(in srgb,#c43b3b 12%,var(--surface))}
+.cfvr span{font-size:13px;color:var(--muted)}
+.cfleg h4{margin:14px 0 4px;font-size:14px}.cfleg h4:first-child{margin-top:0}.cfleg p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink-2,var(--ink))}
+.cflegb{display:block;margin:10px auto 0;font-size:13px}
+.cfzr .r span:last-child{font-variant-numeric:tabular-nums}
+.cfzc{margin-top:14px}
+
+/* v55 : liste des comptes lisible sur téléphone (les réglages passent à la ligne) */
+.acrow{flex-wrap:wrap;align-items:center;gap:8px 10px}
+.acrow .grow{flex:1 1 calc(100% - 64px);min-width:0;overflow-wrap:anywhere}
+.acrow select{flex:1 1 150px;min-width:0;width:auto}
+.acrow .btn{flex:0 0 auto;white-space:nowrap}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -1857,7 +1900,7 @@ function init(){
   S.monthly=S.monthly||{};S.maint=S.maint||[];S.incidents=S.incidents||[];
   S.profiles=S.profiles||defaultProfiles();
 }
-function number(){S.sales.forEach((s,i)=>{s.no='T-'+String(i+1).padStart(4,'0')})}
+function number(){let k=0;S.sales.forEach(s=>{if(s.h||s.qw)return;s.no=(s.demo?'D-':'T-')+String(++k).padStart(4,'0')})}
 function saveBase(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function newCart(){const n=new Date(),h=n.getHours();return{lines:[],disc:{t:'pct',v:0},clientId:null,rewardPal:null,event:null,slotDate:today(),slotM:nextQ()}}
 
@@ -2031,7 +2074,7 @@ function confirmPay(){
   const s=payState();if(!s.ok)return;
   const pays=pay.list.map(p=>({m:p.m,amt:p.amt,...(p.m==='cash'?{given:p.given??p.amt}:{}),...(p.code?{code:p.code}:{})}));
   const sale=finalize(cart,pays,Date.now(),false);sale.change=s.change;
-  S.sales.push(sale);number();giftUse(sale);afterSale(sale,cart);save();cart=newCart();
+  S.sales.push(cfSeal(sale));number();giftUse(sale);afterSale(sale,cart);save();cart=newCart();
   showReceipt(sale,true);
   if(view==='caisse'){drawCart();drawGrid()}
 }
@@ -2139,7 +2182,7 @@ function prodForm(id){
 
 /* ---------- rapports ---------- */
 function niceStep(v){const raw=v/4;return [5000,10000,20000,25000,50000,100000,200000,500000].find(s=>s>=raw)||1000000}
-function vReports(m){
+function vReportsV0(m){
   const td=today(),ds=S.sales.filter(s=>dkey(new Date(s.ts))===td);
   const ca=ds.reduce((a,s)=>a+s.total,0),jp=ds.reduce((a,s)=>a+s.jumpers,0);
   const byH=HOURS.map(h=>ds.filter(s=>new Date(s.ts).getHours()===h).reduce((a,s)=>a+s.total,0));
@@ -3475,7 +3518,7 @@ document.addEventListener('click',e=>{
   if(a==='chold'){S.held=S.held||[];if(cart.lines.length){S.held.push({id:uid(),ts:Date.now(),cart:JSON.parse(JSON.stringify(cart))});cart=newCart();save();drawCart();drawGrid();toast('Ticket mis en attente')}else heldList()}
   else if(a==='hresume'){const i=(S.held||[]).findIndex(x=>x.id===d.id);if(i>=0){if(cart.lines.length)S.held.push({id:uid(),ts:Date.now(),cart:JSON.parse(JSON.stringify(cart))});cart=S.held.splice(i,1)[0].cart;save();closeModal();drawCart();drawGrid()}}
   else if(a==='hdel'){S.held=(S.held||[]).filter(x=>x.id!==d.id);save();heldList()}
-  else if(a==='cabandon'){cart=newCart();drawCart();drawGrid();toast('Ticket abandonné')}
+  else if(a==='cabandon'){cfAbandon();cart=newCart();drawCart();drawGrid();toast('Ticket abandonné')}
   else if(a==='cbpay'){const T=totals(cart);if(!T.total&&!(T.L.length&&(T.pInfo||T.pcInfo)))toast('Le ticket est vide');else if(!slotOk(T))toast('Choisissez un créneau valide pour encaisser');else openPay()}
 });
 /* page Caisse façon tiroir */
@@ -4044,7 +4087,7 @@ document.addEventListener('submit',async e=>{
       const a={id,name:$('#gn').value.trim(),ident,pwd:pw?await hashPw(pw,id):'',status:first?'active':'pending',admin:first,profileId:'',staffId:k==='new'?$('#gstf').value:'',ts:Date.now()};
       accs().push(a);save();
       if(first)login(a,true);
-      else gateShell(`<div class="gpick"><span class="avatar big ok">${ic('check')}</span><h2>Demande envoyée</h2></div><p class="muted" style="text-align:center">Votre compte sera utilisable dès que l’administrateur l’aura validé.</p><div class="gfoot"><button class="btn primary" data-act="g_back">Retour</button></div>`);
+      else gateShell(`<div class="gpick"><span class="avatar big ok">${ic('check')}</span><h2>Demande envoyée</h2></div><p class="muted" style="text-align:center">Votre compte sera utilisable dès que l’administrateur l’aura validé.</p>${cloudOn()?'':'<div class="banner" id="gnolink"><span><b>Attention :</b> ce téléphone n’est pas connecté à l’équipe. Votre demande n’est enregistrée que sur cet appareil et n’arrivera pas chez l’administrateur. Ouvrez le lien d’équipe, ou touchez le bouton ci-dessous.</span></div>'}<div class="gfoot"><button class="btn primary" data-act="g_back">Retour</button></div>`);
     }else{
       const a=k==='pick'?accs().find(x=>x.id===f.dataset.id):accs().find(x=>x.ident===ident);
       if(!a){err(cloudOn()?'Compte introuvable. Vérifiez l’identifiant, ou choisissez votre prénom dans la liste.':'Compte introuvable : cet appareil n’est pas connecté à l’équipe. Ouvrez le lien d’équipe envoyé par votre responsable.');return}
@@ -4636,7 +4679,7 @@ document.addEventListener('change',e=>{
       const o=JSON.parse(rd.result),d=o&&o.data;
       if(!d||!d.settings||!Array.isArray(d.products)){toast('Ce fichier n’est pas une sauvegarde Lago');return}
       askYes('Remplacer toutes les données actuelles par cette sauvegarde ? Les comptes seront ceux de la sauvegarde.',()=>{
-        S=d;save();migrateSubs();migrateQ();migrateR();migrateT();migrateV();migrateImgs();hoursInit();applySettings();applyTheme();applyLook();cart=newCart();
+        if(!cfRestoreOk(d)){toast('Restauration refusée : cette sauvegarde ne contient pas tous les tickets et clôtures déjà enregistrés.');return}S=d;cfLog('restore','Sauvegarde restaurée');save();migrateSubs();migrateQ();migrateR();migrateT();migrateV();migrateImgs();hoursInit();applySettings();applyTheme();applyLook();cart=newCart();
         ME=null;ROLEMODE='operator';PROF='-';try{localStorage.removeItem(SKEY);sessionStorage.removeItem(SKEY)}catch(_){}
         chrome();route();gateStart();toast('Sauvegarde restaurée')},'Restaurer');
     }catch(err){toast('Fichier illisible')}};
@@ -5343,7 +5386,7 @@ function afterSale(sale,c){
   }catch(e){}
 }
 const x3Pf=s=>`<div class="x3q"><b>${esc(s)}</b></div>`;
-function showReceipt(s,isNew){
+function showReceiptX(s,isNew){
   showReceiptBase(s,isNew);
   try{
     const r=document.querySelector('.receipt');if(!r)return;let h='';
@@ -5516,7 +5559,7 @@ document.addEventListener('click',e=>{
   else if(a==='x3_cam')ciCam();
   else if(a==='x3_cigo'){
     const n=Math.max(1,parseInt($('#cin_n').value)||1);
-    if(d.kind==='ticket'){const s=S.sales.find(x=>x.no===d.ref);if(!s)return;const rem=(s.jumpers||0)-entered(s),k=Math.min(n,rem);if(k<=0)return;
+    if(d.kind==='ticket'){const s=S.sales.find(x=>x.no===d.ref&&!x.cx);if(!s)return;const rem=(s.jumpers||0)-entered(s),k=Math.min(n,rem);if(k<=0)return;
       entries().push({id:uid(),ts:Date.now(),kind:'ticket',ref:s.no,name:clientName(s.clientId)||'Client comptoir',n:k});toast(k+' entrée'+(k>1?'s':'')+' enregistrée'+(k>1?'s':''))}
     else{const p=findPass(d.ref);if(!p||passState(p)!=='ok')return;const k=Math.min(n,p.left);p.left-=k;p.log.push({ts:Date.now(),d:-k,note:'Entrée directe'});
       entries().push({id:uid(),ts:Date.now(),kind:'pass',ref:p.code,name:clientName(p.clientId)||'Carnet',n:k});toast(k+' séance'+(k>1?'s':'')+' déduite'+(k>1?'s':'')+' · reste '+p.left)}
@@ -6008,6 +6051,7 @@ function vSetAcc(m){
   if(p)p.textContent='Les accès sont définis par les profils (Paramètres › Profils). Les comptes sont partagés avec l’équipe quand « Équipe connectée » est active ; les mots de passe sont chiffrés. Un compte demandé depuis l’écran de connexion doit d’abord être validé ci-dessus.';
   if(typeof mailCard==='function')mailCard(m);
   if(typeof etabRows==='function')etabRows(m);
+  m.querySelectorAll('[data-acprof]').forEach(x=>{const r=x.closest('.row');if(r)r.classList.add('acrow')});
 }
 function x4AccModal(){
   const pr=S.profiles||[];
@@ -6045,7 +6089,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v54';
+const LAGO_V='v55';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -7359,7 +7403,7 @@ setTimeout(()=>{
 function accountMenu(){
   accountMenuV0();
   const m=document.querySelector('#modal .modal');if(!m||m.querySelector('.auv'))return;
-  m.insertAdjacentHTML('beforeend',`<div class="auv"><div><b>Lago ${esc(LAGO_V)}</b><span class="muted" id="auvs">${AU.ver?'Nouvelle version '+esc(AU.ver)+' disponible':'Les mises à jour s’installent toutes seules.'}</span></div><button type="button" class="btn" data-act="${AU.ver?'au_go':'au_check'}" id="auvb">${AU.ver?'Mettre à jour':'Rechercher une mise à jour'}</button></div>`);
+  m.insertAdjacentHTML('beforeend',`<div class="auv"><div><b>Lago ${esc(LAGO_V)}</b><span class="muted" id="auvs">${AU.ver?'Nouvelle version '+esc(AU.ver)+' disponible':'Les mises à jour s’installent toutes seules.'}</span></div><button type="button" class="btn" data-act="${AU.ver?'au_go':'au_check'}" id="auvb">${AU.ver?'Mettre à jour':'Rechercher une mise à jour'}</button></div><button type="button" class="glink cflegb" data-act="cf_legal">Mentions légales et propriété du logiciel</button>`);
 }
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act^="au_"]');if(!b)return;const a=b.dataset.act;
@@ -7977,13 +8021,511 @@ document.addEventListener('change',e=>{
     save();toast('Solde enregistré');redraw();
   }
 });
+/* ---------- CF. conformité de la caisse (art. 286 I 3° bis du CGI, BOI-TVA-DECLA-30-10-30) ---------- */
+/* Inaltérabilité : tickets scellés (SHA-256 chaîné, une chaîne par caisse), jamais modifiés ni supprimés ; annulation par avoir.
+   Sécurisation   : clôtures et journal des événements scellés eux aussi, vérification d'intégrité.
+   Conservation   : toutes les lignes sont conservées ; clôtures journalière, mensuelle, annuelle avec grand total et total perpétuel.
+   Archivage      : export annuel en formats ouverts (CSV, JSON) avec notice en français, dans une archive ZIP. */
+const CF_V='1.0';
+const CF_LG={raison:'Nom ou raison sociale',forme:'Forme juridique',adr:'Adresse',siret:'SIRET',tva:'N° de TVA intracommunautaire',mail:'E-mail de contact',franchise:'Franchise en base de TVA'};
+const CF_T={init:'Mise en service',cloture:'Clôture',avoir:'Avoir',duplicata:'Duplicata',export:'Archive',verif:'Vérification',param:'Réglage légal',abandon:'Ticket abandonné',remise:'Remise',restore:'Restauration',purge:'Tickets de test supprimés',seal:'Reprise de tickets'};
+const cfReal=s=>!s.demo&&!s.qw;
+const cfSealed=s=>cfReal(s)&&!!s.h;
+const cfM=c=>((c||0)/100).toFixed(2).replace('.',',');
+
+/* --- SHA-256 synchrone (testé contre l'implémentation du navigateur) --- */
+const cfSha=(()=>{
+  const P=[];for(let n=2;P.length<64;n++){let ok=true;for(let i=2;i*i<=n;i++)if(n%i===0){ok=false;break}if(ok)P.push(n)}
+  const fr=x=>Math.floor((x-Math.floor(x))*4294967296)>>>0;
+  const K=P.map(p=>fr(Math.cbrt(p))),H0=P.slice(0,8).map(p=>fr(Math.sqrt(p)));
+  const rr=(x,n)=>(x>>>n)|(x<<(32-n));
+  return str=>{
+    const b=new TextEncoder().encode(String(str)),l=b.length,n=((l+9+63)>>6)<<6,m=new Uint8Array(n);
+    m.set(b);m[l]=128;
+    const dv=new DataView(m.buffer);dv.setUint32(n-8,Math.floor(l*8/4294967296));dv.setUint32(n-4,(l*8)>>>0);
+    const h=H0.slice(),w=new Array(64);
+    for(let o=0;o<n;o+=64){
+      for(let i=0;i<16;i++)w[i]=dv.getUint32(o+i*4);
+      for(let i=16;i<64;i++){const a=w[i-15],c=w[i-2];w[i]=(w[i-16]+(rr(a,7)^rr(a,18)^(a>>>3))+w[i-7]+(rr(c,17)^rr(c,19)^(c>>>10)))>>>0}
+      let a=h[0],b2=h[1],c=h[2],d=h[3],e=h[4],f=h[5],g=h[6],hh=h[7];
+      for(let i=0;i<64;i++){
+        const t1=(hh+(rr(e,6)^rr(e,11)^rr(e,25))+((e&f)^(~e&g))+K[i]+w[i])>>>0;
+        const t2=((rr(a,2)^rr(a,13)^rr(a,22))+((a&b2)^(a&c)^(b2&c)))>>>0;
+        hh=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=b2;b2=a;a=(t1+t2)>>>0;
+      }
+      h[0]=(h[0]+a)>>>0;h[1]=(h[1]+b2)>>>0;h[2]=(h[2]+c)>>>0;h[3]=(h[3]+d)>>>0;h[4]=(h[4]+e)>>>0;h[5]=(h[5]+f)>>>0;h[6]=(h[6]+g)>>>0;h[7]=(h[7]+hh)>>>0;
+    }
+    return h.map(x=>x.toString(16).padStart(8,'0')).join('');
+  };
+})();
+
+/* --- données : tableaux, caisse (poste) de cet appareil --- */
+function cfEns(){
+  if(!Array.isArray(S.zs))S.zs=[];
+  if(!Array.isArray(S.jrn))S.jrn=[];
+  if(!S.regs||typeof S.regs!=='object'||Array.isArray(S.regs))S.regs={};
+  if(!S.cf||typeof S.cf!=='object')S.cf={};
+  if(!S.settings.legal||typeof S.settings.legal!=='object')S.settings.legal={};
+}
+function cfRegId(){
+  const k='lago-reg';
+  try{let r=localStorage.getItem(k);if(!r){r='r'+uid();localStorage.setItem(k,r)}return r}
+  catch(e){return cfRegId.m||(cfRegId.m='r'+uid())}
+}
+function cfReg(){
+  cfEns();const id=cfRegId();
+  if(!S.regs[id])S.regs[id]={k:Object.keys(S.regs).length+1,ts:Date.now()};
+  return{id,k:S.regs[id].k};
+}
+const cfLive=()=>S.sales.some(cfReal)||(S.zs&&S.zs.length>0);
+const cfLocked=()=>S.sales.some(cfSealed)||!!(S.zs&&S.zs.length);
+const cfDocs=()=>S.sales.filter(cfSealed).sort((a,b)=>a.ts-b.ts||(a.rg<b.rg?-1:a.rg>b.rg?1:0)||a.sq-b.sq);
+
+/* --- tickets scellés --- */
+function cfCanon(s,ph){
+  return ['LT1',s.rg,s.sq,s.no,s.ts,s.ty||'S',s.total,s.disc||0,
+    JSON.stringify(Object.keys(s.vat||{}).sort().map(r=>[r,s.vat[r].ttc,s.vat[r].tva])),
+    JSON.stringify((s.lines||[]).map(l=>[l.pid,l.name,l.qty,l.price,l.rate,l.ttc])),
+    JSON.stringify((s.pay||[]).map(p=>[p.m,p.amt])),s.rf||'',s.mt||'',ph].join('|');
+}
+function cfLast(rg){let b=null;S.sales.forEach(s=>{if(s.h&&s.rg===rg&&(!b||s.sq>b.sq))b=s});return b}
+function cfNo(r,s){return (s.ty==='av'?'AV':'C')+r.k+'-'+String(s.sq).padStart(4,'0')}
+function cfSealOne(s,keepNo){
+  const r=cfReg(),last=cfLast(r.id);
+  s.rg=r.id;s.sq=(last?last.sq:0)+1;
+  if(!keepNo)s.no=cfNo(r,s);
+  s.h=cfSha(cfCanon(s,last?last.h:'GENESIS'));
+  return s;
+}
+/* tickets réels créés avant la mise en conformité : conservés et scellés dans l'ordre */
+function cfSealLegacy(){
+  const L=S.sales.filter(s=>cfReal(s)&&!s.h).sort((a,b)=>a.ts-b.ts);
+  L.forEach(s=>cfSealOne(s,true));
+  if(L.length)cfLog('seal',L.length+' ticket(s) antérieur(s) repris et scellé(s)');
+  return L.length;
+}
+function cfInit(){
+  cfEns();
+  if(!S.cf.init){S.cf.init=Date.now();S.cf.v=CF_V;cfLog('init','Mise en service du module de conformité (Lago '+LAGO_V+')')}
+}
+function cfSeal(sale){
+  if(!cfReal(sale)||sale.h)return sale;
+  cfInit();
+  if(!S.sales.some(cfSealed))cfSealLegacy();
+  cfSealOne(sale,false);
+  if(sale.disc>0&&sale.ty!=='av')cfLog('remise','Remise de '+eur(sale.disc)+' sur '+sale.no);
+  return sale;
+}
+
+/* --- journal des événements (chaîné) --- */
+function cfLog(t,x){
+  cfEns();
+  const last=S.jrn.reduce((m,e)=>e.sq>m.sq?e:m,{sq:0,h:'GENESIS'});
+  const e={id:uid(),sq:last.sq+1,ts:Date.now(),t,x:String(x||'').slice(0,300),by:ME?ME.name:'-',rg:cfRegId()};
+  e.h=cfSha(['LJ1',e.sq,e.ts,e.t,e.x,e.by,e.rg,last.h].join('|'));
+  S.jrn.push(e);return e;
+}
+function cfAbandon(){
+  try{if(cfLive()&&cart&&cart.lines&&cart.lines.length){cfLog('abandon','Ticket abandonné : '+cart.lines.length+' ligne(s), '+eur(totals(cart).total));save()}}catch(e){}
+}
+
+/* --- annulation par avoir --- */
+function cfCancel(id,motif){
+  const o=S.sales.find(x=>x.id===id);
+  if(!o||!cfSealed(o)||o.ty==='av'||o.cx)return null;
+  cfEns();
+  const neg=v=>-(v||0);
+  const av={id:uid(),ts:Date.now(),ty:'av',rf:o.no,rfId:o.id,mt:String(motif||'').slice(0,200),
+    lines:o.lines.map(l=>({...l,qty:-l.qty,ttc:-l.ttc})),sub:neg(o.sub),disc:neg(o.disc),discLabel:o.discLabel||'',total:neg(o.total),
+    vat:Object.fromEntries(Object.entries(o.vat||{}).map(([r,v])=>[r,{ttc:-v.ttc,tva:-v.tva}])),
+    pay:(o.pay||[]).map(p=>({m:p.m,amt:-p.amt,...(p.code?{code:p.code}:{})})),
+    clientId:o.clientId||null,slot:null,dur:0,jumpers:neg(o.jumpers)};
+  cfSealOne(av,false);S.sales.push(av);
+  o.cx={ts:av.ts,no:av.no,mt:av.mt};if(o.slot){o.slot0=o.slot;o.slot=null}
+  try{
+    (o.pay||[]).forEach(p=>{if(p.m==='gift'&&p.code){const g=findGift(p.code);if(g){g.bal+=p.amt;g.log.push({ts:av.ts,d:p.amt,note:'Avoir '+av.no})}}});
+    if(o.passUse){const p=findPass(o.passUse.code);if(p){p.left+=o.passUse.k;p.log.push({ts:av.ts,d:o.passUse.k,note:'Avoir '+av.no})}}
+    (o.newPasses||[]).forEach(cd=>{const p=findPass(cd);if(p){p.log.push({ts:av.ts,d:-p.left,note:'Annulé (avoir '+av.no+')'});p.left=0}});
+    const cl=o.clientId?clientById(o.clientId):null;if(cl&&o.pts)cl.pts=Math.max(0,cl.pts-o.pts);
+    o.lines.forEach(l=>{const s=stk()[l.pid];if(s)s.q+=l.qty});
+    S.events=(S.events||[]).filter(e=>e.sale!==o.no);
+  }catch(e){}
+  cfLog('avoir','Avoir '+av.no+' sur '+o.no+' ('+eur(-av.total)+') : '+av.mt);
+  save();return av;
+}
+
+/* --- clôtures --- */
+const cfEnd=d=>new Date(d+'T23:59:59.999').getTime();
+const cfByTs=(a,b)=>a.ts-b.ts||a.sq-b.sq;
+function cfAgg(docs){
+  const a={n:0,na:0,ttc:0,tva:0,abs:0,vat:{},pay:{}};
+  docs.forEach(s=>{
+    if(s.ty==='av')a.na++;else a.n++;
+    a.ttc+=s.total;a.abs+=Math.abs(s.total);
+    Object.entries(s.vat||{}).forEach(([r,v])=>{const o=a.vat[r]=a.vat[r]||{ttc:0,tva:0};o.ttc+=v.ttc;o.tva+=v.tva;a.tva+=v.tva});
+    (s.pay||[]).forEach(p=>{a.pay[p.m]=(a.pay[p.m]||0)+p.amt});
+  });
+  a.ht=a.ttc-a.tva;return a;
+}
+function cfZCanon(z,ph){
+  return ['LZ1',z.id,z.ty,z.per,z.ts,z.sq,z.rg||'',z.n,z.na,z.ttc,z.tva,
+    JSON.stringify(Object.keys(z.vat||{}).sort().map(r=>[r,z.vat[r].ttc,z.vat[r].tva])),
+    JSON.stringify(Object.keys(z.pay||{}).sort().map(m=>[m,z.pay[m]])),
+    z.gt,z.ga,JSON.stringify(Object.keys(z.hw||{}).sort().map(r=>[r,z.hw[r]])),z.lh||'',z.ex==null?'':z.ex,z.cn==null?'':z.cn,ph].join('|');
+}
+const cfZLast=ty=>S.zs.filter(z=>!ty||z.ty===ty).reduce((m,z)=>!m||z.sq>m.sq?z:m,null);
+const cfCovered=s=>(S.zs||[]).some(z=>z.ty==='J'&&z.per===ymd(s.ts)&&z.hw&&z.hw[s.rg]>=s.sq);
+function cfZPush(z){
+  const last=cfZLast();z.sq=(last?last.sq:0)+1;
+  z.h=cfSha(cfZCanon(z,last?last.h:'GENESIS'));S.zs.push(z);
+  cfLog('cloture',({J:'Clôture journalière',M:'Clôture mensuelle',A:'Clôture annuelle'})[z.ty]+' '+z.per+' : '+z.n+' ticket(s), '+eur(z.ttc)+(z.auto?' (automatique)':''));
+  return z;
+}
+function zMakeJ(date,o){
+  o=o||{};cfEns();cfInit();
+  const docs=cfDocs().filter(s=>ymd(s.ts)===date&&!cfCovered(s));
+  if(!docs.length&&!(o.force&&!S.zs.some(z=>z.ty==='J'&&z.per===date)))return null;
+  const a=cfAgg(docs),pj=cfZLast('J'),hw={};
+  docs.forEach(s=>{hw[s.rg]=Math.max(hw[s.rg]||0,s.sq)});
+  const ld=docs.slice().sort(cfByTs).pop(),seq=S.zs.filter(z=>z.ty==='J'&&z.per===date).length+1;
+  return cfZPush({id:'J'+date+'#'+seq,ty:'J',per:date,ts:o.auto?cfEnd(date):Date.now(),rg:o.auto?'*':cfRegId(),
+    n:a.n,na:a.na,ttc:a.ttc,tva:a.tva,vat:a.vat,pay:a.pay,gt:(pj?pj.gt:0)+a.ttc,ga:(pj?pj.ga:0)+a.abs,hw,lh:ld?ld.h:'',
+    ex:o.ex==null?null:o.ex,cn:o.cn==null?null:o.cn,auto:o.auto?1:0,by:o.auto?'automatique':(ME?ME.name:'-')});
+}
+function cfSum(zs){
+  const a={n:0,na:0,ttc:0,tva:0,vat:{},pay:{}};
+  zs.forEach(z=>{a.n+=z.n;a.na+=z.na;a.ttc+=z.ttc;a.tva+=z.tva;
+    Object.entries(z.vat||{}).forEach(([r,v])=>{const o=a.vat[r]=a.vat[r]||{ttc:0,tva:0};o.ttc+=v.ttc;o.tva+=v.tva});
+    Object.entries(z.pay||{}).forEach(([m,v])=>{a.pay[m]=(a.pay[m]||0)+v})});
+  return a;
+}
+function zMakeP(ty,per){
+  const src=S.zs.filter(z=>z.ty===(ty==='M'?'J':'M')&&z.per.startsWith(per));
+  if(!src.length)return null;
+  const a=cfSum(src),lj=src.slice().sort((x,y)=>x.sq-y.sq).pop();
+  const end=ty==='M'?new Date(+per.slice(0,4),+per.slice(5,7),0,23,59,59,999).getTime():new Date(+per,11,31,23,59,59,999).getTime();
+  return cfZPush({id:ty+per,ty,per,ts:end,rg:'*',n:a.n,na:a.na,ttc:a.ttc,tva:a.tva,vat:a.vat,pay:a.pay,gt:lj.gt,ga:lj.ga,hw:{},lh:lj.lh||'',ex:null,cn:null,auto:1,by:'automatique'});
+}
+/* clôtures automatiques des jours, mois et années écoulés (par l'administrateur) */
+function zRoll(){
+  if(!isAdmin())return 0;
+  cfEns();let k=0;const t=today();
+  const docs=cfDocs();if(!docs.length&&!S.zs.length)return 0;
+  [...new Set(docs.map(s=>ymd(s.ts)).filter(d=>d<t))].sort().forEach(d=>{
+    for(let g=0;g<5&&cfDocs().some(s=>ymd(s.ts)===d&&!cfCovered(s));g++){if(zMakeJ(d,{auto:1}))k++;else break}
+  });
+  const mo=t.slice(0,7);
+  [...new Set(S.zs.filter(z=>z.ty==='J').map(z=>z.per.slice(0,7)))].sort().forEach(m=>{
+    if(m<mo&&!S.zs.some(z=>z.ty==='M'&&z.per===m)&&!cfDocs().some(s=>ymd(s.ts).startsWith(m)&&!cfCovered(s))&&zMakeP('M',m))k++;
+  });
+  const yr=t.slice(0,4);
+  [...new Set(S.zs.filter(z=>z.ty==='M').map(z=>z.per.slice(0,4)))].sort().forEach(y=>{
+    if(y<yr&&!S.zs.some(z=>z.ty==='A'&&z.per===y)&&zMakeP('A',y))k++;
+  });
+  if(k)save();
+  return k;
+}
+function cfTick(){
+  try{
+    if(!ME||!isAdmin()||!S||(typeof cloudOn==='function'&&cloudOn()&&CL.state!=='ok'))return;
+    if(zRoll()&&view==='gestion'&&tab.gestion==='rapports'&&$('#sub'))vReports($('#sub'));
+  }catch(e){}
+}
+setInterval(cfTick,60000);setTimeout(cfTick,4000);
+function cfDayClose(exp,cnt){
+  S.closures.push({ts:Date.now(),expected:exp,counted:cnt,diff:cnt-exp});
+  if(cfLive()){cfEns();zMakeJ(today(),{force:true,ex:exp,cn:cnt})}
+  save();
+}
+
+/* --- vérification d'intégrité --- */
+function cfVerify(){
+  cfEns();const iss=[],docs=S.sales.filter(cfReal),un=docs.filter(s=>!s.h),sealed=docs.filter(s=>s.h);
+  if(un.length)iss.push({k:'warn',x:un.length+' ticket(s) réel(s) non scellé(s) (créés avant la mise en conformité)'});
+  const by={};sealed.forEach(s=>(by[s.rg]=by[s.rg]||[]).push(s));
+  const nos={};let ok=0;
+  Object.entries(by).forEach(([rg,L])=>{
+    L.sort((a,b)=>a.sq-b.sq);let prev=null;
+    L.forEach((s,i)=>{
+      if(s.sq!==i+1)iss.push({k:'bad',x:'Caisse '+(S.regs[rg]?S.regs[rg].k:rg)+' : numéro manquant avant '+s.no+' (attendu '+(i+1)+', trouvé '+s.sq+')'});
+      if(cfSha(cfCanon(s,prev?prev.h:'GENESIS'))!==s.h)iss.push({k:'bad',x:s.no+' : empreinte invalide, ticket modifié ou chaîne rompue'});else ok++;
+      if(nos[s.no])iss.push({k:'bad',x:'Numéro en double : '+s.no});nos[s.no]=1;
+      prev=s;
+    });
+  });
+  const zs=S.zs.slice().sort((a,b)=>a.sq-b.sq);let pz=null;
+  zs.forEach((z,i)=>{
+    if(z.sq!==i+1)iss.push({k:'bad',x:'Clôtures : numéro manquant avant '+z.id});
+    if(cfSha(cfZCanon(z,pz?pz.h:'GENESIS'))!==z.h)iss.push({k:'bad',x:'Clôture '+z.id+' : empreinte invalide'});
+    pz=z;
+  });
+  const seen={};
+  zs.filter(z=>z.ty==='J').forEach(z=>{
+    const base=seen[z.per]||{};
+    const dz=sealed.filter(s=>ymd(s.ts)===z.per&&s.sq<=(z.hw[s.rg]||0)&&s.sq>(base[s.rg]||0)),a=cfAgg(dz);
+    if(a.n!==z.n||a.na!==z.na||a.ttc!==z.ttc)iss.push({k:'bad',x:'Clôture du '+dfr(z.per)+' : les tickets ne correspondent plus au total clôturé'});
+    if(z.lh&&!sealed.some(s=>s.h===z.lh))iss.push({k:'bad',x:'Clôture du '+dfr(z.per)+' : dernier ticket introuvable'});
+    seen[z.per]=Object.assign({},base,z.hw);
+  });
+  const js=S.jrn.slice().sort((a,b)=>a.sq-b.sq);let pj=null;
+  js.forEach((e,i)=>{
+    if(e.sq!==i+1)iss.push({k:'bad',x:'Journal : événement manquant avant le n° '+e.sq});
+    if(cfSha(['LJ1',e.sq,e.ts,e.t,e.x,e.by,e.rg,pj?pj.h:'GENESIS'].join('|'))!==e.h)iss.push({k:'bad',x:'Journal : événement n° '+e.sq+' altéré'});
+    pj=e;
+  });
+  return{ts:Date.now(),ok:!iss.some(i=>i.k==='bad'),iss,n:{tk:sealed.length,ok,z:S.zs.length,j:S.jrn.length}};
+}
+
+/* --- mentions sur les tickets --- */
+function cfLegalLines(){
+  const l=(S.settings&&S.settings.legal)||{},a=[];
+  if(l.raison)a.push(l.raison+(l.forme?' · '+l.forme:''));
+  if(l.adr)a.push(l.adr);
+  if(l.siret)a.push('SIRET '+l.siret);
+  if(l.franchise)a.push('TVA non applicable, art. 293 B du CGI');else if(l.tva)a.push('TVA '+l.tva);
+  return a;
+}
+function showReceipt(s,isNew){
+  showReceiptX(s,isNew);
+  try{cfReceiptFix(s,isNew)}catch(e){}
+}
+function cfReceiptFix(s,isNew){
+  const m=document.querySelector('#modal .modal'),r=m&&m.querySelector('.receipt');if(!r||!cfSealed(s))return;
+  const av=s.ty==='av',first=r.querySelector('.c');
+  if(first){const lg=cfLegalLines();if(lg.length)first.insertAdjacentHTML('afterend',lg.map(x=>'<div class="c cfleg1">'+esc(x)+'</div>').join(''))}
+  if(av){
+    const h=m.querySelector('.mh h2');if(h)h.textContent='Avoir '+s.no;
+    const sc=m.querySelector('.success span');if(sc)sc.textContent='Avoir de '+eur(-s.total)+' établi · ticket '+s.rf+' annulé';
+    r.insertAdjacentHTML('afterbegin','<div class="cfdup">AVOIR sur le ticket '+esc(s.rf)+'<small>Motif : '+esc(s.mt||'')+'</small></div>');
+    r.querySelectorAll('.r').forEach(x=>{if(/^Remise/.test(x.textContent.trim())){const b=x.lastElementChild;if(b)b.textContent=eur(s.disc)}});
+  }else if(s.cx)r.insertAdjacentHTML('afterbegin','<div class="cfdup cfcx">TICKET ANNULÉ<small>Avoir '+esc(s.cx.no)+' · '+esc(s.cx.mt||'')+'</small></div>');
+  if(!isNew&&!av)r.insertAdjacentHTML('afterbegin','<div class="cfdup">DUPLICATA<small>Ticket d’origine du '+new Date(s.ts).toLocaleDateString('fr-FR')+' '+hm(s.ts)+'</small></div>');
+  const reg=S.regs&&S.regs[s.rg];
+  r.insertAdjacentHTML('beforeend','<hr><div class="c cfseal">'+(av?'Avoir':'Ticket')+' n° '+esc(s.no)+(reg?' · caisse '+reg.k:'')+'<br>Lago '+esc(LAGO_V)+' · empreinte '+esc(s.h.slice(0,16))+'</div>');
+  if(!isNew||av){
+    const prim=m.querySelector('button.primary[data-act="close"]');
+    if(prim){
+      let b='<button class="btn" data-act="cf_dup" data-id="'+esc(s.id)+'">'+ic('ticket')+'Duplicata (PDF)</button>';
+      if(isAdmin()&&!av&&!s.cx)b+='<button class="btn cfno" data-act="cf_cancel" data-id="'+esc(s.id)+'">'+ic('x')+'Annuler ce ticket</button>';
+      prim.insertAdjacentHTML('beforebegin','<div class="acts cfacts">'+b+'</div>');
+    }
+  }
+}
+function cfTicketPdf(s){
+  const av=s.ty==='av',n=(s.dup||0)+1;
+  s.dup=n;cfLog('duplicata','Duplicata n° '+n+' de '+s.no);save();
+  const bytes=pdfBuild((av?'Avoir ':'Ticket ')+s.no,S.settings.name,'DUPLICATA n°'+n+' - '+s.no,w=>{
+    w.sec('DUPLICATA n° '+n+' - '+(av?'avoir':'ticket')+' '+s.no);
+    w.kv('Date d’origine',new Date(s.ts).toLocaleDateString('fr-FR')+' '+hm(s.ts));
+    cfLegalLines().forEach(x=>w.kv('',x));
+    if(av){w.kv('Avoir sur le ticket',s.rf);w.kv('Motif',s.mt||'')}
+    if(s.cx)w.kv('Ticket annulé par l’avoir',s.cx.no);
+    w.sec('Détail');
+    s.lines.forEach(l=>w.kv(l.qty+' x '+l.name+' (TVA '+String(l.rate).replace('.',',')+' %)',eur(l.price*l.qty)));
+    if(s.disc)w.kv('Remise',eur(-s.disc));
+    w.kv('TOTAL TTC',eur(s.total));
+    Object.entries(s.vat||{}).forEach(([r,v])=>w.kv('dont TVA '+String(r).replace('.',',')+' % (HT '+eur(v.ttc-v.tva)+')',eur(v.tva)));
+    w.sec('Règlement');
+    (s.pay||[]).forEach(p=>w.kv(METHODS[p.m]||p.m,eur(p.amt)));
+    w.gap(6);w.p((av?'Avoir':'Ticket')+' n° '+s.no+' · Lago '+LAGO_V+' · empreinte '+s.h,8);
+  });
+  saveBytes('duplicata-'+s.no+'.pdf',bytes,'application/pdf');
+}
+
+/* --- Rapports : liste des clôtures --- */
+function vReports(m){
+  vReportsV0(m);
+  try{cfRepFix(m)}catch(e){}
+}
+function cfRepFix(m){
+  if(!m||!cfLive())return;
+  const zs=(S.zs||[]).filter(z=>z.ty==='J').slice().sort((a,b)=>b.sq-a.sq).slice(0,8);
+  m.insertAdjacentHTML('beforeend','<div class="card cfzc"><h3>Clôtures fiscales</h3>'+(zs.length?zs.map(z=>'<button class="row rowbtn" data-act="cf_z" data-id="'+esc(z.id)+'"><span class="grow"><b>'+dfr(z.per)+(z.auto?' · automatique':'')+'</b><span class="muted">'+z.n+' ticket'+(z.n>1?'s':'')+(z.na?' · '+z.na+' avoir'+(z.na>1?'s':''):'')+'</span></span><b class="num">'+eur(z.ttc)+'</b></button>').join(''):'<p class="muted">Aucune clôture pour le moment. Elle se fait avec « Clôturer la journée » ou automatiquement le lendemain.</p>')+
+    '<p class="muted" style="font-size:13px;margin:10px 0 0">Chaque clôture est scellée et ne peut plus être modifiée. Les jours, mois et années écoulés sont clôturés automatiquement.</p></div>');
+}
+function cfZModal(id){
+  const z=S.zs.find(x=>x.id===id);if(!z)return;
+  const nm=({J:'Clôture journalière',M:'Clôture mensuelle',A:'Clôture annuelle'})[z.ty],per=z.ty==='J'?dfr(z.per):z.ty==='M'?new Date(z.per+'-01T12:00').toLocaleDateString('fr-FR',{month:'long',year:'numeric'}):z.per;
+  const row=(a,b,c)=>'<div class="r"><span>'+a+'</span><span>'+(b===undefined?'':b)+'</span>'+(c!==undefined?'<span>'+c+'</span>':'')+'</div>';
+  showModal(mh(nm)+'<div class="receipt cfzr"><div class="c"><b>'+esc(per)+'</b></div><div class="c">'+(z.auto?'Clôture automatique':'Clôturée par '+esc(z.by||'-')+' à '+hm(z.ts))+'</div><hr>'+
+    row('Tickets',z.n)+row('Avoirs',z.na)+'<hr>'+row('Total TTC',eur(z.ttc))+row('Total HT',eur(z.ttc-z.tva))+row('TVA',eur(z.tva))+
+    Object.entries(z.vat||{}).sort().map(([r,v])=>row('TVA '+String(r).replace('.',',')+' % · HT '+eur(v.ttc-v.tva),eur(v.tva))).join('')+'<hr>'+
+    Object.entries(z.pay||{}).map(([k,v])=>row(esc(METHODS[k]||k),eur(v))).join('')+'<hr>'+
+    row('Grand total perpétuel',eur(z.gt))+row('Cumul absolu perpétuel',eur(z.ga))+
+    (z.cn!=null?'<hr>'+row('Espèces attendues',eur(z.ex))+row('Espèces comptées',eur(z.cn))+row('Écart',eur(z.cn-z.ex)):'')+
+    '<hr><div class="c cfseal">Clôture n° '+z.sq+' · empreinte '+esc(z.h.slice(0,16))+'</div></div><button class="btn primary" data-act="close">Fermer</button>');
+}
+
+/* --- archive fiscale (CSV + JSON + notice, dans un ZIP) --- */
+function cfCsv(rows){return '﻿'+rows.map(r=>r.map(v=>{v=v==null?'':String(v);return /[;"\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')).join('\r\n')+'\r\n'}
+function cfCrc(b){
+  let t=cfCrc.t;if(!t){t=cfCrc.t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}}
+  let r=0xFFFFFFFF;for(let i=0;i<b.length;i++)r=t[(r^b[i])&255]^(r>>>8);return (r^0xFFFFFFFF)>>>0;
+}
+function cfZip(files){
+  const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+  const u16=v=>[v&255,(v>>8)&255],u32=v=>[v&255,(v>>8)&255,(v>>16)&255,(v>>>24)&255];
+  const d=new Date(),dd=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  files.forEach(([name,data])=>{
+    const nb=enc.encode(name),crc=cfCrc(data);
+    const lh=new Uint8Array([0x50,0x4b,3,4,20,0,0,8,0,0,0,0,...u16(dd),...u32(crc),...u32(data.length),...u32(data.length),...u16(nb.length),0,0,...nb]);
+    cd.push(new Uint8Array([0x50,0x4b,1,2,20,0,20,0,0,8,0,0,0,0,...u16(dd),...u32(crc),...u32(data.length),...u32(data.length),...u16(nb.length),0,0,0,0,0,0,0,0,0,0,0,0,...u32(off),...nb]));
+    parts.push(lh,data);off+=lh.length+data.length;
+  });
+  const cs=cd.reduce((a,x)=>a+x.length,0);
+  const end=new Uint8Array([0x50,0x4b,5,6,0,0,0,0,...u16(files.length),...u16(files.length),...u32(cs),...u32(off),0,0]);
+  const all=[...parts,...cd,end],out=new Uint8Array(all.reduce((a,x)=>a+x.length,0));let p=0;all.forEach(x=>{out.set(x,p);p+=x.length});return out;
+}
+function cfArchiveFiles(year){
+  const inY=ts=>String(new Date(ts).getFullYear())===String(year);
+  const docs=cfDocs().filter(s=>inY(s.ts)),zs=S.zs.filter(z=>z.per.startsWith(String(year))),js=S.jrn.filter(e=>inY(e.ts));
+  const tk=[['numero','type','date','heure','caisse','ticket_origine','motif','article','quantite','prix_unitaire_ttc','taux_tva','total_ligne_ttc','tva_ligne','total_ligne_ht','remise_ticket','total_ticket_ttc','reglements','empreinte_sha256']];
+  docs.forEach(s=>{
+    const reg=S.regs&&S.regs[s.rg]?S.regs[s.rg].k:s.rg,pay=(s.pay||[]).map(p=>(METHODS[p.m]||p.m)+' '+cfM(p.amt)).join(' + ');
+    (s.lines.length?s.lines:[{name:'',qty:0,price:0,rate:'',ttc:0}]).forEach(l=>{
+      const tv=l.ttc-Math.round(l.ttc/(1+(+l.rate||0)/100));
+      tk.push([s.no,s.ty==='av'?'avoir':'ticket',new Date(s.ts).toLocaleDateString('fr-FR'),hm(s.ts),reg,s.rf||'',s.mt||'',l.name,l.qty,cfM(l.price),String(l.rate).replace('.',','),cfM(l.ttc),cfM(tv),cfM(l.ttc-tv),cfM(s.disc),cfM(s.total),pay,s.h]);
+    });
+  });
+  const zr=[['id','type','periode','date_heure','tickets','avoirs','total_ttc','total_ht','tva','tva_par_taux','reglements','grand_total_periode','grand_total_perpetuel','cumul_absolu_perpetuel','especes_attendues','especes_comptees','empreinte_sha256']];
+  zs.slice().sort((a,b)=>a.sq-b.sq).forEach(z=>zr.push([z.id,z.ty,z.per,new Date(z.ts).toLocaleString('fr-FR'),z.n,z.na,cfM(z.ttc),cfM(z.ttc-z.tva),cfM(z.tva),Object.entries(z.vat||{}).map(([r,v])=>r+'% : '+cfM(v.tva)).join(' | '),Object.entries(z.pay||{}).map(([m,v])=>(METHODS[m]||m)+' '+cfM(v)).join(' | '),cfM(z.ttc),cfM(z.gt),cfM(z.ga),z.ex==null?'':cfM(z.ex),z.cn==null?'':cfM(z.cn),z.h]));
+  const jr=[['numero','date_heure','type','detail','utilisateur','empreinte_sha256']];
+  js.slice().sort((a,b)=>a.sq-b.sq).forEach(e=>jr.push([e.sq,new Date(e.ts).toLocaleString('fr-FR'),CF_T[e.t]||e.t,e.x,e.by,e.h]));
+  const lg=(S.settings&&S.settings.legal)||{};
+  const readme=
+'ARCHIVE FISCALE DES DONNÉES DE CAISSE - '+(S.settings.name||'')+' - année '+year+'\r\n'+
+'Générée le '+new Date().toLocaleString('fr-FR')+' par Lago '+LAGO_V+' (module de conformité '+CF_V+').\r\n'+
+(lg.raison?'Exploitant : '+lg.raison+(lg.siret?' · SIRET '+lg.siret:'')+'\r\n':'')+
+'\r\nPour le contrôle de l\'administration fiscale (article 286, I, 3° bis du Code général des impôts ; BOI-TVA-DECLA-30-10-30).\r\n'+
+'À conserver 6 ans (article L102 B du Livre des procédures fiscales).\r\n\r\n'+
+'CONTENU\r\n'+
+'- tickets.csv : une ligne par article vendu ou remboursé (tickets et avoirs). Séparateur ";", encodage UTF-8, montants en euros avec virgule décimale.\r\n'+
+'- clotures.csv : clôtures journalières (J), mensuelles (M) et annuelles (A), avec grand total de la période et total perpétuel.\r\n'+
+'- journal.csv : journal des événements (clôtures, avoirs, duplicata, archives, vérifications, modifications des informations légales).\r\n'+
+'- archive.json : les mêmes données au format JSON, complètes (lignes, TVA, règlements, empreintes).\r\n\r\n'+
+'VÉRIFIER L\'INTÉGRITÉ\r\n'+
+'Chaque ticket porte une empreinte SHA-256 calculée sur ses données et sur l\'empreinte du ticket précédent de la même caisse (chaînage).\r\n'+
+'Texte haché d\'un ticket, séparé par des barres verticales : LT1|caisse|numéro d\'ordre|numéro|horodatage (ms)|S ou av|total TTC (centimes)|remise (centimes)|TVA par taux (JSON)|lignes (JSON)|règlements (JSON)|ticket d\'origine|motif|empreinte précédente (GENESIS pour le premier).\r\n'+
+'Les clôtures et le journal sont chaînés de la même façon (préfixes LZ1 et LJ1). Toute modification, suppression ou insertion rompt la chaîne.\r\n'+
+'Dans l\'application : Paramètres > Conformité > « Vérifier l\'intégrité ».\r\n\r\n'+
+'LEXIQUE\r\n'+
+'Montants en centimes dans archive.json, en euros dans les fichiers CSV. Un avoir a des montants négatifs et annule le ticket indiqué dans « ticket_origine ». Le grand total perpétuel ne repart jamais à zéro.\r\n';
+  const json=JSON.stringify({lago_archive:1,version_lago:LAGO_V,module:CF_V,annee:year,genere:new Date().toISOString(),exploitant:lg,caisses:S.regs,tickets:docs,clotures:zs,journal:js},null,1);
+  const enc=new TextEncoder();
+  return[['LISEZ-MOI.txt',enc.encode(readme)],['tickets.csv',enc.encode(cfCsv(tk))],['clotures.csv',enc.encode(cfCsv(zr))],['journal.csv',enc.encode(cfCsv(jr))],['archive.json',enc.encode(json)]];
+}
+function cfExport(year){
+  cfEns();
+  const files=cfArchiveFiles(year),bytes=cfZip(files);
+  S.cf.lastExport={ts:Date.now(),y:String(year)};
+  cfLog('export','Archive fiscale '+year+' générée ('+files.length+' fichiers)');save();
+  return saveBytes('archive-fiscale-'+year+'.zip',bytes,'application/zip');
+}
+
+/* --- attestation de l'éditeur (modèle BOI-LETTRE-000242, deux volets) --- */
+function cfAttPdf(){
+  const lg=S.settings.legal||{},ed=lg.raison||'............',d=new Date().toLocaleDateString('fr-FR');
+  const bytes=pdfBuild('Attestation individuelle de l’éditeur',S.settings.name,'Attestation logiciel de caisse',w=>{
+    w.p('Projet généré par Lago d’après le modèle officiel BOI-LETTRE-000242. À relire, compléter et signer avant tout usage. Les deux volets doivent être présentés en cas de contrôle.',9);
+    w.sec('Volet 1 - à remplir par l’éditeur');
+    w.kv('Représentant légal','............');w.kv('Raison sociale de l’éditeur',ed);
+    w.kv('Logiciel','Lago (logiciel de gestion et de caisse pour parcs de loisirs)');
+    w.kv('Version',LAGO_V+' (module de conformité '+CF_V+')');w.kv('Numéro de licence','Sans objet');
+    w.kv('Périmètre','Logiciel entier, dont les fonctionnalités de caisse');
+    w.kv('Date de mise sur le marché','............');
+    w.gap(6);
+    w.p('Je soussigné(e), représentant légal de l’éditeur, atteste que le logiciel désigné ci-dessus satisfait aux conditions d’inaltérabilité, de sécurisation, de conservation et d’archivage des données en vue du contrôle de l’administration fiscale, prévues au 3° bis du I de l’article 286 du code général des impôts.');
+    w.p('Fonctionnalités couvertes : enregistrement des ventes et des règlements, annulations par avoir, duplicata, clôtures journalière, mensuelle et annuelle, journal des événements, archivage annuel.',9);
+    w.p('Fait à ............, le '+d,10);w.sig('Signature de l’éditeur','');
+    w.sec('Volet 2 - à remplir par l’entreprise utilisatrice');
+    w.kv('Représentant légal','............');w.kv('Raison sociale de l’entreprise',lg.raison||'............');
+    w.kv('SIRET',lg.siret||'............');w.kv('Date d’acquisition ou de téléchargement','............');
+    w.kv('Distributeur','............');w.kv('Utilisé depuis le','............');
+    w.gap(6);
+    w.p('Je soussigné(e), représentant légal de l’entreprise, déclare utiliser le logiciel désigné ci-dessus pour enregistrer les règlements de mes clients particuliers depuis la date indiquée.');
+    w.p('Fait à ............, le '+d,10);w.sig('Signature de l’entreprise utilisatrice','');
+    w.gap(4);w.p('Rappel : établir une fausse attestation est un délit (article 441-1 du code pénal : 3 ans d’emprisonnement et 45 000 euros d’amende), de même que son usage.',8);
+  });
+  saveBytes('attestation-editeur-lago-'+LAGO_V+'.pdf',bytes,'application/pdf');
+}
+
+/* --- mentions légales --- */
+function cfLegalModal(){
+  const l=(S.settings&&S.settings.legal)||{},own=l.raison||'le propriétaire de l’application (à renseigner dans Paramètres › Conformité)',y=new Date().getFullYear();
+  showModal(mh('Mentions légales')+'<div class="cfleg"><h4>Éditeur et propriétaire</h4><p>Lago est un logiciel édité et détenu par <b>'+esc(own)+'</b>'+(l.adr?', '+esc(l.adr):'')+(l.siret?' · SIRET '+esc(l.siret):'')+(l.mail?' · '+esc(l.mail):'')+'. © '+y+', tous droits réservés. Le logiciel, son code, ses interfaces, ses textes et son nom ne peuvent être copiés, adaptés, diffusés ou réutilisés sans l’autorisation écrite du propriétaire.</p>'+
+    '<h4>Hébergement</h4><p>Application : GitHub Pages (GitHub, Inc., San Francisco, États-Unis). Données partagées de l’équipe : Google Firebase Realtime Database, région Europe (Belgique).</p>'+
+    '<h4>Données personnelles</h4><p>Les données des clients (nom, téléphone, e-mail, historique d’achats) sont saisies par l’établissement, responsable du traitement. Elles servent à gérer les réservations, la fidélité et les obligations comptables et fiscales. Les données de caisse sont conservées 6 ans. Pour exercer vos droits d’accès, de rectification ou d’effacement, contactez '+(l.mail?esc(l.mail):'l’établissement')+'.</p></div><button class="btn primary" data-act="close">Fermer</button>');
+}
+
+/* --- réglages : Paramètres › Conformité --- */
+function vSetCF(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  cfEns();
+  const lg=S.settings.legal,tk=S.sales.filter(cfSealed),nT=tk.filter(s=>s.ty!=='av').length,nA=tk.length-nT,lz=cfZLast('J'),lv=S.cf.lastVerify,le=S.cf.lastExport;
+  const leg=S.sales.filter(s=>cfReal(s)&&!s.h).length,locked=cfLocked(),yr=new Date().getFullYear();
+  const miss=!lg.raison||!lg.siret||!(lg.franchise||lg.tva);
+  const inp=(k,l,h,ph)=>fld(l,'<input data-lg="'+k+'" value="'+esc(lg[k]||'')+'" placeholder="'+esc(ph||'')+'">',h);
+  const kv=(a,b)=>'<div class="cfk"><span>'+a+'</span><b>'+b+'</b></div>';
+  m.innerHTML='<div class="cols cfcols">'+
+   '<div class="card cfcard"><h3>Caisse conforme</h3>'+
+   '<div class="cfst '+(lv&&!lv.ok?'bad':lv?'ok':'')+'">'+(lv?(lv.ok?'Aucune anomalie à la dernière vérification ('+new Date(lv.ts).toLocaleString('fr-FR')+')':'Anomalies détectées à la dernière vérification'):'Intégrité jamais vérifiée')+'</div>'+
+   kv('Tickets scellés',nT)+kv('Avoirs',nA)+kv('Clôtures',S.zs.length)+kv('Dernière clôture journalière',lz?dfr(lz.per)+(lz.auto?' (auto)':''):'aucune')+kv('Dernière archive',le?'année '+le.y+', le '+new Date(le.ts).toLocaleDateString('fr-FR'):'jamais')+
+   (leg&&!locked?'<div class="cfwarn"><b>'+leg+' ticket'+(leg>1?'s':'')+' de test ou antérieur'+(leg>1?'s':'')+'</b> avant la mise en service. À la première vente, ils seront conservés et scellés. Si ce sont des essais, supprimez-les maintenant : après, ce ne sera plus possible.<div class="acts"><button class="btn" data-act="cf_purge">Supprimer les tickets de test</button></div></div>':'')+
+   '<div class="acts cfacts"><button class="btn primary" data-act="cf_verify">'+ic('shield')+'Vérifier l’intégrité</button><button class="btn" data-act="cf_export" data-y="'+yr+'">'+ic('box')+'Archive '+yr+'</button>'+(new Date().getMonth()<3?'<button class="btn" data-act="cf_export" data-y="'+(yr-1)+'">'+ic('box')+'Archive '+(yr-1)+'</button>':'')+'</div>'+
+   '<p class="muted cfnote">Un ticket validé ne peut plus être modifié ni supprimé : on l’annule par un avoir. L’archive (ZIP : CSV et JSON, avec une notice) est à conserver 6 ans ; faites-la au moins une fois par an.</p></div>'+
+   '<div class="card cfcard"><h3>Informations légales</h3>'+
+   inp('raison','Nom ou raison sociale','Apparaît sur les tickets, l’attestation et les mentions légales. C’est aussi le propriétaire du logiciel.')+inp('forme','Forme juridique','','SAS, SARL, entreprise individuelle…')+inp('adr','Adresse complète')+inp('siret','SIRET')+
+   (lg.franchise?'':inp('tva','N° de TVA intracommunautaire','','FR00000000000'))+
+   '<label class="check" style="margin:6px 0"><input type="checkbox" data-lg="franchise" '+(lg.franchise?'checked':'')+'>Franchise en base de TVA (art. 293 B du CGI)</label>'+inp('mail','E-mail de contact légal')+
+   (miss?'<p class="cfwarn" style="margin-top:10px">Complétez le nom, le SIRET et le régime de TVA : ces mentions s’impriment sur chaque ticket.</p>':'')+'</div></div>'+
+   '<div class="card cfcard"><h3>Documents</h3><p class="muted" style="margin:0 0 10px;font-size:13.5px">L’attestation de l’éditeur (modèle officiel BOI-LETTRE-000242) est le justificatif à présenter en cas de contrôle. Relisez-la avec votre expert-comptable avant de la signer.</p><div class="acts cfacts"><button class="btn" data-act="cf_att">Attestation de l’éditeur (PDF)</button><button class="btn" data-act="cf_legal">Mentions légales</button></div></div>'+
+   '<div class="card cfcard"><h3>Journal des événements</h3>'+(S.jrn.length?'<div class="cflist">'+S.jrn.slice().sort((a,b)=>b.sq-a.sq).slice(0,40).map(e=>'<div class="cfj"><span class="cft">'+esc(CF_T[e.t]||e.t)+'</span><span class="grow">'+esc(e.x)+'</span><small class="muted">'+new Date(e.ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' · '+esc(e.by)+'</small></div>').join('')+'</div>':'<p class="muted">Aucun événement pour le moment.</p>')+'</div>';
+}
+TABS.params.splice(Math.max(1,TABS.params.findIndex(x=>x[0]==='pcat')+1),0,['pcf','Conformité']);SUBS.pcf=vSetCF;
+
+function cfShowVerify(r){
+  showModal(mh('Vérification d’intégrité')+'<div class="cfvr '+(r.ok?'ok':'bad')+'"><b>'+(r.ok?'Aucune anomalie':'Anomalies détectées')+'</b><span>'+r.n.tk+' ticket(s) scellé(s), '+r.n.z+' clôture(s), '+r.n.j+' événement(s) contrôlés</span></div>'+
+    (r.iss.length?'<div class="cflist">'+r.iss.map(i=>'<div class="cfj '+i.k+'"><span class="grow">'+esc(i.x)+'</span></div>').join('')+'</div>':'')+'<button class="btn primary" data-act="close" style="margin-top:14px">Fermer</button>');
+}
+function cfRestoreOk(d){
+  if(!cfLocked())return true;
+  const ids={};(d.sales||[]).forEach(s=>{ids[s.id]=s.h||''});
+  const lost=S.sales.filter(cfSealed).some(s=>ids[s.id]!==s.h),zl=(S.zs||[]).some(z=>!(d.zs||[]).some(x=>x.id===z.id&&x.h===z.h));
+  return !lost&&!zl;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act^="cf_"]');if(!b)return;const a=b.dataset.act,d=b.dataset;
+  if(a==='cf_verify'&&isAdmin()){const r=cfVerify();S.cf.lastVerify={ts:r.ts,ok:r.ok};cfLog('verif',r.ok?'Intégrité vérifiée : aucune anomalie':'Intégrité vérifiée : '+r.iss.filter(i=>i.k==='bad').length+' anomalie(s)');save();cfShowVerify(r);if(view==='params')setTimeout(()=>{if($('#sub')&&SUBS[tab.params])SUBS[tab.params]($('#sub'))},0)}
+  else if(a==='cf_export'&&isAdmin())cfExport(+d.y||new Date().getFullYear());
+  else if(a==='cf_att'&&isAdmin())cfAttPdf();
+  else if(a==='cf_legal')cfLegalModal();
+  else if(a==='cf_z')cfZModal(d.id);
+  else if(a==='cf_dup'){const s=S.sales.find(x=>x.id===d.id);if(s&&cfSealed(s))cfTicketPdf(s)}
+  else if(a==='cf_cancel'&&isAdmin()){
+    const o=S.sales.find(x=>x.id===d.id);if(!o||!cfSealed(o))return;
+    askText('Annuler le ticket '+o.no,'Motif de l’annulation (obligatoire). Un avoir sera établi ; le ticket d’origine reste conservé.',v=>{
+      v=(v||'').trim();if(v.length<3){toast('Le motif est obligatoire');return}
+      const av=cfCancel(o.id,v);if(av){showReceipt(av,true);if(view==='gestion'&&tab.gestion==='rapports')vReports($('#sub'))}
+    });
+  }else if(a==='cf_purge'&&isAdmin()&&!cfLocked()){
+    askYes('Supprimer définitivement les tickets de test créés avant la mise en service ? Cela n’est possible qu’avant la première vente réelle.',()=>{
+      const n=S.sales.filter(s=>cfReal(s)&&!s.h).length;S.sales=S.sales.filter(s=>!cfReal(s)||s.h);cfInit();cfLog('purge',n+' ticket(s) de test supprimé(s) avant la mise en service');save();vSetCF($('#sub'));toast('Tickets de test supprimés')},'Supprimer');
+  }
+});
+document.addEventListener('change',e=>{
+  const t=e.target,k=t.dataset&&t.dataset.lg;if(!k||!isAdmin())return;
+  cfEns();const lg=S.settings.legal,v=t.type==='checkbox'?t.checked:t.value.trim();
+  if(lg[k]===v||(lg[k]==null&&(v===''||v===false)))return;
+  lg[k]=v;cfLog('param','Informations légales : « '+(CF_LG[k]||k)+' » modifié');save();toast('Enregistré');
+  if(view==='params'&&SUBS[tab.params])SUBS[tab.params]($('#sub'));
+});
 
 METHODS.pass='Carnet de séances';
 function openPay(){
   const T=totals(cart);
   if(T.L.length&&T.total===0&&(T.pInfo||T.pcInfo)&&slotOk(T)){
     const sale=finalize(cart,[{m:'pass',amt:0}],Date.now(),false);sale.change=0;
-    S.sales.push(sale);number();afterSale(sale,cart);save();cart=newCart();showReceipt(sale,true);
+    S.sales.push(cfSeal(sale));number();afterSale(sale,cart);save();cart=newCart();showReceipt(sale,true);
     if(view==='caisse'){drawCart();drawGrid()}return;
   }
   openPayBase();
@@ -8028,8 +8570,9 @@ document.addEventListener('click',e=>{
     case 'ticket':{const s=S.sales.find(x=>x.id===d.id);if(s)showReceipt(s,false);break}
     case 'close-day':{
       const inp=$('#counted');const exp=+inp.dataset.exp;const cnt=inp.value.trim()?parseEur(inp.value):exp;
-      S.closures.push({ts:Date.now(),expected:exp,counted:cnt,diff:cnt-exp});save();vReports($('#sub'));toast('Journée clôturée');break}
+      cfDayClose(exp,cnt);vReports($('#sub'));toast('Journée clôturée');break}
     case 'reset':
+      if(cfLocked()){toast('Réinitialisation impossible : des tickets de caisse sont archivés. Exportez l’archive fiscale (Paramètres › Conformité).');break}
       if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Confirmer la réinitialisation';break}
       try{localStorage.removeItem(KEY)}catch(x){}init();cart=newCart();chrome();render();toast('Données de démonstration rechargées');break;
   }
