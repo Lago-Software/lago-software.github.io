@@ -2362,7 +2362,7 @@ function leaveInfo(){
 }
 
 /* ---------- contrôle quotidien ---------- */
-function ensureCheck(){const t=CHKDAY||today();if(!S.checks[t])S.checks[t]={items:{},press:'',press2:'',by:'',ts:0,done:false};return S.checks[t]}
+function ensureCheck(){const t=CHKDAY||today();if(!S.checks[t])S.checks[t]={items:{},press:'',press2:'',by:(typeof curStaff==='function'&&S.staff.some(x=>x.id===curStaff())?curStaff():''),ts:0,done:false};return S.checks[t]}
 function ctrlReady(c){
   return CHECK_IDS.every(k=>c.items[k]&&(c.items[k].s==='ok'||c.items[k].note.trim()))&&String(c.press||'').trim()&&String(c.press2||'').trim()&&c.by;
 }
@@ -4883,7 +4883,8 @@ function migrateR(){
 }
 
 /* ---------- S. contrôles : saisie réservée à l'admin + 1 compte désigné, consultation pour tous ---------- */
-const canCtl=()=>isAdmin()||!!(ME&&S.settings.ctlAcc&&S.settings.ctlAcc===ME.id);
+const ctlMode=()=>S.settings.ctlV2?(S.settings.ctlAcc||''):'*';
+const canCtl=()=>isAdmin()||!!(ME&&(ctlMode()==='*'||ctlMode()===ME.id));
 const CTL_RESTRICTED=['visuel','mensuel','maint'];
 const CTL_OK=['m_pdf','m_mon','m_yr','m_mntopen','m_mntcancel'];
 function ctlWho(){const a=accs().find(x=>x.id===S.settings.ctlAcc&&x.status==='active');return a?a.name:''}
@@ -4908,9 +4909,10 @@ document.addEventListener('click',e=>{
 /* réglage : compte désigné (Paramètres › Comptes) */
 function ctlSelect(){
   const L=accs().filter(a=>a.status==='active'&&!a.admin);
-  return fld('Compte autorisé à remplir les contrôles (en plus de l’administrateur)',`<select id="ctlacc"><option value="">Aucun, administrateur seul</option>${L.map(a=>`<option value="${a.id}" ${S.settings.ctlAcc===a.id?'selected':''}>${esc(a.name)}</option>`).join('')}</select>`,'Contrôle quotidien, mensuel et maintenance. Tous les comptes peuvent les consulter et en télécharger le PDF. Les rapports d’incident restent ouverts à tous.');
+  const cm=ctlMode();
+  return fld('Qui peut remplir et valider les contrôles ?',`<select id="ctlacc"><option value="*" ${cm==='*'?'selected':''}>Tous les comptes (opérateurs compris)</option><option value="" ${cm===''?'selected':''}>Administrateur seul</option>${L.map(a=>`<option value="${a.id}" ${cm===a.id?'selected':''}>Administrateur et ${esc(a.name)}</option>`).join('')}</select>`,'Contrôle quotidien, mensuel et maintenance. Tous les comptes peuvent toujours les consulter et en télécharger le PDF. Les rapports d’incident restent ouverts à tous.');
 }
-document.addEventListener('change',e=>{if(e.target.id==='ctlacc'&&isAdmin()){S.settings.ctlAcc=e.target.value;save();toast('Réglage enregistré')}});
+document.addEventListener('change',e=>{if(e.target.id==='ctlacc'&&isAdmin()){S.settings.ctlAcc=e.target.value;S.settings.ctlV2=1;save();toast('Réglage enregistré')}});
 
 /* ---------- T. Réservations Qweekle : import fichier (CSV, Excel, tableau copié), consultation par tous ---------- */
 const QWF=[['ref','Référence / n° de réservation',/r[ée]f|num[ée]ro|n°|^id|code|r[ée]servation/],['date','Date',/date|jour/],['time','Heure de début',/heure|d[ée]but|d[ée]part|horaire|cr[ée]neau/],['n','Nombre de personnes',/^nb|nombre|pers|particip|quantit|places|sauteurs/],['dur','Durée (minutes)',/dur[ée]e/],['name','Nom du client',/client|nom|r[ée]servant|contact/],['act','Activité / produit',/activit|produit|prestation|offre|service|formule/],['phone','Téléphone',/t[ée]l|phone|mobile|portable/],['mail','E-mail',/mail/],['stat','Statut',/statut|[ée]tat/]];
@@ -6097,7 +6099,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v56';
+const LAGO_V='v57';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
