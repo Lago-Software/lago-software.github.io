@@ -1,5 +1,100 @@
-(()=>{
+(async()=>{
 'use strict';
+/* ---- v67 : stockage principal dans IndexedDB (des centaines de Mo au lieu des 5 Mo de localStorage), avec repli automatique ----
+   Les données restent entièrement en mémoire (S) : seule la façon de les écrire change. En cas d'échec d'IndexedDB, on retombe
+   sur localStorage comme avant ; au démarrage suivant, la copie la plus récente fait foi. Une copie de la toute première
+   migration est conservée (clé « S0 »). Une copie illisible n'est jamais écrasée sans trace (clé « corrompu »). */
+const MSK='lago-v5';
+const MS={ok:false,pre:null,busy:false,pend:null,err:'',last:0,fails:0,persist:null,db:null,size:0,est:null,mig:0,fb:false,ls:false,ms:0,q:false};
+const MS_WAL=1500000;   // en dessous de cette taille, chaque enregistrement est aussi posé tout de suite dans localStorage (filet contre une fermeture brutale), puis retiré une fois la base confirmée
+const msT=(p,ms,msg)=>Promise.race([p,new Promise((_,rj)=>setTimeout(()=>rj(new Error(msg||'délai dépassé')),ms))]);
+function msOpen(){return new Promise((res,rej)=>{try{
+  if(!window.indexedDB)return rej(new Error('IndexedDB indisponible'));
+  const r=indexedDB.open('lago-main',1);
+  r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('kv'))r.result.createObjectStore('kv')};
+  r.onsuccess=()=>{const d=r.result;d.onversionchange=()=>{try{d.close()}catch(e){}if(MS.db===d)MS.db=null};d.onclose=()=>{if(MS.db===d)MS.db=null};res(d)};
+  r.onerror=()=>rej(r.error||new Error('ouverture impossible'));r.onblocked=()=>rej(new Error('ouverture bloquée'))}catch(e){rej(e)}})}
+const msGet=k=>new Promise((res,rej)=>{try{const q=MS.db.transaction('kv','readonly').objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error||new Error('lecture impossible'))}catch(e){rej(e)}});
+const msSet=(k,v)=>new Promise((res,rej)=>{try{
+  let t;try{t=MS.db.transaction('kv','readwrite',{durability:'strict'})}catch(_){t=MS.db.transaction('kv','readwrite')}   // « strict » : on attend l'écriture réelle sur le disque
+  t.objectStore('kv').put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error||new Error('écriture impossible'));t.onabort=()=>rej(t.error||new Error('écriture annulée'))}catch(e){rej(e)}});
+const msLsGet=()=>{try{return localStorage.getItem(MSK)}catch(e){return null}};
+const msLsTs=()=>{try{return +localStorage.getItem(MSK+'-ts')||0}catch(e){return 0}};
+const msLsDrop=()=>{try{localStorage.removeItem(MSK);localStorage.removeItem(MSK+'-ts')}catch(e){}};
+async function msHydrate(){
+  let ls=msLsGet();
+  if(ls&&!(ls[0]==='{'&&ls[ls.length-1]==='}')){try{localStorage.setItem(MSK+'-corrompu',ls)}catch(e){}ls=null}   // copie tronquée : on la garde de côté, on ne s'en sert pas
+  try{
+    MS.db=await msT(msOpen(),4000,'ouverture trop longue');
+    const rec=await msT(msGet('S'),12000,'lecture trop longue');
+    const has=rec&&typeof rec.j==='string'&&rec.j.length>2;
+    /* la copie localStorage fait foi si elle est plus récente que celle d'IndexedDB (ancienne version ou repli),
+       ou s'il n'y a rien dans IndexedDB */
+    if(ls&&(!has||msLsTs()>(rec.ts||0))){
+      if(!has&&!(await msT(msGet('S0'),4000)))await msT(msSet('S0',{j:ls,ts:Date.now()}),12000);    // filet : la toute première migration (pas une simple reprise après coupure)
+      await msT(msSet('S',{j:ls,ts:Date.now()}),15000);
+      const back=await msT(msGet('S'),12000);
+      if(!back||back.j.length!==ls.length)throw new Error('vérification de la copie impossible');
+      msLsDrop();MS.pre=ls;MS.ok=true;MS.mig=1;MS.size=ls.length;
+    }else if(has){
+      MS.pre=rec.j;MS.ok=true;MS.size=rec.j.length;
+      if(ls){                                    // reste d'une ancienne copie : mise de côté dans IndexedDB puis retirée d'ici
+        try{await msT(msSet('Sold',{j:ls,ts:Date.now()}),12000);msLsDrop()}catch(e){}
+      }else if(msLsTs()){msLsDrop()}
+    }else{MS.pre=null;MS.ok=true}
+  }catch(e){MS.ok=false;MS.err=String(e&&e.message||e);MS.pre=ls;try{if(MS.db)MS.db.close()}catch(_){}MS.db=null}
+  msEst();
+  /* stockage « durable » : demandé sans bloquer le démarrage (certains navigateurs affichent une question) */
+  try{if(navigator.storage&&navigator.storage.persisted)navigator.storage.persisted().then(p=>{MS.persist=p;if(!p&&navigator.storage.persist)navigator.storage.persist().then(r=>{MS.persist=r},()=>{})},()=>{})}catch(e){}
+}
+function msEst(){try{if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{MS.est=e},()=>{})}catch(e){}}
+function msLsPut(j){try{localStorage.setItem(MSK,j);localStorage.setItem(MSK+'-ts',String(Date.now()));MS.ls=true;return true}catch(e){return false}}
+function msFallback(j){
+  if(msLsPut(j)){MS.fb=true;return true}
+  if(!window.__qw){window.__qw=1;try{toast('Mémoire de l’appareil pleine : les dernières modifications ne sont pas enregistrées ici')}catch(_){}}
+  return false;
+}
+async function msPutS(x){
+  if(!MS.db)MS.db=await msT(msOpen(),4000,'réouverture impossible');
+  await msT(msSet('S',{j:x,ts:Date.now()}),20000,'écriture trop longue');
+}
+function msWrite(j){
+  MS.pend=j;if(MS.busy)return;MS.busy=true;
+  (async()=>{
+    while(MS.pend!==null){
+      const x=MS.pend;MS.pend=null;
+      try{
+        try{await msPutS(x)}catch(e1){try{if(MS.db)MS.db.close()}catch(_){}MS.db=null;await msPutS(x)}   // connexion perdue (mise en veille) : on rouvre et on réessaie
+        MS.last=Date.now();MS.err='';MS.fails=0;MS.size=x.length;
+        MS.fb=false;if(MS.ls&&MS.pend===null){msLsDrop();MS.ls=false}
+        if(++MS.ms%40===0)msEst();
+      }catch(e){MS.fails++;MS.err=String(e&&e.message||e);try{noteErr('stockage',MS.err,'IndexedDB')}catch(_){}msFallback(x)}
+    }
+    MS.busy=false;
+  })();
+}
+/* save() peut être appelée plusieurs fois dans le même geste : on n'écrit qu'une fois, à la fin du geste (avant toute autre tâche) */
+function saveBase(){
+  if(MS.q)return;MS.q=true;
+  queueMicrotask(()=>{MS.q=false;const j=JSON.stringify(S);if(MS.ok){if(j.length<MS_WAL)msLsPut(j);msWrite(j)}else msFallback(j)});
+}
+/* fermeture de l'onglet avec une écriture encore en attente : copie de secours immédiate dans localStorage (la plus récente fait foi au redémarrage) */
+function msFlush(){if(MS.ok&&MS.pend!==null)msLsPut(MS.pend)}
+addEventListener('pagehide',msFlush);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')msFlush()});
+const msBoot=()=>{const j=MS.pre;MS.pre=null;return j};
+function msClear(){MS.pre=null;MS.pend=null;msLsDrop()}
+function msCorrupt(raw){
+  if(raw==null)return;
+  if(MS.ok&&MS.db){msSet('corrompu',{j:String(raw),ts:Date.now()}).catch(()=>{})}
+  else{try{localStorage.setItem(MSK+'-corrompu',String(raw))}catch(_){}}
+}
+function msBackup(name){
+  const j=JSON.stringify(S);
+  if(MS.ok&&MS.db){msSet(name,{j,ts:Date.now()}).catch(()=>{try{localStorage.setItem(MSK+'-'+name,j)}catch(_){}})}
+  else{try{localStorage.setItem(MSK+'-'+name,j)}catch(_){}}
+}
+try{await msHydrate()}catch(e){}
 /* ---------- utilitaires ---------- */
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -91,7 +186,7 @@ function seedSales(){
   return list;
 }
 function init(){
-  let st=null;try{st=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
+  let st=null,raw=msBoot();try{st=JSON.parse(raw||'null')}catch(e){msCorrupt(raw)}
   if(st&&st.products){S=st;S.settings=Object.assign(defaultSettings(),S.settings);if(S.seedDay!==today()&&!cloudOn()&&!S.noDemo&&S.sales.every(s=>s.demo)){S.sales=seedSales();S.events=seedEvents();S.seedDay=today();S.closures=[];save()}}
   else{S={products:seedProducts(),clients:seedClients(),sales:[],closures:[],settings:defaultSettings(),seedDay:today()};
     S.sales=seedSales();number();save()}
@@ -103,7 +198,6 @@ function init(){
   S.profiles=S.profiles||defaultProfiles();
 }
 function number(){let k=0;S.sales.forEach(s=>{if(s.h||s.qw)return;s.no=(s.demo?'D-':'T-')+String(++k).padStart(4,'0')})}
-function saveBase(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){if(!window.__qw){window.__qw=1;try{toast('Mémoire de l’appareil pleine : les dernières modifications ne sont pas enregistrées ici')}catch(_){}}}}
 function newCart(){const n=new Date(),h=n.getHours();return{lines:[],disc:{t:'pct',v:0},clientId:null,rewardPal:null,event:null,slotDate:today(),slotM:nextQ()}}
 
 /* ---------- calculs ---------- */
@@ -4063,7 +4157,7 @@ function applyM(M,L){
   if(!ch)return false;
   cloudNormalize();
   if(typeof ME!=='undefined'&&ME&&Array.isArray(S.accounts)){const a=S.accounts.find(x=>x.id===ME.id);if(a)ME=a}
-  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  saveBase();
   CL.ui=true;return true;
 }
 async function cloudStep(){
@@ -4125,7 +4219,7 @@ async function cloudBoot(){
   const c=cloudCfg();
   await cFetch(7000);
   c.alt=(cloudCfg()||{}).alt;
-  if(c.fresh&&CL.R!==undefined){treeToS(CL.R,true);cloudNormalize();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}CL.B=CL.R;c.fresh=false;cloudSet(c);CL.ui=true}
+  if(c.fresh&&CL.R!==undefined){treeToS(CL.R,true);cloudNormalize();saveBase();CL.B=CL.R;c.fresh=false;cloudSet(c);CL.ui=true}
   else if(c.fresh){c.fresh=false;cloudSet(c)}
   else{
     if(CL.R===undefined){CL.B=undefined}
@@ -4133,7 +4227,7 @@ async function cloudBoot(){
       let box=null;try{box=JSON.parse(localStorage.getItem(CBOX)||'null')}catch(e){}
       let M=CL.R;if(box&&box.n)for(const p in box.n)M=setAt(M,p.split('/'),box.n[p]===null?undefined:box.n[p]);
       treeToS(M,true);cloudNormalize();CL.B=CL.R;CL.ui=true;
-      try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+      saveBase();
     }
   }
   CL.ready=true;migrateImgs();cloudListen();await cloudSync();
@@ -4335,7 +4429,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v66';
+const LAGO_V='v67';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -4921,7 +5015,7 @@ document.addEventListener('submit',e=>{
   if(e.target.id!=='mjoin')return;e.preventDefault();
   const er=document.getElementById('mjerr'),x=joinParse(document.getElementById('mjl').value);
   if(!x){if(er)er.textContent='Ce lien n’est pas reconnu. Copiez le lien complet (il contient « #cloud= »).';return}
-  try{localStorage.setItem(KEY+'-avant-equipe',JSON.stringify(S))}catch(_){}
+  msBackup('avant-equipe');
   cloudSet({u:x.u,r:x.r,fresh:true});
   const bt=e.target.querySelector('button[type=submit]');if(bt){bt.disabled=true;bt.textContent='Connexion à l’équipe…'}
   setTimeout(()=>location.reload(),150);
@@ -7495,12 +7589,24 @@ const LS_QUOTA=5000000;
 const lsChars=()=>{try{let n=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);n+=k.length+(localStorage.getItem(k)||'').length}return n}catch(e){return 0}};
 const HL={ok:'ok',warn:'warn',bad:'bad'};
 function hStorage(){
-  const used=lsChars(),pc=Math.round(used/LS_QUOTA*100),real=(S.sales||[]).filter(s=>!s.qw);
-  const now=Date.now(),recent=real.filter(s=>s.ts>now-30*864e5).length,perDay=recent/30;
+  const real=(S.sales||[]).filter(s=>!s.qw),now=Date.now(),recent=real.filter(s=>s.ts>now-30*864e5).length,perDay=recent/30;
   const sample=real.slice(-200),bytes=sample.length?JSON.stringify(sample).length/sample.length:0;
+  if(MS.ok){
+    const used=MS.size||JSON.stringify(S).length,e=MS.est||{},quota=e.quota||0,tot=e.usage||used,pc=quota?Math.round(tot/quota*100):0;
+    const room=quota?Math.max(0,quota*0.8-tot):0,months=quota&&perDay>0&&bytes>0?room/(perDay*bytes*30):null;
+    const bad=MS.fails>0||MS.fb;
+    let lv=pc>=85?'bad':pc>=60||bad?'warn':'ok';
+    const cap=quota?(quota>=1e9?(quota/1e9).toFixed(1)+' Go':Math.round(quota/1e6)+' Mo'):'';
+    return{id:'stock',lv,t:'Mémoire de l’appareil',d:`Base de l’appareil : ${(used/1e6).toFixed(1)} Mo pour ${real.length} ticket(s)`+(quota?`, sur ${cap} disponibles (${pc} %)`:'')+'.'
+      +(months!==null&&months<24?` Au rythme actuel : environ ${months<1?'moins d’un mois':Math.round(months)+' mois'} avant saturation.`:'')
+      +(bad?' L’écriture normale a échoué : une copie de secours est utilisée, rouvrez l’appli pour que tout rentre dans l’ordre.':'')
+      +(MS.persist===false?' Le navigateur peut effacer ces données s’il manque de place : installez l’appli sur l’écran d’accueil et exportez régulièrement l’archive des tickets.':'')
+      +(pc>=60?' Exportez l’archive des tickets (Paramètres › Conformité).':'')};
+  }
+  const used=lsChars(),pc=Math.round(used/LS_QUOTA*100);
   const room=Math.max(0,LS_QUOTA*0.9-used),months=perDay>0&&bytes>0?room/(perDay*bytes*30):null;
   const lv=pc>=85?'bad':pc>=60?'warn':'ok';
-  return{id:'stock',lv,t:'Mémoire de l’appareil',d:`${(used/1e6).toFixed(1)} Mo utilisés sur environ 5 Mo (${pc} %), ${real.length} ticket(s).`+(months!==null?` Au rythme actuel : environ ${months>=24?'plus de 2 ans':months<1?'moins d’un mois':Math.round(months)+' mois'} avant saturation.`:'')+(lv!=='ok'?' Exportez l’archive des tickets (Paramètres › Conformité) et contactez le support : un stockage plus grand est prévu.':'')}
+  return{id:'stock',lv,t:'Mémoire de l’appareil',d:`${(used/1e6).toFixed(1)} Mo utilisés sur environ 5 Mo (${pc} %), ${real.length} ticket(s). Mode de secours : ce navigateur n’a pas ouvert la base de l’appareil.`+(months!==null?` Au rythme actuel : environ ${months>=24?'plus de 2 ans':months<1?'moins d’un mois':Math.round(months)+' mois'} avant saturation.`:'')+(lv!=='ok'?' Exportez l’archive des tickets (Paramètres › Conformité) et ouvrez Lago dans un navigateur récent (Chrome, Edge, Safari, Firefox).':'')}
 }
 function hSync(){
   if(!cloudOn())return{id:'sync',lv:'warn',t:'Équipe',d:'Cet appareil n’est pas relié à l’équipe : ses données ne sont pas partagées.'};
@@ -8035,7 +8141,7 @@ document.addEventListener('click',e=>{
     case 'reset':
       if(cfLocked()){toast('Réinitialisation impossible : des tickets de caisse sont archivés. Exportez l’archive fiscale (Paramètres › Conformité).');break}
       if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Confirmer la réinitialisation';break}
-      try{localStorage.removeItem(KEY)}catch(x){}init();cart=newCart();chrome();render();toast('Données de démonstration rechargées');break;
+      msClear();init();cart=newCart();chrome();render();toast('Données de démonstration rechargées');break;
   }
 });
 document.addEventListener('input',e=>{
