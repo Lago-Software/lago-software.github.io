@@ -2021,6 +2021,16 @@ a.btn.primary{color:#fff}
   .mt.todo .mt-main::before,.mt.todo .mt-ic::after{display:none}
 }
 .mt.todo .mt-main{padding-top:24px}
+
+/* ---------- photo jointe au rapport d'incident ---------- */
+.snatt{margin-top:16px;padding-top:14px;border-top:1px dashed rgba(29,79,215,.24)}
+.snatt h4{margin:0 0 4px;font-size:14.5px;font-weight:680}
+.snatt>.muted{font-size:13px;margin:0 0 10px;max-width:64ch}
+.snths{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+.snth{margin:0;width:120px}
+.snth img{display:block;width:120px;height:160px;object-fit:cover;object-position:top;border-radius:12px;border:1px solid rgba(29,79,215,.18);box-shadow:var(--sh-blue);background:#fff}
+.snth .btn{margin-top:8px;width:100%;min-height:0;padding:6px 8px;font-size:13px}
+.snnote{margin:14px 0 0;font-size:12.5px;max-width:64ch}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -2143,7 +2153,7 @@ function init(){
   S.profiles=S.profiles||defaultProfiles();
 }
 function number(){let k=0;S.sales.forEach(s=>{if(s.h||s.qw)return;s.no=(s.demo?'D-':'T-')+String(++k).padStart(4,'0')})}
-function saveBase(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function saveBase(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){if(!window.__qw){window.__qw=1;try{toast('Mémoire de l’appareil pleine : les dernières modifications ne sont pas enregistrées ici')}catch(_){}}}}
 function newCart(){const n=new Date(),h=n.getHours();return{lines:[],disc:{t:'pct',v:0},clientId:null,rewardPal:null,event:null,slotDate:today(),slotM:nextQ()}}
 
 /* ---------- calculs ---------- */
@@ -3988,7 +3998,7 @@ async function ask(q){
 
 /* ---- générateur PDF (sans bibliothèque) ---- */
 function pdfBuild(title,sub,foot,fn){
-  const W=595,H=842,M=42,pages=[];let cur,y;
+  const W=595,H=842,M=42,pages=[],imgs=[],pim={};let cur,y;
   const st=S.settings,LG=st.logoJ?{bin:atob(st.logoJ.split(',')[1]),w:st.logoW,h:st.logoH}:null;
   const MAP={'’':"'",'‘':"'",'“':'"','”':'"','–':'-','—':'-','…':'...','•':'-','→':'->','€':'\x80','œ':'\x9c','Œ':'\x8c'};
   const enc=s=>String(s==null?'':s).replace(/\u202f/g,' ').replace(/[’‘“”–—…•→€œŒ]/g,c=>MAP[c]).replace(/[^\x09\x20-\xff]/g,'?').replace(/[\\()]/g,'\\$&').replace(/\t/g,' ');
@@ -3999,6 +4009,7 @@ function pdfBuild(title,sub,foot,fn){
   const wrap=(t,w,sz)=>{const mx=Math.max(8,Math.floor(w/(sz*.5))),out=[];String(t==null?'':t).split('\n').forEach(par=>{let l='';par.split(' ').forEach(wd=>{if((l+' '+wd).trim().length>mx&&l){out.push(l);l=wd}else l=(l+' '+wd).trim()});out.push(l)});return out};
   const w={
     gap:n=>{y-=n},
+    img:(u,iw,ih,lab)=>{np();const mw=W-2*M,mh=H-200,k=Math.min(mw/iw,mh/ih),dw=iw*k,dh=ih*k;if(lab)op(M,H-110,lab,10,1,'0.35 0.4 0.5');const ix=imgs.push({bin:atob(u.split(',')[1]),w:iw,h:ih})-1;pim[pages.length-1]=ix;cur.push(`q ${dw.toFixed(1)} 0 0 ${dh.toFixed(1)} ${(M+(mw-dw)/2).toFixed(1)} ${(H-122-dh).toFixed(1)} cm /Ix${ix} Do Q`);y=62},
     sec:t=>{need(34);rect(M,y-6,W-2*M,20,'0.93 0.95 0.99');rect(M,y-6,4,20,'1 0.48 0.1');op(M+12,y,t,11,1);y-=26},
     kv:(l,v)=>{const ls=wrap(v||'-',W-2*M-160,10);need(ls.length*14+4);op(M,y,l,10,1,'0.35 0.4 0.5');ls.forEach((x,i)=>op(M+160,y-i*14,x,10,0));y-=ls.length*14+4},
     p:(t,sz=10)=>{wrap(t,W-2*M,sz).forEach(l=>{need(sz+5);op(M,y,l,sz,0);y-=sz+4})},
@@ -4011,8 +4022,12 @@ function pdfBuild(title,sub,foot,fn){
   const kids=pages.map((_,i)=>(5+i*2)+' 0 R').join(' ');
   add('<< /Type /Catalog /Pages 2 0 R >>');add(`<< /Type /Pages /Kids [${kids}] /Count ${N} >>`);
   add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
-  pages.forEach((p,i)=>{const s=p.join('\n');add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>${LG?' /XObject << /Im1 '+(5+2*N)+' 0 R >>':''} >> /Contents ${6+i*2} 0 R >>`);add(`<< /Length ${s.length} >>\nstream\n${s}\nendstream`)});
+  pages.forEach((p,i)=>{const s=p.join('\n');add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>${(LG||pim[i]!==undefined)?' /XObject << '+(LG?'/Im1 '+(5+2*N)+' 0 R ':'')+(pim[i]!==undefined?'/Ix'+pim[i]+' '+(5+2*N+(LG?1:0)+pim[i])+' 0 R ':'')+'>>':''} >> /Contents ${6+i*2} 0 R >>`);add(`<< /Length ${s.length} >>\nstream\n${s}\nendstream`)});
   if(LG)add(`<< /Type /XObject /Subtype /Image /Width ${LG.w} /Height ${LG.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${LG.bin.length} >>\nstream\n${LG.bin}\nendstream`);
+  imgs.forEach(im=>add(`<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bin.length} >>
+stream
+${im.bin}
+endstream`));
   const xr=out.length;out+=`xref\n0 ${off.length+1}\n0000000000 65535 f \n`+off.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')+`trailer\n<< /Size ${off.length+1} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF`;
   const u=new Uint8Array(out.length);for(let i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;return u;
 }
@@ -4031,7 +4046,7 @@ function pdfFor(k,id){
     w.sec('Personne concernée');w.kv('Type',d.who);w.kv('Nom',d.nom);w.kv('Prénom',d.prenom);w.kv('Date de naissance',dfr(d.naiss));w.kv('Téléphone',d.tel);
     w.sec('Incident');w.kv('Type d’incident',d.types.join(', ')+(d.autre?' ('+d.autre+')':''));w.kv('Description',d.desc);w.kv('Douleur',d.pain==null?'-':d.pain+' / 10');
     w.sec('Premiers secours');w.kv('Gestes réalisés',d.secours.join(', '));w.kv('Secouriste',sname(d.secouriste));
-    w.sig('Signature',d.signed?sname(d.writer)+' - '+new Date(d.signed).toLocaleString('fr-FR'):sname(d.writer))})];
+    w.sig('Signature',d.signed?sname(d.writer)+' - '+new Date(d.signed).toLocaleString('fr-FR'):sname(d.writer));(d.scans||[]).forEach((sc,i)=>w.img(sc.u,sc.w,sc.h,'Rapport papier numerise - page '+(i+1)+' sur '+d.scans.length))})];
   return['Rapport maintenance-'+d.date,pdfBuild('RAPPORT DE MAINTENANCE',dfr(d.date),'RAPPORTS DE MAINTENANCE',w=>{
     w.kv('Date',dfr(d.date));w.kv('Équipement',d.equip);w.kv('Type',d.type);w.kv('Statut',d.statut);w.sec('Intervention');w.kv('Problème constaté',d.pb);w.kv('Action réalisée',d.action);w.kv('Pièces remplacées',d.pieces);
     w.kv('Temps passé',d.min?d.min+' min':'');w.kv('Coût',d.cost?d.cost+' €':'');w.kv('Technicien',d.tech);w.sig('Signature',d.tech)})];
@@ -4197,7 +4212,7 @@ function profForm(id){
   showModal(`${mh(id?'Modifier le profil':'Nouveau profil')}<form id="proform" data-id="${id||''}">
    <div class="two"><div class="field"><label for="prn">Nom du profil</label><input id="prn" required value="${esc(p.name)}" placeholder="ex : Accueil, Bar, Manager"></div>
    </div>
-   <div class="field"><label>Accès autorisés</label>${PMODS.map(([k,l,subs])=>cb(k,l)+(subs||[]).map(([t,tl])=>cb(k+':'+t,tl,1)).join('')).join('')}</div>
+   <div class="field"><label>Accès autorisés</label>${PMODS.filter(x=>x[0]!=='caisse').map(([k,l,subs])=>cb(k,l)+(subs||[]).map(([t,tl])=>cb(k+':'+t,tl,1)).join('')).join('')}</div>
    <div style="display:flex;gap:8px"><button class="btn primary" type="submit" style="flex:1">Enregistrer</button>${id&&S.profiles.length>1?`<button class="btn danger" type="button" data-act="profdel" data-id="${id}">Supprimer</button>`:''}</div></form>`);
 }
 document.addEventListener('click',e=>{
@@ -5339,7 +5354,7 @@ function vSetVis(m){
   m.innerHTML=`<div class="card"><h3>Ce que chacun peut voir</h3>
    <p class="muted" style="margin:0 0 12px;font-size:13px">Une colonne par profil : cochez ce qui est visible pour les comptes de ce profil. Vous, administrateur, voyez toujours tout. Le profil d’un compte se choisit dans Comptes.</p>
    <div class="vis-w"><table class="vis"><thead><tr><th></th>${P.map(p=>`<th><b>${esc(p.name)}</b><span class="vis-q"><button class="lnk" data-act="vis_all" data-id="${p.id}" data-v="1">tout</button> · <button class="lnk" data-act="vis_all" data-id="${p.id}" data-v="0">rien</button></span></th>`).join('')}</tr></thead><tbody>
-   ${PMODS.map(([k,l,subs])=>row(l,k,0,k==='controle',k==='controle'?'(consultation toujours visible)':'')+(k==='controle'?'':(subs||[]).map(([t,tl])=>row(tl,k+':'+t,1)).join(''))).join('')}
+   ${PMODS.filter(x=>x[0]!=='caisse').map(([k,l,subs])=>row(l,k,0,k==='controle',k==='controle'?'(consultation toujours visible)':'')+(k==='controle'?'':(subs||[]).map(([t,tl])=>row(tl,k+':'+t,1)).join(''))).join('')}
    <tr class="vis-h"><th colspan="${P.length+1}">Éléments précis</th></tr>
    ${VEXTRA.map(([k,l])=>row(l,k,1)).join('')}
    </tbody></table></div>
@@ -5852,7 +5867,7 @@ TABS.clients.push(['carnets','Carnets']);SUBS.carnets=vPasses;
 TABS.resa.push(['entrees','Entrées']);SUBS.entrees=vEntrees;
 {const g=PMODS.find(x=>x[0]==='gestion');if(g&&g[2])g[2].push(['promos','Codes promo']);const r=PMODS.find(x=>x[0]==='resa');if(r&&r[2])r[2].push(['entrees','Entrées'])}
 /* ---------- Y. mode sans caisse, envoi des rapports vers Google Sheets ---------- */
-const posOpOff=()=>S.settings.noPos!==false;
+const posOpOff=()=>true;
 const noPos=()=>posOpOff()&&!isAdmin();
 const POS_NAV=['caisse','stats','gestion'];
 const POS_TABS=['clients:fidelite','clients:carnets','resa:entrees','params:ploy','params:pcat'];
@@ -5869,8 +5884,8 @@ function vSetStudioY(m){
   vSetStudioBase(m);if(!isAdmin())return;
   const st=S.settings,q=(S.sheetQ||[]).length;
   m.insertAdjacentHTML('afterbegin',`<div class="card" style="margin-bottom:14px"><h3>Fonctions de caisse</h3>
-   <label class="check"><input type="checkbox" id="y_pos" ${posOpOff()?'':'checked'}><span>Afficher aussi la caisse et les fonctions de vente aux opérateurs</span></label>
-   <p class="muted" style="margin:8px 0 0">La caisse, les statistiques de vente, la gestion des produits, les cartes cadeaux, les codes promo, les carnets et la fidélité sont toujours disponibles pour l’administrateur. Décoché : les opérateurs ne les voient pas. Coché : ils les voient selon les accès de leur profil.</p></div>
+   <p style="margin:0"><b>Caisse réservée à l’administrateur</b></p>
+   <p class="muted" style="margin:8px 0 0">La caisse, les statistiques de vente, la gestion des produits, les cartes cadeaux, les codes promo, les carnets et la fidélité ne sont visibles que par l’administrateur. Les opérateurs ne les voient jamais, quels que soient les accès de leur profil.</p></div>
    <div class="card" style="margin-bottom:14px"><h3>Envoi des rapports vers Google Sheets</h3>
    <p class="muted" style="margin:0 0 8px">Après chaque contrôle quotidien, contrôle mensuel, rapport d’incident ou rapport d’intervention, une ligne est ajoutée à votre feuille Google (un onglet par type de rapport).</p>
    <div class="field"><label for="y_url">Adresse de l’application Google Apps Script</label><input id="y_url" type="url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(st.sheetUrl||'')}"></div>
@@ -6299,7 +6314,7 @@ function vSetAcc(m){
   vSetAccBase(m);
   if(!isAdmin())return;
   const h=[...m.querySelectorAll('h3')].find(x=>x.textContent.trim()==='Comptes');
-  if(h&&!m.querySelector('[data-act="x4_acadd"]'))h.insertAdjacentHTML('afterend','<div class="acts" style="margin:6px 0 10px"><button class="btn primary" data-act="x4_acadd">'+ic('plus')+'Ajouter un compte</button></div><p class="muted" style="font-size:13px;margin:0 0 8px">Le compte est utilisable tout de suite, sans validation. Donnez ensuite l’identifiant et le mot de passe à la personne.</p>');
+  if(h&&!m.querySelector('[data-act="x4_acadd"]'))h.insertAdjacentHTML('afterend','<div class="acts" style="margin:6px 0 10px"><button class="btn primary" data-act="x4_acadd">'+ic('plus')+'Ajouter un compte</button><button class="btn" data-act="x4_acadd" data-k="etab">'+ic('shield')+'Compte établissement</button></div><p class="muted" style="font-size:13px;margin:0 0 8px">Le compte est utilisable tout de suite, sans validation. Donnez ensuite l’identifiant et le mot de passe à la personne.</p>');
   const p=[...m.querySelectorAll('p.muted')].find(x=>/restent sur cet appareil/.test(x.textContent));
   if(p)p.textContent='Les accès sont définis par les profils (Paramètres › Profils). Les comptes sont partagés avec l’équipe quand « Équipe connectée » est active ; les mots de passe sont chiffrés. Un compte demandé depuis l’écran de connexion doit d’abord être validé ci-dessus.';
   if(typeof mailCard==='function')mailCard(m);
@@ -6318,7 +6333,7 @@ function x4AccModal(){
    <div class="field"><label for="x4s">Employé lié (facultatif)</label><select id="x4s"><option value="">—</option>${(S.staff||[]).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div>
    <p id="x4err" class="gerr"></p><button class="btn primary" type="submit" style="width:100%">Créer le compte</button></form>`);
 }
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act="x4_acadd"]');if(b&&isAdmin())x4AccModal()});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="x4_acadd"]');if(b&&isAdmin()){x4AccModal();if(b.dataset.k==='etab'){const k=document.getElementById('x4k');if(k){k.value='etab';k.dispatchEvent(new Event('change',{bubbles:true}))}}}});
 document.addEventListener('submit',async e=>{
   if(e.target.id!=='x4acform')return;e.preventDefault();
   if(!isAdmin())return;
@@ -6342,7 +6357,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v59';
+const LAGO_V='v60';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -8774,6 +8789,71 @@ document.addEventListener('change',e=>{
   if(lg[k]===v||(lg[k]==null&&(v===''||v===false)))return;
   lg[k]=v;cfLog('param','Informations légales : « '+(CF_LG[k]||k)+' » modifié');save();toast('Enregistré');
   if(view==='params'&&SUBS[tab.params])SUBS[tab.params]($('#sub'));
+});
+
+/* ---------- SN. joindre la photo d'un rapport papier, sans IA (v60) ---------- */
+/* Fonctionne partout, sans clé : photo ou scan → réduit → joint au rapport d'incident et à son PDF. */
+const SN_MAX=3,SN_PX=1000,SN_Q=.55,SN_CAP=4200000;
+function snImg(file){
+  return new Promise((res,rej)=>{
+    const u=URL.createObjectURL(file),im=new Image();
+    im.onload=()=>{URL.revokeObjectURL(u);
+      const k=Math.min(1,SN_PX/Math.max(im.width,im.height)),cv=document.createElement('canvas');
+      cv.width=Math.max(1,Math.round(im.width*k));cv.height=Math.max(1,Math.round(im.height*k));
+      const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,cv.width,cv.height);x.drawImage(im,0,0,cv.width,cv.height);
+      res({u:cv.toDataURL('image/jpeg',SN_Q),w:cv.width,h:cv.height})};
+    im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('img'))};
+    im.src=u;
+  });
+}
+async function snAdd(files){
+  const d=ctl.inc;if(!d)return;
+  files=[...files].filter(f=>f&&/^image\//.test(f.type));
+  if(!files.length){toast('Choisissez une photo ou un scan en image (JPG, PNG)');return}
+  d.scans=d.scans||[];
+  const room=SN_MAX-d.scans.length;
+  if(room<=0){toast(SN_MAX+' pages au plus par rapport');return}
+  let n=0,full=false;
+  for(const f of files.slice(0,room)){
+    if(JSON.stringify(S).length>SN_CAP){full=true;break}
+    try{d.scans.push(await snImg(f));n++}catch(e){toast('Cette image n’a pas pu être ouverte. Essayez un autre fichier.')}
+  }
+  if(!d.scans.length)delete d.scans;
+  subR();
+  if(full)toast('Mémoire de l’appareil presque pleine : supprimez d’anciennes photos jointes avant d’en ajouter');
+  else if(n)toast(n+' page'+(n>1?'s':'')+' jointe'+(n>1?'s':'')+' au rapport');
+}
+const snNb=d=>((d&&d.scans)||[]).length;
+{const f0=scanCard;scanCard=function(){
+  const d=ctl.inc,sc=(d&&d.scans)||[],full=sc.length>=SN_MAX,off=full?' off':'',dis=full?' disabled':'';
+  const th=sc.map((s,i)=>`<figure class="snth"><img src="${s.u}" alt="Page ${i+1} du rapport papier"><button type="button" class="btn danger" data-act="sn_rm" data-i="${i}" aria-label="Retirer la page ${i+1}">Retirer</button></figure>`).join('');
+  const btns=`<div class="acts scanacts"><label class="btn scanbtn${off}">${scanCam}<span>Choisir une photo ou un scan</span><input type="file" id="snfile" accept="image/*" multiple hidden${dis}></label>
+    <label class="btn scanbtn scancam${off}">${scanCam}<span>Prendre en photo</span><input type="file" id="sncam" accept="image/*" capture="environment" hidden${dis}></label></div>
+    ${th?`<div class="snths" id="snths">${th}</div>`:''}`;
+  if(!aiOk()){
+    return `<div class="card scan"><h3>Numériser un rapport papier</h3>
+    <p class="muted">Prenez en photo (ou choisissez un scan) le rapport rempli à la main : la photo est conservée avec ce rapport et ajoutée à son PDF (${SN_MAX} pages au plus).</p>
+    ${btns}
+    <p class="muted snnote">${isAdmin()?'Lecture automatique par IA non activée. Pour qu’elle remplisse le formulaire à votre place, ajoutez une clé dans Paramètres › Général › Assistant IA (5 minutes, quelques centimes par rapport).':'Demandez à l’administrateur d’activer l’assistant IA (Paramètres › Général › Assistant IA) pour que le formulaire se remplisse tout seul.'}</p>
+    <input type="file" id="incscan" accept="image/*" multiple hidden disabled></div>`;
+  }
+  const att=`<div class="snatt"><h4>Joindre la photo du rapport papier</h4>
+    <p class="muted">La photo est conservée avec ce rapport et ajoutée à son PDF (${SN_MAX} pages au plus).</p>${btns}</div>`;
+  return f0().replace(/<\/div>\s*$/,att+'</div>');
+}}
+/* liste des rapports : sans IA, le bouton « Numériser un rapport papier » crée un rapport avec la photo jointe */
+{const f=SUBS.incident;SUBS.incident=m=>{f(m);
+  if(!ctl.inc&&!aiOk()){const lb=m.querySelector('.impo label.scanbtn');
+    if(lb)lb.outerHTML=`<label class="btn scanbtn" title="Joindre la photo d’un rapport papier"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" fill="none"/><circle cx="12" cy="13" r="3.5" fill="none"/></svg><span>Numériser un rapport papier</span><input type="file" id="snlist" accept="image/*" multiple hidden></label>`}
+}}
+document.addEventListener('change',async e=>{
+  const t=e.target;
+  if(t.id==='snlist'&&t.files&&t.files.length){const fl=[...t.files];t.value='';ctl.inc=incNew();ctl.scan=null;subR();await snAdd(fl)}
+  else if((t.id==='snfile'||t.id==='sncam')&&t.files&&t.files.length){const fl=[...t.files];t.value='';await snAdd(fl)}
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act="sn_rm"]');if(!b||!ctl.inc||!ctl.inc.scans)return;
+  ctl.inc.scans.splice(+b.dataset.i,1);if(!ctl.inc.scans.length)delete ctl.inc.scans;subR();toast('Page retirée');
 });
 
 METHODS.pass='Carnet de séances';
