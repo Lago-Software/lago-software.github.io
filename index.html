@@ -2287,6 +2287,13 @@ body.brl-on{overflow:hidden}
 .brl-r.nxt{background:rgba(255,255,255,.1);border-radius:12px;padding-left:10px;padding-right:10px;margin:0 -10px}
 .brl-a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .brl-none{margin:6px 0 0;color:#B7C9F2;font-size:clamp(15px,1.6vw,19px)}
+
+/* réservation en ligne */
+.wbst{display:inline-block;width:fit-content;font-size:12px;font-weight:700;border-radius:20px;padding:2px 10px;background:#E8F7EF;color:#0B7A47;white-space:nowrap}
+.wbst.bad{background:#FDECEA;color:#B3261E}.wbst.done{background:#E6EDFF;color:#1D4FD7}.wbst.off{background:#EEF0F5;color:#6B7691}
+.wchk{display:flex;align-items:center;gap:8px;cursor:pointer}.wchk input{width:20px;height:20px;flex:none}
+.webd{min-width:0;flex:1 1 200px;max-width:340px}
+@media (max-width:720px){#sub .row .webd{flex-basis:100%;max-width:none}}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -5013,9 +5020,9 @@ function vQweekle(m){
 }
 document.addEventListener('change',e=>{if(e.target.id!=='qwf'||!e.target.files[0])return;const fr=new FileReader();fr.onload=()=>{const R=csvParse(String(fr.result));if(R.length<2){toast('Fichier vide ou illisible');return}qwHead=R[0];qwRows=R.slice(1);vQweekle($('#sub'))};fr.readAsText(e.target.files[0],'UTF-8')});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act="qwgo"],[data-act="qwclear"]');if(!b||!isAdmin())return;
-  if(b.dataset.act==='qwclear'){S.sales=S.sales.filter(s=>!s.qw);save();vQweekle($('#sub'));toast('Réservations importées supprimées');return}
+  if(b.dataset.act==='qwclear'){S.sales=S.sales.filter(s=>!s.qw||s.wb);save();vQweekle($('#sub'));toast('Réservations importées supprimées');return}
   const ix=id=>$('#'+id).value===''?-1:+$('#'+id).value,D=ix('qwd'),H=ix('qwh'),N=ix('qwn'),U=ix('qwu'),C=ix('qwc');if(D<0||H<0||N<0){toast('Associez au moins la date, l’heure et le nombre de personnes');return}
-  S.sales=S.sales.filter(s=>!s.qw);let k=0;
+  S.sales=S.sales.filter(s=>!s.qw||s.wb);let k=0;
   qwRows.forEach(r=>{const d=pDate(r[D]),t=pTime(r[H]),j=parseInt(r[N]);if(!d||t==null||!j)return;const st=Math.floor(t/15)*15;
     S.sales.push({id:uid(),no:'QW-'+(++k),ts:new Date(d+'T'+hmm(st)+':00').getTime(),lines:[],sub:0,disc:0,total:0,vat:{},pay:[],clientId:null,slot:d+'|'+st,dur:U>=0?(parseInt(r[U])||60):60,jumpers:j,qw:true,qwName:C>=0?r[C]:''})});
   save();qwRows=null;vQweekle($('#sub'));toast(k+' réservation(s) importée(s)')});
@@ -5517,7 +5524,7 @@ function qwImport(head,rows,map,fname){
 }
 /* le planning clients lit des « ventes » : on les régénère depuis les réservations Qweekle */
 function qwRebuild(){
-  S.sales=S.sales.filter(s=>!s.qw);let k=0;
+  S.sales=S.sales.filter(s=>!s.qw||s.wb);let k=0;
   qwres().forEach(x=>{S.sales.push({id:'qw'+x.id,no:'QW-'+(++k),ts:new Date(x.date+'T'+hmm(x.start)+':00').getTime(),lines:[],sub:0,disc:0,total:0,vat:{},pay:[],clientId:null,slot:x.date+'|'+x.start,dur:x.dur||60,jumpers:x.n,qw:true,qwName:x.name||'',qwRef:x.ref||''})});
 }
 function qwFinish(head,rows,fname){
@@ -6329,7 +6336,7 @@ function treeToS(T,full){
 }
 function cloudNormalize(){
   S.settings=Object.assign(defaultSettings(),S.settings||{});
-  ['products','clients','sales','closures','events','mails','staff','leaves','plans','maint','incidents','profiles','planArchive','awards','qwres','gifts','waivers','accounts','board','passes','promos','entries'].forEach(k=>{if(!Array.isArray(S[k]))S[k]=[]});
+  ['products','clients','sales','closures','events','mails','staff','leaves','plans','maint','incidents','profiles','planArchive','awards','qwres','web','gifts','waivers','accounts','board','passes','promos','entries'].forEach(k=>{if(!Array.isArray(S[k]))S[k]=[]});
   ['shifts','checks','monthly','stock','hours'].forEach(k=>{if(!isO(S[k])||Array.isArray(S[k]))S[k]={}});
   if(!S.profiles.length)S.profiles=defaultProfiles();
   number();
@@ -6612,7 +6619,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v61';
+const LAGO_V='v62';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -9244,6 +9251,7 @@ document.addEventListener('change',e=>{
 /* la liste d'équipements demandée remplace une ancienne liste personnalisée, une seule fois */
 function v61Init(){
   plEndInit();
+  if(typeof webInit==='function')webInit();
   try{
     if(S&&S.settings&&!S.settings.meqInit){
       S.settings.meqInit=1;
@@ -9317,6 +9325,7 @@ function brItems(ds){
     L.push({start:+s.slot.split('|')[1],dur:s.dur||60,n:s.jumpers||0,name:s.clientId&&typeof clientName==='function'?clientName(s.clientId):'',src:'caisse'});
   });
   (typeof qwres==='function'?qwres():[]).forEach(x=>{if(x.date===ds)L.push({start:+x.start,dur:x.dur||60,n:x.n||1,name:x.name||'',src:'qweekle'})});
+  (Array.isArray(S.web)?S.web:[]).forEach(b=>{if(b.date!==ds||(b.st!=='ok'&&b.st!=='full'))return;(b.items||[]).forEach(it=>{if(it.dur)L.push({start:b.start,dur:it.dur,n:it.q,name:b.name||'',src:'web'})})});
   return L.filter(x=>x.n>0&&isFinite(x.start)).sort((a,b)=>a.start-b.start);
 }
 const brDurLbl=d=>d<60?d+' min':d%60?Math.floor(d/60)+' h '+String(d%60).padStart(2,'0'):(d/60)+' h';
@@ -9348,7 +9357,7 @@ function brHtml(){
   const sw=(c,big)=>`<i class="brl-sw${big?' big':''}" style="background:${c}"></i>`;
   const give=D.give.map(g=>`<div class="brl-g">${sw(g.b.color,1)}<div><b>${g.b.name}</b><span>${brDurLbl(g.d)} · sortie à ${g.b.exit}</span></div></div>`).join('');
   const rows=D.rows.map(r=>`<div class="brl-r${r.past?' past':''}${r.h===D.nh?' nxt':''}"><b class="num">${r.h}h</b>${sw(r.color)}<span>${r.name}</span><em>${r.n?pl(r.n):'—'}</em></div>`).join('');
-  const soon=D.soon.length?D.soon.map(x=>`<div class="brl-a"><b class="num">${fm(x.start)}</b>${sw(x.b.color)}<span>${esc(x.name||(x.src==='qweekle'?'Réservation Qweekle':'Vente caisse'))}</span><em>${pl(x.n)}</em></div>`).join(''):'<p class="brl-none">Personne n’est attendu dans l’heure.</p>';
+  const soon=D.soon.length?D.soon.map(x=>`<div class="brl-a"><b class="num">${fm(x.start)}</b>${sw(x.b.color)}<span>${esc(x.name||(x.src==='qweekle'?'Réservation Qweekle':x.src==='web'?'Réservation en ligne':'Vente caisse'))}</span><em>${pl(x.n)}</em></div>`).join(''):'<p class="brl-none">Personne n’est attendu dans l’heure.</p>';
   return `<div class="brl-top"><div class="brl-clock"><b class="num">${brClock(now)}</b><span class="num">:${String(now.getSeconds()).padStart(2,'0')}</span></div>
       <div class="brl-info"><div class="brl-date">${esc(now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))}</div><div class="brl-pres"><b class="num">${D.present}</b> présent${D.present>1?'s':''} dans le parc</div></div></div>
     <div class="brl-grid">
@@ -9390,6 +9399,318 @@ function vBracelets(m){
   const card=`<div class="card brlcard"><div><h3>En direct</h3><p class="muted">Un écran à afficher sur une tablette ou une télé : couleur à remettre maintenant, prochain retrait avec compte à rebours et nombre de personnes, mis à jour à la seconde. ${D.present} présent${D.present>1?'s':''} dans le parc en ce moment.</p></div><button type="button" class="btn primary" data-act="brlive">${ic('wave')}Ouvrir l’écran bracelets</button></div>`;
   if(first)first.insertAdjacentHTML('afterend',card);else m.insertAdjacentHTML('afterbegin',card);
 }
+
+/* ===== Réservation en ligne : page publique à intégrer sur le site du parc ===========================
+   - La page (reserver.html) lit dans la base Firebase les places libres (nœud pub/<clé>/base + web)
+     et y dépose la demande de réservation, CHIFFRÉE avec la clé publique du parc (RSA-OAEP + AES-GCM).
+   - Lago lit les demandes, les déchiffre avec la clé privée (gardée dans les réglages synchronisés),
+     crée la réservation, la fiche client et bloque les places dans le planning.
+   - Paiement : sur place pour l'instant (le paiement Stripe viendra ensuite, il demande un serveur). */
+const WEB_PAGE='https://lago-software.github.io/reserver.html';
+const WEB_DEF=()=>({on:false,k:'',cap:120,lead:120,days:60,max:12,prods:null,adds:null,desc:{},info:'',cgv:'',pre:'RES',pub:null,priv:null});
+const WEBR={t:0,h:'',rec:0,seen:0,busy:false,err:'',ok:0,pend:0};
+function webCfg(){const s=S.settings;s.web=Object.assign(WEB_DEF(),s.web||{});return s.web}
+const webArr=()=>Array.isArray(S.web)?S.web:(S.web=[]);
+const wb64=b=>{const a=new Uint8Array(b);let s='';for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+const wunb64=t=>{t=String(t).replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a};
+/* produits proposés : par défaut les formules « sauteur » avec une durée, et deux options courantes */
+function webDefaults(w){
+  const P=S.products||[];
+  if(!Array.isArray(w.prods))w.prods=P.filter(p=>p.jumper&&p.dur&&p.active!==false).map(p=>p.id);
+  if(!Array.isArray(w.adds))w.adds=P.filter(p=>p.active!==false&&!p.jumper&&!p.event&&p.cat==='park'&&/accompagnateur|chaussette/i.test(p.name)).map(p=>p.id);
+  return w;
+}
+const webProd=id=>(S.products||[]).find(p=>p.id===id);
+function webSite(w){return w.k||(w.k=Array.from(crypto.getRandomValues(new Uint8Array(20)),x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join(''))}
+async function webKeys(w){
+  if(w.pub&&w.priv)return;
+  const kp=await crypto.subtle.generateKey({name:'RSA-OAEP',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['encrypt','decrypt']);
+  const pub=await crypto.subtle.exportKey('jwk',kp.publicKey),priv=await crypto.subtle.exportKey('jwk',kp.privateKey);
+  w.pub={n:pub.n,e:pub.e};w.priv=priv;
+}
+async function webOpen(r){
+  const w=webCfg();
+  const pk=await crypto.subtle.importKey('jwk',w.priv,{name:'RSA-OAEP',hash:'SHA-256'},false,['decrypt']);
+  const raw=await crypto.subtle.decrypt({name:'RSA-OAEP'},pk,wunb64(r.k));
+  const key=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt']);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:wunb64(r.iv)},key,wunb64(r.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+const webDb=()=>{const c=cloudCfg();return c&&c.u?c.u.replace(/\/+$/,''):''};
+const webU=p=>webDb()+'/pub/'+webCfg().k+'/'+p+'.json';
+const webReady=()=>{const w=webCfg();return !!(w.on&&w.k&&w.pub&&w.priv&&cloudOn())};
+function webEmbedParam(){const w=webCfg();return wb64(new TextEncoder().encode(JSON.stringify({u:webDb(),k:w.k,p:w.pub})))}
+const webLink=()=>WEB_PAGE+'?c='+webEmbedParam();
+function webIframe(){
+  return `<iframe id="lago-resa" src="${webLink()}" title="Réserver une session" style="width:100%;min-height:760px;border:0" loading="lazy"></iframe>\n<scr`+`ipt>addEventListener('message',function(e){if(e.origin==='https://lago-software.github.io'&&e.data&&e.data.lagoHeight){document.getElementById('lago-resa').style.height=e.data.lagoHeight+'px'}})</scr`+`ipt>`;
+}
+function webRules(){
+  const c=cloudCfg(),w=webCfg();
+  return `{\n  "rules": {\n    ".read": false,\n    ".write": false,\n    "${c?c.r:'room'}": { ".read": true, ".write": true },\n    "pub": {\n      "${w.k}": {\n        "cfg":  { ".read": true, ".write": true },\n        "base": { ".read": true, ".write": true },\n        "web": {\n          ".read": true, ".write": true,\n          "$d": { "$i": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" } }\n        },\n        "req": {\n          ".read": true, ".indexOn": ["ts"],\n          "$id": {\n            ".write": "!data.exists() || (!newData.exists() && data.child('ts').val() < now - 604800000)",\n            ".validate": "newData.hasChildren(['ts','k','iv','ct']) && newData.child('ts').isNumber() && newData.child('ts').val() > now - 600000 && newData.child('ts').val() < now + 600000 && newData.child('ct').isString() && newData.child('ct').val().length < 8000"\n          }\n        }\n      }\n    }\n  }\n}`;
+}
+/* ---------- publication des places libres ---------- */
+const webSlotCap=()=>S.settings.cap;
+function webLoad(ds,t){
+  const cap=S.settings.cap;if(S.closed&&S.closed[ds+'|'+t])return cap;
+  const h=Math.floor(t/60);let l=(!S.noDemo&&h>=S.settings.open&&h<S.settings.close)?baseBooked(ds,h):0;
+  S.sales.forEach(s=>{if(s.wb||!s.slot||!s.slot.startsWith(ds))return;const st=+s.slot.split('|')[1];if(st<=t&&t<st+(s.dur||60))l+=s.jumpers||0});
+  return Math.min(cap,l);
+}
+function webBase(w){
+  const out={},t0=today();
+  for(let i=0;i<=w.days;i++){
+    const ds=addDays(t0,i),h=hoursFor(ds);
+    if(h.closed||!(h.c>h.o)){out[ds]={x:1};continue}
+    const o=Math.ceil(h.o/15)*15,c=Math.floor(h.c/15)*15,l=[];
+    for(let m=o;m+15<=c;m+=15)l.push(webLoad(ds,m));
+    out[ds]={o,c,l};
+  }
+  return out;
+}
+function webCfgOut(w){
+  const P=(ids,adds)=>ids.map(webProd).filter(p=>p&&p.active!==false&&(adds||(p.jumper&&p.dur))).map(p=>{const o={id:p.id,n:p.name,d:(w.desc&&w.desc[p.id])||'',p:p.price};if(!adds)o.dur=p.dur;return o});
+  return{v:1,on:true,name:S.settings.name||'',tel:S.settings.phone||'',mail:S.settings.mail||'',addr:S.settings.addr||'',brand:S.settings.brand||'#1D4FD7',accent:S.settings.accent||'#FF7A1A',
+    cap:S.settings.cap,wcap:Math.min(S.settings.cap,w.cap),lead:w.lead,days:w.days,max:w.max,tz:(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Paris'}catch(e){return 'Europe/Paris'}})(),
+    info:w.info||'',cgv:w.cgv||'',pre:(w.pre||'RES').slice(0,4),br:BR.map(b=>[b[0],b[1]]),prods:P(w.prods||[],false),adds:P(w.adds||[],true),upd:Date.now()};
+}
+async function webPublish(force){
+  const w=webCfg();if(!webReady())return false;
+  const cfgO=webCfgOut(w),baseO=webBase(w),h=JSON.stringify([{...cfgO,upd:0},baseO]);
+  if(!force&&h===WEBR.h&&Date.now()-WEBR.t<600000)return true;
+  try{
+    const r=await fetch(webU('').replace(/\.json$/,'')+'.json',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({cfg:cfgO,base:baseO})});
+    if(!r.ok)throw new Error('http '+r.status);
+    WEBR.h=h;WEBR.t=Date.now();WEBR.err='';w.lastPub=WEBR.t;return true;
+  }catch(e){WEBR.err=/40[13]/.test(String(e.message))?'Règles Firebase à mettre à jour (voir Paramètres › Réservation en ligne)':'Hors ligne';return false}
+}
+let webTimer=0;
+function webSched(){if(!webCfg().on)return;clearTimeout(webTimer);webTimer=setTimeout(()=>{webPublish().catch(()=>{})},4000)}
+{const f0=save;save=function(){f0();webSched()}}
+/* ---------- compteurs de places réservées en ligne ---------- */
+function webLines(b){return (b.items||[]).filter(it=>it.dur)}
+function webSlots(b){
+  const o={};
+  webLines(b).forEach(it=>{for(let m=b.start;m<b.start+it.dur;m+=15)o[m/15]=(o[m/15]||0)+it.q});
+  return Object.entries(o).map(([i,n])=>[+i,n]);
+}
+async function webCounters(b,sign){
+  if(!cloudOn()||!webCfg().k)return false;
+  const body={};webSlots(b).forEach(([i,n])=>{body[i]={'.sv':{increment:sign*n}}});
+  try{const r=await fetch(webU('web/'+b.date),{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)});return r.ok}catch(e){return false}
+}
+async function webReconcile(){
+  if(!webReady())return;
+  const exp={},t0=addDays(today(),-1);
+  webArr().filter(b=>(b.st==='ok'||b.st==='full')&&b.date>=t0).forEach(b=>webSlots(b).forEach(([i,n])=>{(exp[b.date]=exp[b.date]||{});exp[b.date][i]=(exp[b.date][i]||0)+n}));
+  try{const r=await fetch(webU('web'),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(Object.keys(exp).length?exp:null)});if(r.ok)WEBR.rec=Date.now()}catch(e){}
+}
+/* ---------- importer les demandes ---------- */
+function webRebuild(){
+  S.sales=S.sales.filter(s=>!s.wb);
+  webArr().forEach(b=>{
+    if(b.st!=='ok'&&b.st!=='full')return;
+    webLines(b).forEach(it=>S.sales.push({id:'wb'+b.id+'_'+it.pid,no:'WEB-'+b.ref,ts:b.ts||Date.now(),lines:[],sub:0,disc:0,total:0,vat:{},pay:[],clientId:b.clientId||null,slot:b.date+'|'+b.start,dur:it.dur,jumpers:it.q,qw:true,wb:true,wbId:b.id,qwName:b.name,qwRef:b.ref}));
+  });
+}
+function webClient(b,p){
+  const em=(p.mail||'').trim().toLowerCase();
+  let c=em&&S.clients.find(x=>(x.email||'').trim().toLowerCase()===em);
+  if(!c){c={id:'cw'+b.id,name:b.name,phone:b.phone,email:p.mail||'',optin:!!p.optin,pts:0,note:'Réservation en ligne',kid:'',rewards:[]};S.clients.push(c)}
+  else if(p.optin&&!c.optin)c.optin=true;
+  return c.id;
+}
+async function webIngest(id,r){
+  if(webArr().some(b=>b.id===id))return null;
+  let p;try{p=await webOpen(r)}catch(e){return null}
+  const w=webCfg(),t0=today();
+  if(!p||p.v!==1||!/^\d{4}-\d{2}-\d{2}$/.test(p.date||'')||!Number.isInteger(p.start)||p.start%15||p.start<0||p.start>1440||p.date<addDays(t0,-1)||p.date>addDays(t0,w.days+1))return null;
+  const items=[];let people=0;
+  for(const it of (Array.isArray(p.items)?p.items.slice(0,12):[])){
+    const pr=webProd(it.id),q=Math.floor(+it.q);if(!pr||!(q>=1&&q<=w.max))continue;
+    const sess=(w.prods||[]).includes(pr.id)&&pr.jumper&&pr.dur,add=(w.adds||[]).includes(pr.id);
+    if(!sess&&!add)continue;
+    items.push({pid:pr.id,q,n:pr.name,price:pr.price,...(sess?{dur:pr.dur}:{})});if(sess)people+=q;
+  }
+  if(!people||people>w.max)return null;
+  const clean=(s,n)=>String(s==null?'':s).replace(/[\u0000-\u001f]/g,' ').trim().slice(0,n);
+  const b={id,ref:clean(p.ref,14)||('WEB-'+id.slice(0,5).toUpperCase()),ts:+r.ts||Date.now(),date:p.date,start:p.start,items,people,total:items.reduce((a,x)=>a+x.q*x.price,0),
+    name:clean(p.name,80),mail:clean(p.mail,120),phone:clean(p.phone,20),note:clean(p.note,300),optin:!!p.optin,st:'ok'};
+  /* places encore libres ? (la page a déjà réservé les places, ce contrôle est un filet de sécurité) */
+  const longest=Math.max(...items.filter(x=>x.dur).map(x=>x.dur));
+  for(let m=b.start;m<b.start+longest;m+=15){
+    const nd=items.reduce((a,x)=>a+(x.dur&&m<b.start+x.dur?x.q:0),0);
+    if(!openAt(b.date,m)||S.settings.cap-occ(b.date,m)<nd){b.st='full';break}
+  }
+  b.clientId=webClient(b,p);
+  webArr().push(b);webRebuild();
+  return b;
+}
+async function webPoll(){
+  const w=webCfg();if(!webReady()||WEBR.busy)return;
+  WEBR.busy=true;
+  try{
+    let r=await fetch(webU('req')+'?orderBy="ts"&startAt='+Math.max(0,(w.seen||0)-900000),{cache:'no-store'});
+    if(r.status===400)r=await fetch(webU('req'),{cache:'no-store'});
+    if(!r.ok)throw new Error('http '+r.status);
+    const J=await r.json()||{},made=[];let maxTs=w.seen||0;
+    for(const id of Object.keys(J)){
+      const q=J[id];if(!q||!q.ct)continue;maxTs=Math.max(maxTs,+q.ts||0);
+      const b=await webIngest(id,q);if(b)made.push(b);
+    }
+    WEBR.err='';WEBR.ok=Date.now();
+    if(maxTs>(w.seen||0))WEBR.seen=w.seen=maxTs;
+    if(made.length){
+      save();
+      toast(made.length===1?'Nouvelle réservation en ligne : '+made[0].name+' · '+dshort(made[0].date)+' '+fm(made[0].start):made.length+' nouvelles réservations en ligne');
+      if(view==='resa'&&(tab.resa==='web'||tab.resa==='apercu'||tab.resa==='bracelets'))render();
+    }
+    /* nettoyage des demandes de plus de 8 jours, déjà importées */
+    const old=Object.keys(J).filter(id=>J[id]&&+J[id].ts<Date.now()-8*86400000&&webArr().some(b=>b.id===id));
+    for(const id of old.slice(0,20))fetch(webU('req/'+id),{method:'DELETE'}).catch(()=>{});
+    WEBR.pend=0;
+    /* remise à jour des compteurs publics : après un moment sans nouvelle demande */
+    if(Date.now()-WEBR.rec>300000&&Date.now()-Math.max(maxTs,WEBR.seen||0)>180000)await webReconcile();
+  }catch(e){WEBR.err='Hors ligne'}
+  finally{WEBR.busy=false}
+}
+async function webTick(){
+  if(typeof ME==='undefined'||!ME||document.visibilityState==='hidden')return;
+  const w=webCfg();if(!w.on||!cloudOn())return;
+  await webPublish().catch(()=>{});
+  await webPoll().catch(()=>{});
+}
+setInterval(()=>{webTick().catch(()=>{})},20000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')webTick().catch(()=>{})});
+/* ---------- actions sur une réservation ---------- */
+const WEB_ST={ok:['Confirmée','ok'],full:['À replacer','bad'],done:['Encaissée','done'],cancel:['Annulée','off']};
+const webOf=id=>webArr().find(b=>b.id===id);
+function webWhen(b){return dshort(b.date)+' · '+fm(b.start)}
+function webDetail(id){
+  const b=webOf(id);if(!b)return;
+  const s=WEB_ST[b.st]||WEB_ST.ok,live=b.st==='ok'||b.st==='full';
+  const mail=b.mail?`<a class="btn" href="mailto:${esc(b.mail)}?subject=${encodeURIComponent('Votre réservation '+b.ref+' – '+S.settings.name)}">Écrire</a>`:'',tel=b.phone?`<a class="btn" href="tel:${esc(b.phone.replace(/[^\d+]/g,''))}">Appeler</a>`:'';
+  showModal(`${mh('Réservation '+esc(b.ref))}
+   <p class="muted" style="text-transform:capitalize;margin:0 0 8px">${esc(dlong(b.date))} · ${fm(b.start)}</p>
+   <div class="wbst ${s[1]}">${s[0]}</div>
+   ${b.st==='full'?'<p class="muted">Les places de ce créneau ont été prises entre-temps en caisse : contactez le client pour lui proposer un autre horaire, puis annulez-la.</p>':''}
+   <div class="card" style="margin:10px 0"><b>${esc(b.name)}</b><div class="muted">${esc(b.phone)}${b.phone&&b.mail?' · ':''}${esc(b.mail)}</div>${b.note?`<p style="margin:8px 0 0"><i>« ${esc(b.note)} »</i></p>`:''}</div>
+   <div class="card" style="margin:10px 0">${b.items.map(x=>`<div class="row"><span class="grow">${x.q} × ${esc(x.n)}${x.dur?' <span class="muted">('+brDurLbl(x.dur)+')</span>':''}</span><b class="num">${eur(x.q*x.price)}</b></div>`).join('')}<div class="row"><span class="grow"><b>Total à régler sur place</b></span><b class="num">${eur(b.total)}</b></div></div>
+   <div class="acts" style="flex-wrap:wrap">${live?`<button class="btn primary" data-act="web_cash" data-id="${b.id}">Encaisser</button>`:''}${tel}${mail}${live?`<button class="btn danger" data-act="web_cancel" data-id="${b.id}">Annuler la réservation</button>`:''}<button class="btn" data-act="close">Fermer</button></div>`);
+}
+async function webDoCancel(id){
+  const b=webOf(id);if(!b||(b.st!=='ok'&&b.st!=='full'))return;
+  const was=b.st;b.st='cancel';webRebuild();save();
+  const ok=await webCounters(b,-1);
+  closeModal();toast(ok?'Réservation annulée, places rendues':'Réservation annulée (les places seront remises en ligne dans quelques minutes)');
+  if(view==='resa')render();
+  webPublish(true).catch(()=>{});
+}
+function webCash(id){
+  const b=webOf(id);if(!b||(b.st!=='ok'&&b.st!=='full'))return;
+  const lines=b.items.filter(x=>webProd(x.pid)).map(x=>({pid:x.pid,qty:x.q}));
+  cart=newCart();cart.lines=lines;cart.slotDate=b.date;cart.slotM=b.start;cart.clientId=b.clientId||null;cart.web=b.id;
+  closeModal();
+  if(location.hash==='#caisse')render();else location.hash='caisse';
+  toast('Panier prérempli pour '+b.name);
+}
+{const f0=afterSale;afterSale=function(sale,c){
+  f0(sale,c);
+  try{const b=c&&c.web?webOf(c.web):null;
+    if(b&&(b.st==='ok'||b.st==='full')){b.st='done';b.saleId=sale.id;webRebuild();webCounters(b,-1).then(()=>webPublish(true)).catch(()=>{})}}catch(e){}
+}}
+/* ---------- l'onglet « En ligne » du planning clients ---------- */
+function vWeb(m){
+  const w=webCfg(),t0=today(),L=webArr().slice().sort((a,b)=>(a.date+fm(a.start)).localeCompare(b.date+fm(b.start)));
+  const up=L.filter(b=>b.date>=t0&&(b.st==='ok'||b.st==='full')),past=L.filter(b=>b.date<t0||b.st==='done'||b.st==='cancel').sort((a,b)=>(b.date+fm(b.start)).localeCompare(a.date+fm(a.start))).slice(0,30);
+  const pp=up.reduce((a,b)=>a+b.people,0),need=up.filter(b=>b.st==='full').length;
+  const row=b=>{const s=WEB_ST[b.st]||WEB_ST.ok;return `<button class="row rowbtn" data-act="web_open" data-id="${b.id}"><span class="tm num" style="font-weight:700;min-width:104px">${esc(webWhen(b))}</span><span class="grow"><b>${esc(b.name)}</b><span class="muted"> · ${b.people} pers. · ${esc(b.ref)}</span></span><span class="wbst ${s[1]}">${s[0]}</span><b class="num">${eur(b.total)}</b></button>`};
+  const days={};up.forEach(b=>(days[b.date]=days[b.date]||[]).push(b));
+  let st;
+  if(!w.on)st=`<div class="banner"><span>La réservation en ligne n’est pas activée.${isAdmin()?' <button class="btn primary" data-act="web_goset" style="margin-left:8px">Activer</button>':''}</span></div>`;
+  else if(!webReady())st=`<div class="banner"><span>Terminez l’installation dans Paramètres › Réservation en ligne.${isAdmin()?' <button class="btn primary" data-act="web_goset" style="margin-left:8px">Ouvrir</button>':''}</span></div>`;
+  else st=`<div class="banner ok"><span>Réservation en ligne ouverte${WEBR.err?' · '+esc(WEBR.err):''}. Le planning se met à jour tout seul.</span></div>`;
+  m.innerHTML=st+`<div class="kpis"><div class="kpi"><div class="l">À venir</div><div class="v num">${up.length}</div></div><div class="kpi"><div class="l">Participants</div><div class="v num">${pp}</div></div><div class="kpi"><div class="l">À replacer</div><div class="v num">${need}</div></div></div>
+   ${Object.keys(days).map(d=>`<div class="card"><h3 style="text-transform:capitalize">${esc(dlong(d))}${d===t0?' · aujourd’hui':''}</h3>${days[d].map(row).join('')}</div>`).join('')||'<div class="card"><p class="muted">Aucune réservation en ligne à venir.</p></div>'}
+   ${past.length?`<details class="card"><summary><b>Passées, encaissées ou annulées</b></summary>${past.map(row).join('')}</details>`:''}`;
+}
+/* ---------- les réglages ---------- */
+const WEB_LEAD=[[0,'Jusqu’à la dernière minute'],[30,'30 minutes avant'],[60,'1 heure avant'],[120,'2 heures avant'],[240,'4 heures avant'],[720,'12 heures avant'],[1440,'La veille']];
+function vSetWeb(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const w=webDefaults(webCfg()),P=S.products||[],sess=P.filter(p=>p.jumper&&p.dur&&p.active!==false),opts=P.filter(p=>!p.jumper&&!p.event&&p.cat==='park'&&p.active!==false);
+  const cl=cloudOn(),ready=webReady();
+  const sRow=p=>`<div class="row"><label class="wchk grow"><input type="checkbox" data-web="prod" data-id="${p.id}" ${w.prods.includes(p.id)?'checked':''}> <b>${esc(p.name)}</b> <span class="muted">${brDurLbl(p.dur)} · ${eur(p.price)}</span></label><input class="webd" data-web="desc" data-id="${p.id}" value="${esc((w.desc||{})[p.id]||'')}" placeholder="Description (facultatif)" maxlength="90" aria-label="Description de ${esc(p.name)}"></div>`;
+  const oRow=p=>`<div class="row"><label class="wchk grow"><input type="checkbox" data-web="add" data-id="${p.id}" ${w.adds.includes(p.id)?'checked':''}> <b>${esc(p.name)}</b> <span class="muted">${eur(p.price)}</span></label></div>`;
+  const when=WEBR.t?new Date(WEBR.t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—';
+  m.innerHTML=`<div class="card"><h3>Réservation en ligne</h3>
+    <p class="muted" style="margin:0 0 10px">Vos clients réservent et choisissent leur créneau sur votre site, en voyant les vraies places libres. La réservation arrive dans Lago, le planning se met à jour et le règlement se fait à l’accueil.</p>
+    ${cl?'':'<div class="banner"><span>Il faut d’abord connecter l’équipe (Paramètres › Studio) : la réservation passe par la même base en ligne.</span></div>'}
+    <label class="wchk"><input type="checkbox" id="web_on" ${w.on?'checked':''} ${cl?'':'disabled'}> <b>Ouvrir la réservation en ligne</b></label>
+    ${w.on&&cl?`<p class="muted" style="margin:8px 0 0">${ready?(WEBR.err?'<b style="color:var(--bad)">'+esc(WEBR.err)+'</b>':'Dernière mise à jour des places : '+when):'Préparation…'}</p>`:''}</div>
+   <div class="card"><h3>Formules proposées</h3><p class="muted" style="margin:0 0 6px">Cochez ce que le client peut réserver. Les tarifs viennent de vos produits.</p>${sess.map(sRow).join('')||'<p class="muted">Aucune formule avec durée (produit « sauteur »).</p>'}
+    <h4 style="margin:14px 0 4px">Options</h4>${oRow?opts.map(oRow).join(''):''}</div>
+   <div class="card"><h3>Règles</h3>
+    <div class="field"><label for="web_cap">Places maximum réservables en ligne par départ</label><input id="web_cap" type="number" min="1" max="${S.settings.cap}" value="${w.cap}"><small class="muted">Sur ${S.settings.cap} places au total : le reste est gardé pour la caisse.</small></div>
+    <div class="field"><label for="web_lead">Réservation possible jusqu’à</label><select id="web_lead">${WEB_LEAD.map(x=>`<option value="${x[0]}" ${w.lead===x[0]?'selected':''}>${x[1]}</option>`).join('')}</select></div>
+    <div class="g2"><div class="field"><label for="web_days">Réservable jusqu’à (jours)</label><select id="web_days">${[14,30,60,90].map(x=>`<option ${w.days===x?'selected':''}>${x}</option>`).join('')}</select></div>
+    <div class="field"><label for="web_max">Participants maximum par réservation</label><select id="web_max">${[6,8,10,12,20,30].map(x=>`<option ${w.max===x?'selected':''}>${x}</option>`).join('')}</select></div></div>
+    <div class="field"><label for="web_pre">Début du code de réservation</label><input id="web_pre" value="${esc(w.pre)}" maxlength="4" style="text-transform:uppercase"><small class="muted">Exemple : ${esc(w.pre||'RES')}-7KQ4M2</small></div>
+    <div class="field"><label for="web_info">Message affiché sur la première étape (facultatif)</label><input id="web_info" value="${esc(w.info)}" maxlength="200" placeholder="Chaussettes antidérapantes obligatoires (en vente sur place)."></div>
+    <div class="field"><label for="web_cgv">Conditions de réservation (facultatif)</label><textarea id="web_cgv" rows="4" maxlength="1500" placeholder="Annulation gratuite jusqu’à 24 h avant, retard, âge minimum, taille…">${esc(w.cgv)}</textarea></div></div>
+   ${w.on&&cl?`<div class="card"><h3>Installer sur votre site</h3>
+    <ol class="muted" style="margin:0 0 10px 18px;padding:0"><li>Dans Firebase › Realtime Database › Règles, remplacez tout par le texte ci-dessous, puis cliquez sur Publier (une seule fois).</li><li>Collez le code d’intégration dans la page de votre site où la réservation doit apparaître (bloc « HTML personnalisé »).</li></ol>
+    <b>1. Règles Firebase</b><textarea readonly rows="9" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%;margin:6px 0">${esc(webRules())}</textarea>
+    <div class="acts" style="margin-bottom:12px"><button class="btn" data-act="web_copy" data-what="rules">Copier les règles</button></div>
+    <b>2. Code d’intégration</b><textarea readonly rows="6" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%;margin:6px 0">${esc(webIframe())}</textarea>
+    <div class="acts"><button class="btn primary" data-act="web_copy" data-what="iframe">Copier le code</button><a class="btn" target="_blank" rel="noopener" href="${esc(webLink())}">Ouvrir la page de réservation</a></div>
+    <details style="margin-top:12px"><summary><b>Lien direct et QR code</b></summary><div class="field" style="margin-top:8px"><input readonly onclick="this.select()" value="${esc(webLink())}"></div><div style="display:flex;justify-content:center;margin:8px 0"><div style="background:#fff;padding:6px;border-radius:10px;line-height:0">${qrSvg(webLink(),170)}</div></div><p class="muted" style="margin:0;text-align:center">À afficher à l’accueil ou sur vos affiches.</p></details></div>
+   <div class="card"><h3>Entretien</h3><p class="muted" style="margin:0 0 10px">La base est mise à jour toutes les quelques minutes tant que Lago est ouvert sur un appareil.</p><div class="acts"><button class="btn" data-act="web_pub">Mettre à jour les places maintenant</button><button class="btn" data-act="web_rec">Recalculer les places réservées en ligne</button></div><p class="muted" id="web_msg" style="margin:8px 0 0"></p></div>`:''}`;
+}
+TABS.params.splice(Math.max(1,TABS.params.findIndex(x=>x[0]==='pcf')+1),0,['pweb','Réservation en ligne']);SUBS.pweb=vSetWeb;
+TABS.resa.splice(Math.max(1,TABS.resa.findIndex(x=>x[0]==='resas')+1),0,['web','En ligne']);SUBS.web=vWeb;
+{const r=PMODS.find(x=>x[0]==='resa');if(r&&r[2])r[2].push(['web','Réservations en ligne'])}
+SIC['resa:web']='globe';
+function webInit(){
+  (S.profiles||[]).forEach(p=>{if(p.perms&&p.perms.resa&&p.perms['resa:web']===undefined)p.perms['resa:web']=true});
+  webArr();webCfg();
+}
+const webMsg=t=>{const x=$('#web_msg');if(x)x.textContent=t};
+document.addEventListener('change',async e=>{
+  const t=e.target;if(!t||view!=='params'||tab.params!=='pweb'||!isAdmin())return;
+  const w=webDefaults(webCfg());let redo=false;
+  if(t.id==='web_on'){
+    if(t.checked){
+      if(!cloudOn()){t.checked=false;toast('Connectez d’abord l’équipe (Paramètres › Studio)');return}
+      w.on=true;webSite(w);try{await webKeys(w)}catch(x){w.on=false;t.checked=false;toast('Ce navigateur ne permet pas de créer les clés de chiffrement');return}
+      toast('Réservation en ligne activée');
+    }else{w.on=false;fetch(webU('cfg'),{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({on:false})}).catch(()=>{});toast('Réservation en ligne fermée')}
+    redo=true;
+  }
+  else if(t.dataset.web==='prod'||t.dataset.web==='add'){const k=t.dataset.web==='prod'?'prods':'adds',i=w[k].indexOf(t.dataset.id);if(t.checked&&i<0)w[k].push(t.dataset.id);if(!t.checked&&i>=0)w[k].splice(i,1)}
+  else if(t.dataset.web==='desc'){w.desc=w.desc||{};if(t.value.trim())w.desc[t.dataset.id]=t.value.trim();else delete w.desc[t.dataset.id]}
+  else if(t.id==='web_cap')w.cap=Math.max(1,Math.min(S.settings.cap,Math.floor(+t.value)||w.cap));
+  else if(t.id==='web_lead')w.lead=+t.value;
+  else if(t.id==='web_days')w.days=+t.value;
+  else if(t.id==='web_max')w.max=+t.value;
+  else if(t.id==='web_pre')w.pre=(t.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,4))||'RES';
+  else if(t.id==='web_info')w.info=t.value.trim();
+  else if(t.id==='web_cgv')w.cgv=t.value.trim();
+  else return;
+  save();webPublish(true).catch(()=>{});
+  if(redo){const sub=$('#sub');if(sub)vSetWeb(sub)}
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act^="web_"]');if(!b)return;
+  const a=b.dataset.act,id=b.dataset.id;
+  if(a==='web_open')webDetail(id);
+  else if(a==='web_cancel'){showModal(`${mh('Annuler cette réservation ?')}<p class="muted">Les places sont rendues tout de suite. Pensez à prévenir le client.</p><div class="acts"><button class="btn danger" data-act="web_cancel2" data-id="${id}">Oui, annuler</button><button class="btn" data-act="close">Non</button></div>`)}
+  else if(a==='web_cancel2')webDoCancel(id);
+  else if(a==='web_cash')webCash(id);
+  else if(a==='web_goset'){view='params';tab.params='pweb';location.hash='params';route()}
+  else if(a==='web_copy'){const txt=b.dataset.what==='rules'?webRules():webIframe();(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('Copié')).catch(()=>{const ta=b.closest('.card').querySelector('textarea'+(b.dataset.what==='rules'?':first-of-type':''));toast('Sélectionnez le texte et copiez-le')})}
+  else if(a==='web_pub'){webMsg('Mise à jour…');webPublish(true).then(ok=>webMsg(ok?'Places mises à jour.':(WEBR.err||'Échec')))}
+  else if(a==='web_rec'){webMsg('Recalcul…');webReconcile().then(()=>webMsg('Places recalculées.'))}
+});
 
 METHODS.pass='Carnet de séances';
 function openPay(){
