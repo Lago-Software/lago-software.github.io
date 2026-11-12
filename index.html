@@ -1699,6 +1699,16 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--brand);outline-offs
 @media (hover:hover){.tk-m:not(:hover):not(:focus-within) .tk-del{opacity:0}.tk-del{transition:opacity .12s}}
 @media (min-width:701px){.chero svg.cillu{width:150px;height:100px}}
 
+/* ---- congés payés : ajout automatique (v53) ---- */
+.lvnx{grid-column:1/-1;font-size:12.5px;color:var(--muted);margin-top:2px}
+.cpcard{grid-column:1/-1}
+.cpcard .cplist{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px}
+.cprow{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:8px 12px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.cpwho{display:flex;flex-direction:column;min-width:0}.cpwho b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cpwho small{font-size:12.5px;white-space:nowrap}
+.cpfs{grid-column:2;display:flex;gap:10px;flex-wrap:wrap}
+.cpf{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted);font-weight:600}
+.cpf input{min-height:40px;width:9.5em;font-size:15px}
+.cpf input[data-cpn]{width:5.5em;text-align:right}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -2936,7 +2946,7 @@ function vSetTeam(m){
     <button class="ix" data-act="delstaff" data-id="${s.id}" aria-label="Retirer ${esc(s.name)}">${ic('trash')}</button></div>`).join('')}
     <form id="sform" style="margin-top:14px"><div class="two"><div class="field"><label for="sn">Nouveau membre</label><input id="sn" required placeholder="Prénom Nom" autocomplete="off"></div>
     <div class="field"><label for="sr">Poste</label><select id="sr">${Object.entries(ROLE).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div></div><button class="btn primary" type="submit">Ajouter</button></form></div>
-   <div class="card"><h3>Règles du planning</h3>${fld('Effectif minimum en poste',numIn('minStaff',st.minStaff,1,30),'Une alerte s’affiche en dessous de ce nombre.')}${fld('Congés payés par an (jours ouvrés)',numIn('cp',st.cp,0,60))}${fld('Code administrateur',`<input id="pinset" inputmode="numeric" maxlength="8" value="${esc(st.pin||'1234')}">`,'Demandé pour repasser du mode opérateur au mode administrateur.')}</div></div>`;
+   <div class="card"><h3>Règles du planning</h3>${fld('Effectif minimum en poste',numIn('minStaff',st.minStaff,1,30),'Une alerte s’affiche en dessous de ce nombre.')}${fld('Code administrateur',`<input id="pinset" inputmode="numeric" maxlength="8" value="${esc(st.pin||'1234')}">`,'Demandé pour repasser du mode opérateur au mode administrateur.')}</div>${cpCard()}</div>`;
 }
 function vSetLoy(m){
   const st=S.settings;
@@ -6008,7 +6018,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v52';
+const LAGO_V='v53';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -7492,7 +7502,7 @@ function vTeam(m){
     ${low.length?`<div class="banner"><span>${low.length} créneau${low.length>1?'x':''} sous le minimum de ${MIN_STAFF} personnes (${low.slice(0,4).join(', ')}${low.length>4?'…':''}).</span></div>`:`<div class="banner ok"><span>Tous les créneaux respectent le minimum de ${MIN_STAFF} personnes.</span></div>`}
     ${plOverview(p)}
     <div class="dgrid">${[0,1,2,3,4,5,6].map(d=>dayCard(p,d,null)).join('')}</div>
-    <div class="card" style="margin-top:14px"><h3>Total des heures par semaine</h3><div class="tts">${tot}</div><p class="muted" style="margin-top:12px">CP : <b>${CP_TOTAL}</b> jours par personne${isAdmin()?' · Touchez une case pour la remplir : <b>présent</b>, puis <b>gestion</b>, puis vide.':' · Seul l’administrateur peut modifier le planning.'}</p></div>`;
+    <div class="card" style="margin-top:14px"><h3>Total des heures par semaine</h3><div class="tts">${tot}</div><p class="muted" style="margin-top:12px">CP : ${cpLabel()}${isAdmin()?' · Touchez une case pour la remplir : <b>présent</b>, puis <b>gestion</b>, puis vide.':' · Seul l’administrateur peut modifier le planning.'}</p></div>`;
 }
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act="plgo"]');if(!b)return;
@@ -7746,13 +7756,14 @@ function vLeaves(m){
   const pend=S.leaves.filter(l=>l.status==='pending').sort((a,b)=>a.from.localeCompare(b.from));
   const rest=S.leaves.filter(l=>l.status!=='pending').sort((a,b)=>b.from.localeCompare(a.from));
   const cards=S.staff.map(s=>{
-    const u=leaveUsed(s.id,['ok']),p=leaveUsed(s.id,['pending']),left=CP_TOTAL-u-p,c=scol(s);
-    const wu=Math.min(100,u/CP_TOTAL*100),wp=Math.max(0,Math.min(100-wu,p/CP_TOTAL*100));
+    const A=cpOn()?cpCalc(s):null,tot=A?A.acq:CP_TOTAL,u=A?A.u:leaveUsed(s.id,['ok']),p=A?A.p:leaveUsed(s.id,['pending']),left=A?A.left:CP_TOTAL-u-p,c=scol(s);
+    const wu=tot>0?Math.max(0,Math.min(100,u/tot*100)):0,wp=tot>0?Math.max(0,Math.min(100-wu,p/tot*100)):0;
     return `<div class="lvc" style="--c:${c}"><span class="pav" style="background:${c};color:${inkOn(c)}">${esc(initials(s.name))}</span>
       <div class="lvn"><b>${esc(fname(s))}</b><small>${ROLE[s.role]||''}</small></div>
-      <div class="lvbig"><b class="num ${left<0?'neg':left<=3?'low':''}">${left}</b><span>jour${Math.abs(left)>1?'s':''} restant${Math.abs(left)>1?'s':''}</span></div>
-      <div class="lvbar" role="img" aria-label="${u} jours pris, ${p} en attente, sur ${CP_TOTAL}"><i class="u" style="width:${wu}%"></i><i class="p" style="width:${wp}%"></i></div>
-      <div class="lvch"><span><i class="sw u"></i>${u} pris</span>${p?`<span class="w"><i class="sw p"></i>${p} en attente</span>`:''}<span class="t">sur ${CP_TOTAL}</span></div></div>`}).join('');
+      <div class="lvbig"><b class="num ${left<0?'neg':left<=3?'low':''}">${cpFmt(left)}</b><span>jour${Math.abs(left)>1?'s':''} restant${Math.abs(left)>1?'s':''}</span></div>
+      <div class="lvbar" role="img" aria-label="${cpFmt(u)} jours pris, ${cpFmt(p)} en attente, sur ${cpFmt(tot)}"><i class="u" style="width:${wu}%"></i><i class="p" style="width:${wp}%"></i></div>
+      <div class="lvch"><span><i class="sw u"></i>${cpFmt(u)} pris</span>${p?`<span class="w"><i class="sw p"></i>${cpFmt(p)} en attente</span>`:''}<span class="t">sur ${cpFmt(tot)}${A?' acquis':''}</span></div>
+      ${A?`<div class="lvnx">+${cpFmt(cpRate())} j le ${cpDay()} du mois · prochain le ${dshort(cpNext(today()))}</div>`:''}</div>`}).join('');
   const row=l=>{const s=staffOf(l.staffId),n=leaveDays(l.from,l.to).length,c=scol(s);
     const act=l.status==='pending'&&isAdmin()?`<div class="lvact"><button class="btn primary" data-act="lvok" data-id="${l.id}">Valider</button><button class="btn danger" data-act="lvno" data-id="${l.id}">Refuser</button></div>`:'';
     return `<div class="lvr"><span class="pav" style="background:${c};color:${inkOn(c)}">${esc(initials(s.name))}</span>
@@ -7762,7 +7773,7 @@ function vLeaves(m){
    `<div class="lvgrid">${cards}</div>
    ${pend.length?`<div class="card lvcard"><h3>À valider <span class="pill warn">${pend.length}</span></h3>${pend.map(row).join('')}</div>`:''}
    <div class="card lvcard"><h3>${pend.length?'Historique':'Demandes'}</h3>${rest.map(row).join('')||`<p class="muted">${pend.length?'Rien d’autre pour le moment.':'Aucune demande.'}</p>`}
-   <p class="muted" style="margin-top:12px;font-size:13px">Décompte en jours ouvrés (du lundi au vendredi), sur ${CP_TOTAL} jours par an. Les jours en attente sont déjà retirés du solde.</p></div>`;
+   <p class="muted" style="margin-top:12px;font-size:13px">Décompte en jours ouvrés (du lundi au vendredi), ${cpOn()?'solde de départ + '+cpFmt(cpRate())+' jours ajoutés le '+cpDay()+' de chaque mois':'sur '+CP_TOTAL+' jours par an'}. Les jours en attente sont déjà retirés du solde.</p></div>`;
 }
 /* ---------- CH. chat d'équipe : réactions, réponses rapides, bouton « aller en bas », noms colorés (v52) ---------- */
 IC.down=IC.down||'<path d="M6 9l6 6 6-6"/>';
@@ -7857,6 +7868,88 @@ CART.visuel=`<svg viewBox="0 0 120 80" class="cillu" aria-hidden="true">
 <path d="M88 8l13.500 5v11.500c0 8.200-5.600 13.800-13.500 16.500-7.900-2.700-13.500-8.300-13.500-16.500V13z" fill="#fff" stroke="#0A1F4D" stroke-width="2.400" stroke-linejoin="round"/>
 <path d="M81 24.500l5.200 5.200 9.300-10.400" fill="none" stroke="#1F9D55" stroke-width="3.800" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
+/* ---------- CP. congés payés : ajout automatique chaque mois (v53) ---------- */
+/* Principe : un solde de départ par personne (à une date donnée), puis +N jours le 1er de chaque mois,
+   moins les jours ouvrés des congés posés (validés ou en attente) après la date du solde.
+   Sans l'option, l'ancien décompte (total annuel identique pour tous) reste en vigueur. */
+const cpOn=()=>!!(S.settings&&S.settings.cpAuto);
+const cpRate=()=>{const r=S.settings&&S.settings.cpRate;return r==null||!isFinite(+r)?2.5:+r};
+const cpFmt=n=>{const v=Math.round((+n||0)*100)/100;return String(v).replace('.',',')};
+/* jour du mois où les jours sont ajoutés (le 7 par défaut) */
+const cpDay=()=>{const x=S.settings&&S.settings.cpDay,n=Math.round(+x);return x==null||!isFinite(n)?7:Math.max(1,Math.min(28,n))};
+const cpYmd=(y,m,d)=>y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+/* dates d'ajout comprises dans ]d0 ; t] */
+function cpDates(d0,t){
+  const a=new Date(d0+'T12:00'),b=new Date(t+'T12:00'),day=cpDay(),out=[];
+  let y=a.getFullYear(),m=a.getMonth();
+  while(y<b.getFullYear()||(y===b.getFullYear()&&m<=b.getMonth())){
+    const D=cpYmd(y,m,day);if(D>d0&&D<=t)out.push(D);
+    m++;if(m>11){m=0;y++}
+  }
+  return out;
+}
+const cpMonths=(d0,t)=>cpDates(d0,t).length;
+/* prochaine date d'ajout strictement après t */
+function cpNext(t){
+  const d=new Date(t+'T12:00'),D=cpYmd(d.getFullYear(),d.getMonth(),cpDay());
+  if(D>t)return D;
+  const n=new Date(d.getFullYear(),d.getMonth()+1,1,12);return cpYmd(n.getFullYear(),n.getMonth(),cpDay());
+}
+/* jours ouvrés de congés d'une personne, après la date du solde */
+function cpUsed(id,sts,d0){
+  return S.leaves.filter(l=>l.staffId===id&&sts.includes(l.status)).reduce((a,l)=>a+leaveDays(l.from,l.to).filter(d=>d>d0).length,0);
+}
+function cpBase(s){
+  const c=s.cp0;
+  if(c&&typeof c.d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(c.d))return{d:c.d,n:isFinite(+c.n)?+c.n:0};
+  return{d:(S.settings&&S.settings.cpSince)||today(),n:0};
+}
+function cpCalc(s){
+  const b=cpBase(s),cr=cpMonths(b.d,today())*cpRate(),acq=b.n+cr,u=cpUsed(s.id,['ok'],b.d),p=cpUsed(s.id,['pending'],b.d);
+  return{d0:b.d,n0:b.n,credit:cr,acq,u,p,left:acq-u-p};
+}
+/* à l'activation : chaque personne démarre avec le solde qu'on lui voyait jusque-là */
+function cpInit(){
+  const t=today();let ch=false;
+  if(!S.settings.cpSince){S.settings.cpSince=t;ch=true}
+  if(S.settings.cpDay==null){S.settings.cpDay=7;ch=true}
+  S.staff.forEach(s=>{
+    if(s.cp0&&typeof s.cp0.d==='string')return;
+    const used=S.leaves.filter(l=>l.staffId===s.id&&['ok','pending'].includes(l.status)).reduce((a,l)=>a+leaveDays(l.from,l.to).filter(d=>d<=t).length,0);
+    s.cp0={d:t,n:Math.max(0,CP_TOTAL-used)};ch=true;
+  });
+  if(ch)save();
+}
+const cpLabel=()=>cpOn()?'<b>+'+cpFmt(cpRate())+'</b> jour'+(cpRate()>1?'s':'')+' par mois et par personne':'<b>'+CP_TOTAL+'</b> jours par personne';
+/* carte des réglages (Paramètres › Équipe) */
+function cpCard(){
+  const st=S.settings,on=cpOn();
+  const head=`<label class="check" style="margin:2px 0 12px"><input type="checkbox" data-set="cpAuto" data-ty="chk" ${on?'checked':''}>Ajouter automatiquement des jours chaque mois</label>`;
+  if(!on)return `<div class="card"><h3>Congés payés</h3>${head}${fld('Congés payés par an (jours ouvrés)',numIn('cp',st.cp,0,60),'Même total pour tout le monde. Activez l’ajout automatique pour un solde qui augmente chaque mois.')}</div>`;
+  const rows=S.staff.map(s=>{const c=scol(s),b=cpBase(s),k=cpCalc(s);
+    return `<div class="cprow"><span class="pav" style="background:${c};color:${inkOn(c)}">${esc(initials(s.name))}</span>
+      <span class="cpwho"><b>${esc(fname(s))}</b><small class="muted">Aujourd’hui : ${cpFmt(k.left)} j</small></span>
+      <div class="cpfs"><label class="cpf"><span>Solde au</span><input type="date" data-cpd="${s.id}" value="${b.d}" max="${today()}" aria-label="Date du solde de ${esc(fname(s))}"></label>
+      <label class="cpf"><span>Jours</span><input inputmode="decimal" data-cpn="${s.id}" value="${cpFmt(b.n)}" aria-label="Solde de ${esc(fname(s))} à cette date, en jours"></label></div></div>`}).join('');
+  return `<div class="card cpcard"><h3>Congés payés</h3>${head}
+    ${fld('Jours ajoutés chaque mois',numIn('cpRate',cpRate(),0,10,0.5),'2,5 jours par mois = 30 jours ouvrables par an.')}
+    ${fld('Jour du mois de l’ajout',numIn('cpDay',cpDay(),1,28),'Ajout automatique le '+cpDay()+' de chaque mois. Prochain ajout : '+dshort(cpNext(today())))}
+    <p class="muted" style="margin:6px 0 10px;font-size:13px">Pour chaque personne, indiquez son solde à une date donnée (par exemple aujourd’hui). Les jours ajoutés après cette date et les congés posés après cette date sont calculés tout seuls.</p>
+    <div class="cplist">${rows||'<p class="muted">Aucune personne dans l’équipe.</p>'}</div></div>`;
+}
+document.addEventListener('change',e=>{
+  const t=e.target,d=t.dataset||{};
+  const redraw=()=>{if(view==='params'&&SUBS[tab.params])SUBS[tab.params]($('#sub'))};
+  if(d.set==='cpAuto'&&isAdmin()){if(t.checked)cpInit();redraw();return}
+  if(!isAdmin())return;
+  if(d.cpd!==undefined||d.cpn!==undefined){
+    const s=S.staff.find(x=>x.id===(d.cpd!==undefined?d.cpd:d.cpn));if(!s)return;
+    const b=cpBase(s);
+    if(d.cpd!==undefined){if(/^\d{4}-\d{2}-\d{2}$/.test(t.value))s.cp0={d:t.value>today()?today():t.value,n:b.n}}
+    else{const n=parseFloat(String(t.value).replace(',','.').replace(/\s/g,''));s.cp0={d:b.d,n:isFinite(n)?Math.max(-60,Math.min(365,Math.round(n*100)/100)):b.n}}
+    save();toast('Solde enregistré');redraw();
+  }
+});
 
 METHODS.pass='Carnet de séances';
 function openPay(){
