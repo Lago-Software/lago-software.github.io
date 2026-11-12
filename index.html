@@ -1709,6 +1709,33 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--brand);outline-offs
 .cpf{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted);font-weight:600}
 .cpf input{min-height:40px;width:9.5em;font-size:15px}
 .cpf input[data-cpn]{width:5.5em;text-align:right}
+
+/* ---- accueil : tuiles compactes sur écran tactile (v54) ---- */
+@media (hover:none){
+  .mtiles{grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:10px;margin-bottom:14px}
+  .mt-sub,.mt.has::after{display:none!important}
+  .mt-main,.mt:hover>.mt-main,.mt:focus-within>.mt-main{
+    flex-direction:row;justify-content:flex-start;align-items:center;gap:11px;text-align:left;
+    min-height:66px;padding:10px 12px;border-radius:18px;border:1px solid var(--hair);
+    box-shadow:0 1px 2px rgba(10,31,77,.05),0 6px 14px rgba(10,31,77,.05);transform:none;
+    font-size:14.5px;line-height:1.15;letter-spacing:-.01em}
+  .mt-main>span:last-child{min-width:0;overflow-wrap:anywhere}
+  .mt-ic{width:42px;height:42px;flex:none;border-radius:13px}
+  .mt-ic svg{width:23px;height:23px}
+  .mt-main:active{transform:scale(.97);background:color-mix(in srgb,var(--brand) 5%,var(--surface))}
+}
+@media (hover:none) and (max-width:600px){
+  .mtiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (hover:none) and (max-width:380px){
+  .mt-main,.mt:hover>.mt-main,.mt:focus-within>.mt-main{gap:8px;padding:9px 10px;font-size:13.5px}
+  .mt-ic{width:34px;height:34px;border-radius:11px}
+  .mt-ic svg{width:20px;height:20px}
+}
+@media (hover:none) and (max-width:340px){
+  .mt-main,.mt:hover>.mt-main,.mt:focus-within>.mt-main{flex-direction:column;justify-content:center;text-align:center;gap:6px;min-height:84px;font-size:13px}
+  .mt-main>span:last-child{overflow-wrap:normal}
+}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -6018,7 +6045,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v53';
+const LAGO_V='v54';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
