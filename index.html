@@ -4569,11 +4569,11 @@ const gate=()=>$('#gate')||document.body.appendChild(Object.assign(document.crea
 function gateShellBase(inner){const st=S.settings;gate().innerHTML=`<div class="gcard"><div class="glogo">${st.logo?`<img src="${st.logo}" alt="">`:`<span class="lmark">${ic('wave')}</span><span class="lt">lago</span>`}</div><p class="gname">${esc(st.name)}</p>${inner}</div>`;gate().hidden=false}
 function gateStart(){
   const act=accs().filter(a=>a.status==='active');
-  if(!accs().length)return gateSetup();
+  if(!accs().length)return gateEmpty();
   const last=(()=>{try{return localStorage.getItem(LKEY)}catch(e){return null}})();
   act.sort((a,b)=>(b.id===last)-(a.id===last));
   gateShell(`<h2>Qui êtes-vous ?</h2><div class="gav">${act.map(a=>`<button class="gu${a.kind==='etab'?' etab':''}" data-act="g_pick" data-id="${a.id}">${avA(a,0)}<b>${esc(a.kind==='etab'?a.name:a.name.split(' ')[0])}</b></button>`).join('')}</div>
-   <div class="gfoot"><button class="btn" data-act="g_other">Autre compte</button><button class="btn" data-act="g_new">${ic('plus')}Créer mon compte</button></div>`);
+   <div class="gfoot"><button class="btn" data-act="g_other">Autre compte</button>${signupOk()?`<button class="btn" data-act="g_new">${ic('plus')}Créer mon compte</button>`:''}</div>`);
 }
 function gateSetup(){gateShell(`<h2>Bienvenue sur Lago</h2><p class="muted">Créez le compte administrateur. Il validera ensuite les comptes de l’équipe.</p>${gform('setup')}`)}
 function gform(kind){
@@ -4611,6 +4611,7 @@ document.addEventListener('submit',async e=>{
     if(k==='new'||k==='setup'){
       
       if(accs().some(a=>a.ident===ident)){err('Cet identifiant existe déjà.');return}
+      if(k==='setup'&&(cloudOn()||window.__joinBad)){err('Cet appareil est relié à l’équipe : aucun compte administrateur ne peut être créé ici. Réessayez la connexion ou collez à nouveau le lien d’équipe.');return}
       const id=uid(),first=k==='setup';
       const a={id,name:$('#gn').value.trim(),ident,pwd:pw?await hashPw(pw,id):'',status:first?'active':'pending',admin:first,profileId:'',staffId:k==='new'?$('#gstf').value:'',ts:Date.now()};
       accs().push(a);save();
@@ -4631,7 +4632,7 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act^="g_"]');if(!b)return;const a=b.dataset.act;
   if(a==='g_pick')gatePick(b.dataset.id);
   else if(a==='g_other')gateShell(`<h2>Connexion</h2>${gform('other')}`);
-  else if(a==='g_new')gateShell(`<h2>Créer mon compte</h2><p class="muted">L’administrateur devra valider votre demande.</p>${gform('new')}`);
+  else if(a==='g_new'&&signupOk())gateShell(`<h2>Créer mon compte</h2><p class="muted">L’administrateur devra valider votre demande.</p>${gform('new')}`);
   else if(a==='g_back')gateStart();
 });
 /* verrouillage automatique */
@@ -6136,7 +6137,7 @@ const POS_TABS=['clients:fidelite','clients:carnets','resa:entrees','params:ploy
 function vHome(m){
   vHomeV0(m);
   {const h=m.querySelector('.hero h2');if(h&&ME&&ME.kind!=='etab'&&ME.name&&!/,/.test(h.textContent))h.textContent+=', '+ME.name.split(' ')[0]}
-  if(!isAdmin())opHomeClean(m);
+  if(!isAdmin()){opHomeClean(m);m.querySelectorAll('.card').forEach(c=>{const h=c.querySelector('h3');if(h&&/^Congés à valider/.test(h.textContent))c.remove()})}
   swHome(m);
   if(!noPos())return;
   m.querySelectorAll('.kpi').forEach(k=>{if(/Ventes du jour/.test(k.textContent))k.remove()});
@@ -6428,7 +6429,7 @@ async function cloudBoot(){
 }
 /* démarrage : avant l’écran de connexion */
 function bootGate(){
-  if(location.hash.startsWith('#cloud=')){try{const x=JSON.parse(atob(location.hash.slice(7)));if(x.u&&x.r)cloudSet({u:x.u,r:x.r,fresh:true})}catch(e){}history.replaceState(null,'',location.pathname+location.search)}
+  if(/^#cloud=/i.test(location.hash)){const x=joinParse(location.hash);if(x)cloudSet({u:x.u,r:x.r,fresh:true});else window.__joinBad=true;history.replaceState(null,'',location.pathname+location.search)}
   if(!cloudOn()){bootGateBase();return}
   const sp=document.createElement('div');sp.id='zsplash';sp.style.cssText='position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:#1D4FD7;color:#fff;font:600 18px system-ui';sp.textContent='Connexion à l’équipe…';document.body.appendChild(sp);
   cloudBoot().catch(e=>{
@@ -6489,8 +6490,9 @@ function clearDemo(){
 }
 /* Studio : carte « Équipe connectée » */
 const rulesTxt=r=>`{\n  "rules": {\n    ".read": false,\n    ".write": false,\n    "${r}": { ".read": true, ".write": true }\n  }\n}`;
-const zInvite=link=>'Bonjour, voici Lago (caisse et planning). Ouvre ce lien une fois sur ton téléphone, puis choisis ton prénom ou clique sur « Créer mon compte ». Si tu as ajouté Lago sur ton écran d’accueil : ouvre l’appli, touche « Rejoindre l’équipe » et colle ce lien : '+link;
-const zLink=()=>{const c=cloudCfg();return c&&c.u&&!c.pending?location.origin+location.pathname+'#cloud='+btoa(JSON.stringify({u:c.u,r:c.r})):''};
+const zInvite=link=>'Bonjour, voici Lago (caisse et planning). Ouvre ce lien une fois sur ton téléphone, puis choisis ton prénom et entre ton mot de passe (ton responsable crée ton compte). Si tu as ajouté Lago sur ton écran d’accueil : ouvre l’appli, touche « Rejoindre l’équipe » et colle ce lien : '+link;
+const b64Link=o=>btoa(JSON.stringify(o)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const zLink=()=>{const c=cloudCfg();return c&&c.u&&!c.pending?location.origin+location.pathname+'#cloud='+b64Link({u:c.u,r:c.r}):''};
 async function zCopy(t,ok){
   try{await navigator.clipboard.writeText(t);toast(ok);return}catch(e){}
   try{const i=$('#z_link');if(i&&t===i.value){i.select();i.setSelectionRange(0,99999)}else{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
@@ -6500,14 +6502,14 @@ function vSetStudio(m){
   vSetStudioY(m);if(!isAdmin())return;
   const c=cloudCfg();let h;
   if(c&&c.u&&!c.pending){
-    const link=location.origin+location.pathname+'#cloud='+btoa(JSON.stringify({u:c.u,r:c.r}));
+    const link=location.origin+location.pathname+'#cloud='+b64Link({u:c.u,r:c.r});
     h=`<h3>Équipe connectée</h3><p class="muted" style="margin:0 0 8px">Tous les appareils qui utilisent ce lien partagent les mêmes données, en direct.</p>
      <div class="zst" data-s="${CL.state}" style="display:flex;margin-bottom:8px"><i></i><b>${CL.state==='ok'?'Synchronisé':CL.state==='sync'?'Synchronisation…':'Hors ligne'}</b></div>
      ${CL.state==='off'&&CL.err?`<p class="muted" style="margin:-4px 0 8px;font-size:12px">Dernière erreur : ${esc(CL.err)}</p>`:''}
      <div class="field"><label for="z_link">Lien à envoyer à vos employés (à ouvrir une fois sur leur téléphone)</label><input id="z_link" readonly onclick="this.select()" value="${esc(link)}"></div>
      <div class="acts" style="margin-bottom:10px"><button class="btn primary" data-act="z_copy">Copier le lien</button><button class="btn" data-act="z_share">Partager…</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(zInvite(link))}">WhatsApp</a></div>
      <details style="margin-bottom:8px"><summary><b>QR code à faire scanner</b></summary><div style="margin:10px 0;display:flex;justify-content:center"><div style="background:#fff;padding:6px;border-radius:10px;line-height:0">${qrSvg(link,190)}</div></div><p class="muted" style="margin:0;text-align:center">L’employé scanne avec l’appareil photo de son téléphone.</p></details>
-     <p class="muted" style="margin:0 0 8px">Chaque employé ouvre le lien une fois sur son téléphone (ou, si Lago est installé sur l’écran d’accueil, touche « Rejoindre l’équipe » dans l’appli et colle le lien), puis choisit son prénom ou clique sur « Créer mon compte » (vous validez ensuite dans Paramètres › Comptes › Demandes à valider). Gardez ce lien privé : il donne accès aux données de l’équipe.</p>
+     <p class="muted" style="margin:0 0 8px">Chaque employé ouvre le lien une fois sur son téléphone (ou, si Lago est installé sur l’écran d’accueil, touche « Rejoindre l’équipe » dans l’appli et colle le lien), puis choisit son prénom et entre son mot de passe. Ce lien sert à se connecter, pas à créer un compte : vous créez les comptes dans Paramètres › Comptes. Gardez ce lien privé : il donne accès aux données de l’équipe.</p>
      <div class="acts"><button class="btn" data-act="z_now">Synchroniser maintenant</button><button class="btn danger" data-act="z_off">Déconnecter cet appareil</button></div>`;
   }else if(c&&c.pending){
     h=`<h3>Équipe connectée : dernière étape</h3>
@@ -6579,6 +6581,7 @@ function vSetAcc(m){
   if(h&&!m.querySelector('[data-act="x4_acadd"]'))h.insertAdjacentHTML('afterend','<div class="acts" style="margin:6px 0 10px"><button class="btn primary" data-act="x4_acadd">'+ic('plus')+'Ajouter un compte</button><button class="btn" data-act="x4_acadd" data-k="etab">'+ic('shield')+'Compte établissement</button></div><p class="muted" style="font-size:13px;margin:0 0 8px">Le compte est utilisable tout de suite, sans validation. Donnez ensuite l’identifiant et le mot de passe à la personne.</p>');
   const p=[...m.querySelectorAll('p.muted')].find(x=>/restent sur cet appareil/.test(x.textContent));
   if(p)p.textContent='Les accès sont définis par les profils (Paramètres › Profils). Les comptes sont partagés avec l’équipe quand « Équipe connectée » est active ; les mots de passe sont chiffrés. Un compte demandé depuis l’écran de connexion doit d’abord être validé ci-dessus.';
+  if(p&&!m.querySelector('#x4_signup'))p.insertAdjacentHTML('afterend','<label class="check" style="margin:0 0 12px"><input type="checkbox" id="x4_signup" '+(S.settings.signup?'checked':'')+'><span>Afficher « Créer mon compte » sur l’écran de connexion des appareils d’équipe (sinon c’est vous qui créez les comptes)</span></label>');
   if(typeof mailCard==='function')mailCard(m);
   if(typeof etabRows==='function')etabRows(m);
   m.querySelectorAll('[data-acprof]').forEach(x=>{const r=x.closest('.row');if(r)r.classList.add('acrow')});
@@ -6618,8 +6621,9 @@ setInterval(()=>{
   if(g.dataset.ids===undefined){g.dataset.ids=ids;return}
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
+document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v62';
+const LAGO_V='v63';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -6629,7 +6633,7 @@ function gateStat(){
   if(cloudOn()){const ok=CL.state==='ok';h=`<span class="${ok?'g-ok':'g-off'}">●</span> Équipe ${ok?'connectée':'hors ligne'} · ${accs().length} compte(s)`}
   else h='○ Cet appareil n’est pas connecté à l’équipe. Employé ? Utilisez le lien d’équipe envoyé par votre responsable, sans créer de compte ici.';
   const jb=card.querySelector('.gjoinb');
-  if(!cloudOn()&&!card.querySelector('#gjoin')){if(!jb){const b=document.createElement('button');b.type='button';b.className='btn primary gjoinb';b.dataset.act='g_join';b.textContent='Rejoindre l’équipe avec un lien';card.insertBefore(b,el)}}
+  if(!cloudOn()&&!card.querySelector('#gjoin')&&!card.querySelector('.gempty')){if(!jb){const b=document.createElement('button');b.type='button';b.className='btn primary gjoinb';b.dataset.act='g_join';b.textContent='Rejoindre l’équipe avec un lien';card.insertBefore(b,el)}}
   else if(jb)jb.remove();
   el.innerHTML=h+` <span class="gv">${LAGO_V}</span>`;
 }
@@ -6669,6 +6673,19 @@ document.addEventListener('submit',e=>{
   const bt=e.target.querySelector('button[type=submit]');if(bt){bt.disabled=true;bt.textContent='Connexion à l’équipe…'}
   setTimeout(()=>location.reload(),150);
 });
+
+/* ---- appareil d'équipe sans compte : jamais de création d'administrateur, seulement réessayer / rejoindre ---- */
+const signupOk=()=>!cloudOn()||!!S.settings.signup;
+function gateEmpty(){
+  if(!cloudOn()&&!window.__joinBad)return gateSetup();
+  const bad=!cloudOn();
+  gateShell(`<div class="gempty"><h2>${bad?'Lien d’équipe non reconnu':'Équipe injoignable'}</h2>
+   <p class="muted" style="text-align:center">${bad?'Le lien est incomplet ou abîmé (certaines applis coupent la fin du lien). Demandez-le à nouveau à votre responsable, puis collez-le ici.':'Les comptes de l’équipe n’ont pas pu être chargés. Vérifiez la connexion internet puis réessayez : il n’y a rien à créer, vos identifiants sont ceux donnés par votre responsable.'}</p>
+   ${bad?'':'<button class="btn primary gbtn" data-act="g_retry">Réessayer</button>'}
+   <button class="btn ${bad?'primary ':''}gbtn" data-act="g_join" style="margin-top:8px">${bad?'Coller le lien d’équipe':'Utiliser un autre lien d’équipe'}</button></div>`);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="g_retry"]');if(!b)return;b.disabled=true;b.textContent='Connexion…';setTimeout(()=>location.reload(),200)});
+setInterval(()=>{const g=document.getElementById('gate');if(g&&!g.hidden&&g.querySelector('.gempty')&&accs().length)gateStart()},1500);
 
 /* ---------- T. barre de recherche IA tout en haut ; opérateurs sans clients ni planning clients ---------- */
 const GB_MIC='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
