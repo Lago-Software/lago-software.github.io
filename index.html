@@ -4031,7 +4031,15 @@ const SKEY='lago-sess',LKEY='lago-lastacc';
 let LOCKS={};
 async function hashPw(pw,salt){
   try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+'|'+pw));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')}
-  catch(e){let h=5381;const s=salt+'|'+pw;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return 'f'+(h>>>0).toString(16)}
+  catch(e){return cfSha(salt+'|'+pw)}
+}
+function hashPwOld(pw,salt){let h=5381;const s=salt+'|'+pw;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return 'f'+(h>>>0).toString(16)}
+async function pwOk(a,cands){
+  for(const p of cands){
+    if(await hashPw(p,a.id)===a.pwd)return true;
+    if(/^f[0-9a-f]{1,8}$/.test(String(a.pwd))&&hashPwOld(p,a.id)===a.pwd){a.pwd=await hashPw(p,a.id);try{save()}catch(e){}return true}
+  }
+  return false;
 }
 const accs=()=>S.accounts||(S.accounts=[]);
 const pendingCount=()=>accs().filter(a=>a.status==='pending').length;
@@ -4094,7 +4102,7 @@ document.addEventListener('submit',async e=>{
       const lk=LOCKS[a.id];if(lk&&lk.until>Date.now()){err('Trop d’essais. Réessayez dans '+Math.ceil((lk.until-Date.now())/1000)+' s.');return}
       if(a.status==='pending'){err('Compte en attente : l’administrateur doit le valider dans Paramètres › Comptes › Demandes à valider.');return}
       if(a.status!=='active'){err('Ce compte est désactivé. Contactez l’administrateur.');return}
-      if(!a.pwd){a.pwd=await hashPw(pw,a.id);save()}else if(await hashPw(pw,a.id)!==a.pwd&&await hashPw($('#gp').value,a.id)!==a.pwd){const l=LOCKS[a.id]=LOCKS[a.id]||{n:0,until:0};l.n++;if(l.n>=5){l.until=Date.now()+30000;l.n=0}err('Mot de passe incorrect. Un oubli ? Touchez « Mot de passe oublié ? » ci-dessous.');$('#gp').value='';$('#gp').focus();return}
+      if(!a.pwd){a.pwd=await hashPw(pw,a.id);save()}else if(!await pwOk(a,[pw,$('#gp').value])){const l=LOCKS[a.id]=LOCKS[a.id]||{n:0,until:0};l.n++;if(l.n>=5){l.until=Date.now()+30000;l.n=0}err('Mot de passe incorrect. Un oubli ? Touchez « Mot de passe oublié ? » ci-dessous.');$('#gp').value='';$('#gp').focus();return}
       delete LOCKS[a.id];login(a,$('#grem')?$('#grem').checked:true);
     }
   }finally{btn.disabled=false}
@@ -4131,7 +4139,7 @@ document.addEventListener('click',async e=>{
 });
 document.addEventListener('submit',async e=>{
   if(e.target.id!=='pwform')return;e.preventDefault();
-  if(ME.pwd&&await hashPw($('#pw0').value,ME.id)!==ME.pwd){$('#pwerr').textContent='Mot de passe actuel incorrect.';return}
+  if(ME.pwd&&!await pwOk(ME,[$('#pw0').value])){$('#pwerr').textContent='Mot de passe actuel incorrect.';return}
   {const v=$('#pw1').value;if(v.length<6){$('#pwerr').textContent='6 caractères minimum.';return}ME.pwd=await hashPw(v,ME.id)}save();closeModal();toast('Mot de passe enregistré');
 });
 document.addEventListener('change',e=>{const t=e.target;if(!isAdmin())return;
@@ -6089,7 +6097,7 @@ setInterval(()=>{
   if(g.dataset.ids!==ids){g.dataset.ids=ids;gateStart()}
 },1500);
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v55';
+const LAGO_V='v56';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -6395,7 +6403,7 @@ document.addEventListener('submit',async e=>{
     const err=t=>{$('#pwerr2').textContent=t},p1=$('#mp1').value.trim(),p2=$('#mp2').value.trim(),btn=e.target.querySelector('button[type=submit]');
     btn.disabled=true;
     try{
-      if(ME.pwd){const cur=$('#mp0').value;if(await hashPw(cur.trim(),ME.id)!==ME.pwd&&await hashPw(cur,ME.id)!==ME.pwd){err('Mot de passe actuel incorrect.');return}}
+      if(ME.pwd){const cur=$('#mp0').value;if(!await pwOk(ME,[cur.trim(),cur])){err('Mot de passe actuel incorrect.');return}}
       if(p1.length<6){err('6 caractères minimum pour le nouveau mot de passe.');return}
       if(p1!==p2){err('Les deux nouveaux mots de passe sont différents.');return}
       if(ME.pwd&&await hashPw(p1,ME.id)===ME.pwd){err('Choisissez un mot de passe différent de l’actuel.');return}
