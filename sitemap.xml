@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://lago-software.github.io/site/</loc><lastmod>2026-11-13</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://lago-software.github.io/site/metiers/trampoline-park.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lago-software.github.io/site/metiers/laser-game.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lago-software.github.io/site/metiers/bowling.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lago-software.github.io/site/metiers/coiffeur.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lago-software.github.io/site/metiers/restaurant.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lago-software.github.io/site/metiers/boutique.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lago-software.github.io/site/fonctionnalites/caisse.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lago-software.github.io/site/fonctionnalites/planning-reservation.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lago-software.github.io/site/fonctionnalites/equipe.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lago-software.github.io/site/fonctionnalites/controles-conformite.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lago-software.github.io/site/tarifs.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://lago-software.github.io/site/demo.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://lago-software.github.io/site/pourquoi-lago.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://lago-software.github.io/site/guides/logiciel-de-caisse-loi-2026.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://lago-software.github.io/site/guides/ticket-de-caisse-impression.html</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://lago-software.github.io/site/guides/</loc><lastmod>2026-11-13</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://lago-software.github.io/site/mentions-legales.html</loc><lastmod>2026-11-13</lastmod><changefreq>yearly</changefreq><priority>0.2</priority></url>
   <url><loc>https://lago-software.github.io/site/confidentialite.html</loc><lastmod>2026-11-13</lastmod><changefreq>yearly</changefreq><priority>0.2</priority></url>
 </urlset>
