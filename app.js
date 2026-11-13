@@ -594,7 +594,7 @@ function vHomeOld(m){
   const peakQ=QS.map(q=>[q,occ(td,q)]).sort((a,b)=>b[1]-a[1])[0],places=nowM>=QSTART&&nowM<=1140?occ(td,nowM):peakQ[1];
   const duty=onDuty(td),c=checkToday(),pend=S.leaves.filter(l=>l.status==='pending');
   const done=c?CHECK_IDS.filter(k=>c.items[k]).length:0;
-  m.innerHTML=head(new Date().getHours()<18?'Bonjour':'Bonsoir')+
+  m.innerHTML=head(greet())+
   `<div class="hero"><div><h2>${esc(S.settings.name)}</h2><p>${duty.length} personne${duty.length>1?'s':''} en poste aujourd’hui</p></div><a class="btn" href="#caisse">Ouvrir la caisse</a></div>${ctrlBanner()}
   <div class="home">
    <div class="card"><h3>Ventes du jour</h3><div class="big num">${eur(ca)}</div><p class="muted">${ds.length} ticket${ds.length>1?'s':''}</p>
@@ -844,7 +844,7 @@ function drawCartBase(){
   if(cart.rewardPal&&!rewardOf(cart))cart.rewardPal=null;
   const T=totals(cart),left=slotCheck(T),cl=cart.clientId?clientById(cart.clientId):null,lv=cl?level(cl.pts):null;
   const earn=cl?Math.floor(T.total/100*S.settings.ppe):0;
-  const clientHtml=`<button class="pick ${cl?'set':''}" data-act="pickclient">${ic('user')}<span class="grow">${cl?`<b>${esc(cl.name)}</b> <span class="muted">${cl.pts} pts${lv?' · '+lv.name:''}</span>`:'Ajouter un client (points fidélité)'}</span>${cl?`<span data-act="noclient" role="button" aria-label="Retirer le client" class="xx">${ic('x')}</span>`:''}</button>`;
+  const clientHtml=`<button class="pick ${cl?'set':''}" data-act="pickclient">${ic('user')}<span class="grow">${cl?`<b>${esc(cl.name)}</b> <span class="muted">${cl.pts} pts${lv?' · '+esc(lv.name):''}</span>`:'Ajouter un client (points fidélité)'}</span>${cl?`<span data-act="noclient" role="button" aria-label="Retirer le client" class="xx">${ic('x')}</span>`:''}</button>`;
   const rw=cl?(cl.rewards||[]).filter(r=>!r.used):[];
   const rwHtml=rw.length?`<div class="rwd">${rw.map(r=>`<button class="chip ${cart.rewardPal===r.pal?'on':''}" data-act="rwd" data-p="${r.pal}">${cart.rewardPal===r.pal?'Récompense appliquée':'Utiliser'} : ${eur(palOf(r.pal).amt)} offerts</button>`).join('')}</div>`:'';
   const brc=cart.slotM!=null?bracelet(cart.slotM,T.dur):null,slotBad=T.jumpers>0&&!slotOk(T),lapsed=cart.slotM!=null&&cart.slotDate===today()&&cart.slotM+15<=nowMin();
@@ -975,7 +975,7 @@ function drawClients(t){
   const l=S.clients.filter(c=>!n||norm(c.name+' '+c.phone+' '+c.email).includes(n)).sort((a,b)=>a.name.localeCompare(b.name,'fr'));
   $('#clist').innerHTML=l.length?l.map(c=>{const lv=level(c.pts),s=cstats(c.id);return `<button class="row rowbtn" data-act="client" data-id="${c.id}"><span class="avatar">${esc(initials(c.name))}</span>
     <span class="grow"><b>${esc(c.name)}</b><span class="muted">${esc(c.phone||c.email||'Pas de coordonnées')}${c.optin&&c.email?' · e-mails acceptés':''}</span></span>
-    <span style="text-align:right"><b class="num">${c.pts} pts</b><span class="pill ${lv?'ok':''}" style="margin-top:2px">${lv?lv.name:'Nouveau'}</span></span></button>`}).join(''):`<div class="empty">Aucun client trouvé.</div>`;
+    <span style="text-align:right"><b class="num">${c.pts} pts</b><span class="pill ${lv?'ok':''}" style="margin-top:2px">${lv?esc(lv.name):'Nouveau'}</span></span></button>`}).join(''):`<div class="empty">Aucun client trouvé.</div>`;
 }
 function clientForm(){
   showModal(`${mh('Nouveau client')}<form id="cform"><div class="field"><label for="cn">Nom</label><input id="cn" required autocomplete="off"></div>
@@ -991,9 +991,9 @@ function clientDetail(id){
   const rw=(c.rewards||[]).filter(r=>!r.used);
   const sales=S.sales.filter(x=>x.clientId===id).sort((a,b)=>b.ts-a.ts).slice(0,5);
   showModal(`${mh(esc(c.name))}
-    <div class="loy"><div><div class="lab">Points fidélité</div><div class="big num">${c.pts}</div></div><span class="pill ${lv?'ok':''}">${lv?'Palier '+lv.name:'Nouveau'}</span></div>
+    <div class="loy"><div><div class="lab">Points fidélité</div><div class="big num">${c.pts}</div></div><span class="pill ${lv?'ok':''}">${lv?'Palier '+esc(lv.name):'Nouveau'}</span></div>
     <div class="bar"><i style="width:${pct}%"></i></div>
-    <p class="muted">${nx?`Plus que ${nx.pts-c.pts} point${nx.pts-c.pts>1?'s':''} pour ${eur(nx.amt)} offerts (palier ${nx.name}).`:'Palier maximum atteint.'}</p>
+    <p class="muted">${nx?`Plus que ${nx.pts-c.pts} point${nx.pts-c.pts>1?'s':''} pour ${eur(nx.amt)} offerts (palier ${esc(nx.name)}).`:'Palier maximum atteint.'}</p>
     ${rw.length?`<div class="rwd">${rw.map(r=>`<span class="pill warn">${eur(palOf(r.pal).amt)} offerts disponibles</span>`).join('')}</div>`:''}
     <div class="two"><div class="kpi"><div class="l">Dépensé</div><div class="v num">${eur(s.t)}</div></div><div class="kpi"><div class="l">Achats</div><div class="v">${s.n}</div></div></div>
     <form id="cedit" data-id="${id}"><div class="field"><label for="en">Nom</label><input id="en" required value="${esc(c.name)}"></div>
@@ -1010,14 +1010,14 @@ function vLoyalty(m){
   const top=S.clients.slice().sort((a,b)=>b.pts-a.pts).slice(0,5),autos=S.mails.filter(x=>x.kind==='auto').slice(0,5);
   const sample=palierMail({name:'Camille Martin'},PAL[1]);
   m.innerHTML=`<div class="hero"><div><h2>${S.settings.ppe===1?'1 € dépensé = 1 point':'1 € dépensé = '+String(S.settings.ppe).replace('.',',')+' points'}</h2><p>Chaque palier offre une remise utilisable en caisse sur le ticket suivant.</p></div></div>
-  <div class="home" style="margin-bottom:14px">${PAL.map((p,i)=>`<div class="card"><span class="pill ${i?'ok':'warn'}">Palier ${p.name}</span><div class="big num" style="margin:8px 0 2px">${p.pts} points</div>
+  <div class="home" style="margin-bottom:14px">${PAL.map((p,i)=>`<div class="card"><span class="pill ${i?'ok':'warn'}">Palier ${esc(p.name)}</span><div class="big num" style="margin:8px 0 2px">${p.pts} points</div>
     <p><b>${eur(p.amt)} offerts</b> sur un ticket</p><p class="muted">${S.clients.filter(c=>c.pts>=p.pts).length} client${S.clients.filter(c=>c.pts>=p.pts).length>1?'s ont':' a'} atteint ce palier</p></div>`).join('')}</div>
   <div class="cols"><div class="card"><h3>E-mail automatique aux paliers</h3>
     <label class="check"><input type="checkbox" id="automail" ${S.settings.autoMail?'checked':''}>Envoyer un e-mail quand un client atteint un palier</label>
     <div class="lab" style="margin-bottom:6px">Exemple pour Camille Martin</div><div class="mailprev"><b>${esc(sample.subject)}</b>\n\n${esc(sample.body)}</div>
     <p class="muted" style="margin-top:10px;font-size:13px">Seuls les clients qui ont accepté les e-mails et dont l’adresse est connue le reçoivent. Dans ce prototype, l’envoi est simulé.</p></div>
    <div class="card"><h3>Meilleurs clients</h3>${top.map(c=>{const nx=nextPal(c.pts),lv=level(c.pts),base=lv?lv.pts:0,pc=nx?Math.round((c.pts-base)/(nx.pts-base)*100):100;
-     return `<button class="rowbtn" data-act="client" data-id="${c.id}" style="display:block;margin-bottom:12px"><div class="mrow" style="margin:0"><span><b>${esc(c.name)}</b> <span class="muted">${lv?lv.name:'Nouveau'}</span></span><b class="num">${c.pts} pts</b><div class="bar"><i style="width:${pc}%"></i></div></div></button>`}).join('')}</div></div>
+     return `<button class="rowbtn" data-act="client" data-id="${c.id}" style="display:block;margin-bottom:12px"><div class="mrow" style="margin:0"><span><b>${esc(c.name)}</b> <span class="muted">${lv?esc(lv.name):'Nouveau'}</span></span><b class="num">${c.pts} pts</b><div class="bar"><i style="width:${pc}%"></i></div></div></button>`}).join('')}</div></div>
   <div class="card"><h3>Derniers e-mails automatiques</h3>${autos.map(x=>`<button class="row rowbtn" data-act="mail" data-id="${x.id}"><span class="grow"><b>${esc(x.subject)}</b><span class="muted">${esc(x.to)} · ${new Date(x.ts).toLocaleDateString('fr-FR')} ${hm(x.ts)}</span></span><span class="pill ok">Envoyé</span></button>`).join('')||'<p class="muted">Aucun pour le moment. Ils apparaissent quand un client franchit un palier en caisse.</p>'}</div>`;
 }
 
@@ -1488,7 +1488,7 @@ function vHomeBase(m){
   const resaN=S.sales.filter(s=>s.slot&&s.slot.startsWith(td)).length+evOn(td).length;
   const duty=onDuty(td),c=checkToday(),pend=S.leaves.filter(l=>l.status==='pending'),done=c?CHECK_IDS.filter(k=>c.items[k]).length:0;
   const start=Math.max(QSTART,Math.min(QEND,Math.ceil(nm/15)*15)),deps=QS.filter(q=>q>=start).slice(0,4);
-  m.innerHTML=`<div class="top-actions" style="margin-bottom:10px;justify-content:flex-end">${rolePill()}</div><div class="hero"><div><p class="eyebrow">${dlong(td)}</p><h2>${new Date().getHours()<18?'Bonjour':'Bonsoir'}</h2>${S.settings.welcome?`<p class="wel">${esc(S.settings.welcome)}</p>`:''}<p>${esc(S.settings.name)} · ${openNow?here+' personnes présentes sur '+cap:'fermé pour le moment'} · ${duty.length} en poste</p></div>
+  m.innerHTML=`<div class="top-actions" style="margin-bottom:10px;justify-content:flex-end">${rolePill()}</div><div class="hero"><div><p class="eyebrow">${dlong(td)}</p><h2>${greet()}</h2>${welcomeOn()?`<p class="wel">${esc(S.settings.welcome)}</p>`:''}<p>${esc(S.settings.name)} · ${openNow?here+' personnes présentes sur '+cap:'fermé pour le moment'} · ${duty.length} en poste</p></div>
     <div class="hero-actions"><a class="btn ghost" href="#resa">Planning clients</a></div></div>${homeTiles()}${ctrlBanner()}
    <div class="kpis"><div class="kpi"><div class="l">Ventes du jour</div><div class="v num">${eur(ca)}</div></div><div class="kpi"><div class="l">Présents</div><div class="v num">${here}<small> / ${cap}</small></div></div>
      <div class="kpi"><div class="l">Réservations</div><div class="v num">${resaN}</div></div><div class="kpi"><div class="l">Équipe en poste</div><div class="v num">${duty.length}</div></div></div>
@@ -1554,8 +1554,8 @@ function vDayGrid(m){
 const DAYN=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const PSL=['10h-12h','12h-14h','14h-16h','16h-18h','18h-20h','20h-22h','22h-00h'];
 const PCOL=['#FF2D2D','#FFE600','#18E018','#FF9A00','#4A86E8','#FF00FF','#351C75','#46BDC6'];
-const scol=s=>s.color||PCOL[Math.max(0,S.staff.indexOf(s))%PCOL.length];
-const inkOn=c=>{const n=parseInt(c.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;return (r*299+g*587+b*114)/1000>150?'#0A1F4D':'#FFFFFF'};
+const scolBase=s=>s.color||PCOL[Math.max(0,S.staff.indexOf(s))%PCOL.length];
+const inkOn=c=>{const n=parseInt(String(c).slice(1),16);if(!isFinite(n))return '#FFFFFF';const f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)},l=.2126*f(n>>16)+.7152*f(n>>8&255)+.0722*f(n&255);return (l+.05)/(.0147+.05)>1.05/(l+.05)?'#0A1F4D':'#FFFFFF'};
 const fname=s=>s.name.split(' ')[0];
 function seedStaff(){
   const P=(id,n,r,c)=>({id,name:n,role:r,color:c});
@@ -2170,7 +2170,7 @@ function vSetApp(m){
     <div class="logoprev">${st.logo?`<img src="${st.logo}" alt="Logo">`:'<span class="muted">Aucun logo : le logo Lago est affiché.</span>'}</div>
     <p class="muted" style="font-size:13px;margin:8px 0">Affiché dans le menu, l’en-tête, les tickets et les PDF des contrôles. Idéalement une image carrée ou large, fond transparent ou blanc.</p>
     <div class="acts"><label class="btn primary" for="logof">${ic('plus')}Choisir un logo</label><input type="file" id="logof" accept="image/*" hidden>${st.logo?'<button class="btn" data-act="logorm">Retirer</button>':''}</div></div>
-   <div class="card"><h3>Textes</h3>${fld('Message d’accueil',`<input data-set="welcome" value="${esc(st.welcome||'')}" placeholder="ex : Bonne journée à toute l’équipe !">`,'Affiché sur l’écran d’accueil.')}
+   <div class="card"><h3>Textes</h3>${fld('Message d’accueil',`<input data-set="welcome" value="${esc(st.welcome||'')}" placeholder="ex : Bonne journée à toute l’équipe !">`,'Affiché sur l’écran d’accueil.')}${welFields(st)}
     ${fld('Pied de ticket',`<input data-set="ticketMsg" value="${esc(st.ticketMsg||'')}" placeholder="ex : Merci et à bientôt chez We Fly !">`,'Affiché en bas des tickets de caisse.')}</div></div>
    <div class="cols"><div class="card"><h3>Couleur principale</h3><div class="swgrid">${sw(BRANDS,'brand')}</div><div class="field" style="margin-top:12px"><label>Couleur personnalisée</label><input type="color" class="cpick wide" data-act-color="brand" value="${st.brand}"></div></div>
    <div class="card"><h3>Couleur d’action</h3><div class="swgrid">${sw(ACCENTS,'accent')}</div><div class="field" style="margin-top:12px"><label>Couleur personnalisée</label><input type="color" class="cpick wide" data-act-color="accent" value="${st.accent}"></div></div></div>
@@ -2361,11 +2361,11 @@ function gform(kind){
   const nw=kind==='new'||kind==='setup';
   return `<form id="gform" data-kind="${kind}">
    ${nw?`<div class="field"><label for="gn">Prénom et nom</label><input id="gn" required autocomplete="name"></div>`:''}
-   <div class="field"><label for="gi">Identifiant (e-mail ou pseudo)</label><input id="gi" required autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" ${kind==='pick'?'value="'+esc(gform.ident||'')+'" readonly':''}></div>
-   <div class="field"><label for="gp">Mot de passe</label><input id="gp" type="password" required minlength="6" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="${nw?'new-password':'current-password'}"></div><label class="check" style="margin:-4px 0 10px"><input type="checkbox" id="gshow">Afficher le mot de passe</label>
+   <div class="field"><label for="gi">Identifiant (e-mail ou pseudo)</label><input id="gi" name="username" required autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" ${kind==='pick'?'value="'+esc(gform.ident||'')+'" readonly':kind==='other'&&remIdent()?'value="'+esc(remIdent())+'"':''}></div>
+   <div class="field"><label for="gp">Mot de passe</label><input id="gp" name="password" type="password" required minlength="6" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="${nw?'new-password':'current-password'}"></div><label class="check" style="margin:-4px 0 10px"><input type="checkbox" id="gshow">Afficher le mot de passe</label>
    
    ${kind==='new'?`<div class="field"><label for="gstf">Je suis (facultatif)</label><select id="gstf"><option value="">—</option>${(S.staff||[]).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div>`:''}
-   ${kind!=='new'&&kind!=='setup'?`<label class="check"><input type="checkbox" id="grem" checked>Rester connecté</label>`:''}
+   ${kind!=='new'&&kind!=='setup'?`${remBox()}`:''}
    <p id="gerr" class="gerr"></p><button class="btn primary gbtn" type="submit">${kind==='new'?'Demander mon compte':kind==='setup'?'Créer et entrer':'Se connecter'}</button>
    ${kind==='pick'||kind==='other'?'<button type="button" class="glink" data-act="g_forgot">Mot de passe oublié ?</button>':''}<div class="gfoot">${kind==='new'||kind==='other'?'<button type="button" class="btn" data-act="g_back">Retour</button>':kind==='pick'?'<button type="button" class="btn" data-act="g_back">Changer de compte</button>':''}</div></form>`;
 }
@@ -2374,15 +2374,14 @@ function gatePick(id){const a=accs().find(x=>x.id===id);gform.ident=a.ident;
   const f=$('#gform');f.dataset.id=id;setTimeout(()=>{const p=$('#gp');if(p)p.focus()},50)}
 function login(a,remember){
   if(a.kind==='etab'){a.admin=false;a.staffId=''}ME=a;ROLEMODE=a.admin?'admin':'operator';PROF=a.admin?'-':(a.profileId||'-');
-  try{localStorage.setItem(LKEY,a.id);(remember===false?sessionStorage:localStorage).setItem(SKEY,a.id);if(remember===false)localStorage.removeItem(SKEY)}catch(e){}
+  remSave(a,remember);
   gate().hidden=true;tab.staff=(a.admin||perm('staff:all'))?tab.staff:'monplan';chrome();if(location.hash!=='#accueil'){location.hash='accueil'}else route();chrome();armLock();noteNew();
   if(a.admin&&pendingCount())toast(pendingCount()+' demande(s) de compte à valider');
 }
 function logout(){ME=null;ROLEMODE='operator';PROF='-';try{localStorage.removeItem(SKEY);sessionStorage.removeItem(SKEY)}catch(e){}closeModal();chrome();route();gateStart()}
 function bootGateBase(){
-  let id=null;try{id=localStorage.getItem(SKEY)||sessionStorage.getItem(SKEY)}catch(e){}
-  const a=accs().find(x=>x.id===id&&x.status==='active');
-  if(a)login(a);else gateStart();
+  const r=remRead(),a=r&&accs().find(x=>x.id===r.id&&x.status==='active'&&remValid(r,x));
+  if(a)login(a,r.keep);else{if(r&&accs().length)remClear();gateStart()}
 }
 document.addEventListener('submit',async e=>{
   if(e.target.id!=='gform')return;e.preventDefault();
@@ -2405,7 +2404,7 @@ document.addEventListener('submit',async e=>{
       if(a.status==='pending'){err('Compte en attente : l’administrateur doit le valider dans Paramètres › Comptes › Demandes à valider.');return}
       if(a.status!=='active'){err('Ce compte est désactivé. Contactez l’administrateur.');return}
       if(!a.pwd){a.pwd=await hashPw(pw,a.id);save()}else if(!await pwOk(a,[pw,$('#gp').value])){const l=LOCKS[a.id]=LOCKS[a.id]||{n:0,until:0};l.n++;if(l.n>=5){l.until=Date.now()+30000;l.n=0}err('Mot de passe incorrect. Un oubli ? Touchez « Mot de passe oublié ? » ci-dessous.');$('#gp').value='';$('#gp').focus();return}
-      delete LOCKS[a.id];login(a,$('#grem')?$('#grem').checked:true);
+      delete LOCKS[a.id];{const rm=$('#grem')?$('#grem').checked:true;remPrefSet(rm);remCred(a,ident,pw,rm);login(a,rm)}
     }
   }finally{btn.disabled=false}
 });
@@ -2572,9 +2571,9 @@ const canAll=()=>isAdmin()||perm('staff:all');
 
 /* ---- mur d'équipe ---- */
 const boardL=()=>S.board||(S.board=[]);
-function unreadN(){return ME?boardL().filter(x=>x.ts>(ME.seen||0)&&x.accId!==ME.id).length:0}
+function unreadN(){return ME?boardL().filter(x=>x.ts>(ME.seen||0)&&x.accId!==ME.id&&boardAlive(x)).length:0}
 function boardHtml(){
-  const L=[...boardL()].sort((a,b)=>(b.ts)-(a.ts)).slice(0,8),n=unreadN();
+  const L=(boardPurge(),boardL().filter(x=>boardAlive(x))).sort((a,b)=>(b.ts)-(a.ts)).slice(0,8),n=unreadN();
   return `<section class="board card"><div class="bh"><h3>${ic('users')}Messages de l’équipe ${n?`<span class="pill warn">${n} nouveau${n>1?'x':''}</span>`:''}</h3></div>
    <form id="bform" class="bcomp">${avA(ME)}<textarea id="btext" rows="1" placeholder="Laissez un message à l’équipe : ex. caisse faite, problème de lumière à régler…" maxlength="400"></textarea><div class="bc2"><span></span><button class="btn primary" type="submit">Publier</button></div></form>
    <div class="blist">${L.length?L.map(x=>{const a=accs().find(y=>y.id===x.accId);return `<div class="bmsg ${x.ts>(ME&&ME.seen||0)&&ME&&x.accId!==ME.id?'new':''}">${avA(a||{name:x.name})}<div class="bb"><div class="bm"><b>${esc(x.name)}</b><span class="muted">${new Date(x.ts).toLocaleString('fr-FR',{weekday:'short',hour:'2-digit',minute:'2-digit'})}</span></div><p>${esc(x.text)}</p></div><div class="ba">${ME&&(isAdmin()||x.accId===ME.id)?`<button class="btn" data-act="bdel" data-id="${x.id}" aria-label="Supprimer">${ic('trash')}</button>`:''}</div></div>`}).join(''):'<p class="muted">Aucun message pour le moment.</p>'}</div></section>`;
@@ -2650,7 +2649,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-act=
   if(!SAMPLE)return;const R=stRange(stP),c=stCalc(R.days),p=stCalc(R.pdays);ctl.stAi='Analyse en cours…';$('#stai').textContent=ctl.stAi;
   try{ctl.busy=true;const r=await SAMPLE(AIRULES+`\nPériode : ${R.n} jours. CA ${eurN(c.ca)} (avant : ${eurN(p.ca)}), ${c.n} tickets, ${c.jp} sauteurs, panier moyen ${eurN(c.avg)}.\n${aiCtx()}\nDonne 3 constats clés et 3 actions concrètes pour augmenter le chiffre d’affaires ou mieux remplir les créneaux creux. Maximum 140 mots.`,{modelTier:'default',onText:({text})=>{const el=$('#stai');if(el)el.textContent=text}});ctl.stAi=r.text}
   catch(x){ctl.stAi=AIERR[x.code]||'L’assistant est indisponible.';const el=$('#stai');if(el)el.textContent=ctl.stAi}ctl.busy=false});
-function countUp(el){
+function countUpBase(el){
   const txt=el.textContent,mt=txt.match(/[\d   ]+(?:,\d+)?/);if(!mt)return;
   const raw=mt[0],dec=(raw.split(',')[1]||'').length,val=parseFloat(raw.replace(/[\s  ]/g,'').replace(',','.'));if(!isFinite(val)||val===0)return;
   const pre=txt.slice(0,mt.index),post=txt.slice(mt.index+raw.length),t0=performance.now(),D=700;
@@ -4449,7 +4448,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v68';
+const LAGO_V='v69';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5777,6 +5776,7 @@ function accountMenu(){
   accountMenuV0();
   const m=document.querySelector('#modal .modal');if(!m||m.querySelector('.auv'))return;
   m.insertAdjacentHTML('beforeend',`<div class="auv"><div><b>Lago ${esc(LAGO_V)}</b><span class="muted" id="auvs">${AU.ver?'Nouvelle version '+esc(AU.ver)+' disponible':'Les mises à jour s’installent toutes seules.'}</span></div><button type="button" class="btn" data-act="${AU.ver?'au_go':'au_check'}" id="auvb">${AU.ver?'Mettre à jour':'Rechercher une mise à jour'}</button></div><button type="button" class="glink cflegb" data-act="cf_legal">Mentions légales et propriété du logiciel</button>`);
+  m.insertAdjacentHTML('beforeend',accAnimHtml());
 }
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act^="au_"]');if(!b)return;const a=b.dataset.act;
@@ -5911,15 +5911,16 @@ function plLowSlots(p,d,ds,dc){
   return low;
 }
 function dayCard(p,d,ds){
+  const tdy=ds?ds===today():(planFor(today())===p&&d===((new Date().getDay()+6)%7));
   const n=nrows(p,d),dc=ds?swDayCells(p,d,ds):(p.cells[d]||{}),ro=!isAdmin();
   const head=visStaff().map(s=>{const c=scol(s);return `<th class="${ds&&onLeave(s.id,ds)?'lv':''}"><span class="pav" style="background:${c};color:${inkOn(c)}">${esc(initials(s.name))}</span><span class="pnm">${esc(fname(s))}</span></th>`}).join('');
   const body=Array.from({length:n},(_,i)=>{const c=dc[i]||{},prev=i?dc[i-1]||{}:{},next=dc[i+1]||{},cnt=S.staff.filter(s=>c[s.id]==='w'&&!(ds&&onLeave(s.id,ds))).length;
-    return `<tr><th class="slc">${PSL[i]}</th>${visStaff().map(s=>{const v=c[s.id]||'',lv=ds&&onLeave(s.id,ds),bs=!!v&&prev[s.id]!==v,be=!!v&&(i+1>=n||next[s.id]!==v),col=scol(s);
+    return `<tr><th class="slc">${PSL[i]}<em class="cvm ${cnt<MIN_STAFF?'bad':cnt===MIN_STAFF?'warn':'ok'}" aria-hidden="true">${cnt}</em></th>${visStaff().map((s,si)=>{const v=c[s.id]||'',lv=ds&&onLeave(s.id,ds),bs=!!v&&prev[s.id]!==v,be=!!v&&(i+1>=n||next[s.id]!==v),col=scol(s);
       const lab=bs?(v==='g'?'Gestion':plBlock(p,d,ds,dc,i,s.id,v)):'';
-      return `<td class="${bs?'bs':''} ${be?'be':''} ${v&&!bs?'jn':''}"><button class="pc ${v} ${lv?'off':''} ${ro?'ro':''}" style="--c:${col}${plFill(p,d,ds,i,s.id,v)}" data-act="pcell" data-d="${d}" data-i="${i}" data-s="${s.id}" ${lv?'disabled':''} ${ro?'tabindex="-1"':''} aria-label="${esc(fname(s))}, ${DAYN[d]} ${PSL[i]} : ${v==='w'?'présent':v==='g'?'gestion':'libre'}">${lab?`<span class="bl" style="color:${v==='g'?'var(--ink-2)':inkOn(col)}">${esc(lab)}</span>`:''}</button></td>`}).join('')}<td class="cv"><span class="pill ${cnt<MIN_STAFF?'bad':cnt===MIN_STAFF?'warn':'ok'}">${cnt}</span></td></tr>`}).join('');
+      return `<td class="${bs?'bs':''} ${be?'be':''} ${v&&!bs?'jn':''}"><button class="pc ${v} ${lv?'off':''} ${ro?'ro':''}" style="--c:${col};--k:${si}${plFill(p,d,ds,i,s.id,v)}" data-act="pcell" data-d="${d}" data-i="${i}" data-s="${s.id}" ${lv?'disabled':''} ${ro?'tabindex="-1"':''} aria-label="${esc(fname(s))}, ${DAYN[d]} ${PSL[i]} : ${v==='w'?'présent':v==='g'?'gestion':'libre'}">${lab?`<span class="bl" style="color:${v==='g'?'var(--ink-2)':inkOn(col)}"><span class="lg">${esc(lab)}</span><span class="sm">${esc(v==='g'?'Gest.':lab.replace(/h(?!\d)/g,''))}</span></span>`:''}</button></td>`}).join('')}<td class="cv"><span class="pill ${cnt<MIN_STAFF?'bad':cnt===MIN_STAFF?'warn':'ok'}">${cnt}</span></td></tr>`}).join('');
   const low=plLowSlots(p,d,ds,dc);
   const cov=n?`<span class="pill ${low?'bad':'ok'} plcov">${low?low+' créneau'+(low>1?'x':'')+' à renforcer':'Équipe complète'}</span>`:'';
-  return `<div class="card dcard" ${ds?'':`id="pld${d}"`}><div class="dch"><div class="dtl"><h3>${DAYN[d]}</h3>${cov}</div><span class="plbar">${plBtn(p,d,ro)}${ro?(n>5?'<span class="late">Nocturne jusqu’à minuit</span>':''):`<label class="late"><input type="checkbox" data-plate="${d}" ${n>5?'checked':''}> Nocturne jusqu’à minuit</label>`}</span></div>
+  return `<div class="card dcard${tdy?' today':''}" ${ds?'':`id="pld${d}"`}><div class="dch"><div class="dtl"><h3>${DAYN[d]}</h3>${tdy?'<span class="pill tdy">Aujourd’hui</span>':''}${cov}</div><span class="plbar">${plBtn(p,d,ro)}${ro?(n>5?'<span class="late">Nocturne jusqu’à minuit</span>':''):`<label class="late"><input type="checkbox" data-plate="${d}" ${n>5?'checked':''}> Nocturne jusqu’à minuit</label>`}</span></div>
     <div class="dtw"><table class="dt"><thead><tr><th class="slc"></th>${head}<th class="cv">Équipe</th></tr></thead><tbody>${body}</tbody></table></div>${plNotes(p,d,ds,dc)}</div>`;
 }
 /* vue d'ensemble : combien de personnes par créneau, sur toute la semaine */
@@ -5934,6 +5935,11 @@ function plOverview(p){
     <div class="wkw"><table class="wk"><thead><tr><th></th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
     <p class="muted wkn">Nombre de personnes présentes par tranche de 2 heures. Touchez un jour pour l’ouvrir.</p></details>`;
 }
+/* sélecteur de jour collant : un toucher et on arrive au bon jour (le jour affiché pendant le défilement est mis en avant) */
+function plDayNav(p){
+  const td=planFor(today())===p?((new Date().getDay()+6)%7):-1;
+  return `<nav class="pldays" id="pldays" aria-label="Aller à un jour">${DAYN.map((n,d)=>`<button type="button" class="pld${d===td?' today':''}" data-act="plgo" data-d="${d}" data-pd="${d}">${n.slice(0,3)}${d===td?'<i aria-hidden="true"></i>':''}</button>`).join('')}</nav>`;
+}
 function vTeam(m){
   const p=curPlan();
   const chips=plOrder().map(x=>`<button class="chip ${x.id===p.id?'on':''}" data-act="planset" data-id="${x.id}">${esc(x.name)}</button>`).join('');
@@ -5941,10 +5947,11 @@ function vTeam(m){
   const tot=hs.map(({s,h})=>{const c=scol(s);return `<div class="tt"><span class="pav" style="background:${c};color:${inkOn(c)}">${esc(initials(s.name))}</span><div class="ttx"><small>${esc(fname(s))}</small><b class="num">${plHF(h.w)}</b>${h.g?`<em>+ ${plHF(h.g)} gestion</em>`:''}</div><i class="tbar" style="--w:${Math.round(h.w/mx*100)}%;--c:${c}"></i></div>`}).join('');
   const low=[];for(let d=0;d<7;d++)for(let i=0;i<nrows(p,d);i++){const c=(p.cells[d]||{})[i]||{};if(S.staff.filter(s=>c[s.id]==='w').length<MIN_STAFF)low.push(DAYN[d].slice(0,3)+' '+PSL[i])}
   m.innerHTML=`<div class="plan-h"><div><h2 class="plan-t">${esc(p.name)}</h2><p class="muted">${prange(p)}</p></div>
-     <div class="plact"><button class="btn" data-act="planpdf">PDF</button>${isAdmin()?`<button class="btn" data-act="planarch">Sauvegardes</button><button class="btn" data-act="planedit" data-id="${p.id}">Modifier</button><button class="btn primary" data-act="plannew">${ic('plus')}Nouveau planning</button>`:`<span class="pill">Consultation seule</span>`}</div></div>
-    <div class="chips" style="margin-bottom:12px">${chips}</div>
+     <div class="plact sc"><button class="btn" data-act="planpdf">PDF</button>${isAdmin()?`<button class="btn" data-act="planarch">Sauvegardes</button><button class="btn" data-act="planedit" data-id="${p.id}">Modifier</button><button class="btn primary" data-act="plannew">${ic('plus')}Nouveau planning</button>`:`<span class="pill">Consultation seule</span>`}</div></div>
+    <div class="chips pch">${chips}</div>
     ${low.length?`<div class="banner"><span>${low.length} créneau${low.length>1?'x':''} sous le minimum de ${MIN_STAFF} personnes (${low.slice(0,4).join(', ')}${low.length>4?'…':''}).</span></div>`:`<div class="banner ok"><span>Tous les créneaux respectent le minimum de ${MIN_STAFF} personnes.</span></div>`}
     ${plOverview(p)}
+    ${plDayNav(p)}
     <div class="dgrid">${[0,1,2,3,4,5,6].map(d=>dayCard(p,d,null)).join('')}</div>
     <div class="card" style="margin-top:14px"><h3>Total des heures par semaine</h3><div class="tts">${tot}</div><p class="muted" style="margin-top:12px">CP : ${cpLabel()}${isAdmin()?' · Touchez une case pour la remplir : <b>présent</b>, puis <b>gestion</b>, puis vide.':' · Seul l’administrateur peut modifier le planning.'}</p></div>`;
 }
@@ -8134,6 +8141,237 @@ document.addEventListener('click',e=>{
     }catch(_){}
   });
 },true);
+
+/* ---------- v69 : se souvenir de moi, messages d'accueil, couleurs du planning, animations modernes ---------- */
+
+/* ===== A. se souvenir de moi =====
+   L'appareil garde un jeton de session (jamais le mot de passe) : identifiant du compte, date limite (30 jours, renouvelée à chaque ouverture)
+   et une empreinte courte du mot de passe : si le mot de passe change ou si le compte est désactivé, la session mémorisée s'arrête. */
+const REM_DAYS=30,REM_PREF='lago-rem',REM_ID='lago-lastident',REM={ok:true};
+const remPv=a=>String((a&&a.pwd)||'').slice(0,16);
+function remRead(){
+  let raw=null,where='';
+  try{raw=localStorage.getItem(SKEY);if(raw)where='l'}catch(e){}
+  if(!raw){try{raw=sessionStorage.getItem(SKEY);if(raw)where='s'}catch(e){}}
+  if(!raw)return null;
+  if(raw[0]!=='{')return{id:raw,exp:0,pv:null,keep:where==='l'};                 // ancien format : identifiant seul
+  try{const o=JSON.parse(raw);return o&&o.id?{id:String(o.id),exp:+o.exp||0,pv:o.pv==null?null:String(o.pv),keep:where==='l'}:null}catch(e){return null}
+}
+const remValid=(r,a)=>(!r.exp||r.exp>Date.now())&&(r.pv===null||r.pv===remPv(a));
+function remClear(){try{localStorage.removeItem(SKEY)}catch(e){}try{sessionStorage.removeItem(SKEY)}catch(e){}}
+function remSave(a,remember){
+  const keep=remember!==false,rec=JSON.stringify({id:a.id,exp:Date.now()+REM_DAYS*864e5,pv:remPv(a)});
+  let ok=false;
+  try{localStorage.setItem(LKEY,a.id)}catch(e){}
+  try{
+    if(keep){
+      localStorage.setItem(SKEY,rec);try{sessionStorage.removeItem(SKEY)}catch(e){}
+      ok=localStorage.getItem(SKEY)===rec;try{localStorage.setItem(REM_ID,a.ident||'')}catch(e){}
+    }else{
+      sessionStorage.setItem(SKEY,rec);try{localStorage.removeItem(SKEY);localStorage.removeItem(REM_ID)}catch(e){}
+      ok=sessionStorage.getItem(SKEY)===rec;
+    }
+  }catch(e){ok=false}
+  REM.ok=ok;
+  if(!ok&&keep)setTimeout(()=>{try{toast('La connexion ne peut pas être mémorisée sur cet appareil (navigation privée ?). Vous devrez vous reconnecter.')}catch(e){}},700);
+}
+const remPref=()=>{try{return localStorage.getItem(REM_PREF)!=='0'}catch(e){return true}};
+const remPrefSet=v=>{try{localStorage.setItem(REM_PREF,v?'1':'0')}catch(e){}};
+const remIdent=()=>{try{return localStorage.getItem(REM_ID)||''}catch(e){return ''}};
+/* le gestionnaire de mots de passe du navigateur (s'il existe) propose de retenir l'identifiant et le mot de passe : lui seul les garde */
+function remCred(a,ident,pw,keep){
+  try{if(keep&&pw&&window.PasswordCredential&&navigator.credentials&&navigator.credentials.store)navigator.credentials.store(new PasswordCredential({id:ident,password:pw,name:a.name||ident})).catch(()=>{})}catch(e){}
+}
+const remBox=()=>`<label class="check grem"><input type="checkbox" id="grem" ${remPref()?'checked':''}><span><b>Se souvenir de moi</b><small>Reste connecté pendant ${REM_DAYS} jours sur cet appareil. À éviter sur un appareil partagé.</small></span></label>`;
+document.addEventListener('click',e=>{
+  if(e.target.closest('[data-act="g_other"]'))setTimeout(()=>{const g=document.getElementById('gi'),p=document.getElementById('gp');const x=g&&g.value&&p?p:g;if(x&&matchMedia('(pointer:fine)').matches)x.focus()},60);
+});
+
+/* ===== B. messages de l'équipe éphémères, message d'accueil du matin ===== */
+const BOARD_TTL=()=>{const h=S.settings.boardTtl;return h===undefined||h===null||h===''||isNaN(+h)?12:+h};      // heures ; 0 = jamais
+const boardAlive=(x,now)=>{const h=BOARD_TTL();return !h||!x||!(+x.ts)||(now||Date.now())-x.ts<h*36e5};
+function boardPurge(){
+  const h=BOARD_TTL();if(!h||!Array.isArray(S.board)||!S.board.length)return false;
+  const now=Date.now();
+  if(S.board.some(x=>(+x.ts||0)>now+120000))return false;           // l'horloge de cet appareil est en retard : on ne supprime rien
+  const keep=S.board.filter(x=>boardAlive(x,now));
+  if(keep.length===S.board.length)return false;
+  S.board=keep;save();return true;
+}
+const welcomeOn=()=>!!S.settings.welcome&&(S.settings.welcomeNoon===false||new Date().getHours()<12);
+const greet=()=>{const h=new Date().getHours();return h<12?'Bonjour':h<18?'Bon après-midi':'Bonsoir'};
+const welFields=st=>`<div class="field"><label for="s_bttl">Messages de l’équipe : durée d’affichage</label><select id="s_bttl" data-set="boardTtl" data-ty="num" data-min="0" data-max="720">${[[12,'12 heures'],[24,'24 heures'],[48,'2 jours'],[168,'7 jours'],[0,'Sans limite']].map(([h,l])=>`<option value="${h}" ${BOARD_TTL()===h?'selected':''}>${l}</option>`).join('')}</select><small class="muted">Passé ce délai, les messages laissés sur l’accueil sont supprimés.</small></div>
+ <label class="check" style="margin-top:6px"><input type="checkbox" data-set="welcomeNoon" data-ty="chk" ${st.welcomeNoon===false?'':'checked'}><span>Afficher le message d’accueil seulement le matin (jusqu’à midi)</span></label>`;
+/* toutes les 30 s : suppression des messages périmés, bascule du message d'accueil à midi, salutation adaptée à l'heure */
+setInterval(()=>{
+  if(!ME)return;
+  let ch=false;try{ch=boardPurge()}catch(e){}
+  const hero=document.querySelector('#main .hero');
+  if(hero){
+    const w=hero.querySelector('.wel');if(w&&!welcomeOn())w.remove();
+    const h2=hero.querySelector('h2');
+    if(h2){const g=greet(),m=/^(Bonjour|Bon après-midi|Bonsoir)/.exec(h2.textContent);if(m&&m[1]!==g)h2.textContent=g+h2.textContent.slice(m[1].length)}
+  }
+  if(ch&&view==='accueil'){const ae=document.activeElement;if(!(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)))try{VIEWS[view]($('#main'))}catch(e){}}
+},30000);
+
+/* ===== C. couleurs du planning : la teinte de chaque personne est conservée, le ton est harmonisé avec la marque ===== */
+const _tonePl={};
+function tonePl(hex){
+  hex=String(hex||'').trim();
+  if(_tonePl[hex])return _tonePl[hex];
+  const m=/^#?([0-9a-f]{6})$/i.exec(hex);if(!m)return hex;
+  const n=parseInt(m[1],16),r=(n>>16)/255,g=(n>>8&255)/255,b=(n&255)/255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,l0=(mx+mn)/2,s0=d?d/(1-Math.abs(2*l0-1)):0;
+  let h=0;if(d){h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h=Math.round(h*60);if(h<0)h+=360}
+  let S=.72,L=.5;
+  if(s0<.14){S=.10;L=l0<.35?.30:.46}                                   // gris, noir, blanc : ardoise
+  else if(h>=15&&h<38){S=.95;L=.52}                                    // oranges : l'orange de la marque
+  else if(h>=38&&h<72){S=.88;L=.42}                                    // jaunes : plus foncés (un jaune vif est illisible)
+  else if(h>=72&&h<165){S=.58;L=.38}                                   // verts
+  else if(h>=165&&h<205){S=.82;L=.37}                                  // turquoises
+  else if(h>=205&&h<250){S=.74;L=.5}                                   // bleus
+  else if(h>=250&&h<335){S=.55;L=.52}                                  // violets, roses violacés
+  const f=k=>{const a=S*Math.min(L,1-L),t=(k+h/30)%12;return L-a*Math.max(-1,Math.min(t-3,9-t,1))};
+  const lum=()=>{const q=k=>{const c=f(k);return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*q(0)+.7152*q(8)+.0722*q(4)};
+  /* zone grise de la luminance (0,16 à 0,25) : ni le blanc ni le bleu nuit ne passent à 4,5 : on pousse la couleur d'un côté ou de l'autre, sans changer la teinte */
+  if(s0>=.14){const warm=h>=15&&h<72;for(let i=0;i<40&&lum()>.16&&lum()<.25;i++)L+=warm?.012:-.012}
+  const x=v=>Math.round(v*255).toString(16).padStart(2,'0'),out='#'+x(f(0))+x(f(8))+x(f(4));
+  return _tonePl[hex]=out.toUpperCase();
+}
+const scol=s=>tonePl(scolBase(s));
+
+/* ===== D. animations modernes (transform et opacité uniquement), mode allégé automatique ===== */
+const MO2={lite:false,kv:{},mode:'auto',sp:null,seen:new WeakSet()};
+const moReduced=()=>{try{return matchMedia('(prefers-reduced-motion:reduce)').matches}catch(e){return false}};
+function moSetLite(on,why){
+  MO2.lite=!!on;document.documentElement.classList.toggle('lite',!!on);
+  document.documentElement.classList.toggle('noanim',MO2.mode==='off');
+}
+function moMode(){let m='auto';try{m=localStorage.getItem('lago-anim')||'auto'}catch(e){}if(!/^(auto|full|lite|off)$/.test(m))m='auto';return m}
+function moApplyMode(){
+  MO2.mode=moMode();
+  const on=MO2.mode==='lite'||MO2.mode==='off'||(MO2.mode==='auto'&&MO2.auto===true);
+  moSetLite(on);
+}
+/* auto : appareil modeste (peu de mémoire, économie de données) ou images saccadées pendant les premiers changements d'écran */
+function moGovern(){
+  try{
+    const dm=navigator.deviceMemory,hc=navigator.hardwareConcurrency,sd=navigator.connection&&navigator.connection.saveData;
+    if(sd||(dm&&dm<=2)||(hc&&hc<=2))MO2.auto=true;
+    else if(localStorage.getItem('lago-lite-auto')==='1')MO2.auto=true;
+  }catch(e){}
+  moApplyMode();
+  let runs=0,bad=0;
+  const sample=()=>{
+    if(MO2.mode!=='auto'||MO2.auto)return;
+    let n=0,last=0,slow=0;
+    const step=ts=>{
+      if(document.hidden){return}
+      if(last){n++;if(ts-last>38)slow++}last=ts;
+      if(n<40)requestAnimationFrame(step);
+      else{runs++;if(slow>n*.35)bad++;if(runs>=3&&bad>=2){MO2.auto=true;try{localStorage.setItem('lago-lite-auto','1')}catch(e){}moApplyMode()}}
+    };
+    requestAnimationFrame(step);
+  };
+  addEventListener('hashchange',()=>{if(runs<3)setTimeout(sample,30)});
+}
+document.addEventListener('change',e=>{
+  if(e.target.id==='acc_anim'){try{localStorage.setItem('lago-anim',e.target.value);localStorage.removeItem('lago-lite-auto')}catch(x){}MO2.auto=false;moApplyMode();toast('Animations : '+({auto:'automatique',full:'complètes',lite:'réduites',off:'désactivées'})[e.target.value])}
+});
+const accAnimHtml=()=>`<div class="field" style="margin:0 0 12px"><label for="acc_anim">Animations (cet appareil)</label><select id="acc_anim">${[['auto','Automatique (recommandé)'],['full','Complètes'],['lite','Réduites : plus économe'],['off','Aucune']].map(([v,l])=>`<option value="${v}" ${MO2.mode===v?'selected':''}>${l}</option>`).join('')}</select></div>`;
+
+/* un seul compteur par chiffre : ceux des rangées de KPI sont gérés par moKpi (qui part de l'ancienne valeur), les autres par l'ancien compteur ; rien du tout en mode allégé ou mouvement réduit */
+function countUp(el){
+  if(MO2.lite||moReduced())return;
+  if(el&&el.closest&&el.closest('.kpis'))return;
+  countUpBase(el);
+}
+/* compteurs : les chiffres de l'accueil roulent de l'ancienne à la nouvelle valeur (une première visite part de zéro) */
+function moKpi(root){
+  if(moReduced()||MO2.lite)return;
+  root.querySelectorAll('.kpis .kpi .v').forEach(el=>{
+    const t=el.firstChild;if(!t||t.nodeType!==3||MO2.seen.has(t))return;MO2.seen.add(t);
+    const lab=el.parentNode&&el.parentNode.querySelector('.l'),k=view+'|'+(lab?lab.textContent:'');
+    const txt=t.nodeValue,m=/^(-?\d[\d\s  ]*(?:[.,]\d+)?)(.*)$/s.exec(txt);if(!m)return;
+    const to=parseFloat(m[1].replace(/[\s  ]/g,'').replace(',','.')),dec=(m[1].split(/[.,]/)[1]||'').length;
+    if(!isFinite(to))return;
+    const prev=MO2.kv[k];MO2.kv[k]=to;
+    const from=prev===undefined?0:prev;
+    if(from===to||(prev===undefined&&Math.abs(to)<2))return;
+    const nf=new Intl.NumberFormat('fr-FR',{minimumFractionDigits:dec,maximumFractionDigits:dec}),t0=performance.now(),dur=Math.min(900,420+Math.abs(to-from)*2);
+    t.nodeValue=nf.format(from)+m[2];
+    const step=now=>{
+      const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,3);
+      t.nodeValue=p>=1?txt:nf.format(from+(to-from)*e)+m[2];
+      if(p<1)requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+}
+/* confirmation d'encaissement : une gerbe de confettis part de la coche (compositeur uniquement, retirée après 1 s) */
+function moBurst(host){
+  if(moReduced()||MO2.lite||!host)return;
+  const r=host.getBoundingClientRect();if(!r.width)return;
+  const b=document.createElement('div');b.className='mo-burst';b.style.cssText='left:'+Math.round(r.left+r.width/2)+'px;top:'+Math.round(r.top+r.height/2)+'px';
+  const cols=['#1D4FD7','#FF7A1A','#1F9D55','#FFB23F','#6A4DF0'];let h='';
+  for(let i=0;i<16;i++){const a=i/16*Math.PI*2+Math.random()*.35,d=60+Math.random()*70;h+=`<i style="--dx:${Math.round(Math.cos(a)*d)}px;--dy:${Math.round(Math.sin(a)*d)}px;--r:${Math.round(Math.random()*540-270)}deg;background:${cols[i%5]};animation-delay:${Math.round(Math.random()*70)}ms"></i>`}
+  b.innerHTML=h;document.body.appendChild(b);setTimeout(()=>b.remove(),1200);
+  try{if(navigator.vibrate)navigator.vibrate([12,40,12])}catch(e){}
+}
+/* sélecteur de jour du planning : le jour visible pendant le défilement est mis en avant */
+function moSpy(){
+  const nav=document.getElementById('pldays');
+  if(MO2.sp){MO2.sp.disconnect();MO2.sp=null}
+  if(!nav||!('IntersectionObserver' in window))return;
+  const gb=document.getElementById('gbar')||document.querySelector('.gbar');
+  document.documentElement.style.setProperty('--stk',((gb&&gb.offsetHeight)||60)+'px');
+  const cards=[...document.querySelectorAll('.dcard[id^="pld"]')];if(!cards.length)return;
+  const vis=new Map();
+  MO2.sp=new IntersectionObserver(es=>{
+    es.forEach(x=>vis.set(x.target.id,x.isIntersecting?x.intersectionRect.height:0));
+    let best='',bh=0;vis.forEach((h,id)=>{if(h>bh){bh=h;best=id}});
+    nav.querySelectorAll('.pld').forEach(b=>b.classList.toggle('on','pld'+b.dataset.pd===best));
+  },{rootMargin:'-120px 0px -30% 0px',threshold:[0,.1,.3,.6,1]});
+  cards.forEach(c=>MO2.sp.observe(c));
+}
+{
+  let sched=0,spyNav=null;
+  const check=()=>{
+    sched=0;
+    const md=document.getElementById('modal');
+    if(md){const s=md.querySelector('.success');if(s&&!MO2.seen.has(s)){MO2.seen.add(s);moBurst(s.querySelector('svg')||s)}}
+    const main=document.getElementById('main');if(!main)return;
+    if(main.querySelector('.kpis'))moKpi(main);
+    const nav=main.querySelector('#pldays');
+    if(nav!==spyNav){spyNav=nav;moSpy()}
+  };
+  const mo=new MutationObserver(()=>{if(!sched)sched=requestAnimationFrame(check)});
+  const arm=()=>{const a=document.getElementById('modal'),b=document.getElementById('main');if(a&&b){mo.observe(a,{childList:true,subtree:true});mo.observe(b,{childList:true,subtree:true});return true}return false};
+  if(!arm())addEventListener('DOMContentLoaded',arm);
+  addEventListener('resize',()=>{if(document.getElementById('pldays'))moSpy()});
+}
+moGovern();
+
+/* ===== E. performance : occupation des créneaux ===== */
+/* occ() parcourait toutes les ventes à chaque appel (le planning en fait des centaines par affichage : 850 ms avec 30 000 tickets sur un téléphone moyen).
+   L'index « date → créneaux » est construit une seule fois (les ventes scellées ne changent plus) et réutilisé tant que les ventes sont les mêmes. */
+let _slotIx=null;
+function slotIndex(){
+  const A=S.sales,L=A.length,last=L?A[L-1]:null;
+  if(_slotIx&&_slotIx.A===A&&_slotIx.L===L&&_slotIx.last===last&&_slotIx.sv===CL.sv)return _slotIx.m;
+  const m=new Map();
+  for(let i=0;i<L;i++){const s=A[i],k=s.slot;if(!k||typeof k!=='string')continue;
+    const p=k.indexOf('|');if(p<0)continue;const st=+k.slice(p+1);if(st!==st)continue;
+    const d=k.slice(0,p);let a=m.get(d);if(!a)m.set(d,a=[]);a.push(st,st+(s.dur||60),s.jumpers||0)}
+  _slotIx={A,L,last,sv:CL.sv,m};return m;
+}
+function occ(date,m){
+  const h=Math.floor(m/60),base=h>=S.settings.open&&h<S.settings.close?baseBooked(date,h):0;let ex=0;
+  const a=slotIndex().get(date);
+  if(a)for(let i=0;i<a.length;i+=3)if(a[i]<=m&&m<a[i+1])ex+=a[i+2];
+  return Math.min(S.settings.cap,base+ex);
+}
 
 METHODS.pass='Carnet de séances';
 function openPay(){
