@@ -2711,6 +2711,20 @@ body.navmini .side .logo .lgm{display:block}
 .cxamt{white-space:nowrap}
 .cxoff .cxamt{text-decoration:line-through;color:var(--muted)}
 .cxrf{min-height:38px;padding:6px 12px;font-size:13.5px;flex:none}
+.dv{display:block;font-size:12.5px;margin-top:2px}.dv.warn{color:#B45309}.dv.ok{color:#047857}
+.auv2{margin-top:10px}
+.gb-sy{flex:none;display:inline-grid;place-items:center;width:34px;height:34px;border-radius:11px;background:transparent;border:0;cursor:pointer;padding:0}
+.gb-sy i{width:11px;height:11px;border-radius:50%;background:#2ecc71;box-shadow:0 0 0 3px rgba(46,204,113,.2);display:block}
+.gb-sy[data-s="sync"] i{background:#5ab0ff;box-shadow:0 0 0 3px rgba(90,176,255,.25);animation:moPing 1.1s ease-out infinite}
+.gb-sy[data-s="off"] i{background:#f39c12;box-shadow:0 0 0 3px rgba(243,156,18,.25)}
+.gb-sy[data-s="local"] i{background:transparent;border:2px solid #8a94a6;box-shadow:none}
+.gb-sy[data-p="1"] i{box-shadow:0 0 0 3px rgba(243,156,18,.45)}
+.sybar{display:flex;align-items:center;gap:10px;max-width:1360px;margin:8px auto 0;padding:9px 12px;border-radius:12px;font-size:13.5px;line-height:1.35;background:#FFF4E5;color:#7A4A00;border:1px solid #F5D9A8}
+.sybar[hidden]{display:none}
+.sybar[data-k="local"]{background:#FDECEC;color:#8A1C1C;border-color:#F3C2C2}
+.sybar>span{flex:1;min-width:0}
+.sybar .btn{flex:none;min-height:34px;padding:4px 12px}
+@media (max-width:600px){.sybar{flex-wrap:wrap}.sybar>span{flex-basis:100%}}
 .cxfind{display:flex;gap:8px;flex-wrap:wrap}
 .cxfind input{flex:1 1 180px;width:auto}
 .cxul{margin:0;padding-left:18px;display:grid;gap:8px;font-size:14px;line-height:1.5}
@@ -2746,7 +2760,7 @@ body.navmini .side .logo .lgm{display:block}
 
 <div id="boot" style="position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(160deg,#1D4FD7,#0F2A7A);color:#fff;font:700 34px/1 system-ui,sans-serif">lago<small style="font:500 14px system-ui,sans-serif;opacity:.8">Chargement…</small></div>
 <script>setTimeout(function(){var b=document.getElementById("boot");if(b&&!window.__lagoUp)b.innerHTML="<small style=\"font:500 16px system-ui,sans-serif;text-align:center;padding:0 24px\">Lago ne démarre pas.<br>Vérifiez la connexion puis<br><button onclick=\"location.reload()\" style=\"margin-top:12px;padding:10px 18px;font:600 15px system-ui;border-radius:10px;border:0\">Réessayer</button></small>"},15000)</script>
-<script src="app.js?v=v73" defer></script>
+<script src="app.js?v=v74" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

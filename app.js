@@ -4087,7 +4087,7 @@ function diffT(r,m,path,out){
 }
 /* état de la synchronisation */
 const CL={R:undefined,B:undefined,fetched:false,ready:false,busy:false,again:false,es:null,state:'off',t:null,ui:false,err:'',last:0,ev:0,ka:75000,away:30000,hid:0,sv:0,okSv:-1,fail:0};
-function setCS(s){CL.state=s;if(s==='ok')CL.err='';document.querySelectorAll('.zst').forEach(e=>{e.dataset.s=s;e.title=s==='ok'?'':(CL.err||'');const t=e.querySelector('b');if(t)t.textContent=s==='ok'?'Synchronisé':s==='sync'?'Synchronisation…':'Hors ligne'})}
+function setCS(s){if(s==='off'&&!CL.offAt)CL.offAt=Date.now();else if(s==='ok')CL.offAt=0;CL.state=s;if(s==='ok')CL.err='';document.querySelectorAll('.zst').forEach(e=>{e.dataset.s=s;e.title=s==='ok'?'':(CL.err||'');const t=e.querySelector('b');if(t)t.textContent=s==='ok'?'Synchronisé':s==='sync'?'Synchronisation…':'Hors ligne'});try{syDraw()}catch(e){}}
 /* v64 : si la route réseau principale vers la base ne répond plus (connexion bloquée dans le navigateur : erreur 503 ou attente sans fin),
    on essaie la route équivalente « nom de serveur. » (même base, même adresse) et on la garde tant qu'elle marche. */
 const cAltOk=c=>!!c&&/^https:\/\/[^\/:]+\.(firebasedatabase\.app|firebaseio\.com)\/?$/i.test(c.u||'');
@@ -4096,7 +4096,7 @@ const cBaseFor=(c,alt)=>cHostFor(c,alt)+'/'+c.r;
 const cUrl=p=>{const c=cloudCfg();return cBaseFor(c,c.alt)+(p?'/'+p:'')+'.json'};
 function cAltSet(alt){const c=cloudCfg();if(c&&!!c.alt!==!!alt){c.alt=!!alt;cloudSet(c);if(CL.ready)setTimeout(cloudListen,0)}}
 async function cFetch(ms){
-  ms=ms||8000;const c=cloudCfg(),alts=cAltOk(c),first=!!c.alt;
+  ms=ms||Math.min(60000,8000*Math.pow(2,Math.min(CL.fail||0,3)));const c=cloudCfg(),alts=cAltOk(c),first=!!c.alt;
   const get=(alt,sig)=>fetch(cBaseFor(c,alt)+'.json',{signal:sig}).then(async r=>{if(!r.ok)throw new Error('http '+r.status);return{j:await r.json(),alt}});
   /* route principale d'abord ; sans réponse après 2,5 s (ou en cas d'erreur), on lance la route alternative en parallèle : la première qui répond gagne */
   const out=await new Promise((resolve,reject)=>{
@@ -4124,7 +4124,7 @@ function treeToS(T,full){
 function cloudNormalize(){
   S.settings=Object.assign(defaultSettings(),S.settings||{});
   ['products','clients','sales','closures','events','mails','staff','leaves','plans','maint','incidents','profiles','planArchive','awards','qwres','web','gifts','waivers','accounts','board','passes','promos','entries'].forEach(k=>{if(!Array.isArray(S[k]))S[k]=[]});
-  ['shifts','checks','monthly','stock','hours'].forEach(k=>{if(!isO(S[k])||Array.isArray(S[k]))S[k]={}});
+  ['shifts','checks','monthly','stock','hours','devs'].forEach(k=>{if(!isO(S[k])||Array.isArray(S[k]))S[k]={}});
   if(!S.profiles.length)S.profiles=defaultProfiles();
   number();
 }
@@ -4376,6 +4376,7 @@ function vSetAcc(m){
   if(typeof mailCard==='function')mailCard(m);
   if(typeof etabRows==='function')etabRows(m);
   m.querySelectorAll('[data-acprof]').forEach(x=>{const r=x.closest('.row');if(r)r.classList.add('acrow')});
+  try{devRows(m)}catch(e){}
 }
 function x4AccModal(){
   const pr=S.profiles||[];
@@ -4414,7 +4415,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v73';
+const LAGO_V='v74';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -4491,8 +4492,8 @@ function gbarDraw(force){
   document.body.classList.toggle('is-op',!isAdmin());
   const k=gbKey();if(!force&&k===GB.key&&el.firstChild)return;
   GB.key=k;const ai=aiOk();
-  el.innerHTML=`<div class="gb-in"><form id="gbf" autocomplete="off" role="search"><div class="gbox"><span class="gb-lead">${ai?GB_AI:ic('search')}</span><input id="gbq" type="search" enterkeyhint="search" placeholder="${ai?'Demandez à l’IA ou cherchez…':'Rechercher dans l’app…'}" aria-label="${ai?'Recherche et assistant IA':'Recherche'}" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">${SR?`<button type="button" class="gb-ic" data-act="gb_mic" aria-label="Dicter la question">${GB_MIC}</button>`:''}<button class="gb-go" type="submit" aria-label="${ai?'Demander à l’IA':'Chercher'}">${ai?'Demander':ic('search')}</button></div></form><div class="gb-res" id="gbr" hidden></div></div>`;
-  requestAnimationFrame(gbH);
+  el.innerHTML=`<div class="gb-in"><form id="gbf" autocomplete="off" role="search"><div class="gbox"><span class="gb-lead">${ai?GB_AI:ic('search')}</span><input id="gbq" type="search" enterkeyhint="search" placeholder="${ai?'Demandez à l’IA ou cherchez…':'Rechercher dans l’app…'}" aria-label="${ai?'Recherche et assistant IA':'Recherche'}" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">${SR?`<button type="button" class="gb-ic" data-act="gb_mic" aria-label="Dicter la question">${GB_MIC}</button>`:''}<button type="button" class="gb-sy" data-act="sy_open" data-s="" aria-label="État de la synchronisation"><i></i></button><button class="gb-go" type="submit" aria-label="${ai?'Demander à l’IA':'Chercher'}">${ai?'Demander':ic('search')}</button></div></form><div class="gb-res" id="gbr" hidden></div></div><div class="sybar" id="sybar" hidden></div>`;
+  requestAnimationFrame(gbH);try{syDraw()}catch(e){}
 }
 const gbPanel=h=>{const p=$('#gbr');if(!p)return;p.innerHTML=h||'';p.hidden=!h};
 const gbClear=()=>{gbPanel('');const i=$('#gbq');if(i)i.value=''};
@@ -5746,9 +5747,10 @@ function accountMenu(){
   const m=document.querySelector('#modal .modal');if(!m||m.querySelector('.auv'))return;
   m.insertAdjacentHTML('beforeend',`<div class="auv"><div><b>Lago ${esc(LAGO_V)}</b><span class="muted" id="auvs">${AU.ver?'Nouvelle version '+esc(AU.ver)+' disponible':'Les mises à jour s’installent toutes seules.'}</span></div><button type="button" class="btn" data-act="${AU.ver?'au_go':'au_check'}" id="auvb">${AU.ver?'Mettre à jour':'Rechercher une mise à jour'}</button></div><button type="button" class="glink cflegb" data-act="cf_legal">Mentions légales et propriété du logiciel</button>`);
   m.insertAdjacentHTML('beforeend',accAnimHtml());
+  try{appSyncRow(m)}catch(e){}
 }
 document.addEventListener('click',async e=>{
-  const b=e.target.closest('[data-act^="au_"]');if(!b)return;const a=b.dataset.act;
+  const b=e.target.closest('[data-act^="au_"]');if(!b||b.dataset.act==='au_force')return;const a=b.dataset.act;
   if(a==='au_go'){auApply();return}
   if(a==='au_x'){AU.snooze=Date.now()+30*60*1000;auHide();return}
   if(a==='au_check'){
@@ -9228,5 +9230,148 @@ document.addEventListener('submit',e=>{
   showReceipt(s,false);
 });
 
+/* ---------- v74 : suivi des appareils (version + dernière synchro) et « Recharger tout » ---------- */
+/* Chaque appareil connecté à l'équipe écrit, toutes les 30 minutes au plus, sa version et l'heure de son dernier passage
+   dans S.devs[identifiant du compte]. Le responsable voit dans Paramètres › Comptes qui est à jour, qui est sur une
+   ancienne version et qui n'a donné aucun signe de vie (appli ancienne qui ne se synchronise plus, ou jamais ouverte). */
+function devBeat(){
+  try{
+    if(!ME||!cloudOn()||!CL.ready||CL.state!=='ok')return;
+    const D=isO(S.devs)&&!Array.isArray(S.devs)?S.devs:(S.devs={}),c=D[ME.id],now=Date.now();
+    /* un collègue tourne déjà sur une version plus récente : on la cherche tout de suite */
+    const nv=Object.values(D).reduce((m,x)=>Math.max(m,x&&x.v?auNum(x.v)||0:0),0);
+    if(nv>auNum(LAGO_V)&&!AU.busy&&now-AU.last>60000)auCheck();
+    if(c&&c.v===LAGO_V&&now-c.ts<30*60000)return;
+    D[ME.id]={v:LAGO_V,ts:now};save();
+  }catch(e){}
+}
+setInterval(devBeat,20000);setTimeout(devBeat,4000);
+function devAge(ts){
+  const d=Math.max(0,Date.now()-ts);
+  if(d<90000)return 'à l’instant';
+  if(d<3600000)return 'il y a '+Math.round(d/60000)+' min';
+  if(d<86400000)return 'il y a '+Math.round(d/3600000)+' h';
+  const j=Math.round(d/86400000);return 'il y a '+j+' jour'+(j>1?'s':'');
+}
+function devState(id){
+  const d=(S.devs||{})[id];
+  if(!d||typeof d.ts!=='number'||!d.v)return{c:'warn',t:'Aucun signal : appli ancienne, ou pas ouverte depuis un moment'};
+  const old=auNum(d.v)<auNum(LAGO_V);
+  return{c:old?'warn':Date.now()-d.ts>7*86400000?'':'ok',t:String(d.v).slice(0,12)+(old?' · ancienne version':'')+' · vu '+devAge(d.ts)};
+}
+function devRows(m){
+  if(!isAdmin()||!m)return;
+  m.querySelectorAll('[data-acprof]').forEach(x=>{
+    const id=x.dataset.acprof,r=x.closest('.row'),g=r&&r.querySelector('.grow');
+    if(!g||g.querySelector('.dv'))return;
+    const s=devState(id);
+    g.insertAdjacentHTML('beforeend',`<span class="muted dv ${s.c}">${esc(s.t)}</span>`);
+  });
+}
+/* « Mon compte » : état de la synchronisation + réparation d'une appli bloquée sur une ancienne version */
+function appSyncRow(m){
+  if(!m||m.querySelector('.auv2'))return;
+  const on=cloudOn(),ok=CL.state==='ok';
+  const t=on?(ok?'● Équipe connectée'+(CL.last?' · dernière synchro à '+hm(CL.last):''):'○ Hors ligne : vos changements partiront au retour du réseau'):'○ Cet appareil n’est pas relié à l’équipe : ses données restent sur ce téléphone';
+  const a=m.querySelector('.auv');
+  const h=`<div class="auv auv2"><div><b>Synchronisation</b><span class="muted" id="auvy">${esc(t)}</span><span class="muted" style="display:block;font-size:12.5px">Si l’appli reste bloquée sur une ancienne version : « Recharger tout » vide la mémoire de l’appli et la relance. Vos données sont conservées.</span></div><button type="button" class="btn" data-act="au_force">Recharger tout</button></div>`;
+  if(a)a.insertAdjacentHTML('afterend',h);else m.insertAdjacentHTML('beforeend',h);
+}
+async function appForce(btn){
+  if(btn){btn.disabled=true;btn.textContent='Rechargement…'}
+  const tm=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(r,ms))]);
+  try{save();cloudStash()}catch(_){}
+  try{if(cloudOn()&&CL.ready)await tm(cloudSync(),3000)}catch(_){}
+  try{if(navigator.serviceWorker){const regs=await tm(navigator.serviceWorker.getRegistrations(),2000);await tm(Promise.all((regs||[]).map(r=>r.unregister())),2000)}}catch(_){}
+  try{if(window.caches){const ks=await tm(caches.keys(),2000);await tm(Promise.all((ks||[]).map(k=>caches.delete(k))),3000)}}catch(_){}
+  location.replace(location.pathname+'?r='+Date.now()+(/^#cloud=/i.test(location.hash)?'':location.hash||''));
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="au_force"]');if(b)appForce(b)});
+if(/[?&]r=\d+/.test(location.search)){try{history.replaceState(null,'',location.pathname+location.hash)}catch(_){}}
+
+/* ---- v74 : état de la synchronisation, partout et en permanence ---- */
+/* Pastille dans la barre du haut (toujours visible), bandeau dès qu'un problème dure, fiche de détail et réparation en un geste. */
+function syState(){
+  if(!cloudOn())return{k:'local'};
+  if(CL.offAt&&CL.state!=='ok')return{k:'off',long:Date.now()-CL.offAt>12000,p:CL.sv!==CL.okSv};   // « synchronisation… » pendant les nouveaux essais ne cache pas la coupure
+  if(!CL.ready||CL.state==='sync')return{k:'sync'};
+  if(CL.state==='off')return{k:'off',long:false,p:CL.sv!==CL.okSv};
+  if(CL.ev&&!document.hidden&&Date.now()-CL.ev>150000)return{k:'late',p:CL.sv!==CL.okSv};
+  return{k:'ok',p:CL.sv!==CL.okSv};
+}
+const syTitle=s=>({local:'Appareil non relié à l’équipe',sync:'Synchronisation en cours…',off:'Hors ligne'+(s.p?' · modifications en attente d’envoi':''),late:'Pas de nouvelles de la base depuis un moment',ok:s.p?'Envoi des modifications…':'Synchronisé'}[s.k]);
+const syAgo=ts=>{if(!ts)return 'jamais';const s=Math.max(0,Math.round((Date.now()-ts)/1000));return s<5?'à l’instant':s<60?'il y a '+s+' s':s<3600?'il y a '+Math.round(s/60)+' min':'à '+hm(ts)};
+function syErrTxt(e){
+  const t=String(e||'');
+  if(/http 40[13]/.test(t))return 'La base en ligne refuse l’accès : les règles de sécurité de la base ne laissent plus passer cet appareil. Prévenez votre responsable (Paramètres › Studio).';
+  if(/http 404|http 405/.test(t))return 'Adresse de la base introuvable : le lien d’équipe est peut-être périmé.';
+  if(/http 5\d\d/.test(t))return 'Le serveur de la base répond par une erreur : nouvel essai automatique.';
+  if(/abort|délai|Failed to fetch|NetworkError|Load failed/i.test(t))return 'Connexion lente ou bloquée : nouvel essai automatique.';
+  return t?'Erreur : '+t.slice(0,80):'';
+}
+function syPending(){try{if(!cloudOn()||!CL.ready)return 0;const p={};diffT(CL.B,projS(),'',p);return Object.keys(p).length}catch(e){return 0}}
+function syDraw(){
+  const s=syState(),k=s.k;
+  document.querySelectorAll('.gb-sy').forEach(b=>{b.dataset.s=k==='late'?'off':k;b.dataset.p=s.p&&k!=='local'?'1':'';b.title=syTitle(s)});
+  let lateShow=false;
+  if(k==='late'){   // d'abord une réparation silencieuse (on rouvre le flux) ; le bandeau n'apparaît que si le silence persiste
+    const n=syDraw.nudge||0;
+    if(Date.now()-n>60000){syDraw.nudge=Date.now();try{cloudWake(true)}catch(e){}}
+    else if(Date.now()-n>20000)lateShow=true;
+  }
+  const bar=document.getElementById('sybar');if(!bar)return;
+  let hide=false;try{hide=sessionStorage.getItem('lago-sy-x')==='1'}catch(e){}
+  let m=null;
+  if(k==='local'){
+    if(!isAdmin())m=['local','<span><b>Cet appareil n’est pas relié à l’équipe.</b> Ce que vous saisissez ici (messages, congés, contrôles) n’est vu que sur ce téléphone, et vous ne voyez pas ce que les autres saisissent.</span><button class="btn primary" data-act="pl_join">Rejoindre l’équipe</button>'];
+    else if(accs().length>1&&!hide)m=['local','<span><b>Cet appareil n’est pas relié à l’équipe.</b> Les autres téléphones ne voient pas vos modifications.</span><button class="btn" data-act="sy_open">Détails</button><button class="btn" data-act="sy_hide">Masquer</button>'];
+  }else if(k==='off'&&s.long){
+    const auth=/http 40[13]/.test(String(CL.err||''));
+    m=['off',auth?'<span><b>Synchronisation refusée.</b> '+esc(syErrTxt(CL.err))+(s.p?' Vos modifications restent sur ce téléphone en attendant.':'')+'</span><button class="btn" data-act="sy_now">Réessayer</button><button class="btn" data-act="sy_open">Détails</button>'
+      :'<span><b>Hors ligne.</b> '+(s.p?'Vos dernières modifications partiront dès le retour de la connexion.':'Vous ne voyez plus les changements des autres pour le moment.')+'</span><button class="btn" data-act="sy_now">Réessayer</button>'];
+  }
+  else if(k==='late'&&lateShow)m=['off','<span><b>Pas de nouvelles de la base</b> depuis '+syAgo(CL.ev).replace('il y a ','')+'. Vérification en cours…</span><button class="btn" data-act="sy_now">Actualiser</button>'];
+  const key=m?m.join('|'):'';
+  if(bar.dataset.key===key)return;
+  bar.dataset.key=key;
+  if(!m){bar.hidden=true;bar.innerHTML=''}else{bar.hidden=false;bar.dataset.k=m[0];bar.innerHTML=m[1]}
+  requestAnimationFrame(gbH);
+}
+setInterval(()=>{try{syDraw()}catch(e){}},1500);
+function syOpen(again){
+  const s=syState(),on=cloudOn(),adm=isAdmin();
+  const lab={local:'Non relié à l’équipe',sync:'Synchronisation en cours…',off:'Hors ligne',late:'Sans nouvelles de la base',ok:'Synchronisé'}[s.k];
+  const devs=adm?accs().filter(a=>a.status!=='pending').map(a=>{const d=devState(a.id);return `<div class="row"><span class="grow"><b>${esc(a.name)}</b><span class="muted dv ${d.c}">${esc(d.t)}</span></span></div>`}).join(''):'';
+  if(!again||document.getElementById('sypanel')){
+    showModal(`<div id="sypanel">${mh('Synchronisation')}
+     <div class="sum"><div class="r"><span>État</span><b>${esc(lab)}</b></div>
+      <div class="r"><span>Version de Lago</span><b>${esc(LAGO_V)}</b></div>
+      ${on?`<div class="r"><span>${s.k==='off'?'Dernière synchronisation réussie':'Dernier contact avec la base'}</span><b>${esc(syAgo(s.k==='off'?CL.last:CL.ev))}</b></div><div class="r"><span>Modifications à envoyer</span><b id="sypend">…</b></div><div class="r"><span>Taille des données de l’équipe</span><b id="sysize">…</b></div>`:''}
+      ${on&&CL.err&&CL.state==='off'?`<div class="r"><span>Problème</span><b style="text-align:right;max-width:60%">${esc(syErrTxt(CL.err))}</b></div>`:''}</div>
+     <p class="muted" style="font-size:13px;margin:10px 0">${on?'Chaque modification part vers la base de l’équipe dans la seconde. Sans réseau, elle est gardée sur ce téléphone puis envoyée au retour de la connexion.':'Les données de cet appareil restent ici. Pour partager le planning, les messages, les congés et la caisse avec l’équipe, collez le lien d’équipe de votre responsable.'}</p>
+     <div class="acts">${on?'<button class="btn primary" data-act="sy_now">Synchroniser maintenant</button>':'<button class="btn primary" data-act="pl_join">Rejoindre l’équipe</button>'}<button class="btn" data-act="au_force">Recharger tout</button><button class="btn" data-act="close">Fermer</button></div>
+     ${devs?`<h3 class="mah" style="margin-top:16px">Appareils de l’équipe</h3><div class="card" style="margin:6px 0 0">${devs}</div>`:''}</div>`);
+  }
+  if(on)setTimeout(()=>{
+    const e=document.getElementById('sypend');if(e){const n=syPending();e.textContent=n?n+' en attente':'aucune'}
+    const z=document.getElementById('sysize');
+    if(z){try{const mo=JSON.stringify(CL.R||{}).length/1048576;z.textContent=(mo<0.1?'moins de 0,1':mo.toFixed(1).replace('.',','))+' Mo'+(mo>8?' · lourde : le démarrage peut ralentir':'')}catch(x){z.textContent='—'}}
+  },60);
+}
+async function syNow(btn){
+  if(!cloudOn())return;
+  if(btn)btn.disabled=true;
+  CL.fetched=false;try{cloudWake(true);cloudKick(0)}catch(e){}
+  await new Promise(r=>setTimeout(r,1800));
+  if(btn&&btn.isConnected)btn.disabled=false;
+  try{syDraw()}catch(e){}
+  if(document.getElementById('sypanel'))syOpen(true);
+  toast(CL.state==='ok'?'Synchronisé':'Toujours hors ligne : nouvel essai automatique');
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act="sy_open"],[data-act="sy_now"],[data-act="sy_hide"]');if(!b)return;const a=b.dataset.act;
+  if(a==='sy_open')syOpen();else if(a==='sy_now')syNow(b);
+  else{try{sessionStorage.setItem('lago-sy-x','1')}catch(x){}syDraw()}
+});
 init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();migrateImgs();v61Init();hoursInit();applySettings();cart=newCart();chrome();route();bootGate();
 })();
