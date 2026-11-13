@@ -235,7 +235,7 @@ const clientName=id=>{const c=S.clients.find(c=>c.id===id);return c?c.name:''};
 
 /* ---------- gabarits communs ---------- */
 function head(title,actions=''){
-  return `<header class="top"><div><div class="logo logo-m">${S.settings.logo?logoHtml():ic('wave')+'lago'}</div><h1>${title}</h1><p class="sub">${dlong(today())}</p></div><div class="top-actions">${actions}${rolePill()}</div></header>`;
+  return `<header class="top"><div><div class="logo logo-m">${S.settings.logo?logoHtml():lagoLogo('l')}</div><h1>${title}</h1><p class="sub">${dlong(today())}</p></div><div class="top-actions">${actions}${rolePill()}</div></header>`;
 }
 function showModal(html){$('#modal').innerHTML=`<div class="scrim" data-act="scrim"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`}
 function closeModal(){$('#modal').innerHTML='';pay=null}
@@ -258,7 +258,7 @@ function vPlanning(m){tabbed(m,'Planning')}
 function vGestion(m){tabbed(m,'Gestion')}
 function vClientsHub(m){tabbed(m,'Clients')}
 function chromeV0(){
-  $('#logo').innerHTML=S.settings.logo?logoHtml():'<span class="lmark">'+ic('wave')+'</span><span class="lt">lago</span>';
+  $('#logo').innerHTML=S.settings.logo?logoHtml():lagoLogo('d');
   renderNav();
   $('#sidefoot').innerHTML=`<strong style="color:var(--ink)">${esc(S.settings.name)}</strong><span>${S.sales.some(s=>s.demo)?'Données de démonstration':''}</span><button data-act="reset">Réinitialiser la démo</button>`;
 }
@@ -307,7 +307,7 @@ function drawCartOld(){
   if(T.jumpers>0){
     const opts=HOURS.map(h=>{const r=S.settings.cap-booked(cart.slotDate,h);
       return `<option value="${h}" ${cart.slotH===h?'selected':''} ${r<=0?'disabled':''}>${pad(h)}:00 – ${pad(h+1)}:00 · ${r<=0?'complet':r+' places'}</option>`}).join('');
-    slotHtml=`<div class="slotrow"><span class="lbl">Créneau (${T.jumpers} sauteur${T.jumpers>1?'s':''})</span>
+    slotHtml=`<div class="slotrow"><span class="lbl">Créneau (${T.jumpers} ${NOUN()}${T.jumpers>1?'s':''})</span>
       <button class="ix" data-act="cday" data-d="-1" aria-label="Jour précédent" ${cart.slotDate<=today()?'disabled':''}>${ic('left')}</button>
       <select id="slotsel" aria-label="Créneau"><option value="" ${cart.slotH==null?'selected':''}>Entrée immédiate, sans créneau</option>${opts}</select>
       <button class="ix" data-act="cday" data-d="1" aria-label="Jour suivant">${ic('right')}</button>
@@ -449,7 +449,7 @@ function slotDetailOld(h){
     <div class="kpis" style="margin:0"><div class="kpi"><div class="l">Réservé en ligne</div><div class="v num">${base}</div></div>
     <div class="kpi"><div class="l">Vendu en caisse</div><div class="v num">${extra}</div></div>
     <div class="kpi"><div class="l">Places libres</div><div class="v num">${left}</div></div></div>
-    <div>${ss.length?ss.map(s=>`<div class="row"><span class="grow"><b>${s.no}${s.clientId?' · '+esc(clientName(s.clientId)):''}</b><span class="muted">${hm(s.ts)}</span></span><b>${s.jumpers} sauteur${s.jumpers>1?'s':''}</b></div>`).join(''):'<p class="muted">Aucune vente en caisse sur ce créneau.</p>'}</div>
+    <div>${ss.length?ss.map(s=>`<div class="row"><span class="grow"><b>${s.no}${s.clientId?' · '+esc(clientName(s.clientId)):''}</b><span class="muted">${hm(s.ts)}</span></span><b>${s.jumpers} ${NOUN()}${s.jumpers>1?'s':''}</b></div>`).join(''):'<p class="muted">Aucune vente en caisse sur ce créneau.</p>'}</div>
     <button class="btn primary" data-act="sellslot" data-h="${h}" ${left<=0?'disabled':''}>Vendre sur ce créneau</button>`);
 }
 
@@ -457,7 +457,7 @@ function slotDetailOld(h){
 function vProducts(m){
   m.innerHTML=bar(`<button class="btn primary" data-act="newprod">${ic('plus')}Nouveau produit</button>`)+
     CATS.map(c=>{const l=S.products.filter(p=>p.cat===c.id);return `<div class="card" style="margin-bottom:14px;--cat:var(${c.v})"><h3 style="display:flex;align-items:center;gap:8px"><span class="dot"></span>${c.name}</h3>
-    ${l.length?l.map(p=>`<button class="row rowbtn" data-act="editprod" data-id="${p.id}" style="${p.active?'':'opacity:.55'}"><span class="grow"><b>${esc(p.name)}</b><span class="muted">${p.scat?esc(p.scat)+' · ':''}TVA ${p.tva} %${p.jumper?' · compte comme sauteur':''}${p.active?'':' · masqué en caisse'}</span></span><b class="num">${eur(p.price)}</b></button>`).join(''):'<p class="muted">Aucun produit dans cette catégorie.</p>'}</div>`}).join('');
+    ${l.length?l.map(p=>`<button class="row rowbtn" data-act="editprod" data-id="${p.id}" style="${p.active?'':'opacity:.55'}"><span class="grow"><b>${esc(p.name)}</b><span class="muted">${p.scat?esc(p.scat)+' · ':''}TVA ${p.tva} %${p.jumper?' · compte comme '+NOUN():''}${p.active?'':' · masqué en caisse'}</span></span><b class="num">${eur(p.price)}</b></button>`).join(''):'<p class="muted">Aucun produit dans cette catégorie.</p>'}</div>`}).join('');
 }
 function prodForm(id){
   if(!canEdit()){toast('Réservé à l’administrateur');return}
@@ -470,7 +470,7 @@ function prodForm(id){
     <div class="field"><label for="psub">Sous-catégorie</label><select id="psub">${subOpts(p.cat,p.scat)}</select></div>
     <div class="field"><label for="pt">TVA</label><select id="pt">${[5.5,10,20].map(t=>`<option value="${t}" ${p.tva===t?'selected':''}>${String(t).replace('.',',')} %</option>`).join('')}</select></div>
     <div class="field"><label>Image du produit</label><div class="imgpick"><div id="pimgprev">${p.img?`<img class="art" src="${p.img}" alt="">`:(id?art(p):'<span class="muted">Image par défaut</span>')}</div><div><label class="btn" for="pimgf">Choisir une image</label><input type="file" id="pimgf" accept="image/*" hidden><button type="button" class="btn" data-act="pimgrm">Retirer</button></div></div></div>
-    <label class="check"><input type="checkbox" id="pj" ${p.jumper?'checked':''}>Compte comme un sauteur sur le créneau</label>
+    <label class="check"><input type="checkbox" id="pj" ${p.jumper?'checked':''}>Compte comme un ${NOUN()} sur le créneau</label>
     <label class="check"><input type="checkbox" id="pa" ${p.active?'checked':''}>Visible en caisse</label>
     <div style="display:flex;gap:8px"><button class="btn primary" type="submit" style="flex:1">Enregistrer</button>
     ${id?`<button class="btn danger" type="button" data-act="delprod" data-id="${id}">Supprimer</button>`:''}</div></form>`);
@@ -499,7 +499,7 @@ function vReportsV0(m){
   `<div class="kpis"><div class="kpi"><div class="l">Chiffre d’affaires</div><div class="v num">${eur(ca)}</div></div>
     <div class="kpi"><div class="l">Tickets</div><div class="v num">${ds.length}</div></div>
     <div class="kpi"><div class="l">Panier moyen</div><div class="v num">${eur(ds.length?Math.round(ca/ds.length):0)}</div></div>
-    <div class="kpi"><div class="l">Sauteurs</div><div class="v num">${jp}</div></div></div>
+    <div class="kpi"><div class="l">${CAPP()}</div><div class="v num">${jp}</div></div></div>
   <div class="card" style="margin-bottom:14px"><h3>Chiffre d’affaires par heure</h3><div class="chartwrap">${svg}</div></div>
   <div class="cols"><div class="card"><h3>Moyens de paiement</h3>${Object.entries(pm).sort((a,b)=>b[1]-a[1]).map(([k,v])=>mr(METHODS[k],eur(v),Math.round(v/pmTot*100))).join('')||'<p class="muted">Aucun encaissement aujourd’hui.</p>'}</div>
     <div class="card"><h3>Ventes par catégorie</h3>${CATS.filter(c=>ct[c.id]).map(c=>mr(c.name,eur(ct[c.id]),Math.round(ct[c.id]/(ca||1)*100),`background:var(${c.v})`)).join('')||'<p class="muted">Aucune vente aujourd’hui.</p>'}</div></div>
@@ -538,7 +538,7 @@ const ART={
   b3:'<path class="a1" d="M42 14l-20 11 9 13 8-5v28h42V33l8 5 9-13-20-11q-7 8-19 8t-19-8z"/>'
 };
 const ARTCAT={park:'p1',event:'a1',bar:'s3',gestion:'a4'};
-const art=p=>p.img?`<img class="art" src="${p.img}" alt="">`:`<svg class="art" viewBox="0 0 120 76" aria-hidden="true"><rect class="bg" width="120" height="76"/>${ART[p.id]||ART[ARTCAT[p.cat]]}</svg>`;
+const art=p=>p.img?`<img class="art" src="${p.img}" alt="">`:`<svg class="art" viewBox="0 0 120 76" aria-hidden="true"><rect class="bg" width="120" height="76"/>${artSvg(p)}</svg>`;
 
 /* ---------- équipe, congés, contrôle : données ---------- */
 const ROLE={resp:'Responsable',accueil:'Accueil et caisse',mon:'Animateur',anniv:'Anniversaires'};
@@ -580,8 +580,10 @@ function shiftOf(ds,id){
 function onDuty(ds){return S.staff.filter(s=>['M','S','J'].includes(shiftOf(ds,s.id)))}
 function leaveUsed(id,st){return S.leaves.filter(l=>l.staffId===id&&st.includes(l.status)).reduce((a,l)=>a+leaveDays(l.from,l.to).length,0)}
 const checkToday=()=>S.checks[today()]||null;
-const ctlTodo=()=>{const c=S.checks[today()];return !(c&&c.done)};
+const ctlOff=()=>{const o=S.settings.off||{},t=S.settings.offT||{};return !!(o.controle||t['controle:visuel'])};
+const ctlTodo=()=>{if(ctlOff())return false;const c=S.checks[today()];return !(c&&c.done)};
 function ctrlBanner(){
+  if(ctlOff())return '';
   const c=checkToday();
   if(c&&c.done)return '';
   return `<div class="banner"><span>Le contrôle visuel du jour n’est pas encore validé.</span><a class="btn" href="#controle">Faire le contrôle</a></div>`;
@@ -604,9 +606,9 @@ function vHomeOld(m){
      <button class="btn" style="margin-top:12px" data-act="goto" data-v="resa">Planning clients</button></div>
    <div class="card"><h3>Équipe en poste</h3>${duty.map(s=>{const c2=shiftOf(td,s.id);return `<div class="row"><span class="avatar">${initials(s.name)}</span><span class="grow"><b>${esc(s.name)}</b><span class="muted">${ROLE[s.role]}</span></span><span class="pill">${SHIFT[c2][1]}</span></div>`}).join('')||'<p class="muted">Personne n’est planifié aujourd’hui.</p>'}
      <button class="btn" style="margin-top:12px" data-act="goto" data-v="staff" data-t="sjour">Planning staff</button></div>
-   <div class="card"><h3>Contrôle quotidien <span class="pill ${c&&c.done?'ok':'warn'}">${c&&c.done?'Validé':'À faire'}</span></h3>
+   ${ctlOff()?'':`<div class="card"><h3>Contrôle quotidien <span class="pill ${c&&c.done?'ok':'warn'}">${c&&c.done?'Validé':'À faire'}</span></h3>
      <div class="bar" style="margin:6px 0 10px"><i style="width:${c&&c.done?100:Math.round(done/CHECK_IDS.length*100)}%"></i></div><p class="muted">${c&&c.done?'Signé par '+esc(staffOf(c.by).name)+' à '+hm(c.ts):done+' point'+(done>1?'s':'')+' sur '+CHECK_IDS.length+' contrôlés'}</p>
-     <a class="btn" style="margin-top:12px" href="#controle">${c&&c.done||!canCtl()?'Voir le contrôle':'Faire le contrôle'}</a></div>
+     <a class="btn" style="margin-top:12px" href="#controle">${c&&c.done||!canCtl()?'Voir le contrôle':'Faire le contrôle'}</a></div>`}
    <div class="card"><h3>Congés à valider <span class="pill ${pend.length?'warn':'ok'}">${pend.length}</span></h3>
      ${pend.map(l=>`<div class="row"><span class="grow"><b>${esc(staffOf(l.staffId).name)}</b><span class="muted">${dshort(l.from)} au ${dshort(l.to)}</span></span></div>`).join('')||'<p class="muted">Aucune demande en attente.</p>'}
      <button class="btn" style="margin-top:12px" data-act="goto" data-v="staff" data-t="conges">Gérer les congés</button></div>
@@ -848,7 +850,7 @@ function drawCartBase(){
   const rw=cl?(cl.rewards||[]).filter(r=>!r.used):[];
   const rwHtml=rw.length?`<div class="rwd">${rw.map(r=>`<button class="chip ${cart.rewardPal===r.pal?'on':''}" data-act="rwd" data-p="${r.pal}">${cart.rewardPal===r.pal?'Récompense appliquée':'Utiliser'} : ${eur(palOf(r.pal).amt)} offerts</button>`).join('')}</div>`:'';
   const brc=cart.slotM!=null?bracelet(cart.slotM,T.dur):null,slotBad=T.jumpers>0&&!slotOk(T),lapsed=cart.slotM!=null&&cart.slotDate===today()&&cart.slotM+15<=nowMin();
-  const slotInfo=T.jumpers>0?`<div class="info ${slotBad?'or':''}"><div><b>${T.jumpers} sauteur${T.jumpers>1?'s':''}</b><small>${cart.slotM==null?'Créneau à choisir':(cart.slotDate===today()?'Aujourd’hui':dshort(cart.slotDate))+' · '+fm(cart.slotM)+' à '+fm(cart.slotM+T.dur)}</small>${brc?`<small>${swatch(brc.color)}Bracelet ${brc.name}, jusqu’à ${brc.until}h</small>`:''}</div><button class="btn" data-act="rebook">${slotBad?'Choisir':'Changer'}</button></div>`+(lapsed?`<p class="warn-t">Ce départ est passé. Choisissez un autre créneau.</p>`:left!=null?`<p class="warn-t">Créneau presque plein : il reste ${left} place${left>1?'s':''}. Changez de créneau.</p>`:''):'';
+  const slotInfo=T.jumpers>0?`<div class="info ${slotBad?'or':''}"><div><b>${T.jumpers} ${NOUN()}${T.jumpers>1?'s':''}</b><small>${cart.slotM==null?'Créneau à choisir':(cart.slotDate===today()?'Aujourd’hui':dshort(cart.slotDate))+' · '+fm(cart.slotM)+' à '+fm(cart.slotM+T.dur)}</small>${brc?`<small>${swatch(brc.color)}Bracelet ${brc.name}, jusqu’à ${brc.until}h</small>`:''}</div><button class="btn" data-act="rebook">${slotBad?'Choisir':'Changer'}</button></div>`+(lapsed?`<p class="warn-t">Ce départ est passé. Choisissez un autre créneau.</p>`:left!=null?`<p class="warn-t">Créneau presque plein : il reste ${left} place${left>1?'s':''}. Changez de créneau.</p>`:''):'';
   const evInfo=cart.event&&cart.lines.some(l=>prod(l.pid).event)?`<div class="info or"><div><b>${esc(cart.event.title)}</b><small>${ROOMS[cart.event.room]} · ${dshort(cart.event.date)} · ${pad(cart.event.h)}:00 à ${pad(cart.event.h+2)}:00</small></div><button class="btn" data-act="rebookev">Changer</button></div>`:'';
   const groups=CATS.map(c=>({c,ls:T.L.filter(l=>l.p.cat===c.id)})).filter(g=>g.ls.length);
   const lines=groups.map(g=>`<div class="grp" style="--cat:var(${g.c.v})"><div class="gh"><span class="dot"></span>${g.c.name}</div>${g.ls.map(l=>`<div class="cl"><div><div class="cl-n">${esc(l.p.name)}</div><div class="cl-u num">${l.qty} × ${eur(l.p.price)}</div></div>
@@ -949,12 +951,12 @@ function vDayOld(m){
   if(full.length)alerts.push(`<div class="banner"><span>Créneaux complets : ${full.map(h=>h+'h').join(', ')}.</span></div>`);
   if(!alerts.length)alerts.push(`<div class="banner ok"><span>Journée équilibrée : équipe suffisante et places disponibles sur tous les créneaux.</span></div>`);
   m.innerHTML=`<div class="chips">${days.map((d,i)=>`<button class="chip ${d===ds?'on':''}" data-act="day" data-d="${d}">${i===0?'Aujourd’hui':dshort(d)}</button>`).join('')}</div>
-   <div class="kpis"><div class="kpi"><div class="l">Sauteurs attendus</div><div class="v num">${jumpers}</div></div><div class="kpi"><div class="l">Pic</div><div class="v num">${peak[0]}h</div></div>
+   <div class="kpis"><div class="kpi"><div class="l">${CAPP()} attendus</div><div class="v num">${jumpers}</div></div><div class="kpi"><div class="l">Pic</div><div class="v num">${peak[0]}h</div></div>
      <div class="kpi"><div class="l">Événements</div><div class="v num">${evOn(ds).length}</div></div><div class="kpi"><div class="l">Équipe en poste</div><div class="v num">${onDuty(ds).length}</div></div></div>
    ${alerts.join('')}
    <div class="tl"><div class="tl-in">
      <div class="tl-row hd"><div class="tl-lab"></div>${track(head,'hdt')}</div>
-     <div class="tl-sec"><span class="dot" style="--cat:var(--c-entree)"></span>Clients du parc</div>${row('Sauteurs','places réservées',parkBlocks)}
+     <div class="tl-sec"><span class="dot" style="--cat:var(--c-entree)"></span>${tv('clients_de')}</div>${row(CAPP(),'places réservées',parkBlocks)}
      <div class="tl-sec"><span class="dot" style="--cat:var(--c-snack)"></span>Événements</div>${evRows}
      <div class="tl-sec"><span class="dot" style="--cat:var(--c-shop)"></span>Équipe</div>${staffRows}${row('Présence','minimum '+MIN_STAFF+' personnes',covBlocks)}
    </div></div>
@@ -1134,14 +1136,14 @@ function vDayOld(m){
    </div></div>
    <div class="legend"><span><i class="lg" style="background:var(--brand)"></i>Places disponibles</span><span><i class="lg" style="background:var(--pay)"></i>Presque complet</span><span><i class="lg" style="background:var(--bad)"></i>Complet</span><span>Touchez une barre pour le détail et vendre</span></div>
    ${braceletCard()}
-   <div class="card"><h3>Réservations vendues en caisse</h3>${sold.map(s=>{const st=+s.slot.split('|')[1];return `<button class="row rowbtn" data-act="ticket" data-id="${s.id}"><span class="tm num" style="font-weight:700;min-width:124px">${swatch(bracelet(st,s.dur||60).color)}${fm(st)} à ${fm(st+(s.dur||60))}</span><span class="grow"><b>${s.jumpers} sauteur${s.jumpers>1?'s':''}</b><span class="muted">${s.clientId?esc(clientName(s.clientId)):'Client au comptoir'} · ${s.no}</span></span><b class="num">${eur(s.total)}</b></button>`}).join('')||'<p class="muted">Aucune réservation vendue en caisse ce jour-là.</p>'}</div>`;
+   <div class="card"><h3>Réservations vendues en caisse</h3>${sold.map(s=>{const st=+s.slot.split('|')[1];return `<button class="row rowbtn" data-act="ticket" data-id="${s.id}"><span class="tm num" style="font-weight:700;min-width:124px">${swatch(bracelet(st,s.dur||60).color)}${fm(st)} à ${fm(st+(s.dur||60))}</span><span class="grow"><b>${s.jumpers} ${NOUN()}${s.jumpers>1?'s':''}</b><span class="muted">${s.clientId?esc(clientName(s.clientId)):'Client au comptoir'} · ${s.no}</span></span><b class="num">${eur(s.total)}</b></button>`}).join('')||'<p class="muted">Aucune réservation vendue en caisse ce jour-là.</p>'}</div>`;
 }
 function slotDetail(m){
   const ds=slotDay,cap=S.settings.cap,o=occ(ds,m);
   const ss=S.sales.filter(s=>{if(!(s.slot&&s.slot.startsWith(ds)))return false;const st=+s.slot.split('|')[1];return st<=m&&m<st+(s.dur||60)});
   showModal(`${mh(fm(m))}<p class="muted" style="text-transform:capitalize">${dlong(ds)}</p>
     <div class="kpis" style="margin:0"><div class="kpi"><div class="l">Présents</div><div class="v num">${o}</div></div><div class="kpi"><div class="l">Places libres</div><div class="v num">${cap-o}</div></div></div>
-    <div>${ss.length?ss.map(s=>{const st=+s.slot.split('|')[1];return `<div class="row"><span class="grow"><b>${s.no}${s.clientId?' · '+esc(clientName(s.clientId)):''}</b><span class="muted">${swatch(bracelet(st,s.dur||60).color)}${fm(st)} à ${fm(st+(s.dur||60))}</span></span><b>${s.jumpers} sauteur${s.jumpers>1?'s':''}</b></div>`}).join(''):'<p class="muted">Aucune vente en caisse sur ce départ.</p>'}</div>
+    <div>${ss.length?ss.map(s=>{const st=+s.slot.split('|')[1];return `<div class="row"><span class="grow"><b>${s.no}${s.clientId?' · '+esc(clientName(s.clientId)):''}</b><span class="muted">${swatch(bracelet(st,s.dur||60).color)}${fm(st)} à ${fm(st+(s.dur||60))}</span></span><b>${s.jumpers} ${NOUN()}${s.jumpers>1?'s':''}</b></div>`}).join(''):'<p class="muted">Aucune vente en caisse sur ce départ.</p>'}</div>
     <button class="btn primary" data-act="sellslot" data-m="${m}" ${cap-o<=0?'disabled':''}>Vendre sur ce départ</button>`);
 }
 
@@ -1283,7 +1285,7 @@ function renderNavV0(){
     const subs=on&&tabsFor(id).length?`<div class="subnav">${tabsFor(id).map(([t,tl])=>`<button class="${tab[id]===t?'on':''}" data-act="tab" data-id="${t}">${tl}</button>`).join('')}</div>`:'';
     return `<div class="ni"><a href="#${id}" data-v="${id}" class="${on?'on':''}">${ic(i)}<span class="lg">${l}</span><span class="sm">${sh}</span></a>${subs}</div>`}).join('');
 }
-const ctrlPill=()=>{const c=checkToday();return c&&c.done?'':'<a class="btn warnbtn" href="#controle">Contrôle du jour à faire</a>'};
+const ctrlPill=()=>{if(ctlOff())return '';const c=checkToday();return c&&c.done?'':'<a class="btn warnbtn" href="#controle">Contrôle du jour à faire</a>'};
 let showDisc=false;
 
 /* ---------- paramètres ---------- */
@@ -1292,7 +1294,7 @@ const fld=(label,inner,hint)=>`<div class="field"><label>${label}</label>${inner
 const numIn=(path,v,min,max,step=1)=>`<input type="number" inputmode="decimal" data-set="${path}" data-ty="num" data-min="${min}" data-max="${max}" step="${step}" value="${v}">`;
 function vSetGen(m){
   const st=S.settings;
-  m.innerHTML=`<div class="cols"><div class="card"><h3>Établissement</h3>${fld('Nom du parc',`<input data-set="name" value="${esc(st.name)}">`)}
+  m.innerHTML=`<div class="cols"><div class="card"><h3>Établissement</h3>${fld(tv('nom_etab'),`<input data-set="name" value="${esc(st.name)}">`)}
     ${fld('E-mail d’envoi',`<input type="email" data-set="mail" value="${esc(st.mail)}">`,'Adresse affichée comme expéditeur des mails aux clients.')}</div>
    <div class="card"><h3>Caisse</h3>${fld('Fond de caisse (€)',`<input inputmode="decimal" data-set="fond" data-ty="eur" value="${inEur(st.fond)}">`)}
     ${fld('Remises rapides (en %)',`<input data-set="discPct" data-ty="list" value="${st.discPct.join(', ')}">`,'Séparées par une virgule, par exemple 5, 10, 20.')}</div></div>
@@ -1383,8 +1385,8 @@ function vDay(m){
      <div class="occ-bars" style="grid-template-columns:repeat(${QS.length},minmax(0,1fr))"><i class="l80"></i>${bars}</div>
      <div class="occ-x" style="grid-template-columns:repeat(${QS.length},minmax(0,1fr))">${hl}</div></div></div>
      <div class="legend"><span><i class="lg" style="background:var(--brand)"></i>Places disponibles</span><span><i class="lg" style="background:var(--pay)"></i>Plus de 80 %</span><span><i class="lg" style="background:var(--bad)"></i>Complet</span><span>Touchez une barre pour le détail</span></div></div>
-   <div class="card" style="margin-top:14px"><h3>Prochains départs</h3><div class="deps">${deps.map(q=>{const l=leftFor(ds,q,60),pc=Math.round((cap-l)/cap*100);
-     return `<div class="dep"><b class="num">${fm(q)}</b><span class="${l<=0?'warn-t':'muted'}">${l<=0?'Complet':l+' places'}</span><div class="bar"><i class="${l<=0?'full':pc>=80?'warn':''}" style="width:${pc}%"></i></div><button class="btn" data-act="sellslot" data-m="${q}" ${l<=0?'disabled':''}>Vendre</button></div>`}).join('')||'<p class="muted">Plus de départ aujourd’hui.</p>'}</div></div>`;
+   <div class="card" style="margin-top:14px"><h3>${tv('departs')}</h3><div class="deps">${deps.map(q=>{const l=leftFor(ds,q,60),pc=Math.round((cap-l)/cap*100);
+     return `<div class="dep"><b class="num">${fm(q)}</b><span class="${l<=0?'warn-t':'muted'}">${l<=0?'Complet':l+' places'}</span><div class="bar"><i class="${l<=0?'full':pc>=80?'warn':''}" style="width:${pc}%"></i></div><button class="btn" data-act="sellslot" data-m="${q}" ${l<=0?'disabled':''}>Vendre</button></div>`}).join('')||'<p class="muted">'+tv('plus_de_depart')+'</p>'}</div></div>`;
 }
 let resF='all',resQ='';
 function resItems(ds){
@@ -1403,7 +1405,7 @@ function drawResas(){
   let last=-1,html='';
   items.forEach(it=>{const h=Math.floor(it.t/60);if(h!==last){html+=`<div class="grp-h">${h}h</div>`;last=h}
     if(it.k==='park'){const s=it.s,dur=s.dur||60;
-      html+=`<button class="row rowbtn" data-act="ticket" data-id="${s.id}"><span class="rt-time num">${fm(it.t)}</span><span class="grow"><b>${swatch(bracelet(it.t,dur).color)}${s.jumpers} sauteur${s.jumpers>1?'s':''} · jusqu’à ${fm(it.t+dur)}</b><span class="muted">${s.clientId?esc(clientName(s.clientId)):'Client au comptoir'} · ${s.no}</span></span><b class="num">${eur(s.total)}</b></button>`;
+      html+=`<button class="row rowbtn" data-act="ticket" data-id="${s.id}"><span class="rt-time num">${fm(it.t)}</span><span class="grow"><b>${swatch(bracelet(it.t,dur).color)}${s.jumpers} ${NOUN()}${s.jumpers>1?'s':''} · jusqu’à ${fm(it.t+dur)}</b><span class="muted">${s.clientId?esc(clientName(s.clientId)):'Client au comptoir'} · ${s.no}</span></span><b class="num">${eur(s.total)}</b></button>`;
     }else{const e=it.e;
       html+=`<button class="row rowbtn" data-act="evinfo" data-id="${e.id}"><span class="rt-time num">${fm(it.t)}</span><span class="grow"><b>${esc(e.title)}</b><span class="muted">${ROOMS[e.room]} · ${e.guests} invités · jusqu’à ${fm(it.t+e.dur*60)}</span></span><span class="pill ${e.room==='bleue'?'ok':'warn'}">Événement</span></button>`}});
   $('#reslist').innerHTML=html||'<div class="empty">Aucune réservation pour ce filtre.</div>';
@@ -1492,9 +1494,9 @@ function vHomeBase(m){
     <div class="hero-actions"><a class="btn ghost" href="#resa">Planning clients</a></div></div>${homeTiles()}${ctrlBanner()}
    <div class="kpis"><div class="kpi"><div class="l">Ventes du jour</div><div class="v num">${eur(ca)}</div></div><div class="kpi"><div class="l">Présents</div><div class="v num">${here}<small> / ${cap}</small></div></div>
      <div class="kpi"><div class="l">Réservations</div><div class="v num">${resaN}</div></div><div class="kpi"><div class="l">Équipe en poste</div><div class="v num">${duty.length}</div></div></div>
-   <div class="home"><div class="card"><h3>Prochains départs</h3>${deps.map(q=>{const l=leftFor(td,q,60);return `<div class="row"><span class="rt-time num"><b>${fm(q)}</b></span><span class="grow muted">${l<=0?'Complet':l+' places'}</span><button class="btn" data-act="sellslot" data-m="${q}" ${l<=0?'disabled':''}>Vendre</button></div>`}).join('')||'<p class="muted">Plus de départ aujourd’hui.</p>'}</div>
-    <div class="card"><h3>Contrôle quotidien <span class="pill ${c&&c.done?'ok':'warn'}">${c&&c.done?'Validé':'À faire'}</span></h3><div class="bar" style="margin:6px 0 10px"><i style="width:${c&&c.done?100:Math.round(done/CHECK_IDS.length*100)}%"></i></div>
-     <p class="muted">${c&&c.done?'Signé par '+esc(staffOf(c.by).name)+' à '+hm(c.ts):done+' point'+(done>1?'s':'')+' sur '+CHECK_IDS.length+' contrôlés'}</p><a class="btn" style="margin-top:12px" href="#controle">${c&&c.done||!canCtl()?'Voir le contrôle':'Faire le contrôle'}</a></div>
+   <div class="home"><div class="card"><h3>${tv('departs')}</h3>${deps.map(q=>{const l=leftFor(td,q,60);return `<div class="row"><span class="rt-time num"><b>${fm(q)}</b></span><span class="grow muted">${l<=0?'Complet':l+' places'}</span><button class="btn" data-act="sellslot" data-m="${q}" ${l<=0?'disabled':''}>Vendre</button></div>`}).join('')||'<p class="muted">'+tv('plus_de_depart')+'</p>'}</div>
+    ${ctlOff()?'':`<div class="card"><h3>Contrôle quotidien <span class="pill ${c&&c.done?'ok':'warn'}">${c&&c.done?'Validé':'À faire'}</span></h3><div class="bar" style="margin:6px 0 10px"><i style="width:${c&&c.done?100:Math.round(done/CHECK_IDS.length*100)}%"></i></div>
+     <p class="muted">${c&&c.done?'Signé par '+esc(staffOf(c.by).name)+' à '+hm(c.ts):done+' point'+(done>1?'s':'')+' sur '+CHECK_IDS.length+' contrôlés'}</p><a class="btn" style="margin-top:12px" href="#controle">${c&&c.done||!canCtl()?'Voir le contrôle':'Faire le contrôle'}</a></div>`}
     <div class="card"><h3>Équipe en poste</h3>${duty.map(s=>{const k=shiftOf(td,s.id);return `<div class="row"><span class="avatar">${initials(s.name)}</span><span class="grow"><b>${esc(s.name)}</b><span class="muted">${ROLE[s.role]}</span></span><span class="pill">${shiftLabel(td,s.id)}</span></div>`}).join('')||'<p class="muted">Personne n’est planifié aujourd’hui.</p>'}</div>
     <div class="card"><h3>Congés à valider <span class="pill ${pend.length?'warn':'ok'}">${pend.length}</span></h3>${pend.map(l=>`<div class="row"><span class="grow"><b>${esc(staffOf(l.staffId).name)}</b><span class="muted">${dshort(l.from)} au ${dshort(l.to)}</span></span></div>`).join('')||'<p class="muted">Aucune demande en attente.</p>'}
      <button class="btn" style="margin-top:12px" data-act="goto" data-v="staff" data-t="conges">Gérer les congés</button></div></div>`;
@@ -1662,7 +1664,7 @@ function vDay(m){
     return `<button class="dl ${q===nowQ?'cur':''} ${past?'past':''}" style="background:${bg};color:${fg}" data-act="slot" data-m="${q}" aria-label="${fm(q)} : ${n} présents sur ${cap}, ${st.n} réservation${st.n>1?'s':''} au départ"><span class="dt1 num">${fm(q)}</span><span class="pc2 num">${Math.round(pc*100)} %</span><b class="num">${n}<small> / ${cap}</small></b><span class="dt2">${st.n?st.n+' résa · '+st.j+' pers.':'Aucun départ'}</span></button>`}).join('')}</div></div>`).join('');
   const ns=Math.max(QSTART,Math.min(QEND,Math.ceil(nm/15)*15));
   m.innerHTML=dayStrip(ds)+`<div class="plbar"><div class="pst"><span><b class="num">${cur!=null?cur:cap}</b> ${cur!=null?'présents maintenant sur '+cap:'places au total'}</span><span>Pic <b class="num">${peak}</b> à ${fm(pk)}</span><span><b class="num">${sales.length}</b> réservation${sales.length>1?'s':''}</span><span><b class="num">${evs.length}</b> événement${evs.length>1?'s':''}</span></div>
-    <div class="plact">${modeSeg()}<button class="btn primary" data-act="sellslot" data-m="${isT?ns:QSTART}">${ic('plus')}Réserver un départ</button></div></div>
+    <div class="plact">${modeSeg()}<button class="btn primary" data-act="sellslot" data-m="${isT?ns:QSTART}">${ic('plus')}${tv('reserver')}</button></div></div>
     <div class="slegend"><span>Libre</span><i class="sgrad"></i><span>Complet (${cap})</span><span class="muted">Chaque dalle = 15 minutes. Touchez une dalle pour voir toutes les réservations du créneau.</span></div>
     <div class="dalles">${rows}</div>`;
 }
@@ -1671,7 +1673,7 @@ function slotDetail(m){
   const act=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)).map(s=>({s,st:+s.slot.split('|')[1],dur:s.dur||60})).filter(x=>x.st<=m&&m<x.st+x.dur);
   const go=act.filter(x=>x.st===m),inprog=act.filter(x=>x.st<m),pers=act.reduce((a,x)=>a+x.s.jumpers,0),other=Math.max(0,o-pers);
   const evs=evOn(ds).filter(e=>e.h*60<=m&&m<(e.h+e.dur)*60);
-  const row=x=>`<button class="row rowbtn" data-act="ticket" data-id="${x.s.id}"><span class="grow"><b>${swatch(bracelet(x.st,x.dur).color)}${x.s.jumpers} sauteur${x.s.jumpers>1?'s':''} · ${x.s.clientId?esc(clientName(x.s.clientId)):'Au comptoir'}</b><span class="muted">${x.s.no} · ${fm(x.st)} à ${fm(x.st+x.dur)}</span></span><b class="num">${eur(x.s.total)}</b></button>`;
+  const row=x=>`<button class="row rowbtn" data-act="ticket" data-id="${x.s.id}"><span class="grow"><b>${swatch(bracelet(x.st,x.dur).color)}${x.s.jumpers} ${NOUN()}${x.s.jumpers>1?'s':''} · ${x.s.clientId?esc(clientName(x.s.clientId)):'Au comptoir'}</b><span class="muted">${x.s.no} · ${fm(x.st)} à ${fm(x.st+x.dur)}</span></span><b class="num">${eur(x.s.total)}</b></button>`;
   const can=m>=QS[0],prev=QS.includes(m-15)?m-15:null,next=QS.includes(m+15)?m+15:null;
   showModal(`<div class="mh"><button class="ix" data-act="slot" data-m="${prev}" ${prev==null?'disabled':''} aria-label="Créneau précédent">${ic('left')}</button><h2 style="flex:1;text-align:center">${fm(m)} à ${fm(m+15)}</h2><button class="ix" data-act="slot" data-m="${next}" ${next==null?'disabled':''} aria-label="Créneau suivant">${ic('right')}</button><button class="ix" data-act="close" aria-label="Fermer">${ic('x')}</button></div>
    <p class="muted" style="text-transform:capitalize;margin-top:-6px">${dlong(ds)}</p>
@@ -1701,10 +1703,10 @@ function vTimeline(m){
   const f=(nm-QSTART)/(N*15),nowl=isT&&f>=0&&f<=1?`<i class="nowv" style="--f:${f}"></i>`:'';
   const ns=Math.max(QSTART,Math.min(QEND,Math.ceil(nm/15)*15));
   m.innerHTML=dayStrip(ds)+`<div class="plbar"><div class="pst"><span><b class="num">${cur!=null?cur:cap}</b> ${cur!=null?'présents maintenant sur '+cap:'places au total'}</span><span>Pic <b class="num">${peak}</b> à ${fm(pk)}</span><span><b class="num">${sales.length}</b> réservation${sales.length>1?'s':''}</span><span><b class="num">${evs.length}</b> événement${evs.length>1?'s':''}</span></div>
-    <div class="plact">${modeSeg()}<button class="btn primary" data-act="sellslot" data-m="${isT?ns:QSTART}">${ic('plus')}Réserver un départ</button></div></div>
+    <div class="plact">${modeSeg()}<button class="btn primary" data-act="sellslot" data-m="${isT?ns:QSTART}">${ic('plus')}${tv('reserver')}</button></div></div>
    <div class="tlw"><div class="tlr" style="--n:${N}"><div class="tlbody">
      <div class="tlrow tlhead"><div class="tll"></div><div class="tlg hh" style="--n:${N}">${hdr}</div></div>
-     <div class="tlrow"><div class="tll"><b>Session JUMP</b><span>Trampo Park (${cap})</span></div><div class="tlg" style="--n:${N}">${cells}</div></div>
+     <div class="tlrow"><div class="tll"><b>${tv('session')}</b><span>${tv('lieu')} (${cap})</span></div><div class="tlg" style="--n:${N}">${cells}</div></div>
      ${rooms}${nowl}</div></div></div>
    <div class="slegend"><span>Libre</span><i class="sgrad"></i><span>Complet (${cap})</span><span class="muted">Un carré = 15 minutes : nombre de présents, et entre parenthèses les arrivées. Touchez un carré pour ouvrir le créneau.</span></div>`;
 }
@@ -1716,11 +1718,11 @@ function slotDetail(m){
   const act=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)).map(s=>({s,st:+s.slot.split('|')[1],dur:s.dur||60})).filter(x=>x.st<=m&&m<x.st+x.dur);
   const go=act.filter(x=>x.st===m),inprog=act.filter(x=>x.st<m),pers=act.reduce((a,x)=>a+x.s.jumpers,0),other=Math.max(0,o-pers);
   const evs=evOn(ds).filter(e=>e.h*60<=m&&m<(e.h+e.dur)*60);
-  const row=x=>`<button class="row rowbtn" data-act="ticket" data-id="${x.s.id}"><span class="grow"><b>${swatch(bracelet(x.st,x.dur).color)}${x.s.jumpers} sauteur${x.s.jumpers>1?'s':''} · ${x.s.clientId?esc(clientName(x.s.clientId)):'Au comptoir'}</b><span class="muted">${x.s.no} · ${fm(x.st)} à ${fm(x.st+x.dur)}</span></span><b class="num">${eur(x.s.total)}</b></button>`;
+  const row=x=>`<button class="row rowbtn" data-act="ticket" data-id="${x.s.id}"><span class="grow"><b>${swatch(bracelet(x.st,x.dur).color)}${x.s.jumpers} ${NOUN()}${x.s.jumpers>1?'s':''} · ${x.s.clientId?esc(clientName(x.s.clientId)):'Au comptoir'}</b><span class="muted">${x.s.no} · ${fm(x.st)} à ${fm(x.st+x.dur)}</span></span><b class="num">${eur(x.s.total)}</b></button>`;
   const prods=S.products.filter(p=>p.active&&p.jumper),need=prods.reduce((a,p)=>a+(slotSel[p.id]||0),0),dur=Math.max(60,...prods.filter(p=>slotSel[p.id]).map(p=>p.dur||60)),left=leftFor(ds,m,dur);
   const prev=QS.includes(m-15)?m-15:null,next=QS.includes(m+15)?m+15:null,ng=go.reduce((a,x)=>a+x.s.jumpers,0);
-  showModal(`<div class="mh"><button class="ix" data-act="slot" data-m="${prev}" ${prev==null?'disabled':''} aria-label="Créneau précédent">${ic('left')}</button><h2 style="flex:1;text-align:center">Session JUMP</h2><button class="ix" data-act="slot" data-m="${next}" ${next==null?'disabled':''} aria-label="Créneau suivant">${ic('right')}</button><button class="ix" data-act="close" aria-label="Fermer">${ic('x')}</button></div>
-   <div class="sinfo"><div><span class="lab">Début</span><b class="num">${fm(m)}</b></div><div><span class="lab">Fin</span><b class="num">${fm(m+15)}</b></div><div><span class="lab">Lieu</span><b>Trampo Park (${cap})</b></div><div><span class="lab">Jour</span><b style="text-transform:capitalize">${dshort(ds)}</b></div></div>
+  showModal(`<div class="mh"><button class="ix" data-act="slot" data-m="${prev}" ${prev==null?'disabled':''} aria-label="Créneau précédent">${ic('left')}</button><h2 style="flex:1;text-align:center">${tv('session')}</h2><button class="ix" data-act="slot" data-m="${next}" ${next==null?'disabled':''} aria-label="Créneau suivant">${ic('right')}</button><button class="ix" data-act="close" aria-label="Fermer">${ic('x')}</button></div>
+   <div class="sinfo"><div><span class="lab">Début</span><b class="num">${fm(m)}</b></div><div><span class="lab">Fin</span><b class="num">${fm(m+15)}</b></div><div><span class="lab">Lieu</span><b>${tv('lieu')} (${cap})</b></div><div><span class="lab">Jour</span><b style="text-transform:capitalize">${dshort(ds)}</b></div></div>
    <div class="occbox" style="background:${shut?'#E8ECF4':bg};color:${shut?'var(--ink)':fg}"><div><span class="lab">${shut?'Créneau fermé':'Présents sur ce créneau'}</span><b class="num">${o}<small> / ${cap}</small></b></div><div style="text-align:right"><span class="lab">Places libres</span><b class="num">${shut?0:cap-o}</b></div></div>
    ${isAdmin()?`<button class="btn" data-act="slotshut" data-m="${m}" style="width:100%">${shut?'Rouvrir ce créneau':'Fermer ce créneau aux ventes'}</button>`:''}
    <div class="grp-h">Choix d’activités</div>
@@ -2118,12 +2120,12 @@ const opHidden=id=>(noPos()&&POS_NAV.includes(id))||(!isAdmin()&&(id==='clients'
 const CATDEF=CATS.map(c=>c.name);
 const LISTDEF={mpts:MPTS.slice(),itypes:ITYPES.slice(),meq:MEQ.slice(),isec:ISECOURS.slice()};
 function applyCustom(){
-  const st=S.settings;
+  const st=S.settings;try{tplArt()}catch(e){}
   if(st.catNames)CATS.forEach((c,i)=>{if(st.catNames[i]&&st.catNames[i].trim())c.name=st.catNames[i].trim()});
   const L=st.lists||{};
   [['mpts',MPTS],['itypes',ITYPES],['meq',MEQ],['isec',ISECOURS]].forEach(([k,arr])=>{if(Array.isArray(L[k])&&L[k].length){arr.length=0;L[k].forEach(x=>arr.push(x))}});
   try{applyLook()}catch(e){}
-  const lg=$('#logo');if(lg)lg.innerHTML=st.logo?logoHtml():'<span class="lmark">'+ic('wave')+'</span><span class="lt">lago</span>';
+  const lg=$('#logo');if(lg)lg.innerHTML=st.logo?logoHtml():lagoLogo('d');
 }
 Object.assign(TABS,{params:[...TABS.params.slice(0,4),['pcat','Caisse'],['pctl','Contrôles'],TABS.params[4]]});
 SUBS.pcat=vSetCaisse;SUBS.pctl=vSetCtl;
@@ -2311,7 +2313,7 @@ const pendingCount=()=>accs().filter(a=>a.status==='pending').length;
 let ME=null;
 const curAcc=()=>ME;const curStaff=()=>ME&&ME.staffId||'';
 const gate=()=>$('#gate')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'gate'}));
-function gateShellBase(inner){const st=S.settings;gate().innerHTML=`<div class="gcard"><div class="glogo">${st.logo?`<img src="${st.logo}" alt="">`:`<span class="lmark">${ic('wave')}</span><span class="lt">lago</span>`}</div><p class="gname">${esc(st.name)}</p>${inner}</div>`;gate().hidden=false}
+function gateShellBase(inner){const st=S.settings;gate().innerHTML=`<div class="gcard"><div class="glogo">${st.logo?`<img src="${st.logo}" alt="">`:`${lagoLogo('l')}`}</div><p class="gname">${esc(st.name)}</p>${inner}</div>`;gate().hidden=false}
 function gateStart(){
   const act=accs().filter(a=>a.status==='active');
   if(!accs().length)return gateEmpty();
@@ -2355,11 +2357,11 @@ document.addEventListener('submit',async e=>{
     if(k==='new'||k==='setup'){
       
       if(accs().some(a=>a.ident===ident)){err('Cet identifiant existe déjà.');return}
-      if(k==='setup'&&(cloudOn()||window.__joinBad)){err('Cet appareil est relié à l’équipe : aucun compte administrateur ne peut être créé ici. Réessayez la connexion ou collez à nouveau le lien d’équipe.');return}
+      if(k==='setup'&&(cloudOn()||window.__joinBad)&&!tplBootOn()){err('Cet appareil est relié à l’équipe : aucun compte administrateur ne peut être créé ici. Réessayez la connexion ou collez à nouveau le lien d’équipe.');return}
       const id=uid(),first=k==='setup';
       const a={id,name:$('#gn').value.trim(),ident,pwd:pw?await hashPw(pw,id):'',status:first?'active':'pending',admin:first,profileId:'',staffId:k==='new'?$('#gstf').value:'',ts:Date.now()};
       accs().push(a);save();
-      if(first)login(a,true);
+      if(first){tplAfterAdmin(a);login(a,true)}
       else gateShell(`<div class="gpick"><span class="avatar big ok">${ic('check')}</span><h2>Demande envoyée</h2></div><p class="muted" style="text-align:center">Votre compte sera utilisable dès que l’administrateur l’aura validé.</p>${cloudOn()?'':'<div class="banner" id="gnolink"><span><b>Attention :</b> ce téléphone n’est pas connecté à l’équipe. Votre demande n’est enregistrée que sur cet appareil et n’arrivera pas chez l’administrateur. Ouvrez le lien d’équipe, ou touchez le bouton ci-dessous.</span></div>'}<div class="gfoot"><button class="btn primary" data-act="g_back">Retour</button></div>`);
     }else{
       const a=k==='pick'?accs().find(x=>x.id===f.dataset.id):accs().find(x=>x.ident===ident);
@@ -2590,7 +2592,7 @@ function vStats(m){
   cur.L.forEach(s=>{if(!s.slot)return;const [d,mm]=s.slot.split('|'),w=(new Date(d+'T12:00').getDay()+6)%7,h=Math.floor(+mm/60);heat[w+'|'+h]=(heat[w+'|'+h]||0)+(s.jumpers||0)});
   const hm2=Math.max(1,...Object.values(heat));
   const dn=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-  const heatH=`<div class="heat" style="--c:${hrs.length}"><span></span>${hrs.map(h=>`<b>${h}h</b>`).join('')}${dn.map((n,w)=>`<b class="hd">${n}</b>${hrs.map(h=>{const v=heat[w+'|'+h]||0;return `<i style="--a:${(v/hm2).toFixed(2)}" title="${n} ${h}h : ${v} sauteurs">${v||''}</i>`}).join('')}`).join('')}</div>`;
+  const heatH=`<div class="heat" style="--c:${hrs.length}"><span></span>${hrs.map(h=>`<b>${h}h</b>`).join('')}${dn.map((n,w)=>`<b class="hd">${n}</b>${hrs.map(h=>{const v=heat[w+'|'+h]||0;return `<i style="--a:${(v/hm2).toFixed(2)}" title="${n} ${h}h : ${v} ${PLUR()}">${v||''}</i>`}).join('')}`).join('')}</div>`;
   // contrôle / qualité
   const chk=R.days.filter(d=>S.checks[d]&&S.checks[d].done).length,past=R.days.filter(d=>d<=today()).length;
   const inc=S.incidents.filter(x=>x.date>=R.from).length,mn=S.maint.filter(x=>x.statut!=='Terminé').length;
@@ -2598,12 +2600,12 @@ function vStats(m){
   const withCl=cur.L.filter(s=>s.clientId).length;
   const kp=(l,v,d,sub)=>`<div class="kpi st"><div class="l">${l}</div><div class="v num" data-count>${v}</div><div class="sub2">${dTag(d)} ${sub||''}</div></div>`;
   m.innerHTML=head('Statistiques')+`<div class="seg stseg">${stPeriods.map(([k,l])=>`<button class="${stP===k?'on':''}" data-act="stp" data-k="${k}">${l}</button>`).join('')}</div>
-   <div class="kpis st6">${kp('Chiffre d’affaires',eurN(cur.ca),dlt(cur.ca,prev.ca),'vs période précédente')}${kp('Tickets',cur.n,dlt(cur.n,prev.n))}${kp('Panier moyen',eurN(cur.avg),dlt(cur.avg,prev.avg))}${kp('Sauteurs',cur.jp,dlt(cur.jp,prev.jp))}${kp('CA par sauteur',eurN(cur.perJ),dlt(cur.perJ,prev.perJ))}${kp('Clients identifiés',cur.n?Math.round(withCl/cur.n*100)+' %':'–',null,'des tickets')}</div>
+   <div class="kpis st6">${kp('Chiffre d’affaires',eurN(cur.ca),dlt(cur.ca,prev.ca),'vs période précédente')}${kp('Tickets',cur.n,dlt(cur.n,prev.n))}${kp('Panier moyen',eurN(cur.avg),dlt(cur.avg,prev.avg))}${kp(CAPP(),cur.jp,dlt(cur.jp,prev.jp))}${kp('CA par sauteur',eurN(cur.perJ),dlt(cur.perJ,prev.perJ))}${kp('Clients identifiés',cur.n?Math.round(withCl/cur.n*100)+' %':'–',null,'des tickets')}</div>
    ${aiOk()?`<div class="card ai-sum"><button class="btn ai" data-act="stai" ${ctl.busy?'disabled':''}>${ic('wave')}Résumé et conseils IA</button><p class="aiout" id="stai">${esc(ctl.stAi||'')}</p></div>`:''}
    <div class="card"><div class="mtitle"><h3>Chiffre d’affaires par jour</h3><span class="muted">moyenne ${eurN(avgD)} · ligne orange</span></div><div class="bchw">${svg}</div></div>
    <div class="cols"><div class="card"><h3>Ventes par catégorie</h3>${bars(catL.map(([c,v])=>[c+' · '+Math.round(v/catT*100)+' %',v]),eurN)}</div>
     <div class="card"><h3>Produits les plus vendus</h3>${bars(top.map(([n,p])=>[n+' ×'+p.q,p.v]),eurN,'var(--pay)')}</div></div>
-   <div class="card"><h3>Heures de pointe <span class="muted" style="font-weight:500">sauteurs par créneau</span></h3><div class="heatw">${heatH}</div></div>
+   <div class="card"><h3>Heures de pointe <span class="muted" style="font-weight:500">${PLUR()} par créneau</span></h3><div class="heatw">${heatH}</div></div>
    <div class="cols"><div class="card"><h3>Modes de paiement</h3>${bars(Object.entries(pays).sort((a,b)=>b[1]-a[1]),eurN)}</div>
     <div class="card"><h3>Sécurité et exploitation</h3><div class="mini"><div><b class="num">${chk}/${past}</b><span>contrôles quotidiens validés</span></div><div><b class="num">${inc}</b><span>incident${inc>1?'s':''} déclaré${inc>1?'s':''}</span></div><div><b class="num">${mn}</b><span>maintenance${mn>1?'s':''} ouverte${mn>1?'s':''}</span></div><div><b class="num">${low}</b><span>produit${low>1?'s':''} à réapprovisionner</span></div></div></div></div>`;
   m.querySelectorAll('[data-count]').forEach(countUp);
@@ -3779,7 +3781,7 @@ function ciLookup(raw){
   if(s){
     const cl=s.clientId?clientById(s.clientId):null,tot=s.jumpers||0,done=entered(s),rem=Math.max(0,tot-done),wv=wvStatus(cl);
     const [sd,sm]=s.slot?s.slot.split('|'):[null,null],late=sd&&sd!==today();
-    showModal(`${mh('Billet '+esc(s.no))}<div class="row"><span class="grow"><b>${esc(cl?cl.name:'Client comptoir')}</b><span class="muted">${tot} sauteur${tot>1?'s':''}${s.slot?' · '+(sd===today()?'aujourd’hui':dshort(sd))+' à '+fm(+sm):''}</span></span><span class="pill ${rem?'ok':''}">${done}/${tot} entré${done>1?'s':''}</span></div>
+    showModal(`${mh('Billet '+esc(s.no))}<div class="row"><span class="grow"><b>${esc(cl?cl.name:'Client comptoir')}</b><span class="muted">${tot} ${NOUN()}${tot>1?'s':''}${s.slot?' · '+(sd===today()?'aujourd’hui':dshort(sd))+' à '+fm(+sm):''}</span></span><span class="pill ${rem?'ok':''}">${done}/${tot} entré${done>1?'s':''}</span></div>
      ${late?`<p class="warn-t">Ce billet est prévu le ${dshort(sd)}.</p>`:''}${tot?'':'<p class="warn-t">Ce ticket ne contient aucune séance de saut.</p>'}
      <p class="${wv.c==='bad'?'warn-t':'muted'}" style="margin:8px 0">${esc(wv.t)}</p>
      ${rem?`<div class="field"><label for="cin_n">Personnes qui entrent</label><input id="cin_n" type="number" min="1" max="${rem}" value="${rem}"></div><button class="btn-pay" data-act="x3_cigo" data-kind="ticket" data-ref="${esc(s.no)}">Valider l’entrée</button>`:`<p class="muted">${tot?'Tout le monde est déjà entré.':''}</p>`}`);
@@ -4202,8 +4204,8 @@ async function cloudBoot(){
   const c=cloudCfg();
   await cFetch(7000);
   c.alt=(cloudCfg()||{}).alt;
-  if(c.fresh&&CL.R!==undefined){treeToS(CL.R,true);cloudNormalize();saveBase();CL.B=CL.R;c.fresh=false;cloudSet(c);CL.ui=true}
-  else if(c.fresh){c.fresh=false;cloudSet(c)}
+  if(c.fresh&&CL.R!==undefined){treeToS(CL.R,true);cloudNormalize();saveBase();CL.B=CL.R;c.fresh=false;delete c.boot;cloudSet(c);CL.ui=true}
+  else if(c.fresh){if(c.boot)tplBootstrap(c.boot);c.fresh=false;cloudSet(c)}
   else{
     if(CL.R===undefined){CL.B=undefined}
     else{
@@ -4218,7 +4220,7 @@ async function cloudBoot(){
 /* démarrage : avant l’écran de connexion */
 function bootGate(){
   window.__lagoUp=1;{const bs=document.getElementById('boot');if(bs)bs.remove()}
-  if(/^#cloud=/i.test(location.hash)){const x=joinParse(location.hash);if(x)cloudSet({u:x.u,r:x.r,fresh:true});else window.__joinBad=true;history.replaceState(null,'',location.pathname+location.search)}
+  if(/^#cloud=/i.test(location.hash)){const x=joinParse(location.hash);if(x&&tplLinkBusy(x)){window.__joinBlock=1;setTimeout(tplBlockNote,600)}else if(x)cloudSet({u:x.u,r:x.r,fresh:true,boot:x.b?{t:x.t,n:x.n}:undefined});else window.__joinBad=true;history.replaceState(null,'',location.pathname+location.search)}
   if(!cloudOn()){bootGateBase();return}
   const sp=document.createElement('div');sp.id='zsplash';sp.style.cssText='position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:#1D4FD7;color:#fff;font:600 18px system-ui';sp.textContent='Connexion à l’équipe…';document.body.appendChild(sp);
   cloudBoot().catch(e=>{
@@ -4412,7 +4414,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v71';
+const LAGO_V='v72';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -4436,7 +4438,7 @@ function joinParse(t){
   const i=t.indexOf('cloud=');let b=i>=0?t.slice(i+6):t;
   b=b.replace(/[^A-Za-z0-9+\/=_-].*$/s,'').replace(/-/g,'+').replace(/_/g,'/');
   while(b.length%4)b+='=';
-  try{const x=JSON.parse(atob(b));if(x&&typeof x.u==='string'&&typeof x.r==='string'&&/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])[^\s]+/.test(x.u)&&x.r)return{u:x.u,r:x.r}}catch(e){}
+  try{const x=JSON.parse(atob(b));if(x&&typeof x.u==='string'&&typeof x.r==='string'&&/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])[^\s]+/.test(x.u)&&x.r){const o={u:x.u,r:x.r};if(x.b===1||x.g===1){o.g=1;if(x.b===1)o.b=1}if(typeof x.t==='string'&&/^[a-z0-9-]{2,30}$/.test(x.t))o.t=x.t;if(typeof x.n==='string')o.n=x.n.replace(/[\u0000-\u001f]/g,' ').trim().slice(0,80);return o}}catch(e){}
   return null;
 }
 function gateJoin(){
@@ -4458,7 +4460,8 @@ document.addEventListener('submit',e=>{
   if(e.target.id!=='gjoin')return;e.preventDefault();
   const er=document.getElementById('gerr'),x=joinParse(document.getElementById('gjl').value);
   if(!x){if(er)er.textContent='Ce lien n’est pas reconnu. Copiez le lien complet reçu (il contient « #cloud= »).';return}
-  cloudSet({u:x.u,r:x.r,fresh:true});
+  if(tplLinkBusy(x)){if(er)er.textContent='Ce lien crée un nouvel espace : il ne peut pas être ouvert sur un appareil qui contient déjà un Lago. Utilisez une fenêtre de navigation privée.';return}
+  cloudSet({u:x.u,r:x.r,fresh:true,boot:x.b?{t:x.t,n:x.n}:undefined});
   const bt=e.target.querySelector('button[type=submit]');if(bt){bt.disabled=true;bt.textContent='Connexion à l’équipe…'}
   setTimeout(()=>location.reload(),150);
 });
@@ -4466,6 +4469,7 @@ document.addEventListener('submit',e=>{
 /* ---- appareil d'équipe sans compte : jamais de création d'administrateur, seulement réessayer / rejoindre ---- */
 const signupOk=()=>!cloudOn()||!!S.settings.signup;
 function gateEmpty(){
+  if(tplBootOn())return gateBoot();
   if(!cloudOn()&&!window.__joinBad)return gateSetup();
   const bad=!cloudOn();
   gateShell(`<div class="gempty"><h2>${bad?'Lien d’équipe non reconnu':'Équipe injoignable'}</h2>
@@ -4563,7 +4567,7 @@ function opHomeClean(m){
   m.querySelectorAll('.hero-actions').forEach(x=>x.remove());
   m.querySelectorAll('.kpi').forEach(k=>{if(/Réservations|Présents|Ventes du jour/.test(k.textContent))k.remove()});
   m.querySelectorAll('.kpis').forEach(k=>{if(!k.children.length)k.remove()});
-  m.querySelectorAll('.home .card').forEach(c=>{const h=c.querySelector('h3');if(h&&/Prochains départs/.test(h.textContent))c.remove()});
+  m.querySelectorAll('.home .card').forEach(c=>{const h=c.querySelector('h3');if(h&&h.textContent.includes(tv('departs')))c.remove()});
   const hp=m.querySelector('.hero > div > p:not(.eyebrow):not(.wel)');if(hp)hp.textContent=S.settings.name;
 }
 gbarDraw(true);
@@ -4998,8 +5002,9 @@ document.addEventListener('submit',e=>{
   if(e.target.id!=='mjoin')return;e.preventDefault();
   const er=document.getElementById('mjerr'),x=joinParse(document.getElementById('mjl').value);
   if(!x){if(er)er.textContent='Ce lien n’est pas reconnu. Copiez le lien complet (il contient « #cloud= »).';return}
+  if(tplLinkBusy(x)){if(er)er.textContent='Ce lien crée un nouvel espace : il ne peut pas être ouvert sur un appareil qui contient déjà un Lago. Utilisez une fenêtre de navigation privée.';return}
   msBackup('avant-equipe');
-  cloudSet({u:x.u,r:x.r,fresh:true});
+  cloudSet({u:x.u,r:x.r,fresh:true,boot:x.b?{t:x.t,n:x.n}:undefined});
   const bt=e.target.querySelector('button[type=submit]');if(bt){bt.disabled=true;bt.textContent='Connexion à l’équipe…'}
   setTimeout(()=>location.reload(),150);
 });
@@ -8763,6 +8768,257 @@ function occ(date,m){
   if(a)for(let i=0;i<a.length;i+=3)if(a[i]<=m&&m<a[i+1])ex+=a[i+2];
   return Math.min(S.settings.cap,base+ex);
 }
+/* ===== v72 : nouveau logo Lago ===== */
+/* généré par logo/build_logo.py : mot-symbole « lago » (l = fond clair, d = fond sombre, e = emblème seul) */
+const LAGO_LOGOS={l:"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%22-10 -760 2014 1000%22 role=%22img%22 aria-label=%22lago%22%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%230A1F4D%22 d=%22M66 0V-715H208V0Z%22/%3E%3C/g%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%230A1F4D%22 d=%22M437 14Q393 14 359.0 -3.5Q325 -21 306.0 -54.0Q287 -87 287 -136Q287 -179 303.5 -208.0Q320 -237 352.0 -255.0Q384 -273 431.0 -285.0Q478 -297 538 -306Q570 -311 590.5 -315.5Q611 -320 621.0 -330.5Q631 -341 631 -361Q631 -389 611.0 -409.0Q591 -429 548 -429Q519 -429 494.5 -419.0Q470 -409 452.5 -389.0Q435 -369 427 -338L300 -377Q312 -418 334.5 -448.0Q357 -478 389.0 -498.5Q421 -519 462.0 -529.0Q503 -539 551 -539Q628 -539 676.5 -514.5Q725 -490 749.0 -438.5Q773 -387 773 -306V-216Q773 -181 774.5 -145.0Q776 -109 778.5 -72.5Q781 -36 784 0H657Q653 -25 649.5 -57.5Q646 -90 644 -123H626Q612 -85 586.0 -54.0Q560 -23 522.5 -4.5Q485 14 437 14ZM498 -90Q517 -90 536.5 -97.0Q556 -104 574.5 -116.5Q593 -129 608.5 -148.0Q624 -167 634 -191L632 -275L655 -270Q637 -257 613.0 -249.5Q589 -242 563.5 -238.0Q538 -234 513.0 -229.0Q488 -224 468.5 -216.0Q449 -208 437.5 -194.5Q426 -181 426 -157Q426 -126 446.0 -108.0Q466 -90 498 -90Z%22/%3E%3C/g%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%230A1F4D%22 d=%22M1081 183Q995 183 939.5 169.5Q884 156 858.0 130.0Q832 104 832 65Q832 19 868.5 -10.0Q905 -39 976 -45V-65Q922 -65 893.0 -76.5Q864 -88 864 -117Q864 -145 892.5 -167.0Q921 -189 987 -202V-222Q925 -226 890.0 -262.0Q855 -298 855 -355Q855 -405 883.0 -444.5Q911 -484 966.5 -507.5Q1022 -531 1103 -531H1369V-421L1204 -444V-421Q1268 -412 1296.5 -389.0Q1325 -366 1325 -325Q1325 -284 1298.0 -253.0Q1271 -222 1221.5 -204.5Q1172 -187 1103 -187Q1090 -187 1075.0 -188.0Q1060 -189 1025 -193Q1006 -179 995.5 -168.5Q985 -158 985 -149Q985 -142 992.5 -137.0Q1000 -132 1012.5 -130.0Q1025 -128 1038 -128H1188Q1208 -128 1240.0 -125.5Q1272 -123 1304.0 -110.0Q1336 -97 1358.0 -68.5Q1380 -40 1380 13Q1380 71 1347.5 109.0Q1315 147 1248.5 165.0Q1182 183 1081 183ZM1097 68Q1158 68 1192.0 61.5Q1226 55 1240.5 40.5Q1255 26 1255 4Q1255 -16 1246.5 -27.0Q1238 -38 1224.5 -42.5Q1211 -47 1197.5 -48.5Q1184 -50 1174 -50H1048Q1006 -46 987.5 -27.5Q969 -9 969 15Q969 37 983.0 48.0Q997 59 1025.5 63.5Q1054 68 1097 68ZM1095 -262Q1143 -262 1167.0 -285.5Q1191 -309 1191 -347Q1191 -387 1166.5 -413.0Q1142 -439 1095 -439Q1049 -439 1023.0 -413.5Q997 -388 997 -348Q997 -323 1008.5 -303.5Q1020 -284 1042.0 -273.0Q1064 -262 1095 -262Z%22/%3E%3C/g%3E%3Csvg x=%221416%22 y=%22-562%22 width=%22578%22 height=%22578%22 viewBox=%220 0 100 100%22%3E%3Cdefs%3E%3CclipPath id=%22cwl%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22/%3E%3C/clipPath%3E%3ClinearGradient id=%22swl%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23FFB347%22/%3E%3Cstop offset=%221%22 stop-color=%22%23FF6A0C%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22wwl%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%233C7BF6%22/%3E%3Cstop offset=%221%22 stop-color=%22%23123B9B%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path=%22url(%23cwl)%22%3E%3Cpath fill=%22url(%23swl)%22 d=%22M-16.7 50 Q-0.05 28 16.6 50 T49.9 50 T83.2 50 T116.5 50 T149.8 50 L130 -20 L-20 -20Z%22/%3E%3Cpath fill=%22url(%23wwl)%22 d=%22M-16.7 59 Q-0.05 37 16.6 59 T49.9 59 T83.2 59 T116.5 59 T149.8 59 L130 130 L-20 130Z%22/%3E%3C/g%3E%3C/svg%3E%3C/svg%3E",d:"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%22-10 -760 2014 1000%22 role=%22img%22 aria-label=%22lago%22%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%23FFFFFF%22 d=%22M66 0V-715H208V0Z%22/%3E%3C/g%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%23FFFFFF%22 d=%22M437 14Q393 14 359.0 -3.5Q325 -21 306.0 -54.0Q287 -87 287 -136Q287 -179 303.5 -208.0Q320 -237 352.0 -255.0Q384 -273 431.0 -285.0Q478 -297 538 -306Q570 -311 590.5 -315.5Q611 -320 621.0 -330.5Q631 -341 631 -361Q631 -389 611.0 -409.0Q591 -429 548 -429Q519 -429 494.5 -419.0Q470 -409 452.5 -389.0Q435 -369 427 -338L300 -377Q312 -418 334.5 -448.0Q357 -478 389.0 -498.5Q421 -519 462.0 -529.0Q503 -539 551 -539Q628 -539 676.5 -514.5Q725 -490 749.0 -438.5Q773 -387 773 -306V-216Q773 -181 774.5 -145.0Q776 -109 778.5 -72.5Q781 -36 784 0H657Q653 -25 649.5 -57.5Q646 -90 644 -123H626Q612 -85 586.0 -54.0Q560 -23 522.5 -4.5Q485 14 437 14ZM498 -90Q517 -90 536.5 -97.0Q556 -104 574.5 -116.5Q593 -129 608.5 -148.0Q624 -167 634 -191L632 -275L655 -270Q637 -257 613.0 -249.5Q589 -242 563.5 -238.0Q538 -234 513.0 -229.0Q488 -224 468.5 -216.0Q449 -208 437.5 -194.5Q426 -181 426 -157Q426 -126 446.0 -108.0Q466 -90 498 -90Z%22/%3E%3C/g%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%23FFFFFF%22 d=%22M1081 183Q995 183 939.5 169.5Q884 156 858.0 130.0Q832 104 832 65Q832 19 868.5 -10.0Q905 -39 976 -45V-65Q922 -65 893.0 -76.5Q864 -88 864 -117Q864 -145 892.5 -167.0Q921 -189 987 -202V-222Q925 -226 890.0 -262.0Q855 -298 855 -355Q855 -405 883.0 -444.5Q911 -484 966.5 -507.5Q1022 -531 1103 -531H1369V-421L1204 -444V-421Q1268 -412 1296.5 -389.0Q1325 -366 1325 -325Q1325 -284 1298.0 -253.0Q1271 -222 1221.5 -204.5Q1172 -187 1103 -187Q1090 -187 1075.0 -188.0Q1060 -189 1025 -193Q1006 -179 995.5 -168.5Q985 -158 985 -149Q985 -142 992.5 -137.0Q1000 -132 1012.5 -130.0Q1025 -128 1038 -128H1188Q1208 -128 1240.0 -125.5Q1272 -123 1304.0 -110.0Q1336 -97 1358.0 -68.5Q1380 -40 1380 13Q1380 71 1347.5 109.0Q1315 147 1248.5 165.0Q1182 183 1081 183ZM1097 68Q1158 68 1192.0 61.5Q1226 55 1240.5 40.5Q1255 26 1255 4Q1255 -16 1246.5 -27.0Q1238 -38 1224.5 -42.5Q1211 -47 1197.5 -48.5Q1184 -50 1174 -50H1048Q1006 -46 987.5 -27.5Q969 -9 969 15Q969 37 983.0 48.0Q997 59 1025.5 63.5Q1054 68 1097 68ZM1095 -262Q1143 -262 1167.0 -285.5Q1191 -309 1191 -347Q1191 -387 1166.5 -413.0Q1142 -439 1095 -439Q1049 -439 1023.0 -413.5Q997 -388 997 -348Q997 -323 1008.5 -303.5Q1020 -284 1042.0 -273.0Q1064 -262 1095 -262Z%22/%3E%3C/g%3E%3Csvg x=%221416%22 y=%22-562%22 width=%22578%22 height=%22578%22 viewBox=%220 0 100 100%22%3E%3Cdefs%3E%3CclipPath id=%22cwd%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22/%3E%3C/clipPath%3E%3ClinearGradient id=%22swd%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23FFB347%22/%3E%3Cstop offset=%221%22 stop-color=%22%23FF6A0C%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22wwd%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%237FA8FF%22/%3E%3Cstop offset=%221%22 stop-color=%22%233C7BF6%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path=%22url(%23cwd)%22%3E%3Cpath fill=%22url(%23swd)%22 d=%22M-16.7 50 Q-0.05 28 16.6 50 T49.9 50 T83.2 50 T116.5 50 T149.8 50 L130 -20 L-20 -20Z%22/%3E%3Cpath fill=%22url(%23wwd)%22 d=%22M-16.7 59 Q-0.05 37 16.6 59 T49.9 59 T83.2 59 T116.5 59 T149.8 59 L130 130 L-20 130Z%22/%3E%3C/g%3E%3C/svg%3E%3C/svg%3E",e:"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cdefs%3E%3CclipPath id=%22cem%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22/%3E%3C/clipPath%3E%3ClinearGradient id=%22sem%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23FFB347%22/%3E%3Cstop offset=%221%22 stop-color=%22%23FF6A0C%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22wem%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%237FA8FF%22/%3E%3Cstop offset=%221%22 stop-color=%22%233C7BF6%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path=%22url(%23cem)%22%3E%3Cpath fill=%22url(%23sem)%22 d=%22M-16.7 50 Q-0.05 28 16.6 50 T49.9 50 T83.2 50 T116.5 50 T149.8 50 L130 -20 L-20 -20Z%22/%3E%3Cpath fill=%22url(%23wem)%22 d=%22M-16.7 59 Q-0.05 37 16.6 59 T49.9 59 T83.2 59 T116.5 59 T149.8 59 L130 130 L-20 130Z%22/%3E%3C/g%3E%3C/svg%3E"};
+
+function lagoLogo(k){return '<img class="lgw" alt="lago" src="'+LAGO_LOGOS[k]+'">'+(k==='d'?'<img class="lgm" alt="" aria-hidden="true" src="'+LAGO_LOGOS.e+'">':'')}
+
+/* ===== v72 : modèles métier · espace client neuf · suspension =====
+   - Les modèles (templates/*.json) sont intégrés à la construction de Lago : TPL_DATA.
+   - « Mon métier » (Paramètres) applique un modèle : produits, catégories, horaires, menus affichés, textes, fidélité…
+   - Un lien d'activation créé par la console (#cloud=… avec b:1) prépare un espace client NEUF : état vierge + modèle choisi,
+     puis le premier visiteur crée le compte administrateur.
+   - Suspension : si le propriétaire suspend l'espace depuis la console, la base refuse tout accès ; Lago affiche un écran clair. */
+const TPL_DATA=[{"id":"parc-trampoline","version":1,"label":"Parc de trampolines","resume":"Sessions de saut, bar, anniversaires, privatisations, cartes cadeaux.","settings":{"catNames":["Park","Bar","Événement","Gestion"],"subs":{"bar":["Boissons fraîches","Boissons chaudes","Snack","Crêpes & paninis","Pizza","Pop corn","Glaces"]},"capacite":200,"equipe_minimum":3,"horaires":{"ouverture":"10:00","fermeture":"19:00","jours_fermes":[]},"fond_de_caisse":100,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Découverte","points":100,"remise":5},{"nom":"Habitué","points":250,"remise":15},{"nom":"VIP","points":500,"remise":35}]},"reservation_en_ligne":{"places_par_creneau":120,"delai_minimum_minutes":120,"jours_a_l_avance":60,"personnes_max":12,"message":"Chaussettes antidérapantes obligatoires (en vente sur place)."},"message_accueil":"Bonne journée à toute l’équipe !","pied_de_ticket":"Merci et à bientôt chez {nom} !","echeances_desactivees":[]},"products":[{"name":"Session 1 h","cat":"park","price":14,"tva":10,"jumper":true,"dur":60,"art":"p1"},{"name":"Session 1 h 30","cat":"park","price":18,"tva":10,"jumper":true,"dur":90,"art":"p2"},{"name":"Session 2 h","cat":"park","price":22,"tva":10,"jumper":true,"dur":120,"art":"p2"},{"name":"Mini sauteur, moins de 6 ans","cat":"park","price":10,"tva":10,"jumper":true,"dur":45,"art":"p3"},{"name":"Accompagnateur","cat":"park","price":2,"tva":10,"art":"p4"},{"name":"Pass 10 sessions","cat":"park","price":120,"tva":10,"art":"p5"},{"name":"Chaussettes antidérapantes","cat":"park","price":2.5,"tva":20,"art":"b1"},{"name":"Gourde","cat":"park","price":8,"tva":20,"art":"b2"},{"name":"T-shirt du parc","cat":"park","price":15,"tva":20,"art":"b3"},{"name":"Eau 50 cl","cat":"bar","scat":"Boissons fraîches","price":1.5,"tva":10,"art":"s1"},{"name":"Soda","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Jus de fruits","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Café","cat":"bar","scat":"Boissons chaudes","price":1.8,"tva":10,"art":"s3"},{"name":"Chocolat chaud","cat":"bar","scat":"Boissons chaudes","price":2.5,"tva":10,"art":"s3"},{"name":"Hot-dog","cat":"bar","scat":"Snack","price":4.5,"tva":10,"art":"s5"},{"name":"Chips","cat":"bar","scat":"Snack","price":2,"tva":10},{"name":"Gaufre sucre","cat":"bar","scat":"Crêpes & paninis","price":3.5,"tva":10,"art":"s4"},{"name":"Crêpe sucre","cat":"bar","scat":"Crêpes & paninis","price":3,"tva":10,"art":"s4"},{"name":"Panini jambon fromage","cat":"bar","scat":"Crêpes & paninis","price":5.5,"tva":10,"art":"s5"},{"name":"Pizza margherita","cat":"bar","scat":"Pizza","price":7,"tva":10},{"name":"Pizza reine","cat":"bar","scat":"Pizza","price":8,"tva":10},{"name":"Pop corn","cat":"bar","scat":"Pop corn","price":3,"tva":10},{"name":"Glace","cat":"bar","scat":"Glaces","price":2.5,"tva":10,"art":"s6"},{"name":"Cône vanille","cat":"bar","scat":"Glaces","price":2.5,"tva":10,"art":"s6"},{"name":"Anniversaire Essentiel","cat":"event","price":249,"tva":10,"event":true,"guests":10,"art":"a1"},{"name":"Anniversaire Premium","cat":"event","price":329,"tva":10,"event":true,"guests":10,"art":"a2"},{"name":"Privatisation 2 h","cat":"event","price":590,"tva":10,"event":true,"guests":30},{"name":"Team building","cat":"event","price":450,"tva":10,"event":true,"guests":20},{"name":"Enfant supplémentaire","cat":"event","price":19,"tva":10,"art":"a3"},{"name":"Acompte événement","cat":"gestion","price":60,"tva":10},{"name":"Carte cadeau 20 €","cat":"gestion","price":20,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","price":50,"tva":20},{"name":"Caution matériel","cat":"gestion","price":20,"tva":20}]},{"id":"laser-game","version":1,"label":"Laser game","resume":"Parties de laser, bar, anniversaires, soirées entreprise, cartes cadeaux.","settings":{"catNames":["Parties","Bar","Événements","Boutique et gestion"],"subs":{"bar":["Boissons fraîches","Bières","Snack","Sucré"],"gestion":["Cartes cadeaux","Divers"]},"capacite":30,"equipe_minimum":2,"horaires":{"ouverture":"10:00","fermeture":"22:00","jours_fermes":[]},"fond_de_caisse":100,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Recrue","points":100,"remise":5},{"nom":"Agent","points":250,"remise":15},{"nom":"Légende","points":500,"remise":35}]},"reservation_en_ligne":{"places_par_creneau":24,"delai_minimum_minutes":120,"jours_a_l_avance":60,"personnes_max":15,"message":"Arrivez 15 minutes avant votre partie pour le briefing. Chaussures fermées conseillées."},"message_accueil":"Bonne partie à toute l’équipe !","pied_de_ticket":"Merci et à bientôt chez {nom} !","echeances_desactivees":["mousse","jeux"],"listes_controle_mensuel":["Gilets et capteurs (état, fixations)","Pistolets laser (lentilles, déclencheurs, batteries)","Bornes de recharge et chargeurs","Base de jeu et serveur de scores","Décors, cloisons et obstacles (solidité, arêtes)","Fumigène : machine, liquide, aération","Éclairage de jeu et éclairage de secours","Sols et zones de circulation","Issues de secours et signalétique","Extincteurs et trousse de secours","Vestiaires, casiers et sanitaires","Règlement et consignes de sécurité affichés"],"onglets_masques":["controle:visuel","resa:qweekle"],"types_equipement":["Arène de jeu","Labyrinthe","Salle de briefing","Autre"],"illustrations":{"park":"laser","bar":"biere","event":"groupe","gestion":"cadeau"},"vocabulaire":{"session":"Parties de laser","lieu":"Arène","reserver":"Réserver une partie","departs":"Prochaines parties","plus_de_depart":"Plus de partie aujourd’hui.","personne":"joueur","clients_de":"Joueurs","nom_etab":"Nom du laser game"}},"products":[{"name":"Partie laser 20 min","cat":"park","price":9,"tva":10,"jumper":true,"dur":20,"art":"cible"},{"name":"2 parties","cat":"park","price":16,"tva":10,"jumper":true,"dur":40,"art":"cible"},{"name":"3 parties","cat":"park","price":22,"tva":10,"jumper":true,"dur":60,"art":"cible"},{"name":"Partie enfant, moins de 10 ans","cat":"park","price":7,"tva":10,"jumper":true,"dur":20,"art":"gilet"},{"name":"Pass 5 parties","cat":"park","price":35,"tva":10,"art":"p5"},{"name":"Eau 50 cl","cat":"bar","scat":"Boissons fraîches","price":1.5,"tva":10,"art":"s1"},{"name":"Soda","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Jus de fruits","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Bière 25 cl","cat":"bar","scat":"Bières","price":3.5,"tva":20},{"name":"Bière 50 cl","cat":"bar","scat":"Bières","price":6,"tva":20},{"name":"Hot-dog","cat":"bar","scat":"Snack","price":4.5,"tva":10,"art":"s5"},{"name":"Nachos","cat":"bar","scat":"Snack","price":4,"tva":10},{"name":"Pop corn","cat":"bar","scat":"Snack","price":3,"tva":10},{"name":"Bonbons","cat":"bar","scat":"Sucré","price":2,"tva":10},{"name":"Glace","cat":"bar","scat":"Sucré","price":2.5,"tva":10,"art":"s6"},{"name":"Anniversaire laser, 10 enfants","cat":"event","price":189,"tva":10,"event":true,"guests":10,"art":"a1"},{"name":"Anniversaire laser Premium, 10 enfants","cat":"event","price":249,"tva":10,"event":true,"guests":10,"art":"a2"},{"name":"Soirée entreprise, 20 personnes","cat":"event","price":480,"tva":10,"event":true,"guests":20},{"name":"Enterrement de vie de célibataire","cat":"event","price":320,"tva":10,"event":true,"guests":12},{"name":"Enfant supplémentaire","cat":"event","price":16,"tva":10,"art":"a3"},{"name":"Acompte événement","cat":"gestion","scat":"Divers","price":50,"tva":10},{"name":"Carte cadeau 20 €","cat":"gestion","scat":"Cartes cadeaux","price":20,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","scat":"Cartes cadeaux","price":50,"tva":20}]},{"id":"coiffeur","version":1,"label":"Salon de coiffure","resume":"Prestations, rendez-vous en ligne, produits de soin, cartes cadeaux.","settings":{"catNames":["Coiffure","Soins et produits","Forfaits et mariages","Divers"],"subs":{"park":["Femme","Homme","Enfant","Couleur"],"bar":["Soins","Produits"],"gestion":["Cartes cadeaux","Acomptes"]},"capacite":4,"equipe_minimum":1,"horaires":{"ouverture":"09:00","fermeture":"19:00","jours_fermes":[0,1],"jours":{"6":["09:00","18:00"]}},"fond_de_caisse":80,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Fidèle","points":150,"remise":5},{"nom":"Habituée","points":400,"remise":15},{"nom":"VIP","points":800,"remise":40}]},"reservation_en_ligne":{"places_par_creneau":4,"delai_minimum_minutes":240,"jours_a_l_avance":45,"personnes_max":3,"message":"Indiquez en commentaire la longueur de vos cheveux et le service souhaité."},"message_accueil":"Belle journée à toute l’équipe !","pied_de_ticket":"Merci de votre visite chez {nom}, à très bientôt !","modules_masques":["controle"],"onglets_masques":["resa:bracelets","resa:entrees","clients:decharges","clients:carnets","resa:qweekle"],"echeances_desactivees":["ssi","deseno","jeux","mousse","portes"],"textes":{"Animateur":"Coiffeur·se","Park":"Activité","Anniversaires":"Événements"},"illustrations":{"park":"ciseaux","bar":"flacon","event":"agenda","gestion":"cadeau"},"vocabulaire":{"session":"Rendez-vous","lieu":"Salon","reserver":"Nouveau rendez-vous","departs":"Prochains rendez-vous","plus_de_depart":"Plus de rendez-vous aujourd’hui.","personne":"client","clients_de":"Clients du salon","nom_etab":"Nom du salon"}},"products":[{"name":"Coupe femme","cat":"park","scat":"Femme","price":45,"tva":20,"jumper":true,"dur":45},{"name":"Coupe femme cheveux longs","cat":"park","scat":"Femme","price":55,"tva":20,"jumper":true,"dur":60},{"name":"Brushing court","cat":"park","scat":"Femme","price":25,"tva":20,"jumper":true,"dur":30,"art":"seche"},{"name":"Brushing long","cat":"park","scat":"Femme","price":35,"tva":20,"jumper":true,"dur":45,"art":"seche"},{"name":"Coupe homme","cat":"park","scat":"Homme","price":25,"tva":20,"jumper":true,"dur":30,"art":"peigne"},{"name":"Coupe et barbe","cat":"park","scat":"Homme","price":35,"tva":20,"jumper":true,"dur":45,"art":"peigne"},{"name":"Barbe","cat":"park","scat":"Homme","price":15,"tva":20,"jumper":true,"dur":20,"art":"peigne"},{"name":"Coupe enfant, moins de 12 ans","cat":"park","scat":"Enfant","price":18,"tva":20,"jumper":true,"dur":30},{"name":"Couleur racines","cat":"park","scat":"Couleur","price":55,"tva":20,"jumper":true,"dur":75,"art":"pinceau"},{"name":"Couleur complète","cat":"park","scat":"Couleur","price":75,"tva":20,"jumper":true,"dur":90,"art":"pinceau"},{"name":"Mèches ou balayage","cat":"park","scat":"Couleur","price":95,"tva":20,"jumper":true,"dur":120,"art":"pinceau"},{"name":"Patine ou ton sur ton","cat":"park","scat":"Couleur","price":35,"tva":20,"jumper":true,"dur":45,"art":"pinceau"},{"name":"Soin profond","cat":"bar","scat":"Soins","price":15,"tva":20},{"name":"Soin réparateur","cat":"bar","scat":"Soins","price":20,"tva":20},{"name":"Shampoing et coiffage","cat":"bar","scat":"Soins","price":20,"tva":20,"art":"seche"},{"name":"Shampoing 250 ml","cat":"bar","scat":"Produits","price":14.9,"tva":20},{"name":"Après-shampoing 250 ml","cat":"bar","scat":"Produits","price":15.9,"tva":20},{"name":"Masque nourrissant","cat":"bar","scat":"Produits","price":19.9,"tva":20},{"name":"Cire coiffante","cat":"bar","scat":"Produits","price":16.5,"tva":20},{"name":"Laque","cat":"bar","scat":"Produits","price":12.9,"tva":20},{"name":"Coiffure de mariée (essai compris)","cat":"event","price":160,"tva":20,"event":true,"guests":1},{"name":"Coiffure d’invitée","cat":"event","price":50,"tva":20},{"name":"Forfait coupe + couleur + brushing","cat":"event","price":110,"tva":20},{"name":"Carte cadeau 30 €","cat":"gestion","scat":"Cartes cadeaux","price":30,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","scat":"Cartes cadeaux","price":50,"tva":20},{"name":"Carte cadeau 100 €","cat":"gestion","scat":"Cartes cadeaux","price":100,"tva":20},{"name":"Acompte rendez-vous","cat":"gestion","scat":"Acomptes","price":15,"tva":20}]},{"id":"restaurant","version":1,"label":"Restaurant","resume":"Carte, boissons, menus et groupes, réservations de table, cartes cadeaux.","settings":{"catNames":["Plats","Boissons","Menus et groupes","Divers"],"subs":{"park":["Entrées","Plats","Desserts"],"bar":["Softs","Bières","Vins","Café"],"gestion":["Cartes cadeaux","Acomptes"]},"capacite":40,"equipe_minimum":3,"horaires":{"ouverture":"11:30","fermeture":"23:00","jours_fermes":[1],"jours":{"0":["11:30","16:00"]}},"fond_de_caisse":150,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Gourmand","points":150,"remise":5},{"nom":"Habitué","points":400,"remise":20},{"nom":"Grand client","points":800,"remise":50}]},"reservation_en_ligne":{"places_par_creneau":30,"delai_minimum_minutes":120,"jours_a_l_avance":45,"personnes_max":10,"message":"Merci de nous prévenir en cas d’allergie. La table est gardée 15 minutes."},"message_accueil":"Bon service à toute l’équipe !","pied_de_ticket":"Merci de votre visite chez {nom}, à bientôt !","modules_masques":["controle"],"onglets_masques":["resa:bracelets","resa:entrees","clients:decharges","clients:carnets","resa:qweekle"],"echeances_desactivees":["deseno","jeux","mousse","portes"],"textes":{"Animateur":"Serveur·se","Park":"Activité","Anniversaires":"Événements"},"illustrations":{"park":"assiette","bar":"verre","event":"menu","gestion":"cadeau"},"vocabulaire":{"session":"Service","lieu":"Salle","reserver":"Réserver une table","departs":"Prochains services","plus_de_depart":"Plus de service aujourd’hui.","personne":"couvert","clients_de":"Couverts","nom_etab":"Nom du restaurant"}},"products":[{"name":"Soupe du jour","cat":"park","scat":"Entrées","price":7,"tva":10,"art":"soupe"},{"name":"Salade de chèvre chaud","cat":"park","scat":"Entrées","price":10.5,"tva":10},{"name":"Terrine maison","cat":"park","scat":"Entrées","price":9,"tva":10},{"name":"Plat du jour","cat":"park","scat":"Plats","price":14.5,"tva":10},{"name":"Burger maison","cat":"park","scat":"Plats","price":16,"tva":10,"art":"burger"},{"name":"Pavé de saumon","cat":"park","scat":"Plats","price":18.5,"tva":10},{"name":"Entrecôte, frites","cat":"park","scat":"Plats","price":21,"tva":10},{"name":"Assiette végétarienne","cat":"park","scat":"Plats","price":14,"tva":10},{"name":"Tarte du moment","cat":"park","scat":"Desserts","price":7,"tva":10,"art":"dessert"},{"name":"Mousse au chocolat","cat":"park","scat":"Desserts","price":6.5,"tva":10,"art":"dessert"},{"name":"Café gourmand","cat":"park","scat":"Desserts","price":8,"tva":10,"art":"dessert"},{"name":"Eau plate 50 cl","cat":"bar","scat":"Softs","price":3,"tva":10,"art":"s1"},{"name":"Eau gazeuse 50 cl","cat":"bar","scat":"Softs","price":3.5,"tva":10,"art":"s1"},{"name":"Soda 33 cl","cat":"bar","scat":"Softs","price":3.5,"tva":10,"art":"s2"},{"name":"Jus de fruits","cat":"bar","scat":"Softs","price":3.5,"tva":10,"art":"s2"},{"name":"Bière pression 25 cl","cat":"bar","scat":"Bières","price":3.5,"tva":20,"art":"biere"},{"name":"Bière pression 50 cl","cat":"bar","scat":"Bières","price":6.5,"tva":20,"art":"biere"},{"name":"Verre de vin rouge","cat":"bar","scat":"Vins","price":4.5,"tva":20},{"name":"Verre de vin blanc","cat":"bar","scat":"Vins","price":4.5,"tva":20},{"name":"Bouteille de vin, 75 cl","cat":"bar","scat":"Vins","price":22,"tva":20},{"name":"Café","cat":"bar","scat":"Café","price":2,"tva":10,"art":"s3"},{"name":"Thé ou infusion","cat":"bar","scat":"Café","price":3,"tva":10,"art":"s3"},{"name":"Menu du jour (entrée + plat ou plat + dessert)","cat":"event","price":18.5,"tva":10,"jumper":true,"dur":90},{"name":"Menu enfant","cat":"event","price":9.5,"tva":10,"jumper":true,"dur":60},{"name":"Menu groupe, par personne","cat":"event","price":32,"tva":10,"event":true,"guests":20},{"name":"Privatisation de la salle, 30 personnes","cat":"event","price":600,"tva":10,"event":true,"guests":30},{"name":"Carte cadeau 30 €","cat":"gestion","scat":"Cartes cadeaux","price":30,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","scat":"Cartes cadeaux","price":50,"tva":20},{"name":"Acompte groupe","cat":"gestion","scat":"Acomptes","price":100,"tva":10}]}];
+
+/* Illustrations des dalles de produits pour les modèles métier (viewBox 120×76, mêmes classes que les illustrations d'origine :
+   a1 = couleur de la catégorie, a2 = teinte claire, a3 = fond, s = trait, d = trait clair). À réutiliser dans templates/*.json : "art": "<nom>" ou "illustrations": { "park": "<nom>" } */
+const TPL_ART={
+  ciseaux:'<circle class="a1" cx="38" cy="54" r="9"/><circle class="a1" cx="82" cy="54" r="9"/><circle class="a3" cx="38" cy="54" r="4"/><circle class="a3" cx="82" cy="54" r="4"/><path class="s" d="M43 46L86 10M77 46L34 10"/>',
+  peigne:'<rect class="a1" x="18" y="28" width="84" height="13" rx="4"/><path class="s" d="M26 41v19M36 41v19M46 41v19M56 41v19M66 41v19M76 41v19M86 41v19M96 41v19"/>',
+  seche:'<rect class="a1" x="18" y="18" width="58" height="26" rx="13"/><path class="a2" d="M76 24l22-7v30l-22-7z"/><path class="s" d="M44 44l-6 22h15l-4-22"/><path class="d" d="M30 31h30"/>',
+  flacon:'<rect class="a2" x="44" y="22" width="32" height="46" rx="9"/><rect class="a1" x="52" y="10" width="16" height="13" rx="3"/><rect class="a3" x="44" y="36" width="32" height="16"/><path class="s" d="M52 44h16"/>',
+  pinceau:'<path class="a1" d="M24 42h44l-6 22H30z"/><path class="s" d="M68 42l24-28"/><path class="a2" d="M88 10l12 8-8 10z"/><path class="d" d="M34 52h26"/>',
+  cadeau:'<rect class="a1" x="30" y="34" width="60" height="30" rx="4"/><rect class="a2" x="26" y="24" width="68" height="13" rx="3"/><path class="d" d="M60 24v40"/><path class="s" d="M60 24c-8-14-22-10-18-3s18 3 18 3c8-14 22-10 18-3s-18 3-18 3"/>',
+  agenda:'<rect class="a1" x="26" y="16" width="68" height="50" rx="7"/><rect class="a3" x="26" y="29" width="68" height="37" rx="0"/><path class="s" d="M42 9v13M78 9v13"/><circle class="a1" cx="46" cy="44" r="4"/><circle class="a1" cx="62" cy="44" r="4"/><circle class="a2" cx="78" cy="44" r="4"/><circle class="a1" cx="46" cy="57" r="4"/>',
+  groupe:'<circle class="a1" cx="40" cy="24" r="8"/><circle class="a2" cx="80" cy="24" r="8"/><circle class="a1" cx="60" cy="30" r="9"/><path class="s" d="M26 62q0-17 14-17M94 62q0-17-14-17M44 68q0-21 16-21t16 21"/>',
+  laser:'<path class="a1" d="M24 28h54v15H58l-4 20H41l4-20H24z"/><rect class="a2" x="78" y="31" width="20" height="9" rx="3"/><path class="s" d="M100 35h16"/><circle class="a3" cx="36" cy="35" r="3"/>',
+  gilet:'<path class="a1" d="M40 10L24 24v42h72V24L80 10q-7 10-20 10T40 10z"/><circle class="a3" cx="60" cy="42" r="8"/><path class="d" d="M34 54h14M72 54h14"/>',
+  cible:'<circle class="a2" cx="60" cy="38" r="29"/><circle class="a1" cx="60" cy="38" r="19"/><circle class="a3" cx="60" cy="38" r="8"/><path class="s" d="M60 38l26-26"/>',
+  assiette:'<circle class="a2" cx="62" cy="38" r="26"/><circle class="a3" cx="62" cy="38" r="16"/><path class="s" d="M18 14v52M12 14v13a6 6 0 0 0 12 0V14M108 14v52M108 14c-9 7-9 24 0 28"/>',
+  burger:'<path class="a1" d="M32 36q0-22 28-22t28 22z"/><rect class="a3" x="28" y="40" width="64" height="6" rx="3"/><rect class="a2" x="30" y="48" width="60" height="9" rx="4"/><path class="a1" d="M32 59h56q0 9-12 9H44q-12 0-12-9z"/>',
+  soupe:'<path class="a1" d="M28 38h64a32 32 0 0 1-64 0z"/><path class="s" d="M44 28q-5-7 0-14M60 28q-5-7 0-14M76 28q-5-7 0-14"/>',
+  dessert:'<path class="a1" d="M34 42h52l-7 24H41z"/><circle class="a2" cx="60" cy="33" r="15"/><circle class="a1" cx="60" cy="15" r="4"/>',
+  verre:'<path class="a1" d="M42 10h36q3 26-14 33h-8q-17-7-14-33z"/><path class="s" d="M60 43v22M46 67h28"/><path class="d" d="M46 22h28"/>',
+  biere:'<rect class="a2" x="36" y="16" width="38" height="48" rx="5"/><path class="a1" d="M36 21q0-5 5-5h28q5 0 5 5v10H36z"/><path class="s" d="M74 26h10a7 7 0 0 1 0 22H74"/>',
+  menu:'<rect class="a1" x="32" y="10" width="56" height="56" rx="7"/><path class="d" d="M42 24h36M42 34h36M42 44h22"/><circle class="a3" cx="76" cy="52" r="5"/>'
+};
+Object.assign(ART,TPL_ART);
+
+const TPLS=TPL_DATA;
+/* illustrations des dalles : catégories par défaut du modèle appliqué, puis illustration propre à chaque produit (champ art) */
+const ARTCAT0=Object.assign({},ARTCAT),hasO=Object.prototype.hasOwnProperty;
+function tplArt(){
+  const t=S&&S.settings&&S.settings.tpl&&tplGet(S.settings.tpl.id),il=(t&&t.settings&&t.settings.illustrations)||{};
+  Object.keys(ARTCAT0).forEach(k=>{ARTCAT[k]=typeof il[k]==='string'&&hasO.call(ART,il[k])?il[k]:ARTCAT0[k]});
+}
+function artSvg(p){const a=p&&typeof p.art==='string'&&hasO.call(ART,p.art)?ART[p.art]:(p&&hasO.call(ART,p.id)?ART[p.id]:ART[ARTCAT[p&&p.cat]]);return a||ART[ARTCAT0.park]}
+const tplGet=id=>TPLS.find(t=>t.id===id)||null;
+const tplMin=hm=>{const m=/^(\d{1,2}):(\d{2})$/.exec(hm||'');return m?(+m[1])*60+(+m[2]):null};
+const tplEuros=v=>Math.round((+v||0)*100);
+const tplHm=m=>{const h=Math.floor(m/60),n=m%60;return h+'h'+(n?String(n).padStart(2,'0'):'')};
+const TPL_AB=['dim','lun','mar','mer','jeu','ven','sam'],TPL_DAYS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+function tplHoursOf(t){
+  const h=(t.settings||{}).horaires;if(!h)return null;
+  const o0=tplMin(h.ouverture),c0=tplMin(h.fermeture),cl=h.jours_fermes||[],ex=h.jours||{},week={};let mo=1e9,mc=0;
+  for(let d=0;d<7;d++){
+    if(cl.includes(d)){week[d]={closed:true,o:o0,c:c0};continue}
+    let o=o0,c=c0;if(ex[d]){o=tplMin(ex[d][0]);c=tplMin(ex[d][1])}
+    week[d]={closed:false,o,c};mo=Math.min(mo,o);mc=Math.max(mc,c);
+  }
+  if(mo===1e9){mo=o0;mc=c0}
+  return{week,open:Math.floor(mo/60),close:Math.ceil(mc/60)};
+}
+function tplHoursText(t){
+  const H=tplHoursOf(t);if(!H)return '';
+  const ord=[1,2,3,4,5,6,0],runs=[];
+  ord.forEach(d=>{const w=H.week[d],k=w.closed?'x':w.o+'-'+w.c,l=runs[runs.length-1];if(l&&l.k===k)l.d.push(d);else runs.push({k,d:[d],w})});
+  const open=runs.filter(r=>r.k!=='x').map(r=>(r.d.length>1?TPL_AB[r.d[0]]+'–'+TPL_AB[r.d[r.d.length-1]]:TPL_AB[r.d[0]])+' '+tplHm(r.w.o)+'–'+tplHm(r.w.c));
+  const cl=ord.filter(d=>H.week[d].closed).map(d=>TPL_DAYS[d]);
+  return open.join(' ; ')+(cl.length?' ; fermé : '+cl.join(', '):'');
+}
+const tplNavLabel=id=>{const n=NAV.find(x=>x[0]===id);return n?n[1]:id};
+const tplTabLabel=k=>{const [m,t]=k.split(':');const x=(TABS[m]||[]).find(y=>y[0]===t);return (x?x[1]:t)+' ('+tplNavLabel(m)+')'};
+/* vocabulaire du métier (aperçus : « Réserver un départ » devient « Nouveau rendez-vous »…) : défauts = parc de trampolines */
+const TV0={session:'Session JUMP',lieu:'Trampo Park',reserver:'Réserver un départ',departs:'Prochains départs',plus_de_depart:'Plus de départ aujourd’hui.',personne:'sauteur',clients_de:'Clients du parc',nom_etab:'Nom du parc'};
+function tv(k){const t=S&&S.settings&&S.settings.tpl&&tplGet(S.settings.tpl.id),v=t&&t.settings&&t.settings.vocabulaire;return v&&typeof v[k]==='string'&&v[k]?v[k]:TV0[k]}
+const NOUN=()=>tv('personne'),PLUR=()=>NOUN()+'s',CAPP=()=>{const p=PLUR();return p.charAt(0).toUpperCase()+p.slice(1)};
+const tplFill=(s,name)=>String(s||'').replace(/\{nom\}/g,name||'');
+/* ce que le modèle change, en clair (aperçu avant application) */
+function tplSummary(t){
+  const c=t.settings||{},names=c.catNames||CATDEF,cnt={};CATS.forEach(x=>cnt[x.id]=0);t.products.forEach(p=>cnt[p.cat]++);
+  return{
+    cats:CATS.map((x,i)=>({n:names[i],k:cnt[x.id]})),
+    n:t.products.length,
+    ex:t.products.slice(0,4).map(p=>p.name+' '+tplEur(p.price)),
+    hours:tplHoursText(t),
+    cap:c.capacite,staff:c.equipe_minimum,
+    hidden:[...(c.modules_masques||[]).map(tplNavLabel),...(c.onglets_masques||[]).map(tplTabLabel)],
+    web:c.reservation_en_ligne||null
+  };
+}
+const tplEur=v=>(+v).toLocaleString('fr-FR',{minimumFractionDigits:(+v)%1?2:0,maximumFractionDigits:2})+' €';
+
+/* ---- application d'un modèle ----
+   mode « replace » : repart du modèle (produits, catégories, horaires, menus affichés, textes, fidélité…). Ventes, clients, comptes et planning ne sont pas touchés.
+   mode « add »     : ajoute seulement les produits (et sous-catégories) qui manquent ; les réglages ne bougent pas. */
+function tplApply(id,o){
+  o=o||{};const t=tplGet(id);if(!t)return false;
+  const mode=o.mode==='add'?'add':'replace',st=S.settings,c=t.settings||{},nm=String(o.name||'').trim().slice(0,80);
+  const keep=(p,list)=>list.find(x=>x.cat===p.cat&&String(x.name).trim().toLowerCase()===p.name.toLowerCase());
+  const prods=t.products.map(p=>{
+    const old=keep(p,S.products||[]),q={id:old?old.id:uid(),name:p.name,cat:p.cat,price:tplEuros(p.price),tva:p.tva,active:true};
+    if(old&&old.img)q.img=old.img;
+    if(p.scat)q.scat=p.scat;
+    if(p.art)q.art=p.art;
+    if(p.jumper){q.jumper=true;q.dur=p.dur}else if(p.dur)q.dur=p.dur;
+    if(p.event){q.event=true;q.guests=p.guests||10}
+    return q;
+  });
+  if(mode==='replace')S.products=prods;
+  else{const have=new Set(S.products.map(p=>p.cat+'|'+String(p.name).trim().toLowerCase()));prods.forEach(q=>{if(!have.has(q.cat+'|'+q.name.toLowerCase()))S.products.push(q)})}
+  /* sous-catégories : en mode « add », on ajoute celles qui manquent */
+  const sb=c.subs||{};st.subs=st.subs||{};
+  if(mode==='replace')st.subs=JSON.parse(JSON.stringify(sb));
+  else Object.keys(sb).forEach(k=>{const cur=st.subs[k]=st.subs[k]||[];sb[k].forEach(x=>{if(!cur.includes(x))cur.push(x)})});
+  if(mode==='replace'){
+    const d=defaultSettings();
+    if(c.catNames)st.catNames=c.catNames.slice();else delete st.catNames;
+    CATS.forEach((x,i)=>{x.name=(st.catNames&&String(st.catNames[i]||'').trim())||CATDEF[i]});
+    st.cap=c.capacite||d.cap;st.minStaff=c.equipe_minimum||d.minStaff;
+    st.fond=c.fond_de_caisse!==undefined?tplEuros(c.fond_de_caisse):d.fond;
+    st.brand=(c.couleurs&&c.couleurs.principale)||d.brand;st.accent=(c.couleurs&&c.couleurs.action)||d.accent;
+    const f=c.fidelite;
+    if(f){st.ppe=f.points_par_euro||1;st.pal=(f.paliers||[]).map(p=>({id:'p'+p.points,pts:p.points,amt:tplEuros(p.remise),name:p.nom}))}else{st.ppe=d.ppe;st.pal=d.pal}
+    st.welcome=tplFill(c.message_accueil,nm||st.name);st.ticketMsg=tplFill(c.pied_de_ticket,nm||st.name);
+    const H=tplHoursOf(t);
+    if(H){S.hours={week:H.week,exc:(S.hours&&S.hours.exc)||[]};syncEnvelope()}
+    const r=c.reservation_en_ligne;
+    if(r){const w=webCfg();if(r.places_par_creneau)w.cap=r.places_par_creneau;if(r.delai_minimum_minutes!==undefined)w.lead=r.delai_minimum_minutes;if(r.jours_a_l_avance)w.days=r.jours_a_l_avance;if(r.personnes_max)w.max=r.personnes_max;w.info=r.message||'';if(r.conditions!==undefined)w.cgv=r.conditions;w.prods=null;w.adds=null}
+    st.off={};(c.modules_masques||[]).forEach(m=>{st.off[m]=true});
+    st.offT={};(c.onglets_masques||[]).forEach(k=>{st.offT[k]=true});
+    if(st.conf&&Array.isArray(st.conf.ech)){const off=new Set(c.echeances_desactivees||[]);st.conf.ech.forEach(e=>{e.on=!off.has(e.k)})}
+    st.lists={};
+    if(c.listes_controle_mensuel)st.lists.mpts=c.listes_controle_mensuel.slice();
+    if(c.types_incident)st.lists.itypes=c.types_incident.slice();
+    if(c.types_equipement)st.lists.meq=c.types_equipement.slice();
+    if(c.types_secours)st.lists.isec=c.types_secours.slice();
+    if(!Object.keys(st.lists).length)delete st.lists;
+    [['mpts',MPTS],['itypes',ITYPES],['meq',MEQ],['isec',ISECOURS]].forEach(([k,a])=>{a.length=0;LISTDEF[k].forEach(x=>a.push(x))});
+    st.texts=Object.assign({},c.textes||{});
+    if(nm)st.name=nm;
+    st.tpl={id:t.id,v:t.version,at:Date.now()};
+  }
+  try{tplArt()}catch(e){}
+  if(o.clearDemo!==false){try{clearDemo()}catch(e){}}
+  S.noDemo=true;
+  if(typeof cart!=='undefined')cart=newCart();
+  (o.quiet?saveBase:save)();
+  try{applySettings();applyCustom();renderNav();chrome()}catch(e){}
+  return true;
+}
+
+/* ---- espace client neuf (lien d'activation de la console) ---- */
+const tplBootOn=()=>{const c=cloudCfg();return !!(c&&c.boot&&!accs().length)};
+function tplBootstrap(b){
+  const t=tplGet(b&&b.t)||tplGet('parc-trampoline');
+  try{clearDemo()}catch(e){}
+  S.staff=[];S.leaves=[];S.shifts={};S.checks={};S.stock={};S.events=[];S.clients=[];S.sales=[];S.closures=[];S.mails=[];
+  S.plans=[buildPlan('p0','Semaine type','','',true)];
+  tplApply(t.id,{mode:'replace',name:b&&b.n,quiet:true,clearDemo:false});
+  S.noDemo=true;
+}
+function tplAfterAdmin(a){
+  if(!tplBootOn())return;
+  if(!S.staff.length){S.staff=[{id:'e1',name:String(a.name||'Responsable').trim(),role:'resp',color:PCOL[0]}];a.staffId='e1'}
+  const c=cloudCfg();if(c){delete c.boot;cloudSet(c)}
+  save();
+}
+function gateBoot(){
+  const c=cloudCfg()||{},n=(c.boot&&c.boot.n)||S.settings.name;
+  gateShell(`<h2>Bienvenue chez ${esc(n)}</h2><p class="muted">Votre espace Lago est prêt. Créez le compte administrateur : c’est vous qui validerez ensuite les comptes de votre équipe.</p>${gform('setup')}`);
+}
+/* un lien « nouvel espace » ouvert sur un appareil qui contient déjà un Lago ne doit rien écraser */
+function tplLinkBusy(x){
+  if(!(x&&(x.b||x.g)))return false;
+  const c=cloudCfg();
+  if(c&&c.u&&c.r&&c.r===x.r)return false;
+  return accs().length>0||!!(c&&c.u&&c.r);
+}
+function tplBlockNote(){
+  if(document.getElementById('zblock'))return;
+  const d=document.createElement('div');d.id='zblock';d.className='zblock';d.setAttribute('role','alertdialog');d.setAttribute('aria-modal','true');
+  d.innerHTML=`<div class="zbc"><h2>Lien ignoré</h2><p>Cet appareil contient déjà un Lago. Pour ne pas mélanger les données, le lien n’a pas été utilisé.</p><p>Ouvrez-le dans une fenêtre de navigation privée, ou sur un autre appareil.</p><button class="btn primary" type="button" data-act="zblock_ok">Compris</button></div>`;
+  document.body.appendChild(d);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="zblock_ok"]');if(b){const d=document.getElementById('zblock');if(d)d.remove()}});
+
+/* ---- suspension par le propriétaire ---- */
+const SUSP={on:false,msg:''};
+function suspDraw(){
+  let d=document.getElementById('zsusp');
+  if(!SUSP.on){if(d)d.remove();return}
+  if(!d){d=document.createElement('div');d.id='zsusp';d.className='zblock zsusp';d.setAttribute('role','alertdialog');d.setAttribute('aria-modal','true');document.body.appendChild(d)}
+  d.innerHTML=`<div class="zbc"><h2>Espace suspendu</h2><p>L’accès à ce Lago est suspendu pour le moment.</p>${SUSP.msg?`<p class="zbm">${esc(SUSP.msg)}</p>`:''}<p class="muted">Contactez votre prestataire pour le réactiver. Vos données sont conservées.</p><button class="btn" type="button" data-act="susp_retry">Réessayer</button></div>`;
+}
+async function suspCheck(){
+  const c=cloudCfg();if(!c||!c.u||!/^https?:\/\//.test(c.u))return;
+  try{
+    const r=await fetch(c.u.replace(/\/+$/,'')+'/_susp.json',{cache:'no-store'});
+    if(!r.ok)return;
+    const j=await r.json(),on=!!(j&&typeof j==='object'&&j.on===true);
+    SUSP.on=on;SUSP.msg=on&&typeof j.msg==='string'?j.msg.slice(0,300):'';suspDraw();
+  }catch(e){}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="susp_retry"]');if(b){b.disabled=true;suspCheck().finally(()=>{b.disabled=false})}});
+setTimeout(suspCheck,1500);setInterval(()=>{if(!document.hidden)suspCheck()},60000);
+addEventListener('focus',()=>suspCheck());addEventListener('online',()=>suspCheck());
+
+/* ---- Paramètres › Mon métier ---- */
+const TPLUI={mode:'replace'};
+function vSetMetier(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const cur=S.settings.tpl,ct=cur&&tplGet(cur.id);
+  m.innerHTML=`<div class="card" style="margin-bottom:14px"><h3>Mon métier</h3>
+    <p class="muted" style="margin:0 0 10px">Choisissez un modèle prêt à l’emploi : il règle d’un coup les produits, les catégories, les horaires, les menus affichés, la fidélité et les textes. Vous pourrez tout modifier ensuite.</p>
+    <p style="margin:0">${ct?`Modèle appliqué : <b>${esc(ct.label)}</b> <span class="pill">version ${cur.v}</span>`:'Aucun modèle appliqué : réglages d’origine (parc de trampolines).'}</p></div>
+   <div class="tpg">${TPLS.map(t=>{const s=tplSummary(t),on=cur&&cur.id===t.id;return `<button type="button" class="tpc${on?' on':''}" data-act="tpl_view" data-id="${t.id}"><b class="tpn">${esc(t.label)}</b><span class="tpr">${esc(t.resume)}</span><span class="tpk">${s.n} produits${on?' · modèle actuel':''}</span></button>`}).join('')}</div>`;
+}
+TABS.params.splice(1,0,['pmetier','Mon métier']);SUBS.pmetier=vSetMetier;
+function tplModal(id){
+  const t=tplGet(id);if(!t)return;
+  const s=tplSummary(t),real=(S.sales||[]).some(x=>!x.demo);
+  TPLUI.id=id;TPLUI.mode=real?'add':'replace';
+  const lost=Math.max(0,(S.products||[]).filter(p=>!t.products.some(q=>q.cat===p.cat&&q.name.toLowerCase()===String(p.name).trim().toLowerCase())).length);
+  showModal(`${mh(esc(t.label))}<p class="muted" style="margin:0 0 10px">${esc(t.resume)}</p>
+   <div class="tps">
+    <div><b>Catégories</b><span>${s.cats.map(c=>esc(c.n)+' ('+c.k+')').join(', ')}</span></div>
+    <div><b>Produits</b><span>${s.n} produits, par exemple ${s.ex.map(esc).join(', ')}</span></div>
+    ${s.hours?`<div><b>Horaires</b><span>${esc(s.hours)}</span></div>`:''}
+    ${s.cap?`<div><b>Capacité</b><span>${s.cap} personnes en même temps, ${s.staff||1} personne${(s.staff||1)>1?'s':''} minimum en poste</span></div>`:''}
+    ${s.hidden.length?`<div><b>Masqué</b><span>${s.hidden.map(esc).join(', ')}</span></div>`:''}
+   </div>
+   <div class="field" style="margin:0 0 12px"><label for="tpl_name">Nom de votre établissement</label><input id="tpl_name" maxlength="80" autocomplete="off" placeholder="Ex. ${esc(t.label)} Dupont" value="${esc(S.settings.name===defaultSettings().name?'':S.settings.name)}"><span class="muted" style="font-size:13px">Il apparaît sur les tickets, les mails et la page de réservation.</span></div>
+   <div class="tpo" role="radiogroup" aria-label="Que faire des modèles ?">
+    <label class="tpl-o"><input type="radio" name="tplm" value="replace" ${TPLUI.mode==='replace'?'checked':''}><span><b>Repartir du modèle</b>Remplace vos produits, catégories, horaires, menus affichés et textes par ceux du modèle${lost?` (${lost} produit${lost>1?'s':''} actuel${lost>1?'s':''} ne figure${lost>1?'nt':''} pas dans le modèle)`:''}. Vos ventes, clients, comptes et planning ne bougent pas.</span></label>
+    <label class="tpl-o"><input type="radio" name="tplm" value="add" ${TPLUI.mode==='add'?'checked':''}><span><b>Ajouter les produits manquants</b>Ajoute les produits du modèle que vous n’avez pas encore. Vos réglages ne changent pas.</span></label>
+   </div>
+   <p class="muted" style="font-size:13px;margin:8px 0 12px">Une copie de sécurité est enregistrée avant le changement (Paramètres › Santé).</p>
+   <div class="acts"><button class="btn" data-act="close">Annuler</button><button class="btn primary" data-act="tpl_go">Appliquer le modèle</button></div>`);
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act="tpl_view"],[data-act="tpl_go"]');if(!b||!isAdmin())return;
+  if(b.dataset.act==='tpl_view'){tplModal(b.dataset.id);return}
+  const r=document.querySelector('#modal input[name="tplm"]:checked');
+  const id=TPLUI.id,mode=r?r.value:TPLUI.mode,ni=document.getElementById('tpl_name'),name=ni?ni.value.trim():'';
+  if(mode==='replace'&&!name&&S.settings.name===defaultSettings().name){toast('Indiquez le nom de votre établissement');if(ni)ni.focus();return}
+  b.disabled=true;
+  try{await bkSnap(false,'Avant le modèle « '+((tplGet(id)||{}).label||id)+' »')}catch(x){}
+  if(tplApply(id,{mode,name:mode==='replace'?name:''})){closeModal();toast('Modèle appliqué');try{render()}catch(x){}}
+  else b.disabled=false;
+});
+
 
 METHODS.pass='Carnet de séances';
 function openPay(){

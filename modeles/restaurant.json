@@ -1,0 +1,335 @@
+{
+  "id": "restaurant",
+  "version": 1,
+  "label": "Restaurant",
+  "resume": "Carte, boissons, menus et groupes, réservations de table, cartes cadeaux.",
+  "settings": {
+    "catNames": [
+      "Plats",
+      "Boissons",
+      "Menus et groupes",
+      "Divers"
+    ],
+    "subs": {
+      "park": [
+        "Entrées",
+        "Plats",
+        "Desserts"
+      ],
+      "bar": [
+        "Softs",
+        "Bières",
+        "Vins",
+        "Café"
+      ],
+      "gestion": [
+        "Cartes cadeaux",
+        "Acomptes"
+      ]
+    },
+    "capacite": 40,
+    "equipe_minimum": 3,
+    "horaires": {
+      "ouverture": "11:30",
+      "fermeture": "23:00",
+      "jours_fermes": [
+        1
+      ],
+      "jours": {
+        "0": [
+          "11:30",
+          "16:00"
+        ]
+      }
+    },
+    "fond_de_caisse": 150,
+    "fidelite": {
+      "points_par_euro": 1,
+      "paliers": [
+        {
+          "nom": "Gourmand",
+          "points": 150,
+          "remise": 5
+        },
+        {
+          "nom": "Habitué",
+          "points": 400,
+          "remise": 20
+        },
+        {
+          "nom": "Grand client",
+          "points": 800,
+          "remise": 50
+        }
+      ]
+    },
+    "reservation_en_ligne": {
+      "places_par_creneau": 30,
+      "delai_minimum_minutes": 120,
+      "jours_a_l_avance": 45,
+      "personnes_max": 10,
+      "message": "Merci de nous prévenir en cas d’allergie. La table est gardée 15 minutes."
+    },
+    "message_accueil": "Bon service à toute l’équipe !",
+    "pied_de_ticket": "Merci de votre visite chez {nom}, à bientôt !",
+    "modules_masques": [
+      "controle"
+    ],
+    "onglets_masques": [
+      "resa:bracelets",
+      "resa:entrees",
+      "clients:decharges",
+      "clients:carnets",
+      "resa:qweekle"
+    ],
+    "echeances_desactivees": [
+      "deseno",
+      "jeux",
+      "mousse",
+      "portes"
+    ],
+    "textes": {
+      "Animateur": "Serveur·se",
+      "Park": "Activité",
+      "Anniversaires": "Événements"
+    },
+    "illustrations": {
+      "park": "assiette",
+      "bar": "verre",
+      "event": "menu",
+      "gestion": "cadeau"
+    },
+    "vocabulaire": {
+      "session": "Service",
+      "lieu": "Salle",
+      "reserver": "Réserver une table",
+      "departs": "Prochains services",
+      "plus_de_depart": "Plus de service aujourd’hui.",
+      "personne": "couvert",
+      "clients_de": "Couverts",
+      "nom_etab": "Nom du restaurant"
+    }
+  },
+  "products": [
+    {
+      "name": "Soupe du jour",
+      "cat": "park",
+      "scat": "Entrées",
+      "price": 7,
+      "tva": 10,
+      "art": "soupe"
+    },
+    {
+      "name": "Salade de chèvre chaud",
+      "cat": "park",
+      "scat": "Entrées",
+      "price": 10.5,
+      "tva": 10
+    },
+    {
+      "name": "Terrine maison",
+      "cat": "park",
+      "scat": "Entrées",
+      "price": 9,
+      "tva": 10
+    },
+    {
+      "name": "Plat du jour",
+      "cat": "park",
+      "scat": "Plats",
+      "price": 14.5,
+      "tva": 10
+    },
+    {
+      "name": "Burger maison",
+      "cat": "park",
+      "scat": "Plats",
+      "price": 16,
+      "tva": 10,
+      "art": "burger"
+    },
+    {
+      "name": "Pavé de saumon",
+      "cat": "park",
+      "scat": "Plats",
+      "price": 18.5,
+      "tva": 10
+    },
+    {
+      "name": "Entrecôte, frites",
+      "cat": "park",
+      "scat": "Plats",
+      "price": 21,
+      "tva": 10
+    },
+    {
+      "name": "Assiette végétarienne",
+      "cat": "park",
+      "scat": "Plats",
+      "price": 14,
+      "tva": 10
+    },
+    {
+      "name": "Tarte du moment",
+      "cat": "park",
+      "scat": "Desserts",
+      "price": 7,
+      "tva": 10,
+      "art": "dessert"
+    },
+    {
+      "name": "Mousse au chocolat",
+      "cat": "park",
+      "scat": "Desserts",
+      "price": 6.5,
+      "tva": 10,
+      "art": "dessert"
+    },
+    {
+      "name": "Café gourmand",
+      "cat": "park",
+      "scat": "Desserts",
+      "price": 8,
+      "tva": 10,
+      "art": "dessert"
+    },
+    {
+      "name": "Eau plate 50 cl",
+      "cat": "bar",
+      "scat": "Softs",
+      "price": 3,
+      "tva": 10,
+      "art": "s1"
+    },
+    {
+      "name": "Eau gazeuse 50 cl",
+      "cat": "bar",
+      "scat": "Softs",
+      "price": 3.5,
+      "tva": 10,
+      "art": "s1"
+    },
+    {
+      "name": "Soda 33 cl",
+      "cat": "bar",
+      "scat": "Softs",
+      "price": 3.5,
+      "tva": 10,
+      "art": "s2"
+    },
+    {
+      "name": "Jus de fruits",
+      "cat": "bar",
+      "scat": "Softs",
+      "price": 3.5,
+      "tva": 10,
+      "art": "s2"
+    },
+    {
+      "name": "Bière pression 25 cl",
+      "cat": "bar",
+      "scat": "Bières",
+      "price": 3.5,
+      "tva": 20,
+      "art": "biere"
+    },
+    {
+      "name": "Bière pression 50 cl",
+      "cat": "bar",
+      "scat": "Bières",
+      "price": 6.5,
+      "tva": 20,
+      "art": "biere"
+    },
+    {
+      "name": "Verre de vin rouge",
+      "cat": "bar",
+      "scat": "Vins",
+      "price": 4.5,
+      "tva": 20
+    },
+    {
+      "name": "Verre de vin blanc",
+      "cat": "bar",
+      "scat": "Vins",
+      "price": 4.5,
+      "tva": 20
+    },
+    {
+      "name": "Bouteille de vin, 75 cl",
+      "cat": "bar",
+      "scat": "Vins",
+      "price": 22,
+      "tva": 20
+    },
+    {
+      "name": "Café",
+      "cat": "bar",
+      "scat": "Café",
+      "price": 2,
+      "tva": 10,
+      "art": "s3"
+    },
+    {
+      "name": "Thé ou infusion",
+      "cat": "bar",
+      "scat": "Café",
+      "price": 3,
+      "tva": 10,
+      "art": "s3"
+    },
+    {
+      "name": "Menu du jour (entrée + plat ou plat + dessert)",
+      "cat": "event",
+      "price": 18.5,
+      "tva": 10,
+      "jumper": true,
+      "dur": 90
+    },
+    {
+      "name": "Menu enfant",
+      "cat": "event",
+      "price": 9.5,
+      "tva": 10,
+      "jumper": true,
+      "dur": 60
+    },
+    {
+      "name": "Menu groupe, par personne",
+      "cat": "event",
+      "price": 32,
+      "tva": 10,
+      "event": true,
+      "guests": 20
+    },
+    {
+      "name": "Privatisation de la salle, 30 personnes",
+      "cat": "event",
+      "price": 600,
+      "tva": 10,
+      "event": true,
+      "guests": 30
+    },
+    {
+      "name": "Carte cadeau 30 €",
+      "cat": "gestion",
+      "scat": "Cartes cadeaux",
+      "price": 30,
+      "tva": 20
+    },
+    {
+      "name": "Carte cadeau 50 €",
+      "cat": "gestion",
+      "scat": "Cartes cadeaux",
+      "price": 50,
+      "tva": 20
+    },
+    {
+      "name": "Acompte groupe",
+      "cat": "gestion",
+      "scat": "Acomptes",
+      "price": 100,
+      "tva": 10
+    }
+  ]
+}

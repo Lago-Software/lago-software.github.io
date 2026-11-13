@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src https://*.firebasedatabase.app https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com http://localhost:*; base-uri 'none'; form-action 'none'">
+<title>Console Lago</title>
+<style>
+:root{--brand:#1D4FD7;--ink:#0A1F4D;--muted:#566785;--line:#D7DFEE;--soft:#F3F6FC;--ok:#1C8553;--bad:#C63A3A;--warn:#B85408;--bg:#fff}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif}
+h1,h2,h3{margin:0;line-height:1.2;letter-spacing:-.012em;font-weight:680}
+h1{font-size:26px}h2{font-size:19px}h3{font-size:16px}
+p{margin:0 0 10px}
+a{color:var(--brand)}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #7FA2F5;outline-offset:2px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font-weight:650}
+.brand img{height:30px;display:block}
+.brand span{padding-left:10px;border-left:1px solid var(--line);color:var(--muted);font-weight:600}
+.who{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted)}
+.who b{font-weight:600;color:var(--ink);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+main{max-width:980px;margin:0 auto;padding:26px 20px 70px}
+.narrow{max-width:620px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.bar{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.bar p{margin:4px 0 0;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 16px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:600;cursor:pointer;text-decoration:none;color:var(--ink)}
+.btn:hover{background:var(--soft)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.pri:hover{background:#1742B8}
+.btn.dng{color:var(--bad);border-color:#EBC3C3}
+.btn.dng:hover{background:#FDF1F1}
+.btn.sm{min-height:34px;padding:0 12px;font-size:13px}
+.btn[disabled]{opacity:.55;cursor:default}
+.lnk{background:none;border:0;padding:0;color:var(--brand);cursor:pointer;font-weight:600;text-decoration:underline}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+.box{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:0 0 16px;background:#fff}
+.box>h3{margin-bottom:8px}
+.box.warn{background:#FFF8EF;border-color:#F2D3B0}
+.box.okb{background:#F2FAF6;border-color:#BFE3D0}
+.fld{display:block;margin:0 0 12px}
+.fld>span{display:block;font-weight:600;font-size:13px;margin-bottom:4px}
+input[type=text],input[type=email],input[type=password],input[type=url],textarea{width:100%;padding:10px 12px;border:1px solid #B9C6E0;border-radius:10px;background:#fff}
+textarea{min-height:110px;resize:vertical;font:12.5px/1.45 ui-monospace,Menlo,Consolas,monospace}
+textarea.t1{min-height:74px;font:inherit}
+input[readonly],textarea[readonly]{background:var(--soft)}
+.ol{margin:0 0 12px;padding:0 0 0 20px}
+.ol li{margin:0 0 6px}
+code{font:12.5px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padding:1px 5px;border-radius:5px}
+.tbl{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.tbl th{font-size:12px;font-weight:600;color:var(--muted);text-align:left;padding:10px 14px;background:var(--soft);border-bottom:1px solid var(--line)}
+.tbl td{padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl .nm{background:none;border:0;padding:0;text-align:left;font-weight:650;font-size:15px;cursor:pointer;color:var(--ink)}
+.tbl .nm:hover{color:var(--brand);text-decoration:underline}
+.tbl .sub{display:block;font-size:12px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--soft);white-space:nowrap}
+.pill:before{content:"";width:8px;height:8px;border-radius:50%;background:#8FA0BF}
+.pill.ok{background:#E8F6EE;color:var(--ok)}.pill.ok:before{background:var(--ok)}
+.pill.wait{background:#EAF0FD;color:var(--brand)}.pill.wait:before{background:var(--brand)}
+.pill.susp{background:#FFF0E0;color:var(--warn)}.pill.susp:before{background:var(--warn)}
+.pill.off{background:#FCEBEB;color:var(--bad)}.pill.off:before{background:var(--bad)}
+.pill.upd{background:#FFF0E0;color:var(--warn)}.pill.upd:before{display:none}
+.stp{display:flex;gap:6px;margin:0 0 20px;padding:0;list-style:none;flex-wrap:wrap}
+.stp li{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:99px;background:var(--soft);color:var(--muted);font-size:13px;font-weight:600}
+.stp li i{font-style:normal;width:20px;height:20px;border-radius:50%;background:#C9D5EE;color:#fff;display:grid;place-items:center;font-size:12px}
+.stp li.on{background:var(--brand);color:#fff}.stp li.on i{background:#fff;color:var(--brand)}
+.stp li.done{color:var(--ok);background:#E8F6EE}.stp li.done i{background:var(--ok)}
+.tpls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:0 0 14px}
+.tpl{display:block;text-align:left;border:2px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;cursor:pointer}
+.tpl:hover{border-color:#9DB4EC}
+.tpl[aria-pressed=true]{border-color:var(--brand);background:#F4F7FE}
+.tpl b{display:block}
+.tpl span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.chk{list-style:none;margin:10px 0 0;padding:0}
+.chk li{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.chk li:first-child{border-top:0}
+.chk .m{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700;background:var(--ok)}
+.chk .x .m{background:var(--bad)}
+.chk b{display:block;font-weight:600}
+.chk span{display:block;font-size:13px;color:var(--muted)}
+.qr{display:inline-block;background:#fff;padding:8px;border:1px solid var(--line);border-radius:12px;line-height:0}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;margin:0}
+.kv dt{color:var(--muted);font-size:13px}.kv dd{margin:0;word-break:break-word}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);max-width:min(560px,92vw);background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;font-size:14px;z-index:30;box-shadow:0 8px 28px rgba(10,31,77,.28)}
+.toast.err{background:#9B2C2C}
+.sk{color:var(--muted);padding:30px 0}
+.back{margin:0 0 14px}
+.bk{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.bk:first-of-type{border-top:0}
+.sr{position:absolute;left:-9999px}
+@media (max-width:760px){
+ .top{padding:10px 14px}.who b{display:none}
+ main{padding:20px 14px 60px}
+ .tbl,.tbl tbody,.tbl tr,.tbl td{display:block;width:100%}
+ .tbl{border:0}.tbl thead{display:none}
+ .tbl tr{border:1px solid var(--line);border-radius:14px;margin:0 0 10px;padding:6px 4px}
+ .tbl td{border:0;padding:4px 12px}
+ .kv{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app"><p class="sk" style="text-align:center">Chargement…</p></div>
+<div id="toast" class="toast" role="status" hidden></div>
+<script>
+const QRX=(()=>{
+  const ECC=[10,16,26,18,24,16,18,22,22,26,30,22,22,24],BLK=[1,1,1,2,2,4,4,4,5,5,5,8,9,9];
+  const gb=(x,i)=>((x>>>i)&1)!==0;
+  const rawMods=v=>{let r=(16*v+128)*v+64;if(v>=2){const n=Math.floor(v/7)+2;r-=(25*n-10)*n-55;if(v>=7)r-=36}return r};
+  const dataCw=v=>Math.floor(rawMods(v)/8)-ECC[v-1]*BLK[v-1];
+  const alignPos=v=>{if(v===1)return[];const n=Math.floor(v/7)+2,step=Math.ceil((v*4+4)/(n*2-2))*2,r=[6];for(let p=v*4+10;r.length<n;p-=step)r.splice(1,0,p);return r};
+  const gfMul=(x,y)=>{let z=0;for(let i=7;i>=0;i--){z=(z<<1)^((z>>>7)*0x11D);z^=((y>>>i)&1)*x}return z};
+  const rsDiv=deg=>{const r=new Array(deg).fill(0);r[deg-1]=1;let root=1;for(let i=0;i<deg;i++){for(let j=0;j<deg;j++){r[j]=gfMul(r[j],root);if(j+1<deg)r[j]^=r[j+1]}root=gfMul(root,2)}return r};
+  const rsRem=(data,div)=>{const r=div.map(()=>0);for(const b of data){const f=b^r.shift();r.push(0);div.forEach((c,i)=>{r[i]^=gfMul(c,f)})}return r};
+  const MASK=[(x,y)=>(x+y)%2===0,(x,y)=>y%2===0,(x,y)=>x%3===0,(x,y)=>(x+y)%3===0,(x,y)=>(Math.floor(x/3)+Math.floor(y/2))%2===0,(x,y)=>x*y%2+x*y%3===0,(x,y)=>(x*y%2+x*y%3)%2===0,(x,y)=>((x+y)%2+x*y%3)%2===0];
+  function make(text){
+    const bytes=[...new TextEncoder().encode(text)];
+    let v=1;for(;v<=14;v++){if(4+(v<10?8:16)+bytes.length*8<=dataCw(v)*8)break}
+    if(v>14)return null;
+    const bits=[],put=(val,n)=>{for(let i=n-1;i>=0;i--)bits.push((val>>>i)&1)};
+    put(4,4);put(bytes.length,v<10?8:16);bytes.forEach(b=>put(b,8));
+    const cap=dataCw(v)*8;put(0,Math.min(4,cap-bits.length));put(0,(8-bits.length%8)%8);
+    for(let p=0xEC;bits.length<cap;p^=0xEC^0x11)put(p,8);
+    const data=[];for(let i=0;i<bits.length;i+=8){let b=0;for(let j=0;j<8;j++)b=b<<1|bits[i+j];data.push(b)}
+    /* ECC + entrelacement */
+    const nb=BLK[v-1],el=ECC[v-1],raw=Math.floor(rawMods(v)/8),ns=nb-raw%nb,sl=Math.floor(raw/nb),div=rsDiv(el),blocks=[];
+    for(let i=0,k=0;i<nb;i++){const d=data.slice(k,k+sl-el+(i<ns?0:1));k+=d.length;const e=rsRem(d,div);if(i<ns)d.push(0);blocks.push(d.concat(e))}
+    const all=[];for(let i=0;i<blocks[0].length;i++)blocks.forEach((b,j)=>{if(i!==sl-el||j>=ns)all.push(b[i])});
+    /* matrice */
+    const size=v*4+17,mk=()=>[...Array(size)].map(()=>Array(size).fill(false)),mod=mk(),fn=mk();
+    const set=(x,y,d)=>{mod[y][x]=d;fn[y][x]=true};
+    for(let i=0;i<size;i++){set(6,i,i%2===0);set(i,6,i%2===0)}
+    const finder=(x,y)=>{for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++){const d=Math.max(Math.abs(dx),Math.abs(dy)),xx=x+dx,yy=y+dy;if(xx>=0&&xx<size&&yy>=0&&yy<size)set(xx,yy,d!==2&&d!==4)}};
+    finder(3,3);finder(size-4,3);finder(3,size-4);
+    const ap=alignPos(v),na=ap.length;
+    for(let i=0;i<na;i++)for(let j=0;j<na;j++){if((i===0&&j===0)||(i===0&&j===na-1)||(i===na-1&&j===0))continue;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)set(ap[i]+dx,ap[j]+dy,Math.max(Math.abs(dx),Math.abs(dy))!==1)}
+    const fmt=(M,mask,mark)=>{const w=(x,y,d)=>{M[y][x]=d;if(mark)fn[y][x]=true};
+      const dd=mask;let r=dd;for(let i=0;i<10;i++)r=(r<<1)^((r>>>9)*0x537);const b=((dd<<10)|r)^0x5412;
+      for(let i=0;i<=5;i++)w(8,i,gb(b,i));w(8,7,gb(b,6));w(8,8,gb(b,7));w(7,8,gb(b,8));for(let i=9;i<15;i++)w(14-i,8,gb(b,i));
+      for(let i=0;i<8;i++)w(size-1-i,8,gb(b,i));for(let i=8;i<15;i++)w(8,size-15+i,gb(b,i));w(8,size-8,true)};
+    fmt(mod,0,true);
+    if(v>=7){let r=v;for(let i=0;i<12;i++)r=(r<<1)^((r>>>11)*0x1F25);const b=(v<<12)|r;for(let i=0;i<18;i++){const c=gb(b,i),a=size-11+i%3,bb=Math.floor(i/3);set(a,bb,c);set(bb,a,c)}}
+    /* données */
+    let i=0;
+    for(let right=size-1;right>=1;right-=2){if(right===6)right=5;
+      for(let vert=0;vert<size;vert++)for(let j=0;j<2;j++){const x=right-j,up=((right+1)&2)===0,y=up?size-1-vert:vert;
+        if(!fn[y][x]&&i<all.length*8){mod[y][x]=gb(all[i>>>3],7-(i&7));i++}}}
+    /* masque : on garde le moins pénalisé */
+    const pen=M=>{let p=0;
+      for(let a=0;a<size;a++)for(const col of[0,1]){let run=1;for(let b=1;b<size;b++){const c=col?M[b][a]:M[a][b],pc=col?M[b-1][a]:M[a][b-1];if(c===pc){run++;if(run===5)p+=3;else if(run>5)p++}else run=1}}
+      for(let y=0;y<size-1;y++)for(let x=0;x<size-1;x++){const c=M[y][x];if(c===M[y][x+1]&&c===M[y+1][x]&&c===M[y+1][x+1])p+=3}
+      let dark=0;M.forEach(r=>r.forEach(c=>{if(c)dark++}));p+=Math.floor(Math.abs(dark*20/(size*size)-10))*10;return p};
+    let best=null,bp=1e9;
+    for(let m=0;m<8;m++){const M=mod.map(r=>r.slice());for(let y=0;y<size;y++)for(let x=0;x<size;x++)if(!fn[y][x]&&MASK[m](x,y))M[y][x]=!M[y][x];fmt(M,m,false);const p=pen(M);if(p<bp){bp=p;best=M}}
+    return best;
+  }
+  function svg(text,px){const M=make(text);if(!M)return'';const n=M.length;let d='';
+    for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(M[y][x])d+='M'+(x+4)+' '+(y+4)+'h1v1h-1z';
+    return `<svg class="wqr" viewBox="0 0 ${n+8} ${n+8}" width="${px}" height="${px}" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#000"/></svg>`}
+  return{make,svg};
+})();
+const qrSvg=(t,px)=>QRX.svg(t,px||140);
+const TPLS=[{"id": "coiffeur", "label": "Salon de coiffure", "resume": "Prestations, rendez-vous en ligne, produits de soin, cartes cadeaux.", "v": 1, "n": 27}, {"id": "laser-game", "label": "Laser game", "resume": "Parties de laser, bar, anniversaires, soirées entreprise, cartes cadeaux.", "v": 1, "n": 23}, {"id": "parc-trampoline", "label": "Parc de trampolines", "resume": "Sessions de saut, bar, anniversaires, privatisations, cartes cadeaux.", "v": 1, "n": 33}, {"id": "restaurant", "label": "Restaurant", "resume": "Carte, boissons, menus et groupes, réservations de table, cartes cadeaux.", "v": 1, "n": 29}];
+const LOGO="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%22-10 -760 2014 1000%22 role=%22img%22 aria-label=%22lago%22%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%230A1F4D%22 d=%22M66 0V-715H208V0Z%22/%3E%3C/g%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%230A1F4D%22 d=%22M437 14Q393 14 359.0 -3.5Q325 -21 306.0 -54.0Q287 -87 287 -136Q287 -179 303.5 -208.0Q320 -237 352.0 -255.0Q384 -273 431.0 -285.0Q478 -297 538 -306Q570 -311 590.5 -315.5Q611 -320 621.0 -330.5Q631 -341 631 -361Q631 -389 611.0 -409.0Q591 -429 548 -429Q519 -429 494.5 -419.0Q470 -409 452.5 -389.0Q435 -369 427 -338L300 -377Q312 -418 334.5 -448.0Q357 -478 389.0 -498.5Q421 -519 462.0 -529.0Q503 -539 551 -539Q628 -539 676.5 -514.5Q725 -490 749.0 -438.5Q773 -387 773 -306V-216Q773 -181 774.5 -145.0Q776 -109 778.5 -72.5Q781 -36 784 0H657Q653 -25 649.5 -57.5Q646 -90 644 -123H626Q612 -85 586.0 -54.0Q560 -23 522.5 -4.5Q485 14 437 14ZM498 -90Q517 -90 536.5 -97.0Q556 -104 574.5 -116.5Q593 -129 608.5 -148.0Q624 -167 634 -191L632 -275L655 -270Q637 -257 613.0 -249.5Q589 -242 563.5 -238.0Q538 -234 513.0 -229.0Q488 -224 468.5 -216.0Q449 -208 437.5 -194.5Q426 -181 426 -157Q426 -126 446.0 -108.0Q466 -90 498 -90Z%22/%3E%3C/g%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%230A1F4D%22 d=%22M1081 183Q995 183 939.5 169.5Q884 156 858.0 130.0Q832 104 832 65Q832 19 868.5 -10.0Q905 -39 976 -45V-65Q922 -65 893.0 -76.5Q864 -88 864 -117Q864 -145 892.5 -167.0Q921 -189 987 -202V-222Q925 -226 890.0 -262.0Q855 -298 855 -355Q855 -405 883.0 -444.5Q911 -484 966.5 -507.5Q1022 -531 1103 -531H1369V-421L1204 -444V-421Q1268 -412 1296.5 -389.0Q1325 -366 1325 -325Q1325 -284 1298.0 -253.0Q1271 -222 1221.5 -204.5Q1172 -187 1103 -187Q1090 -187 1075.0 -188.0Q1060 -189 1025 -193Q1006 -179 995.5 -168.5Q985 -158 985 -149Q985 -142 992.5 -137.0Q1000 -132 1012.5 -130.0Q1025 -128 1038 -128H1188Q1208 -128 1240.0 -125.5Q1272 -123 1304.0 -110.0Q1336 -97 1358.0 -68.5Q1380 -40 1380 13Q1380 71 1347.5 109.0Q1315 147 1248.5 165.0Q1182 183 1081 183ZM1097 68Q1158 68 1192.0 61.5Q1226 55 1240.5 40.5Q1255 26 1255 4Q1255 -16 1246.5 -27.0Q1238 -38 1224.5 -42.5Q1211 -47 1197.5 -48.5Q1184 -50 1174 -50H1048Q1006 -46 987.5 -27.5Q969 -9 969 15Q969 37 983.0 48.0Q997 59 1025.5 63.5Q1054 68 1097 68ZM1095 -262Q1143 -262 1167.0 -285.5Q1191 -309 1191 -347Q1191 -387 1166.5 -413.0Q1142 -439 1095 -439Q1049 -439 1023.0 -413.5Q997 -388 997 -348Q997 -323 1008.5 -303.5Q1020 -284 1042.0 -273.0Q1064 -262 1095 -262Z%22/%3E%3C/g%3E%3Csvg x=%221416%22 y=%22-562%22 width=%22578%22 height=%22578%22 viewBox=%220 0 100 100%22%3E%3Cdefs%3E%3CclipPath id=%22cwl%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22/%3E%3C/clipPath%3E%3ClinearGradient id=%22swl%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23FFB347%22/%3E%3Cstop offset=%221%22 stop-color=%22%23FF6A0C%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22wwl%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%233C7BF6%22/%3E%3Cstop offset=%221%22 stop-color=%22%23123B9B%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path=%22url(%23cwl)%22%3E%3Cpath fill=%22url(%23swl)%22 d=%22M-16.7 50 Q-0.05 28 16.6 50 T49.9 50 T83.2 50 T116.5 50 T149.8 50 L130 -20 L-20 -20Z%22/%3E%3Cpath fill=%22url(%23wwl)%22 d=%22M-16.7 59 Q-0.05 37 16.6 59 T49.9 59 T83.2 59 T116.5 59 T149.8 59 L130 130 L-20 130Z%22/%3E%3C/g%3E%3C/svg%3E%3C/svg%3E";
+(()=>{
+'use strict';
+if(window.top!==window.self){document.body.textContent='';return}
+const app=document.getElementById('app'),tst=document.getElementById('toast');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const AUTH='https://identitytoolkit.googleapis.com/v1/',TOKU='https://securetoken.googleapis.com/v1/token';
+const LOCAL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+const REGK='lago-console-reg';
+const pad=n=>String(n).padStart(2,'0');
+
+/* ---------- utilitaires ---------- */
+const rnd=n=>{const a=crypto.getRandomValues(new Uint8Array(n));return Array.from(a,x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('')};
+const slug=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,24);
+const b64=o=>btoa(JSON.stringify(o).replace(/[\u0080-￿]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const unb64=t=>{t=String(t).replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';return JSON.parse(atob(t))};
+const fmtD=t=>t?new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'—';
+const fmtDT=t=>t?new Date(t).toLocaleString('fr-FR',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+const tplOf=id=>TPLS.find(t=>t.id===id);
+const tplName=id=>(tplOf(id)||{label:id||'—'}).label;
+const baseLink=()=>new URL('./',location.href).href;
+const lagoLink=c=>baseLink()+'#cloud='+b64({u:c.u,r:c.r,b:1,t:c.t,n:c.name});
+let tmo=0;
+function toast(m,err){tst.textContent=m;tst.className='toast'+(err?' err':'');tst.hidden=false;clearTimeout(tmo);tmo=setTimeout(()=>{tst.hidden=true},err?7000:3500)}
+async function copy(t,ok){
+  try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(x){}a.remove()}
+  toast(ok||'Copié')
+}
+function save(name,text,type){
+  const u=URL.createObjectURL(new Blob([text],{type:type||'application/json'})),a=document.createElement('a');
+  a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)
+}
+
+/* ---------- Firebase (REST) ---------- */
+async function jf(url,opt,ms){
+  const ac=new AbortController(),t=setTimeout(()=>ac.abort(),ms||12000);
+  try{
+    const r=await fetch(url,Object.assign({signal:ac.signal,cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer'},opt||{}));
+    let d=null;try{d=await r.json()}catch(e){}
+    return{ok:r.ok,status:r.status,d};
+  }catch(e){return{ok:false,status:0,d:null,err:e&&e.name==='AbortError'?'timeout':'net'}}
+  finally{clearTimeout(t)}
+}
+const AERR=[['EMAIL_EXISTS','Ce compte existe déjà dans ce projet.'],['INVALID_LOGIN_CREDENTIALS','E-mail ou mot de passe incorrect.'],['INVALID_PASSWORD','E-mail ou mot de passe incorrect.'],['EMAIL_NOT_FOUND','E-mail ou mot de passe incorrect.'],
+ ['OPERATION_NOT_ALLOWED','La connexion par e-mail et mot de passe n’est pas activée : Authentication › Méthode de connexion › E-mail/Mot de passe › Activer.'],
+ ['TOO_MANY_ATTEMPTS','Trop d’essais : patientez quelques minutes.'],['WEAK_PASSWORD','Mot de passe trop court (6 caractères minimum).'],['USER_DISABLED','Ce compte est désactivé.'],
+ ['API key','Clé API refusée : recopiez la configuration Firebase du bon projet.'],['API_KEY','Clé API refusée : recopiez la configuration Firebase du bon projet.'],['INVALID_EMAIL','Adresse e-mail non valide.'],['CONFIGURATION_NOT_FOUND','Authentication n’est pas activée dans ce projet (Build › Authentication › Commencer).']];
+const afr=(code,r)=>{if(!code)return r&&r.err==='timeout'?'Firebase ne répond pas : réessayez.':'Pas de connexion à Firebase : vérifiez le réseau.';const k=AERR.find(a=>code.indexOf(a[0])>=0);return k?k[1]:'Erreur Firebase : '+String(code).slice(0,120)};
+async function authCall(key,ep,body){
+  const r=await jf(AUTH+'accounts:'+ep+'?key='+encodeURIComponent(key),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(Object.assign({returnSecureToken:true},body))});
+  if(r.ok&&r.d&&r.d.idToken)return{ok:true,idToken:r.d.idToken,refreshToken:r.d.refreshToken,uid:r.d.localId,exp:Date.now()+(parseInt(r.d.expiresIn,10)||3600)*1000};
+  return{ok:false,code:(r.d&&r.d.error&&r.d.error.message)||'',r};
+}
+async function tokenOf(s){
+  if(Date.now()<s.exp-90000)return s.idToken;
+  const r=await jf(TOKU+'?key='+encodeURIComponent(s.k),{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(s.refreshToken)});
+  if(r.ok&&r.d&&r.d.id_token){s.idToken=r.d.id_token;s.refreshToken=r.d.refresh_token||s.refreshToken;s.exp=Date.now()+(parseInt(r.d.expires_in,10)||3600)*1000;return s.idToken}
+  throw new Error('Session expirée : reconnectez-vous.');
+}
+/* s = session (compte) ou null (sans compte) */
+async function db(u,s,method,path,body,extra){
+  const qs=[];if(s)qs.push('auth='+encodeURIComponent(await tokenOf(s)));if(extra)qs.push(extra);
+  const o={method};if(body!==undefined){o.body=JSON.stringify(body);o.headers={'content-type':'application/json'}}
+  return jf(u.replace(/\/+$/,'')+'/'+path+'.json'+(qs.length?'?'+qs.join('&'):''),o);
+}
+const denied=r=>r.status===401||r.status===403;
+const URLOK=u=>/^https:\/\/[a-z0-9.-]+\.(firebasedatabase\.app|firebaseio\.com)$/i.test(u)||(LOCAL&&/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(u));
+function parseCfg(t){
+  const g=k=>{const m=new RegExp('["\']?'+k+'["\']?\\s*:\\s*["\']([^"\']+)["\']').exec(t||'');return m?m[1].trim():''};
+  let u=g('databaseURL').replace(/\/+$/,''),pid=g('projectId'),guess=false;
+  if(!u&&pid){u='https://'+pid+'-default-rtdb.firebaseio.com';guess=true}
+  return{k:g('apiKey'),u,pid,guess};
+}
+
+/* ---------- règles de sécurité ---------- */
+const UIDOK=/^[A-Za-z0-9]{10,64}$/;
+const rulesOwner=uid=>JSON.stringify({rules:{'.read':`auth != null && auth.uid === '${uid}'`,'.write':`auth != null && auth.uid === '${uid}'`}},null,2);
+function rulesClient(r,uid){
+  const own=`auth != null && auth.uid === '${uid}'`;
+  return JSON.stringify({rules:{
+    '.read':false,'.write':false,
+    [r]:{'.read':true,'.write':true},
+    '_susp':{'.read':true,'.write':own,
+      'on':{'.validate':'newData.isBoolean()'},
+      'msg':{'.validate':'newData.isString() && newData.val().length <= 300'},
+      't':{'.validate':'newData.isNumber()'},
+      '$other':{'.validate':false}},
+    '_owner':{'.read':own,'.write':own},
+    '_bk':{'.read':own,'.write':own}
+  }},null,2);
+}
+
+/* ---------- état ---------- */
+const ST={reg:null,own:null,rs:null,cs:{},clients:[],live:{},view:'boot',sel:null,busy:'',su:{},wz:{},bks:{},chk:{}};
+try{ST.reg=JSON.parse(localStorage.getItem(REGK)||'null')}catch(e){}
+if(ST.reg&&!(ST.reg.u&&ST.reg.k&&URLOK(ST.reg.u)))ST.reg=null;
+(function(){
+  const m=/^#reg=(.+)$/.exec(location.hash);
+  if(m){try{const x=unb64(m[1]);if(x&&x.k&&URLOK(x.u)&&!ST.reg){ST.reg={u:x.u.replace(/\/+$/,''),k:x.k};try{localStorage.setItem(REGK,JSON.stringify(ST.reg))}catch(e){}}}catch(e){}history.replaceState(null,'',location.pathname+location.search)}
+})();
+
+/* ---------- registre (projet Firebase du propriétaire) ---------- */
+const rdb=(m,p,b,x)=>db(ST.reg.u,ST.rs,m,p,b,x);
+async function loadClients(){
+  const r=await rdb('GET','clients');
+  if(denied(r))throw new Error('Accès refusé par le registre : les règles ne sont pas appliquées, ou ce compte n’est pas le propriétaire.');
+  if(!r.ok)throw new Error(afr('',r));
+  ST.clients=Object.values(r.d||{}).filter(c=>c&&c.id).sort((a,b)=>(b.at||0)-(a.at||0));
+}
+async function putClient(c){
+  const r=await rdb('PUT','clients/'+c.id,c,'print=silent');
+  if(!r.ok)throw new Error(denied(r)?'Le registre refuse l’écriture (règles).':afr('',r));
+}
+async function liveOf(c){
+  const o={t:Date.now()};
+  const a=await db(c.u,null,'GET','_susp');
+  if(a.status===0||(!a.ok&&!denied(a))){o.err=1;return o}
+  if(denied(a)){o.err=2;return o}
+  o.susp=!!(a.d&&a.d.on===true);o.msg=(a.d&&a.d.msg)||'';
+  if(c.ready){
+    const b=await db(c.u,null,'GET',c.r,undefined,'shallow=true');
+    o.opened=!!(b.ok&&b.d);
+    if(o.opened){const t=await db(c.u,null,'GET',c.r+'/settings/tpl');if(t.ok&&t.d&&typeof t.d==='object')o.tpl={id:t.d.id,v:t.d.v,at:t.d.at}}
+  }
+  return o;
+}
+async function loadLive(){
+  const q=ST.clients.filter(c=>!ST.live[c.id]);
+  await Promise.all(Array.from({length:4},async()=>{while(q.length){const c=q.shift();ST.live[c.id]=await liveOf(c);if(ST.view==='list'||ST.view==='detail')draw()}}));
+}
+function statusOf(c){
+  const l=ST.live[c.id];
+  if(!c.ready)return['prep','À terminer'];
+  if(!l)return['wait','Vérification…'];
+  if(l.err)return['off','Injoignable'];
+  if(l.susp)return['susp','Suspendu'];
+  if(!l.opened)return['wait','Lien non ouvert'];
+  return['ok','Actif'];
+}
+async function csess(c){
+  let s=ST.cs[c.id];if(s)return s;
+  const r=await authCall(c.k,'signInWithPassword',{email:ST.own.email,password:ST.own.pw});
+  if(!r.ok)throw new Error(afr(r.code,r.r));
+  s=ST.cs[c.id]={u:c.u,k:c.k,idToken:r.idToken,refreshToken:r.refreshToken,uid:r.uid,exp:r.exp};
+  return s;
+}
+
+/* ---------- contrôles de sécurité (lecture seule, sans effet durable) ---------- */
+async function runChecks(c){
+  const out=[],add=(ok,t,d)=>out.push({ok,t,d});
+  let r=await db(c.u,null,'GET','',undefined,'shallow=true');
+  if(r.status===0)add(false,'Base joignable','Impossible de joindre la base : vérifiez son adresse.');
+  else if(denied(r))add(true,'La base entière est fermée sans autorisation','Personne ne peut la parcourir ni la lister.');
+  else add(false,'La base est ouverte à tous','Les règles de sécurité ne sont pas appliquées : collez les règles ci-dessous dans Firebase.');
+  r=await db(c.u,null,'GET',c.r,undefined,'shallow=true');
+  add(r.ok,'Le lien du client fonctionne',r.ok?'Les appareils qui possèdent le lien peuvent lire et écrire leurs données.':'Le chemin du client n’est pas accessible : vérifiez les règles.');
+  r=await db(c.u,null,'GET','zz-sonde');
+  let r2=await db(c.u,null,'PUT','zz-sonde',1);
+  if(r2.ok)await db(c.u,null,'DELETE','zz-sonde');
+  add(denied(r)&&denied(r2),'Aucun autre chemin n’est accessible',denied(r)&&denied(r2)?'Seul le chemin du client est ouvert, avec son identifiant secret.':'Un chemin hors du client est lisible ou modifiable sans compte.');
+  r=await db(c.u,null,'GET','_susp');
+  add(r.ok,'L’état de suspension est lisible par Lago',r.ok?'Lago peut vérifier si l’espace est suspendu.':'Sans cette lecture, la suspension ne peut pas être appliquée.');
+  const cur=r.ok?r.d:null;
+  r2=await db(c.u,null,'PUT','_susp',cur===null?{on:false}:cur);
+  if(r2.ok&&cur===null)await db(c.u,null,'DELETE','_susp');
+  add(denied(r2),'Seul le propriétaire peut suspendre',denied(r2)?'Écrire dans l’état de suspension exige votre compte.':'N’importe qui peut modifier la suspension : les règles ne sont pas appliquées.');
+  r=await db(c.u,null,'GET','_owner');r2=await db(c.u,null,'GET','_bk');
+  add(denied(r)&&denied(r2),'Zone propriétaire et sauvegardes verrouillées',denied(r)&&denied(r2)?'Illisibles sans votre compte.':'La zone propriétaire est lisible sans compte.');
+  let s=null,err='';
+  try{s=await csess(c)}catch(e){err=e.message}
+  if(!s)add(false,'Compte propriétaire',err||'Connexion impossible.');
+  else{
+    const w=await db(c.u,s,'GET','_owner');
+    const w2=await db(c.u,s,'PUT','_susp',cur===null?{on:false,t:Date.now()}:cur);
+    add(w.ok&&w2.ok,'Le compte propriétaire a la main',w.ok&&w2.ok?'Lecture de la zone propriétaire et écriture de la suspension : OK.':'Votre compte n’est pas reconnu par les règles : vérifiez que l’identifiant propriétaire des règles correspond à ce projet.');
+  }
+  return out;
+}
+
+/* ---------- vues ---------- */
+function head(){
+  const who=ST.own?`<div class="who"><b>${esc(ST.own.email)}</b><button class="lnk" data-a="logout" type="button">Se déconnecter</button></div>`:'<div></div>';
+  return `<header class="top"><a class="brand" href="./console.html"><img src="${LOGO}" alt="Lago"><span>Console</span></a>${who}</header>`;
+}
+const busy=()=>ST.busy?' disabled':'';
+const stepper=(i,names)=>`<ol class="stp" aria-label="Étapes">${names.map((n,k)=>`<li class="${k+1<i?'done':k+1===i?'on':''}"${k+1===i?' aria-current="step"':''}><i>${k+1<i?'✓':k+1}</i>${esc(n)}</li>`).join('')}</ol>`;
+const fld=(id,label,val,o)=>{o=o||{};return `<label class="fld"><span>${esc(label)}</span><input id="${id}" type="${o.type||'text'}" value="${esc(val||'')}" ${o.ph?`placeholder="${esc(o.ph)}"`:''} ${o.ac?`autocomplete="${o.ac}"`:'autocomplete="off"'} autocapitalize="none" spellcheck="false"${o.req?' required':''}></label>`};
+
+function vSetup(){
+  const su=ST.su,step=!su.cfg?1:!su.uid?2:3;
+  let h=`<main class="narrow"><h1>Première configuration</h1><p class="muted">La console garde la liste de vos clients dans <b>votre propre projet Firebase</b>, verrouillé : seul votre compte peut le lire. À faire une seule fois (5 minutes).</p>${stepper(step,['Projet','Compte','Règles'])}`;
+  if(step===1)h+=`<div class="box"><h3>Créez le projet Firebase de la console</h3>
+   <ol class="ol"><li>Ouvrez <b>console.firebase.google.com</b> avec votre compte Google, puis « Ajouter un projet », nom : <code>lago-console</code> (Google Analytics : non).</li>
+   <li>Menu <b>Build</b> (Compiler) › <b>Realtime Database</b> › « Créer une base de données », emplacement en Europe, mode <b>verrouillé</b>.</li>
+   <li>Menu <b>Authentication</b> › « Commencer » › <b>E-mail/Mot de passe</b> › Activer › Enregistrer.</li>
+   <li>Roue dentée › « Paramètres du projet » › « Vos applications » › icône <code>&lt;/&gt;</code> (Web) › enregistrez l’appli, puis copiez le bloc <code>firebaseConfig</code>.</li></ol>
+   <label class="fld"><span>Collez le bloc firebaseConfig ici</span><textarea id="su_cfg" rows="7" spellcheck="false" placeholder="const firebaseConfig = { apiKey: &quot;…&quot;, databaseURL: &quot;https://…&quot;, … };">${esc(su.txt||'')}</textarea></label>
+   ${su.needUrl?fld('su_url','Adresse de la base (databaseURL)',su.url,{ph:'https://lago-console-default-rtdb.europe-west1.firebasedatabase.app',type:'url'}):''}
+   <div class="acts"><button class="btn pri" data-a="su1" type="button"${busy()}>Continuer</button></div></div>`;
+  else if(step===2)h+=`<div class="box"><h3>Créez votre compte propriétaire</h3><p class="muted">Ce sont vos identifiants pour la console. Choisissez un mot de passe long (12 caractères ou plus) que vous n’utilisez nulle part ailleurs. Il n’est jamais enregistré sur cet appareil.</p>
+   <form id="su_f" autocomplete="on">${fld('su_em','Votre e-mail',su.email,{type:'email',ac:'username',req:1})}${fld('su_pw','Mot de passe (12 caractères minimum)','',{type:'password',ac:'new-password',req:1})}
+   <div class="acts"><button class="btn pri" type="submit"${busy()}>Créer le compte</button><button class="btn" data-a="su_back" type="button">Retour</button></div></form></div>`;
+  else h+=`<div class="box"><h3>Collez ces règles dans Firebase</h3><p class="muted">Elles interdisent tout accès sauf à votre compte.</p>
+   <ol class="ol"><li>Realtime Database › onglet <b>Règles</b>.</li><li>Remplacez tout le contenu par le texte ci-dessous, puis « Publier ».</li></ol>
+   <textarea id="su_rules" readonly rows="6" onclick="this.select()">${esc(rulesOwner(su.uid))}</textarea>
+   <div class="acts"><button class="btn" data-a="su_copy" type="button">Copier les règles</button><button class="btn pri" data-a="su3" type="button"${busy()}>J’ai publié : vérifier</button></div>${su.msg?`<p class="small" style="margin-top:10px;color:var(--bad)">${esc(su.msg)}</p>`:''}</div>`;
+  return h+'</main>';
+}
+
+function vLogin(){
+  return `<main class="narrow"><h1>Console propriétaire</h1><p class="muted">Accès réservé. Cet appareil ne conserve ni mot de passe ni donnée de vos clients.</p>
+  <div class="box"><form id="lg_f" autocomplete="on">${fld('lg_em','E-mail',ST.lgEm,{type:'email',ac:'username',req:1})}${fld('lg_pw','Mot de passe','',{type:'password',ac:'current-password',req:1})}
+  <div class="acts"><button class="btn pri" type="submit"${busy()}>Se connecter</button></div></form></div>
+  <p class="small muted">Mauvais projet Firebase ? <button class="lnk" data-a="resetreg" type="button">Changer de projet de console</button></p></main>`;
+}
+
+function vList(){
+  const L=ST.clients,n=L.length,act=L.filter(c=>statusOf(c)[0]==='ok').length,sp=L.filter(c=>statusOf(c)[0]==='susp').length;
+  let h=`<main><div class="bar"><div><h1>Clients</h1><p>${n?`${n} espace${n>1?'s':''} · ${act} actif${act>1?'s':''}${sp?` · ${sp} suspendu${sp>1?'s':''}`:''}`:'Aucun espace pour le moment'}</p></div>
+   <div class="acts" style="margin:0"><button class="btn" data-a="refresh" type="button"${busy()}>Actualiser</button><button class="btn pri" data-a="wnew" type="button">Nouveau client</button></div></div>`;
+  if(!n)h+=`<div class="box"><h3>Créez le premier espace client</h3><p class="muted">L’assistant vous guide : nom du client, métier (modèle prêt à l’emploi), projet Firebase dédié, règles de sécurité, puis un lien à envoyer.</p><div class="acts"><button class="btn pri" data-a="wnew" type="button">Nouveau client</button></div></div>`;
+  else h+=`<table class="tbl"><thead><tr><th scope="col">Client</th><th scope="col">Métier</th><th scope="col">Modèle</th><th scope="col">Créé le</th><th scope="col">Statut</th></tr></thead><tbody>${L.map(c=>{
+    const l=ST.live[c.id]||{},[sk,st]=statusOf(c),cur=l.tpl&&l.tpl.v||c.tv,last=(tplOf(c.t)||{}).v,up=last&&cur&&last>cur;
+    return `<tr><td><button class="nm" data-a="open" data-id="${esc(c.id)}" type="button">${esc(c.name)}</button><span class="sub">${esc(c.pid||'')}</span></td><td>${esc(tplName(c.t))}</td><td>v${esc(cur||'?')}${up?` <span class="pill upd">v${last} disponible</span>`:''}</td><td>${fmtD(c.at)}</td><td><span class="pill ${sk}">${st}</span></td></tr>`}).join('')}</tbody></table>`;
+  h+=`<p class="small muted" style="margin-top:16px"><button class="lnk" data-a="export" type="button">Exporter la liste</button> · <button class="lnk" data-a="import" type="button">Importer une liste</button> · <button class="lnk" data-a="addev" type="button">Lien pour un autre appareil</button><input id="imp_f" type="file" accept="application/json,.json" class="sr" tabindex="-1" aria-hidden="true"></p></main>`;
+  return h;
+}
+
+function vDetail(){
+  const c=ST.clients.find(x=>x.id===ST.sel);if(!c){ST.view='list';return vList()}
+  const l=ST.live[c.id]||{},[sk,st]=statusOf(c),tp=tplOf(c.t),cur=l.tpl&&l.tpl.v||c.tv,link=lagoLink(c),bk=ST.bks[c.id],chk=ST.chk[c.id];
+  let h=`<main><button class="lnk back" data-a="home" type="button">‹ Tous les clients</button>
+  <div class="bar"><div><h1>${esc(c.name)}</h1><p>${esc(tplName(c.t))} · modèle v${esc(cur||'?')} · créé le ${fmtD(c.at)}</p></div><span class="pill ${sk}">${st}</span></div>`;
+  if(!c.ready)h+=`<div class="box warn"><h3>Configuration à terminer</h3><p>Les règles de sécurité n’ont pas encore été vérifiées pour cet espace. Le lien ne doit pas être envoyé avant.</p><div class="acts"><button class="btn pri" data-a="wresume" type="button">Reprendre l’assistant</button></div></div>`;
+  if(tp&&l.tpl&&tp.v>l.tpl.v)h+=`<div class="box"><h3>Modèle plus récent disponible</h3><p class="muted">Le modèle « ${esc(tp.label)} » est en v${tp.v}, cet espace est en v${l.tpl.v}. Rien n’est changé automatiquement : le client peut l’appliquer lui-même dans Paramètres › Mon métier, en choisissant « Ajouter » pour garder ses données.</p></div>`;
+  if(c.ready)h+=`<div class="box"><h3>Accès du client</h3>
+   <label class="fld"><span>Lien à envoyer (secret)</span><input id="dl_link" type="text" readonly value="${esc(link)}" onclick="this.select()"></label>
+   <div class="acts" style="margin-top:0"><button class="btn pri" data-a="copylink" type="button">Copier le lien</button><button class="btn" data-a="copymsg" type="button">Copier le message prêt à envoyer</button><button class="btn" data-a="openhere" type="button">Ouvrir ici</button></div>
+   <details style="margin-top:12px"><summary><b>QR code</b></summary><div style="margin:10px 0"><div class="qr">${qrSvg(link,200)}</div></div></details>
+   <p class="small muted" style="margin:12px 0 0">Ouvrez toujours un espace client dans une <b>fenêtre de navigation privée</b> (Ctrl/Cmd + Maj + N) : le navigateur garde sinon les données de l’espace précédent. Lago refuse d’ailleurs d’ouvrir un second espace dans un navigateur déjà utilisé.</p></div>
+   <div class="box"><h3>Accès à l’espace</h3>${l.susp?`<p>L’espace est <b>suspendu</b>. Le client voit un écran bloquant${l.msg?` avec votre message : « ${esc(l.msg)} »`:''}. Ses données sont conservées.</p><div class="acts"><button class="btn pri" data-a="resume" type="button"${busy()}>Réactiver l’accès</button></div>`:
+   `<p class="muted">Suspendre bloque l’accès à Lago pour tous les appareils du client (impayé, fin de contrat). Les données restent intactes ; vous pouvez réactiver à tout moment. Les appareils hors ligne sont bloqués dès qu’ils retrouvent le réseau.</p>
+   <label class="fld"><span>Message affiché au client (facultatif)</span><textarea id="sp_msg" class="t1" rows="2" maxlength="300" placeholder="Votre abonnement est en attente de règlement.">${esc(ST.spMsg||'')}</textarea></label>
+   <div class="acts" style="margin-top:0"><button class="btn dng" data-a="suspend" type="button"${busy()}>Suspendre l’accès</button></div>`}</div>
+   <div class="box"><h3>Sauvegardes</h3><p class="muted">Une sauvegarde copie toutes les données du client : une fois dans son projet Firebase (zone verrouillée), et en fichier sur votre appareil. Les 10 dernières sont gardées sur le serveur.</p>
+   <div class="acts" style="margin-top:0"><button class="btn pri" data-a="bkNow" type="button"${busy()}>Sauvegarder maintenant</button><button class="btn" data-a="bkList" type="button"${busy()}>Voir les sauvegardes</button><button class="btn" data-a="bkFile" type="button"${busy()}>Restaurer depuis un fichier</button><input id="bk_f" type="file" accept="application/json,.json" class="sr" tabindex="-1" aria-hidden="true"></div>
+   ${bk?(bk.length?`<div style="margin-top:12px">${bk.map(k=>`<div class="bk"><span>${esc(bkDate(k))}</span><span class="acts" style="margin:0"><button class="btn sm" data-a="bkDl" data-k="${esc(k)}" type="button">Télécharger</button><button class="btn sm dng" data-a="bkRest" data-k="${esc(k)}" type="button">Restaurer</button></span></div>`).join('')}</div>`:'<p class="small muted" style="margin:12px 0 0">Aucune sauvegarde sur le serveur.</p>'):''}
+   <p class="small muted" style="margin:12px 0 0">Limite : ces sauvegardes sont lancées à la main. Une sauvegarde automatique quotidienne côté Google existe sur le plan payant (Blaze) de Firebase ; à vérifier dans la console Firebase du projet.</p></div>`;
+  h+=`<div class="box"><h3>Sécurité de ce projet</h3><p class="muted">Contrôle en direct : la base est fermée, seul le chemin du client est ouvert, seul votre compte peut suspendre ou lire les sauvegardes.</p>
+   <div class="acts" style="margin-top:0"><button class="btn pri" data-a="chk" type="button"${busy()}>Vérifier maintenant</button></div>
+   ${chk?`<ul class="chk">${chk.map(x=>`<li class="${x.ok?'':'x'}"><span class="m" aria-hidden="true">${x.ok?'✓':'!'}</span><div><b>${esc(x.t)}</b><span>${esc(x.d)}</span></div></li>`).join('')}</ul>`:''}
+   <details style="margin-top:12px"><summary><b>Règles à coller dans Firebase</b></summary><textarea id="dl_rules" readonly rows="10" onclick="this.select()" style="margin-top:8px">${esc(UIDOK.test(c.ou||'')?rulesClient(c.r,c.ou):'')}</textarea><div class="acts"><button class="btn sm" data-a="copyrules" type="button">Copier</button></div></details></div>
+   <div class="box"><h3>Détails</h3><dl class="kv"><dt>Projet Firebase</dt><dd>${esc(c.pid||'—')}</dd><dt>Base de données</dt><dd>${esc(c.u)}</dd><dt>Modèle de départ</dt><dd>${esc(tplName(c.t))} v${esc(c.tv||'?')}</dd></dl>
+   <label class="fld" style="margin-top:12px"><span>Notes (privées)</span><textarea id="dl_note" class="t1" rows="3" maxlength="1000">${esc(c.note||'')}</textarea></label>
+   <div class="acts" style="margin-top:0"><button class="btn sm" data-a="saveNote" type="button"${busy()}>Enregistrer la note</button><button class="btn sm dng" data-a="forget" type="button"${busy()}>Retirer de la liste</button></div></div></main>`;
+  return h;
+}
+const bkDate=k=>{const m=/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)Z$/.exec(k);return m?fmtDT(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6])):k};
+
+function vWiz(){
+  const w=ST.wz,st=w.step||1,names=['Client','Projet Firebase','Règles','Lien'];
+  let h=`<main class="narrow"><button class="lnk back" data-a="home" type="button">‹ Tous les clients</button><h1>Nouveau client</h1><p class="muted">Un projet Firebase par client : ses données restent isolées des autres.</p>${stepper(st,names)}`;
+  if(st===1)h+=`<div class="box"><h3>Qui est le client ?</h3>${fld('w_name','Nom du commerce',w.name,{ph:'Salon Hélène'})}
+   <p class="fld" style="margin-bottom:6px"><span style="font-weight:600;font-size:13px">Métier (modèle de départ)</span></p><div class="tpls" role="group" aria-label="Métier">${TPLS.map(t=>`<button class="tpl" type="button" data-a="wtpl" data-id="${t.id}" aria-pressed="${w.t===t.id}"><b>${esc(t.label)}</b><span>${esc(t.resume)}</span><span>${t.n} produits · version ${t.v}</span></button>`).join('')}</div>
+   <label class="fld"><span>Note privée (facultatif)</span><textarea id="w_note" class="t1" rows="2" maxlength="1000">${esc(w.note||'')}</textarea></label>
+   <div class="acts"><button class="btn pri" data-a="w1" type="button">Continuer</button></div></div>`;
+  else if(st===2)h+=`<div class="box"><h3>Créez le projet Firebase de ${esc(w.name)}</h3>
+   <ol class="ol"><li>Sur <b>console.firebase.google.com</b> : « Ajouter un projet », nom conseillé <code>lago-${esc(slug(w.name)||'client')}</code>, Google Analytics : non.</li>
+   <li><b>Build</b> (Compiler) › <b>Realtime Database</b> › « Créer une base de données », emplacement en Europe, mode <b>verrouillé</b>.</li>
+   <li><b>Authentication</b> › « Commencer » › <b>E-mail/Mot de passe</b> › Activer › Enregistrer.</li>
+   <li>Roue dentée › « Paramètres du projet » › « Vos applications » › icône <code>&lt;/&gt;</code> › enregistrez l’appli, copiez le bloc <code>firebaseConfig</code>. <span class="muted">(Créez la base avant : sans elle, l’adresse de la base manque dans le bloc.)</span></li></ol>
+   <label class="fld"><span>Collez le bloc firebaseConfig ici</span><textarea id="w_cfg" rows="7" spellcheck="false" placeholder="const firebaseConfig = { apiKey: &quot;…&quot;, databaseURL: &quot;https://…&quot;, … };">${esc(w.cfgTxt||'')}</textarea></label>
+   ${w.needUrl?fld('w_url','Adresse de la base (databaseURL)',w.url,{ph:'https://lago-client-default-rtdb.europe-west1.firebasedatabase.app',type:'url'}):''}
+   <p class="small muted">Votre compte propriétaire sera créé dans ce projet avec le même e-mail et mot de passe que la console.</p>
+   <div class="acts"><button class="btn pri" data-a="w2" type="button"${busy()}>Analyser et créer le compte propriétaire</button><button class="btn" data-a="wback" type="button">Retour</button></div></div>`;
+  else if(st===3){const c=w.c;h+=`<div class="box"><h3>Collez les règles de sécurité</h3>
+   <p class="muted">Le projet est lié à votre compte propriétaire. Il reste à fermer la base : tout est interdit sauf le chemin secret du client et votre compte.</p>
+   <ol class="ol"><li>Realtime Database › onglet <b>Règles</b>.</li><li>Remplacez tout le contenu par le texte ci-dessous, puis « Publier ».</li></ol>
+   <textarea id="w_rules" readonly rows="12" onclick="this.select()">${esc(rulesClient(c.r,c.ou))}</textarea>
+   <div class="acts"><button class="btn" data-a="wcopyrules" type="button">Copier les règles</button><button class="btn pri" data-a="w3" type="button"${busy()}>J’ai publié : vérifier</button></div>
+   ${w.chk?`<ul class="chk">${w.chk.map(x=>`<li class="${x.ok?'':'x'}"><span class="m" aria-hidden="true">${x.ok?'✓':'!'}</span><div><b>${esc(x.t)}</b><span>${esc(x.d)}</span></div></li>`).join('')}</ul>`:''}</div>`}
+  else{const c=w.c,link=lagoLink(c);h+=`<div class="box okb"><h3>L’espace de ${esc(c.name)} est prêt et verrouillé</h3><p class="muted" style="margin:0">Tous les contrôles de sécurité sont passés.</p></div>
+   <div class="box"><h3>Lien à envoyer au client</h3><label class="fld"><span>Lien secret (ouvre un espace neuf « ${esc(tplName(c.t))} »)</span><input id="w_link" type="text" readonly value="${esc(link)}" onclick="this.select()"></label>
+   <div class="acts" style="margin-top:0"><button class="btn pri" data-a="wcopylink" type="button">Copier le lien</button><button class="btn" data-a="wcopymsg" type="button">Copier le message prêt à envoyer</button></div>
+   <details style="margin-top:12px" open><summary><b>QR code</b></summary><div style="margin:10px 0"><div class="qr">${qrSvg(link,200)}</div></div></details>
+   <p class="small muted" style="margin:12px 0 0">Envoyez-le par un canal privé. La première personne qui l’ouvre crée le compte administrateur : le client doit donc l’ouvrir en premier. Ne l’ouvrez pas vous-même sans fenêtre privée.</p></div>
+   <div class="acts"><button class="btn pri" data-a="home" type="button">Terminer</button></div>`}
+  return h+'</main>';
+}
+const clientMsg=c=>`Bonjour,\n\nVotre espace Lago « ${c.name} » est prêt.\n\n1. Ouvrez ce lien sur l’ordinateur ou la tablette de votre caisse :\n${lagoLink(c)}\n2. Créez votre compte administrateur (prénom et mot de passe).\n3. Ensuite, invitez votre équipe depuis les paramètres de Lago.\n\nCe lien est personnel : ne le transférez pas et gardez-le pour ajouter d’autres appareils.`;
+
+function draw(){
+  const ae=document.activeElement,id=ae&&ae.id,ss=ae&&ae.selectionStart,se=ae&&ae.selectionEnd;
+  const v=ST.view;
+  app.innerHTML=head()+(v==='boot'?'<main><p class="sk">Chargement…</p></main>':v==='setup'?vSetup():v==='login'?vLogin():v==='list'?vList():v==='detail'?vDetail():vWiz());
+  if(id){const e=document.getElementById(id);if(e){e.focus();try{if(ss!=null&&e.type!=='email'&&e.type!=='password')e.setSelectionRange(ss,se)}catch(x){}}}
+}
+async function act(fn,msg){
+  if(ST.busy)return;ST.busy=msg||'…';draw();
+  try{await fn()}catch(e){toast(e&&e.message?e.message:'Erreur inattendue',true)}
+  ST.busy='';draw();
+}
+const go=v=>{ST.view=v;window.scrollTo(0,0);draw()};
+
+/* ---------- actions ---------- */
+const lgOut=()=>{ST.own=null;ST.rs=null;ST.cs={};ST.clients=[];ST.live={};ST.bks={};ST.chk={};ST.wz={};ST.sel=null;go('login')};
+async function startList(){
+  await loadClients();go('list');loadLive();
+}
+const A={
+  logout:lgOut,
+  home(){ST.wz={};ST.sel=null;go('list');loadLive()},
+  async refresh(){await act(async()=>{await loadClients();ST.live={};draw();loadLive()})},
+  resetreg(){if(!confirm('Oublier le projet Firebase de la console sur cet appareil ? Vos clients ne sont pas supprimés.'))return;try{localStorage.removeItem(REGK)}catch(e){}ST.reg=null;ST.su={};go('setup')},
+  open(b){ST.sel=b.dataset.id;ST.spMsg='';go('detail')},
+  /* --- première configuration --- */
+  async su1(){
+    const t=document.getElementById('su_cfg').value;ST.su.txt=t;
+    const u=document.getElementById('su_url');if(u)ST.su.url=u.value.trim();
+    const c=parseCfg(t);if(ST.su.url)c.u=ST.su.url.replace(/\/+$/,'');
+    if(!c.k){toast('Clé API introuvable : collez le bloc firebaseConfig complet.',true);return}
+    if(!c.u){ST.su.needUrl=true;draw();toast('Adresse de la base absente : créez d’abord la Realtime Database, puis recopiez-la ici.',true);return}
+    if(!URLOK(c.u)){ST.su.needUrl=true;draw();toast('Adresse de base non valide (…firebasedatabase.app ou …firebaseio.com).',true);return}
+    await act(async()=>{
+      const r=await db(c.u,null,'GET','',undefined,'shallow=true');
+      if(r.status===0||r.status===404){if(c.guess){ST.su.needUrl=true;throw new Error('Adresse de la base introuvable : recopiez la databaseURL du projet (Realtime Database › Données), ou créez d’abord la base.')}throw new Error(r.status===0?'Base injoignable : vérifiez son adresse.':'Base introuvable : créez la Realtime Database dans ce projet.')}
+      ST.su.cfg={u:c.u,k:c.k,pid:c.pid};
+    });
+  },
+  su_back(){ST.su.cfg=null;draw()},
+  su_copy(){copy(rulesOwner(ST.su.uid),'Règles copiées')},
+  async su3(){
+    await act(async()=>{
+      ST.su.msg='';
+      const cfg=ST.su.cfg,s=ST.su.s;
+      const a=await db(cfg.u,null,'GET','',undefined,'shallow=true');
+      if(!denied(a)){ST.su.msg='La base est encore ouverte (ou injoignable) : publiez les règles dans l’onglet Règles de Realtime Database.';return}
+      const w=await db(cfg.u,s,'PUT','meta',{v:1,at:Date.now()},'print=silent');
+      if(!w.ok){ST.su.msg='Votre compte ne peut pas écrire : vérifiez que les règles collées sont complètes et publiées.';return}
+      ST.reg={u:cfg.u.replace(/\/+$/,''),k:cfg.k};try{localStorage.setItem(REGK,JSON.stringify(ST.reg))}catch(e){}
+      ST.rs=s;ST.own={email:ST.su.email,pw:ST.su.pw};ST.su={};
+      await startList();toast('Console configurée.');
+    });
+  },
+  /* --- clients --- */
+  copylink(){const c=cur();copy(lagoLink(c),'Lien copié')},
+  copymsg(){copy(clientMsg(cur()),'Message copié')},
+  openhere(){const c=cur();if(confirm('Ouvrir dans cette fenêtre de navigateur ? Mieux vaut coller le lien dans une fenêtre privée. Continuer quand même ?'))window.open(lagoLink(c),'_blank','noopener')},
+  copyrules(){const c=cur();copy(rulesClient(c.r,c.ou),'Règles copiées')},
+  async chk(){const c=cur();await act(async()=>{ST.chk[c.id]=await runChecks(c)})},
+  async suspend(){
+    const c=cur(),m=(document.getElementById('sp_msg')||{}).value||'';ST.spMsg=m;
+    if(!confirm('Suspendre l’accès de « '+c.name+' » ? Tous ses appareils seront bloqués jusqu’à la réactivation.'))return;
+    await act(async()=>{
+      const s=await csess(c),r=await db(c.u,s,'PUT','_susp',{on:true,msg:m.trim().slice(0,300),t:Date.now()},'print=silent');
+      if(!r.ok)throw new Error('Suspension refusée par Firebase (règles ?).');
+      ST.live[c.id]=await liveOf(c);toast('Espace suspendu.')
+    });
+  },
+  async resume(){
+    const c=cur();await act(async()=>{
+      const s=await csess(c),r=await db(c.u,s,'PUT','_susp',{on:false,t:Date.now()},'print=silent');
+      if(!r.ok)throw new Error('Réactivation refusée par Firebase (règles ?).');
+      ST.live[c.id]=await liveOf(c);toast('Accès réactivé.')
+    });
+  },
+  async saveNote(){const c=cur();c.note=(document.getElementById('dl_note')||{}).value||'';await act(async()=>{await putClient(c);toast('Note enregistrée.')})},
+  async forget(){
+    const c=cur();if(!confirm('Retirer « '+c.name+' » de la liste ? Son projet Firebase et ses données ne sont pas touchés ; le lien continue de fonctionner.'))return;
+    await act(async()=>{const r=await rdb('DELETE','clients/'+c.id,undefined,'print=silent');if(!r.ok)throw new Error('Suppression refusée.');ST.clients=ST.clients.filter(x=>x.id!==c.id);ST.sel=null;ST.view='list';toast('Retiré de la liste.')});
+  },
+  /* --- sauvegardes --- */
+  async bkNow(){
+    const c=cur();await act(async()=>{await backup(c,true)},'Sauvegarde…');
+  },
+  async bkList(){const c=cur();await act(async()=>{await listBk(c)})},
+  async bkDl(b){const c=cur();await act(async()=>{const s=await csess(c),r=await db(c.u,s,'GET','_bk/'+b.dataset.k+'/d');if(!r.ok||r.d==null)throw new Error('Sauvegarde illisible.');dlBackup(c,r.d,b.dataset.k)})},
+  async bkRest(b){
+    const c=cur(),k=b.dataset.k;
+    if(prompt('Restaurer la sauvegarde du '+bkDate(k)+' remplace TOUTES les données actuelles de « '+c.name+' ». Une sauvegarde de l’état actuel est faite avant.\nPour confirmer, tapez le nom du client :')!==c.name){toast('Restauration annulée.');return}
+    await act(async()=>{
+      const s=await csess(c),r=await db(c.u,s,'GET','_bk/'+k+'/d');if(!r.ok||r.d==null)throw new Error('Sauvegarde illisible.');
+      await backup(c,false);
+      const w=await db(c.u,null,'PUT',c.r,r.d,'print=silent');if(!w.ok)throw new Error('Restauration refusée par Firebase.');
+      toast('Sauvegarde restaurée. Les appareils du client se resynchronisent.');
+    },'Restauration…');
+  },
+  bkFile(){document.getElementById('bk_f').click()},
+  addev(){copy(baseLink()+'console.html#reg='+b64({u:ST.reg.u,k:ST.reg.k}),'Lien copié : à ouvrir sur l’autre appareil, puis connexion avec vos identifiants.')},
+  export(){
+    save('lago-clients-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({lagoConsole:1,exporte:Date.now(),clients:ST.clients},null,2));
+    toast('Fichier exporté : il contient les liens secrets, gardez-le en lieu sûr.');
+  },
+  import(){document.getElementById('imp_f').click()},
+  /* --- assistant --- */
+  wnew(){ST.wz={step:1,id:'c'+rnd(10),r:'lago-'+rnd(24),t:'parc-trampoline'};go('wiz')},
+  wtpl(b){wzRead();ST.wz.t=b.dataset.id;draw()},
+  w1(){
+    wzRead();const w=ST.wz;
+    if(!w.name.trim()){toast('Donnez le nom du commerce.',true);return}
+    if(!w.t){toast('Choisissez un métier.',true);return}
+    w.step=2;go('wiz');
+  },
+  wback(){wzRead();ST.wz.step=1;draw()},
+  async w2(){
+    wzRead();const w=ST.wz;
+    const c=parseCfg(w.cfgTxt);if(w.url)c.u=w.url.replace(/\/+$/,'');
+    if(!c.k){toast('Clé API introuvable : collez le bloc firebaseConfig complet.',true);return}
+    if(!c.u){w.needUrl=true;draw();toast('Adresse de la base absente : créez la Realtime Database puis recopiez son adresse.',true);return}
+    if(!URLOK(c.u)){w.needUrl=true;draw();toast('Adresse de base non valide (…firebasedatabase.app ou …firebaseio.com).',true);return}
+    await act(async()=>{
+      const r=await db(c.u,null,'GET','',undefined,'shallow=true');
+      if(r.status===0||r.status===404){if(c.guess){w.needUrl=true;throw new Error('Adresse de la base introuvable : recopiez la databaseURL du projet (Realtime Database › Données), ou créez d’abord la base.')}throw new Error(r.status===0?'Base injoignable : vérifiez son adresse.':'Base introuvable : créez la Realtime Database dans ce projet Firebase.')}
+      let a=await authCall(c.k,'signUp',{email:ST.own.email,password:ST.own.pw});
+      if(!a.ok&&/EMAIL_EXISTS/.test(a.code))a=await authCall(c.k,'signInWithPassword',{email:ST.own.email,password:ST.own.pw});
+      if(!a.ok)throw new Error(afr(a.code,a.r));
+      const rec={id:w.id,name:w.name.trim().slice(0,60),t:w.t,tv:(tplOf(w.t)||{}).v||1,at:Date.now(),u:c.u,k:c.k,pid:c.pid||'',r:w.r,ou:a.uid,note:(w.note||'').trim(),ready:false};
+      await putClient(rec);
+      const i=ST.clients.findIndex(x=>x.id===rec.id);if(i>=0)ST.clients[i]=rec;else ST.clients.unshift(rec);
+      ST.cs[rec.id]={u:c.u,k:c.k,idToken:a.idToken,refreshToken:a.refreshToken,uid:a.uid,exp:a.exp};
+      w.c=rec;w.step=3;w.chk=null;
+    });
+  },
+  wcopyrules(){copy(rulesClient(ST.wz.c.r,ST.wz.c.ou),'Règles copiées')},
+  async w3(){
+    const w=ST.wz,c=w.c;
+    await act(async()=>{
+      const res=await runChecks(c);w.chk=res;
+      if(!res.every(x=>x.ok))return;
+      const s=await csess(c);
+      const a=await db(c.u,s,'PUT','_susp',{on:false,t:Date.now()},'print=silent');
+      const b=await db(c.u,s,'PUT','_owner/meta',{name:c.name,t:c.t,at:c.at},'print=silent');
+      if(!a.ok||!b.ok)throw new Error('Écriture initiale refusée : vérifiez les règles.');
+      c.ready=true;await putClient(c);delete ST.live[c.id];w.step=4;
+    },'Vérification…');
+  },
+  wcopylink(){copy(lagoLink(ST.wz.c),'Lien copié')},
+  wcopymsg(){copy(clientMsg(ST.wz.c),'Message copié')},
+  wresume(){const c=cur();ST.wz={step:3,c,id:c.id,r:c.r,t:c.t,name:c.name};go('wiz')}
+};
+const cur=()=>ST.clients.find(x=>x.id===ST.sel);
+function wzRead(){
+  const w=ST.wz,g=id=>{const e=document.getElementById(id);return e?e.value:null};
+  const n=g('w_name');if(n!==null)w.name=n;const nt=g('w_note');if(nt!==null)w.note=nt;const cf=g('w_cfg');if(cf!==null)w.cfgTxt=cf;const u=g('w_url');if(u!==null)w.url=u.trim();
+}
+async function backup(c,download){
+  const s=await csess(c),r=await db(c.u,null,'GET',c.r);
+  if(!r.ok)throw new Error('Lecture des données impossible.');
+  if(r.d==null)throw new Error('Cet espace est encore vide : rien à sauvegarder.');
+  const d=new Date(),k=`${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+  const w=await db(c.u,s,'PUT','_bk/'+k,{t:d.getTime(),d:r.d},'print=silent');
+  if(!w.ok)throw new Error('Écriture de la sauvegarde refusée par Firebase (règles ?).');
+  const l=await db(c.u,s,'GET','_bk',undefined,'shallow=true');
+  const keys=l.ok&&l.d?Object.keys(l.d).sort():[];
+  for(const old of keys.slice(0,Math.max(0,keys.length-10)))await db(c.u,s,'DELETE','_bk/'+old,undefined,'print=silent');
+  ST.bks[c.id]=keys.slice(-10).reverse();
+  if(download){dlBackup(c,r.d,k);toast('Sauvegarde faite (serveur et fichier).')}
+}
+async function listBk(c){
+  const s=await csess(c),l=await db(c.u,s,'GET','_bk',undefined,'shallow=true');
+  if(!l.ok)throw new Error('Lecture des sauvegardes refusée (règles ?).');
+  ST.bks[c.id]=Object.keys(l.d||{}).sort().reverse();
+}
+function dlBackup(c,data,k){save('lago-sauvegarde-'+(slug(c.name)||'client')+'-'+k+'.json',JSON.stringify({lagoSauvegarde:1,client:c.name,room:c.r,date:k,data}))}
+
+/* ---------- événements ---------- */
+app.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b||b.disabled)return;
+  const f=A[b.dataset.a];if(f){e.preventDefault();Promise.resolve(f(b)).catch(x=>toast(x&&x.message||'Erreur',true))}
+});
+app.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='w_name'||t.id==='w_note'||t.id==='w_cfg'||t.id==='w_url')wzRead();
+  if(t.id==='su_cfg')ST.su.txt=t.value;
+  if(t.id==='sp_msg')ST.spMsg=t.value;
+});
+app.addEventListener('change',async e=>{
+  const t=e.target;if(!(t&&t.type==='file'&&t.files&&t.files[0]))return;
+  const f=t.files[0];t.value='';
+  let j;try{j=JSON.parse(await f.text())}catch(x){toast('Fichier illisible.',true);return}
+  if(t.id==='imp_f'){
+    const L=j&&Array.isArray(j.clients)?j.clients.filter(c=>c&&/^c[a-z0-9]{6,20}$/.test(c.id||'')&&c.u&&c.r&&c.k&&URLOK(c.u)&&/^[\w-]{3,64}$/.test(c.r)):[];
+    if(!L.length){toast('Aucun client valide dans ce fichier.',true);return}
+    if(!confirm('Importer '+L.length+' client'+(L.length>1?'s':'')+' dans cette console ? Les fiches de même identifiant seront remplacées.'))return;
+    await act(async()=>{for(const c of L)await putClient({id:c.id,name:String(c.name||'Client').slice(0,60),t:c.t,tv:c.tv,at:c.at,u:c.u,k:c.k,pid:c.pid||'',r:c.r,ou:c.ou||'',note:String(c.note||'').slice(0,1000),ready:!!c.ready});await loadClients();ST.live={};loadLive();toast('Liste importée.')});
+  }else if(t.id==='bk_f'){
+    const c=cur(),d=j&&j.lagoSauvegarde&&j.data;
+    if(!c||!d||typeof d!=='object'){toast('Ce fichier n’est pas une sauvegarde Lago.',true);return}
+    if(j.room!==c.r){toast('Cette sauvegarde appartient à un autre espace client.',true);return}
+    if(prompt('Restaurer ce fichier remplace TOUTES les données actuelles de « '+c.name+' ». Une sauvegarde de l’état actuel est faite avant.\nPour confirmer, tapez le nom du client :')!==c.name){toast('Restauration annulée.');return}
+    await act(async()=>{await backup(c,false);const w=await db(c.u,null,'PUT',c.r,d,'print=silent');if(!w.ok)throw new Error('Restauration refusée par Firebase.');toast('Sauvegarde restaurée.')},'Restauration…');
+  }
+});
+app.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const f=e.target;
+  if(f.id==='lg_f'){
+    const em=document.getElementById('lg_em').value.trim(),pw=document.getElementById('lg_pw').value;ST.lgEm=em;
+    await act(async()=>{
+      const a=await authCall(ST.reg.k,'signInWithPassword',{email:em,password:pw});
+      if(!a.ok)throw new Error(afr(a.code,a.r));
+      ST.own={email:em,pw};ST.rs={u:ST.reg.u,k:ST.reg.k,idToken:a.idToken,refreshToken:a.refreshToken,uid:a.uid,exp:a.exp};
+      try{await startList()}catch(x){ST.own=null;ST.rs=null;throw x}
+    },'Connexion…');
+  }else if(f.id==='su_f'){
+    const em=document.getElementById('su_em').value.trim(),pw=document.getElementById('su_pw').value;ST.su.email=em;
+    if(pw.length<12){toast('Mot de passe : 12 caractères minimum.',true);return}
+    await act(async()=>{
+      let a=await authCall(ST.su.cfg.k,'signUp',{email:em,password:pw});
+      if(!a.ok&&/EMAIL_EXISTS/.test(a.code))a=await authCall(ST.su.cfg.k,'signInWithPassword',{email:em,password:pw});
+      if(!a.ok)throw new Error(afr(a.code,a.r));
+      if(!UIDOK.test(a.uid||''))throw new Error('Identifiant de compte inattendu.');
+      ST.su.uid=a.uid;ST.su.pw=pw;ST.su.s={u:ST.su.cfg.u,k:ST.su.cfg.k,idToken:a.idToken,refreshToken:a.refreshToken,uid:a.uid,exp:a.exp};
+    },'Création…');
+  }
+});
+
+/* ---------- démarrage ---------- */
+ST.view=ST.reg?'login':'setup';
+draw();
+})();
+</script>
+</body>
+</html>

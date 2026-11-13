@@ -1,0 +1,317 @@
+{
+  "id": "parc-trampoline",
+  "version": 1,
+  "label": "Parc de trampolines",
+  "resume": "Sessions de saut, bar, anniversaires, privatisations, cartes cadeaux.",
+  "settings": {
+    "catNames": [
+      "Park",
+      "Bar",
+      "Événement",
+      "Gestion"
+    ],
+    "subs": {
+      "bar": [
+        "Boissons fraîches",
+        "Boissons chaudes",
+        "Snack",
+        "Crêpes & paninis",
+        "Pizza",
+        "Pop corn",
+        "Glaces"
+      ]
+    },
+    "capacite": 200,
+    "equipe_minimum": 3,
+    "horaires": {
+      "ouverture": "10:00",
+      "fermeture": "19:00",
+      "jours_fermes": []
+    },
+    "fond_de_caisse": 100,
+    "fidelite": {
+      "points_par_euro": 1,
+      "paliers": [
+        {
+          "nom": "Découverte",
+          "points": 100,
+          "remise": 5
+        },
+        {
+          "nom": "Habitué",
+          "points": 250,
+          "remise": 15
+        },
+        {
+          "nom": "VIP",
+          "points": 500,
+          "remise": 35
+        }
+      ]
+    },
+    "reservation_en_ligne": {
+      "places_par_creneau": 120,
+      "delai_minimum_minutes": 120,
+      "jours_a_l_avance": 60,
+      "personnes_max": 12,
+      "message": "Chaussettes antidérapantes obligatoires (en vente sur place)."
+    },
+    "message_accueil": "Bonne journée à toute l’équipe !",
+    "pied_de_ticket": "Merci et à bientôt chez {nom} !",
+    "echeances_desactivees": []
+  },
+  "products": [
+    {
+      "name": "Session 1 h",
+      "cat": "park",
+      "price": 14,
+      "tva": 10,
+      "jumper": true,
+      "dur": 60,
+      "art": "p1"
+    },
+    {
+      "name": "Session 1 h 30",
+      "cat": "park",
+      "price": 18,
+      "tva": 10,
+      "jumper": true,
+      "dur": 90,
+      "art": "p2"
+    },
+    {
+      "name": "Session 2 h",
+      "cat": "park",
+      "price": 22,
+      "tva": 10,
+      "jumper": true,
+      "dur": 120,
+      "art": "p2"
+    },
+    {
+      "name": "Mini sauteur, moins de 6 ans",
+      "cat": "park",
+      "price": 10,
+      "tva": 10,
+      "jumper": true,
+      "dur": 45,
+      "art": "p3"
+    },
+    {
+      "name": "Accompagnateur",
+      "cat": "park",
+      "price": 2,
+      "tva": 10,
+      "art": "p4"
+    },
+    {
+      "name": "Pass 10 sessions",
+      "cat": "park",
+      "price": 120,
+      "tva": 10,
+      "art": "p5"
+    },
+    {
+      "name": "Chaussettes antidérapantes",
+      "cat": "park",
+      "price": 2.5,
+      "tva": 20,
+      "art": "b1"
+    },
+    {
+      "name": "Gourde",
+      "cat": "park",
+      "price": 8,
+      "tva": 20,
+      "art": "b2"
+    },
+    {
+      "name": "T-shirt du parc",
+      "cat": "park",
+      "price": 15,
+      "tva": 20,
+      "art": "b3"
+    },
+    {
+      "name": "Eau 50 cl",
+      "cat": "bar",
+      "scat": "Boissons fraîches",
+      "price": 1.5,
+      "tva": 10,
+      "art": "s1"
+    },
+    {
+      "name": "Soda",
+      "cat": "bar",
+      "scat": "Boissons fraîches",
+      "price": 2.5,
+      "tva": 10,
+      "art": "s2"
+    },
+    {
+      "name": "Jus de fruits",
+      "cat": "bar",
+      "scat": "Boissons fraîches",
+      "price": 2.5,
+      "tva": 10,
+      "art": "s2"
+    },
+    {
+      "name": "Café",
+      "cat": "bar",
+      "scat": "Boissons chaudes",
+      "price": 1.8,
+      "tva": 10,
+      "art": "s3"
+    },
+    {
+      "name": "Chocolat chaud",
+      "cat": "bar",
+      "scat": "Boissons chaudes",
+      "price": 2.5,
+      "tva": 10,
+      "art": "s3"
+    },
+    {
+      "name": "Hot-dog",
+      "cat": "bar",
+      "scat": "Snack",
+      "price": 4.5,
+      "tva": 10,
+      "art": "s5"
+    },
+    {
+      "name": "Chips",
+      "cat": "bar",
+      "scat": "Snack",
+      "price": 2,
+      "tva": 10
+    },
+    {
+      "name": "Gaufre sucre",
+      "cat": "bar",
+      "scat": "Crêpes & paninis",
+      "price": 3.5,
+      "tva": 10,
+      "art": "s4"
+    },
+    {
+      "name": "Crêpe sucre",
+      "cat": "bar",
+      "scat": "Crêpes & paninis",
+      "price": 3,
+      "tva": 10,
+      "art": "s4"
+    },
+    {
+      "name": "Panini jambon fromage",
+      "cat": "bar",
+      "scat": "Crêpes & paninis",
+      "price": 5.5,
+      "tva": 10,
+      "art": "s5"
+    },
+    {
+      "name": "Pizza margherita",
+      "cat": "bar",
+      "scat": "Pizza",
+      "price": 7,
+      "tva": 10
+    },
+    {
+      "name": "Pizza reine",
+      "cat": "bar",
+      "scat": "Pizza",
+      "price": 8,
+      "tva": 10
+    },
+    {
+      "name": "Pop corn",
+      "cat": "bar",
+      "scat": "Pop corn",
+      "price": 3,
+      "tva": 10
+    },
+    {
+      "name": "Glace",
+      "cat": "bar",
+      "scat": "Glaces",
+      "price": 2.5,
+      "tva": 10,
+      "art": "s6"
+    },
+    {
+      "name": "Cône vanille",
+      "cat": "bar",
+      "scat": "Glaces",
+      "price": 2.5,
+      "tva": 10,
+      "art": "s6"
+    },
+    {
+      "name": "Anniversaire Essentiel",
+      "cat": "event",
+      "price": 249,
+      "tva": 10,
+      "event": true,
+      "guests": 10,
+      "art": "a1"
+    },
+    {
+      "name": "Anniversaire Premium",
+      "cat": "event",
+      "price": 329,
+      "tva": 10,
+      "event": true,
+      "guests": 10,
+      "art": "a2"
+    },
+    {
+      "name": "Privatisation 2 h",
+      "cat": "event",
+      "price": 590,
+      "tva": 10,
+      "event": true,
+      "guests": 30
+    },
+    {
+      "name": "Team building",
+      "cat": "event",
+      "price": 450,
+      "tva": 10,
+      "event": true,
+      "guests": 20
+    },
+    {
+      "name": "Enfant supplémentaire",
+      "cat": "event",
+      "price": 19,
+      "tva": 10,
+      "art": "a3"
+    },
+    {
+      "name": "Acompte événement",
+      "cat": "gestion",
+      "price": 60,
+      "tva": 10
+    },
+    {
+      "name": "Carte cadeau 20 €",
+      "cat": "gestion",
+      "price": 20,
+      "tva": 20
+    },
+    {
+      "name": "Carte cadeau 50 €",
+      "cat": "gestion",
+      "price": 50,
+      "tva": 20
+    },
+    {
+      "name": "Caution matériel",
+      "cat": "gestion",
+      "price": 20,
+      "tva": 20
+    }
+  ]
+}

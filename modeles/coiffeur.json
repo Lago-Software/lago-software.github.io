@@ -1,0 +1,338 @@
+{
+  "id": "coiffeur",
+  "version": 1,
+  "label": "Salon de coiffure",
+  "resume": "Prestations, rendez-vous en ligne, produits de soin, cartes cadeaux.",
+  "settings": {
+    "catNames": [
+      "Coiffure",
+      "Soins et produits",
+      "Forfaits et mariages",
+      "Divers"
+    ],
+    "subs": {
+      "park": [
+        "Femme",
+        "Homme",
+        "Enfant",
+        "Couleur"
+      ],
+      "bar": [
+        "Soins",
+        "Produits"
+      ],
+      "gestion": [
+        "Cartes cadeaux",
+        "Acomptes"
+      ]
+    },
+    "capacite": 4,
+    "equipe_minimum": 1,
+    "horaires": {
+      "ouverture": "09:00",
+      "fermeture": "19:00",
+      "jours_fermes": [
+        0,
+        1
+      ],
+      "jours": {
+        "6": [
+          "09:00",
+          "18:00"
+        ]
+      }
+    },
+    "fond_de_caisse": 80,
+    "fidelite": {
+      "points_par_euro": 1,
+      "paliers": [
+        {
+          "nom": "Fidèle",
+          "points": 150,
+          "remise": 5
+        },
+        {
+          "nom": "Habituée",
+          "points": 400,
+          "remise": 15
+        },
+        {
+          "nom": "VIP",
+          "points": 800,
+          "remise": 40
+        }
+      ]
+    },
+    "reservation_en_ligne": {
+      "places_par_creneau": 4,
+      "delai_minimum_minutes": 240,
+      "jours_a_l_avance": 45,
+      "personnes_max": 3,
+      "message": "Indiquez en commentaire la longueur de vos cheveux et le service souhaité."
+    },
+    "message_accueil": "Belle journée à toute l’équipe !",
+    "pied_de_ticket": "Merci de votre visite chez {nom}, à très bientôt !",
+    "modules_masques": [
+      "controle"
+    ],
+    "onglets_masques": [
+      "resa:bracelets",
+      "resa:entrees",
+      "clients:decharges",
+      "clients:carnets",
+      "resa:qweekle"
+    ],
+    "echeances_desactivees": [
+      "ssi",
+      "deseno",
+      "jeux",
+      "mousse",
+      "portes"
+    ],
+    "textes": {
+      "Animateur": "Coiffeur·se",
+      "Park": "Activité",
+      "Anniversaires": "Événements"
+    },
+    "illustrations": {
+      "park": "ciseaux",
+      "bar": "flacon",
+      "event": "agenda",
+      "gestion": "cadeau"
+    },
+    "vocabulaire": {
+      "session": "Rendez-vous",
+      "lieu": "Salon",
+      "reserver": "Nouveau rendez-vous",
+      "departs": "Prochains rendez-vous",
+      "plus_de_depart": "Plus de rendez-vous aujourd’hui.",
+      "personne": "client",
+      "clients_de": "Clients du salon",
+      "nom_etab": "Nom du salon"
+    }
+  },
+  "products": [
+    {
+      "name": "Coupe femme",
+      "cat": "park",
+      "scat": "Femme",
+      "price": 45,
+      "tva": 20,
+      "jumper": true,
+      "dur": 45
+    },
+    {
+      "name": "Coupe femme cheveux longs",
+      "cat": "park",
+      "scat": "Femme",
+      "price": 55,
+      "tva": 20,
+      "jumper": true,
+      "dur": 60
+    },
+    {
+      "name": "Brushing court",
+      "cat": "park",
+      "scat": "Femme",
+      "price": 25,
+      "tva": 20,
+      "jumper": true,
+      "dur": 30,
+      "art": "seche"
+    },
+    {
+      "name": "Brushing long",
+      "cat": "park",
+      "scat": "Femme",
+      "price": 35,
+      "tva": 20,
+      "jumper": true,
+      "dur": 45,
+      "art": "seche"
+    },
+    {
+      "name": "Coupe homme",
+      "cat": "park",
+      "scat": "Homme",
+      "price": 25,
+      "tva": 20,
+      "jumper": true,
+      "dur": 30,
+      "art": "peigne"
+    },
+    {
+      "name": "Coupe et barbe",
+      "cat": "park",
+      "scat": "Homme",
+      "price": 35,
+      "tva": 20,
+      "jumper": true,
+      "dur": 45,
+      "art": "peigne"
+    },
+    {
+      "name": "Barbe",
+      "cat": "park",
+      "scat": "Homme",
+      "price": 15,
+      "tva": 20,
+      "jumper": true,
+      "dur": 20,
+      "art": "peigne"
+    },
+    {
+      "name": "Coupe enfant, moins de 12 ans",
+      "cat": "park",
+      "scat": "Enfant",
+      "price": 18,
+      "tva": 20,
+      "jumper": true,
+      "dur": 30
+    },
+    {
+      "name": "Couleur racines",
+      "cat": "park",
+      "scat": "Couleur",
+      "price": 55,
+      "tva": 20,
+      "jumper": true,
+      "dur": 75,
+      "art": "pinceau"
+    },
+    {
+      "name": "Couleur complète",
+      "cat": "park",
+      "scat": "Couleur",
+      "price": 75,
+      "tva": 20,
+      "jumper": true,
+      "dur": 90,
+      "art": "pinceau"
+    },
+    {
+      "name": "Mèches ou balayage",
+      "cat": "park",
+      "scat": "Couleur",
+      "price": 95,
+      "tva": 20,
+      "jumper": true,
+      "dur": 120,
+      "art": "pinceau"
+    },
+    {
+      "name": "Patine ou ton sur ton",
+      "cat": "park",
+      "scat": "Couleur",
+      "price": 35,
+      "tva": 20,
+      "jumper": true,
+      "dur": 45,
+      "art": "pinceau"
+    },
+    {
+      "name": "Soin profond",
+      "cat": "bar",
+      "scat": "Soins",
+      "price": 15,
+      "tva": 20
+    },
+    {
+      "name": "Soin réparateur",
+      "cat": "bar",
+      "scat": "Soins",
+      "price": 20,
+      "tva": 20
+    },
+    {
+      "name": "Shampoing et coiffage",
+      "cat": "bar",
+      "scat": "Soins",
+      "price": 20,
+      "tva": 20,
+      "art": "seche"
+    },
+    {
+      "name": "Shampoing 250 ml",
+      "cat": "bar",
+      "scat": "Produits",
+      "price": 14.9,
+      "tva": 20
+    },
+    {
+      "name": "Après-shampoing 250 ml",
+      "cat": "bar",
+      "scat": "Produits",
+      "price": 15.9,
+      "tva": 20
+    },
+    {
+      "name": "Masque nourrissant",
+      "cat": "bar",
+      "scat": "Produits",
+      "price": 19.9,
+      "tva": 20
+    },
+    {
+      "name": "Cire coiffante",
+      "cat": "bar",
+      "scat": "Produits",
+      "price": 16.5,
+      "tva": 20
+    },
+    {
+      "name": "Laque",
+      "cat": "bar",
+      "scat": "Produits",
+      "price": 12.9,
+      "tva": 20
+    },
+    {
+      "name": "Coiffure de mariée (essai compris)",
+      "cat": "event",
+      "price": 160,
+      "tva": 20,
+      "event": true,
+      "guests": 1
+    },
+    {
+      "name": "Coiffure d’invitée",
+      "cat": "event",
+      "price": 50,
+      "tva": 20
+    },
+    {
+      "name": "Forfait coupe + couleur + brushing",
+      "cat": "event",
+      "price": 110,
+      "tva": 20
+    },
+    {
+      "name": "Carte cadeau 30 €",
+      "cat": "gestion",
+      "scat": "Cartes cadeaux",
+      "price": 30,
+      "tva": 20
+    },
+    {
+      "name": "Carte cadeau 50 €",
+      "cat": "gestion",
+      "scat": "Cartes cadeaux",
+      "price": 50,
+      "tva": 20
+    },
+    {
+      "name": "Carte cadeau 100 €",
+      "cat": "gestion",
+      "scat": "Cartes cadeaux",
+      "price": 100,
+      "tva": 20
+    },
+    {
+      "name": "Acompte rendez-vous",
+      "cat": "gestion",
+      "scat": "Acomptes",
+      "price": 15,
+      "tva": 20
+    }
+  ]
+}

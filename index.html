@@ -9,12 +9,8 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Lago</title>
-<meta name="robots" content="noindex, follow">
-<meta name="description" content="Espace de connexion de l’application Lago. Pour découvrir le logiciel de caisse et de réservation Lago, rendez-vous sur https://lago-software.github.io/site/">
-<link rel="alternate" href="https://lago-software.github.io/site/" title="Lago, logiciel de caisse et de réservation">
 <style>*{box-sizing:border-box}html,body{margin:0;min-height:100%}</style>
 </head><body>
-<noscript><a href="site/">Lago, logiciel de caisse et de réservation : découvrir le site</a></noscript>
 <title>Lago</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="copyright" content="© 2026 Hugo Lehéricé — Lago — Tous droits réservés. Logiciel propriétaire, toute reproduction ou réutilisation sans autorisation écrite du titulaire est interdite.">
@@ -2379,7 +2375,7 @@ body.brl-on{overflow:hidden}
 
 /* écran de connexion : la carte arrive, le logo flotte */
 #gate .gcard{animation:moRise .55s var(--ease) both}
-#gate .glogo .lmark{animation:moFloat 6s ease-in-out infinite}
+#gate .glogo .lgw{animation:moFloat 6s ease-in-out infinite}
 
 /* défilement : les blocs sous la ligne de flottaison apparaissent en montant (navigateurs qui savent le faire, comme sur le site) */
 /* la plage est limitée à 240 px et ne dépasse jamais la hauteur du bloc : un petit bloc tout en bas de page est donc toujours révélé en entier */
@@ -2646,6 +2642,40 @@ html.lite .plday .dcard,html.noanim .plday .dcard{animation:none}
 }
 @media (max-width:979px){.payside{display:none}}
 @media (min-width:980px){.payonlym{display:none}}
+/* v72 : Mon métier, lien ignoré, espace suspendu */
+.tpg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.tpc{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:16px 16px 14px;border:2px solid var(--line);border-radius:16px;background:var(--surface);color:inherit;font:inherit;cursor:pointer;min-height:132px;transition:border-color .15s,box-shadow .15s}
+.tpc:hover{border-color:color-mix(in srgb,var(--brand) 45%,var(--line));box-shadow:var(--sh-2,0 6px 20px rgba(12,22,48,.08))}
+.tpc:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 55%,#fff);outline-offset:2px}
+.tpc.on{border-color:var(--brand)}
+.tpn{font-size:17px;line-height:1.2}
+.tpr{color:var(--muted);font-size:14px;line-height:1.4}
+.tpk{margin-top:auto;font-size:13px;font-weight:700;color:var(--brand)}
+.tps{display:grid;gap:8px;margin:0 0 14px;padding:12px 14px;border-radius:14px;background:var(--surface-2)}
+.tps div{display:grid;grid-template-columns:92px 1fr;gap:10px;font-size:14px;line-height:1.4}
+.tps b{font-weight:700}
+.tps span{overflow-wrap:anywhere}
+@media(max-width:520px){.tps div{grid-template-columns:1fr;gap:2px}}
+.tpo{display:grid;gap:8px}
+.tpl-o{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:2px solid var(--line);border-radius:14px;cursor:pointer;font-size:14px;line-height:1.4}
+.tpl-o:has(input:checked){border-color:var(--brand)}
+.tpl-o input{margin-top:3px;flex:none}
+.tpl-o b{display:block;margin-bottom:2px}
+.zblock{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;padding:20px;background:rgba(8,16,40,.72)}
+.zsusp{z-index:2100;background:color-mix(in srgb,var(--ink) 88%,#000)}
+.zbc{width:min(420px,100%);padding:26px 24px;border-radius:22px;background:var(--surface);color:var(--ink);box-shadow:0 30px 80px rgba(5,15,50,.45);display:grid;gap:10px}
+.zbc h2{margin:0;font-size:22px;line-height:1.2}
+.zbc p{margin:0;line-height:1.5}
+.zbc .zbm{padding:10px 12px;border-radius:12px;background:var(--surface-2);font-weight:600}
+.zbc .btn{justify-self:start;margin-top:6px}
+
+/* nouveau logo */
+.logo .lgw{display:block;height:34px;width:auto}
+.logo .lgm{display:none;height:38px;width:auto}
+body.navmini .side .logo .lgw{display:none}
+body.navmini .side .logo .lgm{display:block}
+.glogo .lgw{height:58px;width:auto;display:block}
+.logo-m .lgw{height:28px;width:auto;display:block}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -2664,7 +2694,7 @@ html.lite .plday .dcard,html.noanim .plday .dcard{animation:none}
 
 <div id="boot" style="position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(160deg,#1D4FD7,#0F2A7A);color:#fff;font:700 34px/1 system-ui,sans-serif">lago<small style="font:500 14px system-ui,sans-serif;opacity:.8">Chargement…</small></div>
 <script>setTimeout(function(){var b=document.getElementById("boot");if(b&&!window.__lagoUp)b.innerHTML="<small style=\"font:500 16px system-ui,sans-serif;text-align:center;padding:0 24px\">Lago ne démarre pas.<br>Vérifiez la connexion puis<br><button onclick=\"location.reload()\" style=\"margin-top:12px;padding:10px 18px;font:600 15px system-ui;border-radius:10px;border:0\">Réessayer</button></small>"},15000)</script>
-<script src="app.js?v=v71" defer></script>
+<script src="app.js?v=v72" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

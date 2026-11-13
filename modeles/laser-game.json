@@ -1,0 +1,289 @@
+{
+  "id": "laser-game",
+  "version": 1,
+  "label": "Laser game",
+  "resume": "Parties de laser, bar, anniversaires, soirées entreprise, cartes cadeaux.",
+  "settings": {
+    "catNames": [
+      "Parties",
+      "Bar",
+      "Événements",
+      "Boutique et gestion"
+    ],
+    "subs": {
+      "bar": [
+        "Boissons fraîches",
+        "Bières",
+        "Snack",
+        "Sucré"
+      ],
+      "gestion": [
+        "Cartes cadeaux",
+        "Divers"
+      ]
+    },
+    "capacite": 30,
+    "equipe_minimum": 2,
+    "horaires": {
+      "ouverture": "10:00",
+      "fermeture": "22:00",
+      "jours_fermes": []
+    },
+    "fond_de_caisse": 100,
+    "fidelite": {
+      "points_par_euro": 1,
+      "paliers": [
+        {
+          "nom": "Recrue",
+          "points": 100,
+          "remise": 5
+        },
+        {
+          "nom": "Agent",
+          "points": 250,
+          "remise": 15
+        },
+        {
+          "nom": "Légende",
+          "points": 500,
+          "remise": 35
+        }
+      ]
+    },
+    "reservation_en_ligne": {
+      "places_par_creneau": 24,
+      "delai_minimum_minutes": 120,
+      "jours_a_l_avance": 60,
+      "personnes_max": 15,
+      "message": "Arrivez 15 minutes avant votre partie pour le briefing. Chaussures fermées conseillées."
+    },
+    "message_accueil": "Bonne partie à toute l’équipe !",
+    "pied_de_ticket": "Merci et à bientôt chez {nom} !",
+    "echeances_desactivees": [
+      "mousse",
+      "jeux"
+    ],
+    "listes_controle_mensuel": [
+      "Gilets et capteurs (état, fixations)",
+      "Pistolets laser (lentilles, déclencheurs, batteries)",
+      "Bornes de recharge et chargeurs",
+      "Base de jeu et serveur de scores",
+      "Décors, cloisons et obstacles (solidité, arêtes)",
+      "Fumigène : machine, liquide, aération",
+      "Éclairage de jeu et éclairage de secours",
+      "Sols et zones de circulation",
+      "Issues de secours et signalétique",
+      "Extincteurs et trousse de secours",
+      "Vestiaires, casiers et sanitaires",
+      "Règlement et consignes de sécurité affichés"
+    ],
+    "onglets_masques": [
+      "controle:visuel",
+      "resa:qweekle"
+    ],
+    "types_equipement": [
+      "Arène de jeu",
+      "Labyrinthe",
+      "Salle de briefing",
+      "Autre"
+    ],
+    "illustrations": {
+      "park": "laser",
+      "bar": "biere",
+      "event": "groupe",
+      "gestion": "cadeau"
+    },
+    "vocabulaire": {
+      "session": "Parties de laser",
+      "lieu": "Arène",
+      "reserver": "Réserver une partie",
+      "departs": "Prochaines parties",
+      "plus_de_depart": "Plus de partie aujourd’hui.",
+      "personne": "joueur",
+      "clients_de": "Joueurs",
+      "nom_etab": "Nom du laser game"
+    }
+  },
+  "products": [
+    {
+      "name": "Partie laser 20 min",
+      "cat": "park",
+      "price": 9,
+      "tva": 10,
+      "jumper": true,
+      "dur": 20,
+      "art": "cible"
+    },
+    {
+      "name": "2 parties",
+      "cat": "park",
+      "price": 16,
+      "tva": 10,
+      "jumper": true,
+      "dur": 40,
+      "art": "cible"
+    },
+    {
+      "name": "3 parties",
+      "cat": "park",
+      "price": 22,
+      "tva": 10,
+      "jumper": true,
+      "dur": 60,
+      "art": "cible"
+    },
+    {
+      "name": "Partie enfant, moins de 10 ans",
+      "cat": "park",
+      "price": 7,
+      "tva": 10,
+      "jumper": true,
+      "dur": 20,
+      "art": "gilet"
+    },
+    {
+      "name": "Pass 5 parties",
+      "cat": "park",
+      "price": 35,
+      "tva": 10,
+      "art": "p5"
+    },
+    {
+      "name": "Eau 50 cl",
+      "cat": "bar",
+      "scat": "Boissons fraîches",
+      "price": 1.5,
+      "tva": 10,
+      "art": "s1"
+    },
+    {
+      "name": "Soda",
+      "cat": "bar",
+      "scat": "Boissons fraîches",
+      "price": 2.5,
+      "tva": 10,
+      "art": "s2"
+    },
+    {
+      "name": "Jus de fruits",
+      "cat": "bar",
+      "scat": "Boissons fraîches",
+      "price": 2.5,
+      "tva": 10,
+      "art": "s2"
+    },
+    {
+      "name": "Bière 25 cl",
+      "cat": "bar",
+      "scat": "Bières",
+      "price": 3.5,
+      "tva": 20
+    },
+    {
+      "name": "Bière 50 cl",
+      "cat": "bar",
+      "scat": "Bières",
+      "price": 6,
+      "tva": 20
+    },
+    {
+      "name": "Hot-dog",
+      "cat": "bar",
+      "scat": "Snack",
+      "price": 4.5,
+      "tva": 10,
+      "art": "s5"
+    },
+    {
+      "name": "Nachos",
+      "cat": "bar",
+      "scat": "Snack",
+      "price": 4,
+      "tva": 10
+    },
+    {
+      "name": "Pop corn",
+      "cat": "bar",
+      "scat": "Snack",
+      "price": 3,
+      "tva": 10
+    },
+    {
+      "name": "Bonbons",
+      "cat": "bar",
+      "scat": "Sucré",
+      "price": 2,
+      "tva": 10
+    },
+    {
+      "name": "Glace",
+      "cat": "bar",
+      "scat": "Sucré",
+      "price": 2.5,
+      "tva": 10,
+      "art": "s6"
+    },
+    {
+      "name": "Anniversaire laser, 10 enfants",
+      "cat": "event",
+      "price": 189,
+      "tva": 10,
+      "event": true,
+      "guests": 10,
+      "art": "a1"
+    },
+    {
+      "name": "Anniversaire laser Premium, 10 enfants",
+      "cat": "event",
+      "price": 249,
+      "tva": 10,
+      "event": true,
+      "guests": 10,
+      "art": "a2"
+    },
+    {
+      "name": "Soirée entreprise, 20 personnes",
+      "cat": "event",
+      "price": 480,
+      "tva": 10,
+      "event": true,
+      "guests": 20
+    },
+    {
+      "name": "Enterrement de vie de célibataire",
+      "cat": "event",
+      "price": 320,
+      "tva": 10,
+      "event": true,
+      "guests": 12
+    },
+    {
+      "name": "Enfant supplémentaire",
+      "cat": "event",
+      "price": 16,
+      "tva": 10,
+      "art": "a3"
+    },
+    {
+      "name": "Acompte événement",
+      "cat": "gestion",
+      "scat": "Divers",
+      "price": 50,
+      "tva": 10
+    },
+    {
+      "name": "Carte cadeau 20 €",
+      "cat": "gestion",
+      "scat": "Cartes cadeaux",
+      "price": 20,
+      "tva": 20
+    },
+    {
+      "name": "Carte cadeau 50 €",
+      "cat": "gestion",
+      "scat": "Cartes cadeaux",
+      "price": 50,
+      "tva": 20
+    }
+  ]
+}
