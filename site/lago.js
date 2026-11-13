@@ -1,5 +1,5 @@
 // Adresse qui reçoit les demandes de démo : la renseigner ici active le formulaire.
-var LAGO_CONTACT_EMAIL = '';
+var LAGO_CONTACT_EMAIL = 'lago.software.contact@gmail.com';
 document.addEventListener('click', function (e) {
   var a = e.target.closest && e.target.closest('a.zoom');
   if (!a || !window.HTMLDialogElement || e.metaKey || e.ctrlKey || e.shiftKey) return;
