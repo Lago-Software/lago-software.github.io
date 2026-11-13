@@ -1,5 +1,22 @@
 // Adresse qui reçoit les demandes de démo : la renseigner ici active le formulaire.
 var LAGO_CONTACT_EMAIL = '';
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('a.zoom');
+  if (!a || !window.HTMLDialogElement || e.metaKey || e.ctrlKey || e.shiftKey) return;
+  e.preventDefault();
+  var img = a.querySelector('img');
+  var d = document.createElement('dialog');
+  d.className = 'lb';
+  d.setAttribute('aria-label', img ? img.alt : 'Capture agrandie');
+  d.innerHTML = '<button type="button" aria-label="Fermer">×</button><img alt=""><p></p>';
+  d.querySelector('img').src = a.getAttribute('href');
+  d.querySelector('img').alt = img ? img.alt : '';
+  d.querySelector('p').textContent = (img ? img.alt + ' · ' : '') + 'Capture réelle, données de démonstration';
+  d.addEventListener('click', function (ev) { if (ev.target === d || ev.target.tagName === 'BUTTON' || ev.target.tagName === 'IMG') d.close(); });
+  d.addEventListener('close', function () { d.remove(); a.focus(); });
+  document.body.appendChild(d);
+  d.showModal();
+});
 document.addEventListener('submit', function (e) {
   var f = e.target;
   if (!f.matches('form[data-demo]')) return;
