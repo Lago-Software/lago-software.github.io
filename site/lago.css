@@ -167,6 +167,7 @@ a.card{text-decoration:none;color:var(--navy)}
 .foot h2{font-size:14px;letter-spacing:.06em;text-transform:uppercase;font-family:'Lago Sans',sans-serif;font-weight:700;color:var(--muted);margin-bottom:12px}
 .foot ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
 .foot a{color:var(--ink2);text-decoration:none}.foot a:hover{color:var(--blue);text-decoration:underline}
+.foot a.btn-dark,.foot a.btn-dark:hover{color:#fff;text-decoration:none}
 .foot-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin-top:40px;padding-top:24px;border-top:1px solid #E6ECF5;color:var(--muted);font-size:14px}
 /* zoom + lightbox */
 a.zoom{display:block;cursor:zoom-in}
@@ -199,3 +200,67 @@ a.zoom{display:block;cursor:zoom-in}
 .mcta{display:none}
 @media (max-width:760px){.mcta{display:flex;position:fixed;left:12px;right:12px;bottom:12px;z-index:60;justify-content:center;box-shadow:0 18px 40px -10px rgba(10,31,77,.5)}body{padding-bottom:84px}}
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* métiers menu, hub, guides */
+.dd-menu.cols{min-width:520px}
+.dd:hover .dd-menu.cols,.dd:focus-within .dd-menu.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}
+.dd-menu b{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:8px 12px 2px}
+.dd-menu .all{grid-column:1/-1;border-top:1px solid var(--line);margin-top:6px;border-radius:0 0 10px 10px;color:var(--blue)}
+.fam{margin-top:8px}
+.fam+.fam{margin-top:56px}
+.fam h2{font-size:clamp(24px,3vw,32px);margin-bottom:18px}
+.gcat{margin-top:12px}
+.gcat+.gcat{margin-top:48px}
+.gcat h2{font-size:clamp(22px,2.6vw,28px);margin-bottom:16px}
+.reads{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.reads a{display:flex;gap:12px;align-items:flex-start;padding:16px 18px;border:1px solid var(--line);border-radius:16px;background:#fff;text-decoration:none;color:var(--navy);font-weight:600;line-height:1.4}
+.reads a:hover{border-color:var(--blue);color:var(--blue)}
+.reads svg{flex:none;margin-top:2px}
+/* téléphone : plus court, plus aéré, plus lisible */
+@media (max-width:760px){
+body{font-size:17px}
+.wrap{padding:0 18px}
+.hero{padding:36px 0 40px}
+.hero-grid{gap:28px}
+.hero .orb1,.hero .orb2{display:none}
+h1{font-size:clamp(32px,9vw,40px);line-height:1.1}
+h2{font-size:clamp(26px,7.4vw,32px);line-height:1.12}
+.lead{font-size:18px;line-height:1.55;margin-top:14px}
+.ctas{margin-top:22px}.ctas .btn{flex:1 1 100%}
+.ticks{gap:8px 16px;font-size:15px;margin-top:18px}
+.sec{padding:52px 0}
+.head{margin-bottom:26px}
+.row{gap:20px;padding:18px 0}
+.row-txt p{font-size:17px}
+.tilt{transform:none}
+.shot{border-radius:14px;box-shadow:0 18px 40px -24px rgba(10,31,77,.4)}
+.cap{font-size:13.5px}
+.grid{grid-template-columns:1fr;gap:10px}
+.card{padding:18px;border-radius:18px;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.card .ic{width:40px;height:40px;border-radius:12px}
+.card h3{font-size:18px;flex:1 1 0;min-width:0}
+.card p{flex:1 1 100%;font-size:16px}
+.card .more{flex:1 1 100%}
+.card:hover{transform:none}
+.trust{grid-template-columns:1fr 1fr;gap:10px}
+.trust div{flex-direction:column;gap:6px;padding:14px;font-size:14.5px}
+.steps{gap:22px}
+.step:before{font-size:36px;margin-bottom:6px}
+.faq summary h3{font-size:17px}
+.faq details{padding:0 16px}
+.faq details p{font-size:16.5px}
+.band{border-radius:24px;margin:20px 0}
+.band p{font-size:17px}
+.article p,.article li{font-size:18px;line-height:1.7}
+.article h2{margin:34px 0 10px}
+.ai-hub{display:none!important}
+.duo-col{padding:18px;border-radius:22px}
+.thumbs{grid-template-columns:1fr 1fr}
+.phones{gap:14px}.phones>div,.phones .phone{width:150px}
+.plans{gap:12px}.plan{padding:24px}
+.foot{padding:40px 0 32px}
+.foot-grid{gap:24px}
+.reads{grid-template-columns:1fr}
+.foot-grid>div:first-child{grid-column:1/-1}
+}
+@media (max-width:480px){.acts>.btn-dark{display:none}}
