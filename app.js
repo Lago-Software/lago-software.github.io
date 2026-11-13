@@ -4414,7 +4414,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v72';
+const LAGO_V='v73';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -9108,6 +9108,125 @@ document.addEventListener('submit',e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 window.addEventListener('hashchange',route);
+
+/* ---- v73 : sous-menus de la caisse (encaisser, ventes en attente, ventes validées, avoirs, clôture) ---- */
+const CX_TABS=[['cx_vente','Encaisser'],['cx_att','Ventes en attente'],['cx_val','Ventes validées'],['cx_av','Avoirs et remboursements'],['cx_clo','Clôture de caisse']];
+TABS.caisse=CX_TABS;tab.caisse='cx_vente';
+let cxDay=today(),cxQ='',cxPm='all',cxLast='',cxGoto=false;
+const cxHeld=()=>S.held||(S.held=[]);
+const cxPayTxt=s=>[...new Set((s.pay||[]).map(p=>METHODS[p.m]||p.m))].join(' + ');
+const cxItems=s=>(s.lines||[]).reduce((a,l)=>a+Math.abs(l.qty||0),0);
+const cxLinesTxt=c=>{const L=c.lines||[];return L.slice(0,3).map(l=>{const n=l.name||((prod(l.pid)||{}).name)||'Article';return (Math.abs(l.qty)>1?Math.abs(l.qty)+' × ':'')+esc(n)}).join(', ')+(L.length>3?' …':'')};
+const cxDayOf=s=>dkey(new Date(s.ts));
+function cxTabsHtml(){
+  const L=tabsFor('caisse'),n=cxHeld().length;
+  return `<div class="tabs cxtabs" role="tablist" aria-label="Caisse">${L.map(([id,l])=>`<button role="tab" aria-selected="${tab.caisse===id}" class="${tab.caisse===id?'on':''}" data-act="tab" data-id="${id}">${l}${id==='cx_att'&&n?`<b class="cxn">${n}</b>`:''}</button>`).join('')}</div>`;
+}
+function vCaisseHub(m){
+  const L=tabsFor('caisse');if(L.length&&!L.some(x=>x[0]===tab.caisse))tab.caisse=L[0][0];
+  const sell=tab.caisse==='cx_vente',cb=$('#cartbar');
+  if(cb)cb.hidden=!sell;if(!sell)document.body.classList.remove('cart-open');
+  if(sell){vCaisse(m);const h=m.querySelector('header.top');if(h)h.insertAdjacentHTML('afterend',cxTabsHtml());cxTabScroll(m);return}
+  m.innerHTML=head('Caisse',ctrlPill())+cxTabsHtml()+'<div id="sub"></div>';
+  cxSub();cxTabScroll(m);
+}
+function cxTabScroll(m){try{const t=m.querySelector('.cxtabs'),o=t&&t.querySelector('.on');if(o&&t.scrollWidth>t.clientWidth)t.scrollLeft=Math.max(0,o.offsetLeft-t.offsetLeft-16)}catch(e){}}
+VIEWS.caisse=vCaisseHub;
+function cxSub(){const el=$('#sub'),f={cx_att:cxAtt,cx_val:cxVal,cx_av:cxAv,cx_clo:cxClo}[tab.caisse];if(el&&view==='caisse'&&f)f(el)}
+function cxRefresh(){if(view!=='caisse')return;VIEWS.caisse($('#main'));renderNav()}
+/* les écrans de vente ne se redessinent que s'ils sont affichés */
+drawGrid=(o=>function(){if(!$('#grid'))return;return o.apply(this,arguments)})(drawGrid);
+drawCart=(o=>function(){if(!$('#cart'))return;return o.apply(this,arguments)})(drawCart);
+/* en arrivant sur la caisse depuis un autre écran, on ouvre l'encaissement (sauf lien direct vers un sous-menu) */
+document.addEventListener('click',e=>{if(e.target.closest('[data-act="goto"][data-v="caisse"]'))cxGoto=true},true);
+renderBase=(o=>function(){const was=cxLast;cxLast=view;if(view==='caisse'&&was!=='caisse'&&!cxGoto)tab.caisse='cx_vente';cxGoto=false;return o.apply(this,arguments)})(renderBase);
+/* nombre de ventes en attente dans le menu */
+renderNav=(o=>function(){o.apply(this,arguments);try{const n=cxHeld().length,b=document.querySelector('#nav .subnav [data-v="caisse"][data-t="cx_att"]');if(b&&n)b.insertAdjacentHTML('beforeend',`<b class="cxn">${n}</b>`)}catch(e){}})(renderNav);
+/* un avoir établi depuis un sous-menu met la liste à jour */
+cfCancel=(o=>function(){const r=o.apply(this,arguments);if(r&&view==='caisse'&&tab.caisse!=='cx_vente')setTimeout(()=>{cxSub();renderNav()},0);return r})(cfCancel);
+
+/* Ventes en attente */
+function cxAtt(m){
+  const h=cxHeld().slice().sort((a,b)=>b.ts-a.ts);let T0=null;try{if(cart.lines.length)T0=totals(cart)}catch(e){}
+  const cur=T0?`<div class="card cxcur"><div class="row cxrow"><span class="cxic on">${ic('caisse')}</span><span class="grow"><b>Ticket en cours · ${T0.items} article${T0.items>1?'s':''} · ${eur(T0.total)}</b><span class="muted">${cxLinesTxt(cart)}</span></span><span class="cxacts"><button class="btn" data-act="cx_park">${ic('clock')}Mettre en attente</button><button class="btn primary" data-act="cx_go">Continuer</button></span></div></div>`:'';
+  m.innerHTML=cur+`<div class="card"><h3>Ventes en attente${h.length?` <span class="pill warn">${h.length}</span>`:''}</h3>
+   <p class="muted cxhelp">Tickets mis de côté pendant l’encaissement (client qui revient, addition à finir). Ils ne sont pas encore encaissés : reprenez-les pour les payer.</p>
+   ${h.length?h.map(x=>{let T;try{T=totals(x.cart)}catch(e){T={items:(x.cart.lines||[]).length,total:0}}const old=cxDayOf(x)!==today();
+     return `<div class="row cxrow"><span class="cxic">${ic('clock')}</span><span class="grow"><b>${T.items} article${T.items>1?'s':''} · ${eur(T.total)}${x.cart.clientId?' · '+esc(clientName(x.cart.clientId)):''}</b><span class="muted">Mis en attente ${old?'le '+new Date(x.ts).toLocaleDateString('fr-FR')+' ':''}à ${hm(x.ts)} · ${cxLinesTxt(x.cart)}</span></span><span class="cxacts"><button class="btn primary" data-act="cx_resume" data-id="${x.id}">Reprendre</button><button class="ix" data-act="cx_hdel" data-id="${x.id}" aria-label="Supprimer ce ticket en attente">${ic('trash')}</button></span></div>`}).join(''):`<div class="empty">${ic('check')}<p>Aucune vente en attente.</p></div>`}</div>`;
+}
+
+/* Ventes validées */
+function cxVal(m){
+  const day=cxDay,all=S.sales.filter(s=>s.ty!=='av'&&cxDayOf(s)===day).sort((a,b)=>b.ts-a.ts);
+  const ok=all.filter(s=>!s.cx),ca=ok.reduce((a,s)=>a+s.total,0),pms=[...new Set(all.flatMap(s=>(s.pay||[]).map(p=>p.m)))];
+  if(cxPm!=='all'&&!pms.includes(cxPm))cxPm='all';
+  m.innerHTML=`<div class="cxday"><button class="ix" data-act="cx_day" data-d="-1" aria-label="Jour précédent">${ic('left')}</button><b>${day===today()?'Aujourd’hui':dlong(day)}</b><button class="ix" data-act="cx_day" data-d="1" aria-label="Jour suivant" ${day>=today()?'disabled':''}>${ic('right')}</button>${day!==today()?'<button class="btn" data-act="cx_today">Aujourd’hui</button>':''}<input type="date" id="cxdate" value="${day}" max="${today()}" aria-label="Choisir une date"></div>
+  <div class="kpis cxk"><div class="kpi"><div class="l">Ventes validées</div><div class="v num">${ok.length}</div></div><div class="kpi"><div class="l">Chiffre d’affaires</div><div class="v num">${eur(ca)}</div></div><div class="kpi"><div class="l">Panier moyen</div><div class="v num">${eur(ok.length?Math.round(ca/ok.length):0)}</div></div><div class="kpi"><div class="l">Annulées par avoir</div><div class="v num">${all.length-ok.length}</div></div></div>
+  <div class="card"><div class="cxfilters"><div class="search cxsearch">${ic('search')}<input id="cxq" type="search" placeholder="N° de ticket, client ou article" autocomplete="off" value="${esc(cxQ)}"></div>
+   ${pms.length>1?`<div class="chips cxchips"><button class="chip ${cxPm==='all'?'on':''}" data-act="cx_pm" data-id="all">Tous</button>${pms.map(k=>`<button class="chip ${cxPm===k?'on':''}" data-act="cx_pm" data-id="${esc(k)}">${esc(METHODS[k]||k)}</button>`).join('')}</div>`:''}</div>
+   <div id="cxlist"></div></div>`;
+  cxValList(all);
+}
+function cxValList(all){
+  const el=$('#cxlist');if(!el)return;all=all||S.sales.filter(s=>s.ty!=='av'&&cxDayOf(s)===cxDay).sort((a,b)=>b.ts-a.ts);
+  const nq=norm(cxQ.trim()),L=all.filter(s=>(cxPm==='all'||(s.pay||[]).some(p=>p.m===cxPm))&&(!nq||norm(String(s.no||'')+' '+clientName(s.clientId)+' '+(s.lines||[]).map(l=>l.name).join(' ')).includes(nq)));
+  const adm=isAdmin();
+  el.innerHTML=L.length?L.map(s=>`<div class="row cxrow cxsale${s.cx?' cxoff':''}"><button class="rowbtn cxopen" data-act="ticket" data-id="${s.id}"><span class="cxt num">${hm(s.ts)}</span><span class="grow"><b>${esc(s.no||'Ticket')}${s.clientId?' · '+esc(clientName(s.clientId)):''}</b><span class="muted">${cxItems(s)} article${cxItems(s)>1?'s':''} · ${esc(cxPayTxt(s))}</span></span>${s.cx?`<span class="pill bad">Annulée · ${esc(s.cx.no)}</span>`:''}<b class="num cxamt">${eur(s.total)}</b></button>${adm&&cfSealed(s)&&!s.cx?`<button class="btn cxrf" data-act="cf_cancel" data-id="${s.id}" title="Établir un avoir pour cette vente">Rembourser</button>`:''}</div>`).join('')
+    :`<div class="empty">${all.length?'Aucune vente ne correspond à cette recherche.':'Aucune vente validée ce jour-là.'}</div>`;
+}
+
+/* Avoirs et remboursements */
+function cxAv(m){
+  const av=S.sales.filter(s=>s.ty==='av').sort((a,b)=>b.ts-a.ts),mon=today().slice(0,7),am=av.filter(s=>cxDayOf(s).slice(0,7)===mon);
+  m.innerHTML=`<div class="kpis cxk"><div class="kpi"><div class="l">Avoirs ce mois-ci</div><div class="v num">${am.length}</div></div><div class="kpi"><div class="l">Remboursé ce mois-ci</div><div class="v num">${eur(am.reduce((a,s)=>a-s.total,0))}</div></div><div class="kpi"><div class="l">Avoirs au total</div><div class="v num">${av.length}</div></div></div>
+  <div class="cols"><div class="card"><h3>Rembourser une vente</h3><p class="muted cxhelp">Saisissez le numéro inscrit sur le ticket du client, ou retrouvez la vente dans « Ventes validées ».${isAdmin()?'':' Le remboursement est réservé à l’administrateur.'}</p>
+    <form id="cxrf" class="cxfind"><input id="cxrn" placeholder="N° du ticket, ex. C1-0042" autocomplete="off" autocapitalize="characters"><button class="btn primary" type="submit">Rechercher</button></form><p class="muted cxhelp" id="cxrmsg" role="status" style="margin-top:8px"></p></div>
+   <div class="card"><h3>Comment fonctionne un avoir</h3><ul class="cxul"><li>La vente d’origine est conservée et marquée « annulée » : une vente encaissée ne se supprime jamais.</li><li>Un avoir numéroté et daté est établi pour le même montant, avec le motif.</li><li>Cartes cadeaux, carnets de séances, points de fidélité et stock sont remis à jour automatiquement.</li><li>Un acompte payé en ligne se rembourse en plus depuis votre compte Stripe.</li></ul></div></div>
+  <div class="card"><h3>Historique des avoirs</h3>${av.length?av.slice(0,200).map(s=>`<button class="row rowbtn cxrow" data-act="ticket" data-id="${s.id}"><span class="cxic bad">${ic('ticket')}</span><span class="grow"><b>Avoir ${esc(s.no||'')}${s.rf?' · sur '+esc(s.rf):''}</b><span class="muted">${new Date(s.ts).toLocaleDateString('fr-FR')} à ${hm(s.ts)}${s.mt?' · '+esc(s.mt):''}</span></span><b class="num cxamt">${eur(s.total)}</b></button>`).join(''):'<div class="empty">Aucun avoir pour le moment.</div>'}</div>`;
+}
+
+/* Clôture de caisse */
+function cxClo(m){
+  const c=cashInfo(),td=today(),clo=(S.closures||[]).filter(x=>dkey(new Date(x.ts))===td).pop(),ds=c.ds;
+  const tk=ds.filter(s=>s.ty!=='av'&&!s.cx).length,na=ds.filter(s=>s.ty==='av').length,net=c.mv.reduce((a,x)=>a+(x.t==='dep'?x.amt:-x.amt),0);
+  const pm={};ds.forEach(s=>(s.pay||[]).forEach(p=>pm[p.m]=(pm[p.m]||0)+p.amt));
+  const vat={};ds.forEach(s=>Object.entries(s.vat||{}).forEach(([r,v])=>{(vat[r]=vat[r]||{ttc:0,tva:0});vat[r].ttc+=v.ttc;vat[r].tva+=v.tva}));
+  const gCash=!opHidden('gestion')&&tabsFor('gestion').some(x=>x[0]==='caisse');
+  const zs=(typeof cfLive==='function'&&cfLive())?(S.zs||[]).filter(z=>z.ty==='J').slice().sort((a,b)=>b.sq-a.sq).slice(0,6):[];
+  m.innerHTML=`<div class="kpis cxk"><div class="kpi"><div class="l">Encaissé aujourd’hui</div><div class="v num">${eur(c.enc)}</div></div><div class="kpi"><div class="l">Ventes</div><div class="v num">${tk}</div></div><div class="kpi"><div class="l">Avoirs</div><div class="v num">${na}</div></div><div class="kpi"><div class="l">Espèces attendues</div><div class="v num">${eur(c.exp)}</div></div></div>
+  <div class="cols"><div class="card"><h3>Clôturer la journée</h3>
+    <div class="sum" style="margin-bottom:12px"><div class="r"><span>Fond de caisse</span><span class="num">${eur(S.settings.fond)}</span></div><div class="r"><span>Espèces encaissées</span><span class="num">${eur(c.cash)}</span></div>${c.mv.length?`<div class="r"><span>Retraits et dépôts</span><span class="num">${net>0?'+':''}${eur(net)}</span></div>`:''}<div class="r k"><span>Espèces attendues dans le tiroir</span><span class="num">${eur(c.exp)}</span></div></div>
+    ${clo?`<div class="success">${ic('check')}<span>Journée clôturée à ${hm(clo.ts)}, écart ${clo.diff>0?'+':''}${eur(clo.diff)}</span></div>`:
+    `<div class="field"><label for="counted">Espèces comptées (€)</label><input id="counted" inputmode="decimal" placeholder="${inEur(c.exp)}" data-exp="${c.exp}" autocomplete="off"></div>
+    <p class="muted" id="ecart" style="margin-bottom:12px">Saisissez le montant compté pour voir l’écart.</p><button class="btn primary" data-act="cx_close" style="width:100%">Clôturer la journée</button>`}
+    ${gCash?`<button class="btn" data-act="goto" data-v="gestion" data-t="caisse" style="width:100%;margin-top:10px">${ic('cash')}Compter le tiroir billet par billet, retraits et dépôts</button>`:''}</div>
+   <div class="card"><h3>Par moyen de paiement</h3>${Object.keys(pm).length?Object.entries(pm).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="row"><span class="grow">${esc(METHODS[k]||k)}</span><b class="num">${eur(v)}</b></div>`).join(''):'<p class="muted">Aucun encaissement aujourd’hui.</p>'}
+    <h3 style="margin-top:18px">TVA</h3><div class="vrow h"><span>Taux</span><span>TTC</span><span>HT</span><span>TVA</span></div>${Object.entries(vat).map(([r,v])=>`<div class="vrow num"><span>${String(r).replace('.',',')} %</span><span>${eur(v.ttc)}</span><span>${eur(v.ttc-v.tva)}</span><span>${eur(v.tva)}</span></div>`).join('')||'<p class="muted">Aucune vente.</p>'}</div></div>
+  ${zs.length?`<div class="card"><h3>Dernières clôtures</h3>${zs.map(z=>`<button class="row rowbtn cxrow" data-act="cf_z" data-id="${esc(z.id)}"><span class="cxic">${ic('shield')}</span><span class="grow"><b>${dfr(z.per)}${z.auto?' · automatique':''}</b><span class="muted">${z.n} ticket${z.n>1?'s':''}${z.na?' · '+z.na+' avoir'+(z.na>1?'s':''):''}</span></span><b class="num">${eur(z.ttc)}</b></button>`).join('')}<p class="muted cxhelp" style="margin:10px 0 0">Chaque clôture est scellée et ne peut plus être modifiée.</p></div>`:''}`;
+}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b||b.disabled||view!=='caisse')return;const a=b.dataset.act,d=b.dataset;
+  if(a==='cx_resume'){const H=cxHeld(),i=H.findIndex(x=>x.id===d.id);if(i<0)return;if(cart.lines.length)H.push({id:uid(),ts:Date.now(),cart:JSON.parse(JSON.stringify(cart))});cart=H.splice(i,1)[0].cart;save();tab.caisse='cx_vente';cxRefresh();toast('Vente reprise')}
+  else if(a==='cx_hdel'){askYes('Supprimer ce ticket en attente ? Il n’a pas été encaissé.',()=>{S.held=cxHeld().filter(x=>x.id!==d.id);save();cxSub();renderNav();toast('Ticket supprimé')},'Supprimer')}
+  else if(a==='cx_park'){if(!cart.lines.length)return;cxHeld().push({id:uid(),ts:Date.now(),cart:JSON.parse(JSON.stringify(cart))});cart=newCart();save();cxSub();renderNav();toast('Ticket mis en attente')}
+  else if(a==='cx_go'){tab.caisse='cx_vente';cxRefresh()}
+  else if(a==='cx_day'){const n=addDays(cxDay,+d.d);if(n<=today()){cxDay=n;cxSub()}}
+  else if(a==='cx_today'){cxDay=today();cxSub()}
+  else if(a==='cx_pm'){cxPm=d.id;b.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===b));cxValList()}
+  else if(a==='cx_close'){const inp=$('#counted');if(!inp)return;const exp=+inp.dataset.exp,cnt=inp.value.trim()?parseEur(inp.value):exp;
+    askYes('Clôturer la journée avec '+eur(cnt)+' en espèces'+(cnt===exp?'':' (écart '+(cnt-exp>0?'+':'')+eur(cnt-exp)+')')+' ? La clôture ne peut plus être modifiée.',()=>{cfDayClose(exp,cnt);cxSub();toast('Journée clôturée')},'Clôturer')}
+});
+document.addEventListener('input',e=>{if(e.target.id==='cxq'){cxQ=e.target.value;cxValList()}});
+document.addEventListener('change',e=>{if(e.target.id==='cxdate'&&e.target.value){cxDay=e.target.value>today()?today():e.target.value;cxSub()}});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='cxrf')return;e.preventDefault();
+  const v=norm($('#cxrn').value.trim()).replace(/\s+/g,''),msg=$('#cxrmsg');if(!v){msg.textContent='Saisissez un numéro de ticket.';return}
+  const s=S.sales.find(x=>x.ty!=='av'&&norm(String(x.no||'')).replace(/\s+/g,'')===v);
+  if(!s){msg.textContent='Aucune vente avec ce numéro.';return}
+  msg.textContent=s.cx?'Cette vente a déjà été remboursée par l’avoir '+s.cx.no+'.':!cfSealed(s)?'Vente de démonstration : elle ne peut pas être remboursée.':isAdmin()?'Vente trouvée : touchez « Annuler ce ticket » pour établir l’avoir.':'Vente trouvée. Le remboursement est réservé à l’administrateur.';
+  showReceipt(s,false);
+});
 
 init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();migrateImgs();v61Init();hoursInit();applySettings();cart=newCart();chrome();route();bootGate();
 })();
