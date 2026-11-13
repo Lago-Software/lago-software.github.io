@@ -4036,8 +4036,9 @@ const same=(a,b)=>a===b||(isO(a)&&isO(b)&&JSON.stringify(a)===JSON.stringify(b))
 function cloudCfg(){try{return JSON.parse(localStorage.getItem(CKEY)||'null')}catch(e){return null}}
 function cloudOn(){const c=cloudCfg();return !!(c&&c.u&&c.r)}
 function cloudSet(c){try{c?localStorage.setItem(CKEY,JSON.stringify(c)):localStorage.removeItem(CKEY)}catch(e){}}
-const kEnc=k=>String(k).replace(/[.$#\[\]\/%\x00-\x1f\x7f]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0'))||'%00';
-const kDec=k=>k==='%00'?'':k.replace(/%([0-9A-F]{2})/g,(_,h)=>String.fromCharCode(parseInt(h,16)));
+const KBAD=/[.$#\[\]\/%\x00-\x1f\x7f]/,KBADG=/[.$#\[\]\/%\x00-\x1f\x7f]/g,hasOwn=Object.prototype.hasOwnProperty;
+const kEnc=k=>{k=String(k);return k===''?'%00':KBAD.test(k)?k.replace(KBADG,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0')):k};
+const kDec=k=>k==='%00'?'':k.indexOf('%')<0?k:k.replace(/%([0-9A-F]{2})/g,(_,h)=>String.fromCharCode(parseInt(h,16)));
 /* données Lago -> arbre Firebase */
 function proj(v,key){
   if(v===undefined||typeof v==='function')return undefined;
@@ -4046,15 +4047,19 @@ function proj(v,key){
   if(typeof v!=='object')return v;
   if(Array.isArray(v)){
     if(!v.length)return EA;
-    const ok=v.every(e=>isO(e)&&!Array.isArray(e)&&typeof e.id==='string'&&e.id&&!('_a' in e))&&new Set(v.map(e=>e.id)).size===v.length;
-    if(!ok)return JM+JSON.stringify(v);
+    const ids=new Set();let allTs=true;
+    for(let i=0;i<v.length;i++){
+      const e=v[i];
+      if(!(isO(e)&&!Array.isArray(e)&&typeof e.id==='string'&&e.id&&!('_a' in e))||ids.has(e.id))return JM+JSON.stringify(v);
+      ids.add(e.id);if(typeof e.ts!=='number')allTs=false;
+    }
     const o={_a:1};
-    v.forEach(e=>{const p=proj(e);if(p!==undefined)o[kEnc(e.id)]=p});
-    if(!v.every(e=>typeof e.ts==='number'))o._o=JM+JSON.stringify(v.map(e=>e.id));
+    for(let i=0;i<v.length;i++){const e=v[i],p=proj(e);if(p!==undefined)o[kEnc(e.id)]=p}
+    if(!allTs)o._o=JM+JSON.stringify(v.map(e=>e.id));
     return o;
   }
   const o={};let n=0;
-  for(const k in v){if(LOCAL_KEYS.includes(k))continue;const p=proj(v[k]);if(p!==undefined){o[kEnc(k)]=p;n++}}
+  for(const k in v){if(LOCAL_KEYS.includes(k))continue;const x=v[k],p=typeof x==='string'?x:proj(x);if(p!==undefined){o[kEnc(k)]=p;n++}}
   return n?o:EO;
 }
 function projS(){const o={};for(const k in S){if(CLOUD_SKIP.includes(k))continue;const p=proj(S[k]);if(p!==undefined)o[kEnc(k)]=p}return o}
@@ -4084,17 +4089,29 @@ function setAt(t,parts,val){
   if(nv===undefined)delete o[h];else o[h]=nv;
   return Object.keys(o).length?o:undefined;
 }
+const primT=x=>x!==undefined&&!isO(x);
+const hasKeys=o=>{for(const k in o)return true;return false};
 function merge3(b,l,r){
-  const prim=x=>x!==undefined&&!isO(x);
-  if((isO(b)||isO(l)||isO(r))&&!prim(b)&&!prim(l)&&!prim(r)){
-    const keys=new Set([...Object.keys(b||{}),...Object.keys(l||{}),...Object.keys(r||{})]),o={};let n=0;
-    for(const k of keys){const m=merge3(b&&b[k],l&&l[k],r&&r[k]);if(m!==undefined){o[k]=m;n++}}
+  /* serveur inchangé (r identique à la base) ou identique au local : le résultat de la fusion est exactement la version locale */
+  if((b===r||l===r)&&(!isO(l)||hasKeys(l)))return l;
+  if((isO(b)||isO(l)||isO(r))&&!primT(b)&&!primT(l)&&!primT(r)){
+    const o={};let n=0;
+    const visit=k=>{const m=merge3(b&&b[k],l&&l[k],r&&r[k]);if(m!==undefined){o[k]=m;n++}};
+    if(b)for(const k of Object.keys(b))visit(k);
+    if(l)for(const k of Object.keys(l))if(!(b&&hasOwn.call(b,k)))visit(k);
+    if(r)for(const k of Object.keys(r))if(!(b&&hasOwn.call(b,k))&&!(l&&hasOwn.call(l,k)))visit(k);
     return n?o:undefined;
   }
   return same(l,b)?r:l;
 }
 function diffT(r,m,path,out){
-  if(isO(r)&&isO(m)){for(const k of new Set([...Object.keys(r),...Object.keys(m)]))diffT(r[k],m[k],path?path+'/'+k:k,out)}
+  if(r===m)return;
+  if(isO(r)&&isO(m)){
+    const rk=Object.keys(r);
+    for(let i=0;i<rk.length;i++){const k=rk[i],x=r[k],y=m[k];if(x!==y)diffT(x,y,path?path+'/'+k:k,out)}
+    const mk=Object.keys(m);
+    for(let i=0;i<mk.length;i++){const k=mk[i];if(!hasOwn.call(r,k))diffT(undefined,m[k],path?path+'/'+k:k,out)}
+  }
   else if(!same(r,m)){
     /* Firebase refuse une clé vide : à la racine on envoie chaque clé de premier niveau séparément */
     if(path===''){
@@ -4104,7 +4121,7 @@ function diffT(r,m,path,out){
   }
 }
 /* état de la synchronisation */
-const CL={R:undefined,B:undefined,fetched:false,ready:false,busy:false,again:false,es:null,state:'off',t:null,ui:false,err:'',last:0,ev:0,ka:75000,away:10000,hid:0};
+const CL={R:undefined,B:undefined,fetched:false,ready:false,busy:false,again:false,es:null,state:'off',t:null,ui:false,err:'',last:0,ev:0,ka:75000,away:30000,hid:0,sv:0,okSv:-1,fail:0};
 function setCS(s){CL.state=s;if(s==='ok')CL.err='';document.querySelectorAll('.zst').forEach(e=>{e.dataset.s=s;e.title=s==='ok'?'':(CL.err||'');const t=e.querySelector('b');if(t)t.textContent=s==='ok'?'Synchronisé':s==='sync'?'Synchronisation…':'Hors ligne'})}
 /* v64 : si la route réseau principale vers la base ne répond plus (connexion bloquée dans le navigateur : erreur 503 ou attente sans fin),
    on essaie la route équivalente « nom de serveur. » (même base, même adresse) et on la garde tant qu'elle marche. */
@@ -4164,7 +4181,7 @@ async function cloudStep(){
   const cf=cloudCfg();if(!cf||cf.fresh)throw new Error('connexion initiale non terminée');
   if(!CL.fetched)await cFetch();
   if(Array.isArray(S.sales)){S.sales.sort((x,y)=>(x.ts||0)-(y.ts||0)||(x.id<y.id?-1:1));number()}
-  const L=projS(),M=merge3(CL.B,L,CL.R);
+  const sv0=CL.sv,L=projS(),M=merge3(CL.B,L,CL.R);
   applyM(M,L);
   const patch={};diffT(CL.R,M,'',patch);
   CL.B=CL.R;
@@ -4175,20 +4192,22 @@ async function cloudStep(){
     CL.R=R;CL.B=R;
     try{localStorage.removeItem(CBOX)}catch(e){}
   }
-  CL.last=Date.now();setCS('ok');
+  if(CL.sv===sv0){CL.okSv=sv0;try{localStorage.removeItem(CBOX)}catch(e){}}   // rien n'a été modifié pendant l'envoi : plus rien en attente (une boîte restée là serait rejouée au prochain démarrage)
+  CL.fail=0;CL.last=Date.now();setCS('ok');
 }
 async function cloudSync(){
   if(!cloudOn()||!CL.ready)return;
   if(CL.busy){CL.again=true;return}
   CL.busy=true;
   try{do{CL.again=false;await cloudStep()}while(CL.again)}
-  catch(e){CL.err=String((e&&e.message)||e);setCS('off');cloudStash();setTimeout(()=>cloudKick(8000),0)}
+  catch(e){CL.err=String((e&&e.message)||e);setCS('off');cloudStash();const d=Math.min(60000,8000*Math.pow(2,CL.fail));CL.fail++;setTimeout(()=>cloudKick(CL.fail<=1?d:Math.round(d*(0.85+Math.random()*0.3))),0)}
   CL.busy=false;
 }
 function cloudKick(ms){if(!cloudOn()||!CL.ready)return;clearTimeout(CL.t);CL.t=setTimeout(cloudSync,ms==null?700:ms)}
 const getAt=(t,parts)=>parts.reduce((x,k)=>isO(x)?x[k]:undefined,t);
 function cloudStash(){
   if(!CL.ready||!cloudOn())return;
+  if(CL.sv===CL.okSv){try{localStorage.removeItem(CBOX)}catch(e){}return}
   try{const p={},o={};diffT(CL.B,projS(),'',p);
     for(const k in p){const v=getAt(CL.B,k.split('/'));o[k]=v===undefined?null:v}
     if(Object.keys(p).length)localStorage.setItem(CBOX,JSON.stringify({n:p,o}));else localStorage.removeItem(CBOX)}catch(e){}
@@ -4210,7 +4229,8 @@ function cloudListen(){
 function cloudWake(force,away){
   if(!cloudOn()||!CL.ready)return;
   const es=CL.es,stale=!es||es.readyState===2||!!away||Date.now()-CL.ev>(force?Math.min(40000,CL.ka):CL.ka);
-  if(stale){cloudListen();CL.fetched=false;cloudKick(0)}else if(force)cloudKick(300);
+  if(stale){cloudListen();CL.fetched=false;cloudKick(2500)}   // le flux rouvert apporte l'état complet (et relance la synchro à son arrivée) ; sinon lecture directe au bout de 2,5 s
+  else if(force)cloudKick(300);
 }
 setInterval(()=>{if(!document.hidden)cloudWake(false)},5000);
 addEventListener('focus',()=>cloudWake(true));
@@ -4248,7 +4268,7 @@ function bootGate(){
   }).finally(()=>{sp.remove();chrome();bootGateBase()});
 }
 const saveV0=saveBase;
-function save(){saveV0();cloudKick()}
+function save(){CL.sv++;saveV0();cloudKick()}
 /* indicateur et verrous */
 function chrome(){chromeV0();gbarDraw();if(cloudOn()){const f=$('#sidefoot');if(f){f.querySelectorAll('[data-act="reset"]').forEach(b=>b.remove());f.insertAdjacentHTML('beforeend',`<span class="zst" data-s="${CL.state}"><i></i><b>${CL.state==='ok'?'Synchronisé':CL.state==='sync'?'Synchronisation…':'Hors ligne'}</b></span>`)}}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act="reset"]');if(b&&cloudOn()){e.stopImmediatePropagation();e.preventDefault();toast('Désactivé : la base en ligne est active')}},true);
@@ -4429,7 +4449,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v67';
+const LAGO_V='v68';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -8086,6 +8106,34 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('input',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.cn==='q'){CNS.q=t.value;clearTimeout(cnTm);cnTm=setTimeout(()=>{if(isAdmin()&&view==='params'&&tab.params==='prgpd'){const p=t.selectionStart;cnRe();const n=$('#cn_q');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}}},250)}});
 let cnTm=0;
+/* ---- v68 : retours animés de la caisse (ajout au ticket, quantité, total qui roule) — mêmes effets que la démonstration du site ---- */
+const MO={rm:matchMedia('(prefers-reduced-motion: reduce)'),tw:0,tw2:0};
+const moOn=()=>!MO.rm.matches;
+function moPlay(el,cls){if(!el||!moOn())return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls)}
+function moTween(el,key,from,to,fmt){
+  if(!el||!moOn()||from===to)return;
+  cancelAnimationFrame(MO[key]);const t0=performance.now(),D=420;
+  const step=now=>{const k=Math.min(1,(now-t0)/D),e=1-Math.pow(1-k,3);el.textContent=fmt(k<1?from+(to-from)*e:to);if(k<1)MO[key]=requestAnimationFrame(step)};
+  MO[key]=requestAnimationFrame(step);
+}
+document.addEventListener('click',e=>{
+  if(!moOn())return;
+  const b=e.target.closest&&e.target.closest('#grid [data-act="add"],#cart [data-act="qty"]');if(!b)return;
+  const id=b.dataset.id,qOf=()=>(cart.lines.find(l=>l.pid===id)||{}).qty||0;
+  let t0=0;try{t0=totals(cart).total}catch(_){}
+  const q0=qOf();
+  requestAnimationFrame(()=>{
+    try{
+      const q1=qOf();if(q1===q0)return;
+      let t1=t0;try{t1=totals(cart).total}catch(_){}
+      const badge=document.querySelector('#grid [data-act="add"][data-id="'+id+'"] .badge');if(badge)moPlay(badge,'mo-pop');
+      const row=[...document.querySelectorAll('#cart .cl')].find(r=>r.querySelector('[data-act="qty"][data-id="'+id+'"]'));
+      if(row){if(q0>0)moPlay(row.querySelector('.step b'),'mo-bump');else moPlay(row,'mo-line')}
+      moTween(document.querySelector('#cart .r.big span:last-child'),'tw',t0,t1,eur);
+      moTween(document.querySelector('#cartbar strong'),'tw2',t0,t1,eur);
+    }catch(_){}
+  });
+},true);
 
 METHODS.pass='Carnet de séances';
 function openPay(){

@@ -2312,6 +2312,82 @@ body.brl-on{overflow:hidden}
 .cnext{align-items:flex-start;font-weight:500;line-height:1.4}
 .cnrow[data-lv=off] .grow{opacity:.55}
 @media (max-width:640px){.cnact{margin-left:0;width:100%}.hlt{flex-wrap:wrap}}
+
+/* ---------- v68 : un seul langage d'animation, le même que sur le site vitrine ----------
+   Mêmes courbes, mêmes effets : apparition qui monte, « pop » à l'ajout, soulèvement au survol, reflet sur le bouton d'encaissement,
+   halo qui respire. Uniquement transform / opacité (pas de recalcul de mise en page), tout est coupé si l'appareil demande moins d'animations. */
+:root{--ease:cubic-bezier(.2,.8,.2,1);--ease-io:cubic-bezier(.65,0,.2,1)}
+@keyframes moPop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes moBump{0%{transform:scale(1)}35%{transform:scale(1.14)}100%{transform:scale(1)}}
+@keyframes moLine{from{opacity:0;transform:translate3d(-14px,0,0)}to{opacity:1;transform:none}}
+@keyframes moRise{from{opacity:0;transform:translate3d(0,26px,0) scale(.985)}to{opacity:1;transform:none}}
+@keyframes moDrift{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(36px,-26px,0) scale(1.08)}}
+@keyframes moFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-6px,0)}}
+@keyframes moSheen{0%{transform:translate3d(-130%,0,0) skewX(-18deg)}50%,100%{transform:translate3d(300%,0,0) skewX(-18deg)}}
+@keyframes moDraw{to{stroke-dashoffset:0}}
+@keyframes moPing{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.4);opacity:0}}
+
+/* l'élément qui vient d'être ajouté ou modifié (posé par le code, une seule fois) */
+.mo-pop{animation:moPop .4s var(--ease) both}
+.mo-bump{animation:moBump .34s var(--ease)}
+.mo-line{animation:moLine .38s var(--ease) both}
+
+/* retour au toucher : toutes les touches répondent, même sur tablette */
+.tile,.btn,.btn-pay,.chip,.pick,.step button,.gbtn,.mt-main,.mn,.ms-t,.nav a{transition:transform .35s var(--ease),box-shadow .35s var(--ease),background .25s,border-color .25s,color .25s,filter .2s}
+.tile:active{transform:scale(.965);transition-duration:.12s}
+.btn:active,.btn-pay:active,.chip:active,.pick:active,.gbtn:active,.mt-main:active{transform:scale(.97);transition-duration:.12s}
+.step button:active{transform:scale(.88);transition-duration:.1s}
+
+/* souris : soulèvement et inclinaison, comme les tuiles du site */
+@media (hover:hover) and (pointer:fine){
+  .tile:hover{transform:translate3d(0,-5px,0);box-shadow:0 26px 50px -18px rgba(29,79,215,.38),0 0 0 1px rgba(29,79,215,.14)}
+  .tile:active:hover{transform:scale(.965)}
+  .tile .art{transition:transform .5s var(--ease)}
+  .tile:hover .art{transform:scale(1.07)}
+  .btn-pay:not(:disabled):hover,.gbtn:hover,.hero .btn.primary:hover{transform:translate3d(0,-2px,0);filter:brightness(1.05)}
+  .mt-main:hover{transform:translate3d(0,-4px,0)}
+  .mt-ic{transition:transform .35s var(--ease)}
+  .mt:hover .mt-ic{transform:scale(1.12) rotate(-7deg)}
+  .mn .mi{transition:transform .35s var(--ease),background .25s,color .25s,box-shadow .25s}
+  .mn:hover .mi{transform:scale(1.1) rotate(-6deg)}
+  .nav a:hover{transform:translate3d(3px,0,0)}
+}
+
+/* ticket : la ligne glisse, la quantité rebondit, le total roule (voir chunkMO.js) */
+.cl .step b{display:inline-block}
+.r.big .num{display:inline-block;font-variant-numeric:tabular-nums}
+
+/* bouton d'encaissement : un reflet passe de temps en temps quand il est utilisable */
+.btn-pay:not(:disabled){position:relative;overflow:hidden;isolation:isolate}
+.btn-pay:not(:disabled)::after{content:"";position:absolute;top:0;bottom:0;left:0;width:34%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);transform:translate3d(-130%,0,0) skewX(-18deg);animation:moSheen 5.5s var(--ease-io) 1.4s infinite;pointer-events:none;z-index:1}
+
+/* confirmation d'encaissement : coche qui se dessine, halo qui part */
+.success{position:relative}
+.success svg{animation:moPop .5s var(--ease) both}
+.success svg path{stroke-dasharray:32;stroke-dashoffset:32;animation:moDraw .45s .18s var(--ease) forwards}
+.toast.show{animation:moPop .42s var(--ease) both}
+
+/* accueil : la bannière respire (deux halos qui dérivent lentement) */
+.hero{position:relative;overflow:hidden;isolation:isolate}
+.hero::before,.hero::after{content:"";display:block;position:absolute;z-index:-1;border-radius:50%;pointer-events:none}
+.hero::before{right:-70px;top:-120px;width:420px;height:420px;background:radial-gradient(closest-side,rgba(255,255,255,.24),transparent 72%);animation:moDrift 18s ease-in-out infinite}
+.hero::after{right:160px;bottom:-190px;width:380px;height:380px;background:radial-gradient(closest-side,rgba(255,138,43,.34),transparent 72%);animation:moDrift 22s ease-in-out infinite reverse}
+
+/* écran de connexion : la carte arrive, le logo flotte */
+#gate .gcard{animation:moRise .55s var(--ease) both}
+#gate .glogo .lmark{animation:moFloat 6s ease-in-out infinite}
+
+/* défilement : les blocs sous la ligne de flottaison apparaissent en montant (navigateurs qui savent le faire, comme sur le site) */
+/* la plage est limitée à 240 px et ne dépasse jamais la hauteur du bloc : un petit bloc tout en bas de page est donc toujours révélé en entier */
+@supports (animation-timeline:view()) and (animation-range:entry 0% entry min(100%,240px)){
+  #main>*:nth-child(n+5){animation:moRise linear both;animation-timeline:view();animation-range:entry 0% entry min(100%,240px)}
+}
+
+/* appareils qui demandent moins d'animations : tout est immobile */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .success svg path{stroke-dashoffset:0}
+}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -2330,7 +2406,7 @@ body.brl-on{overflow:hidden}
 
 <div id="boot" style="position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(160deg,#1D4FD7,#0F2A7A);color:#fff;font:700 34px/1 system-ui,sans-serif">lago<small style="font:500 14px system-ui,sans-serif;opacity:.8">Chargement…</small></div>
 <script>setTimeout(function(){var b=document.getElementById("boot");if(b&&!window.__lagoUp)b.innerHTML="<small style=\"font:500 16px system-ui,sans-serif;text-align:center;padding:0 24px\">Lago ne démarre pas.<br>Vérifiez la connexion puis<br><button onclick=\"location.reload()\" style=\"margin-top:12px;padding:10px 18px;font:600 15px system-ui;border-radius:10px;border:0\">Réessayer</button></small>"},15000)</script>
-<script src="app.js?v=v67" defer></script>
+<script src="app.js?v=v68" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

@@ -1,0 +1,22 @@
+LAGO — version application (PWA)
+
+MISE EN LIGNE
+1) Mettez le contenu de ce dossier sur un hébergement HTTPS :
+   - Netlify : glissez-déposez le dossier sur app.netlify.com/drop (gratuit)
+   - ou GitHub Pages, Cloudflare Pages, ou un sous-domaine de votre site.
+2) Ouvrez l'adresse obtenue :
+   - Android / Chrome : menu ⋮ > « Installer l'application »
+   - iPhone / iPad (Safari) : Partager > « Sur l'écran d'accueil »
+   - Windows / Mac (Chrome ou Edge) : icône d'installation dans la barre d'adresse
+
+DONNÉES PARTAGÉES ENTRE TOUS LES APPAREILS (mises à jour en direct)
+Dans Lago, connecté en administrateur : Paramètres > Studio > « Équipe connectée ».
+1) Créez un projet gratuit sur console.firebase.google.com, puis Build > Realtime Database > Créer (région europe-west1, mode verrouillé).
+2) Collez l'adresse de la base dans Lago, cliquez sur Continuer.
+3) Lago affiche des règles : copiez-les dans Firebase (Realtime Database > Règles) et cliquez sur Publier.
+4) Cliquez sur « Vérifier et envoyer mes données ». Lago affiche alors un lien d'équipe.
+5) Envoyez ce lien à vos employés : en l'ouvrant une fois, leur appareil se connecte à la base et récupère comptes, planning, contrôles, etc.
+Gardez le lien privé : il donne accès aux données.
+
+MISE À JOUR DU LOGICIEL
+Remplacez index.html sur l'hébergement : chaque appareil connecté à Internet récupère la nouvelle version à l'ouverture suivante.
