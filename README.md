@@ -1,5 +1,15 @@
 # Lago
 
+**Site officiel : [lago-software.github.io/site](https://lago-software.github.io/site/)**
+
+Lago est un logiciel de caisse, de planning et de réservation en ligne pour les lieux de loisirs (trampoline parks, laser games, bowlings, parcs indoor) et les commerces de proximité (coiffeurs, restaurants, boutiques) : caisse tactile conforme, planning clients et équipe, réservation en ligne, fidélité et contrôles de sécurité.
+
+- [Demander une démonstration](https://lago-software.github.io/site/demo.html)
+- [Fonctionnalités : la caisse](https://lago-software.github.io/site/fonctionnalites/caisse.html)
+- [Logiciel de caisse pour trampoline park](https://lago-software.github.io/site/metiers/trampoline-park.html)
+
+## L'application
+
 Logiciel de gestion pour parcs de loisirs (planning clients, planning staff, échanges de shifts, contrôles, clients, caisse, chat d'équipe).
 
 Application web installable (PWA), un seul fichier `index.html`, sans dépendance.
