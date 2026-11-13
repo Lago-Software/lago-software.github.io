@@ -1515,41 +1515,6 @@ function drawChips(){
   $('#chips').innerHTML=all.map(c=>`<button class="cat ${fcat===c.id?'on':''}" style="--cat:var(${c.v||'--ink'})" data-act="fcat" data-id="${c.id}">${c.name}</button>`).join('');
   drawSubs();
 }
-function vDayGrid(m){
-  if(slotDay<today())slotDay=today();
-  const ds=slotDay,cap=S.settings.cap,isT=ds===today(),nm=nowMin(),T0=QSTART,T1=QEND+15,H=(T1-T0)/15*RH;
-  const occs=QS.map(q=>occ(ds,q)),peak=Math.max(...occs),pk=QS[occs.indexOf(peak)];
-  const cur=isT&&nm>=T0&&nm<T1?occ(ds,Math.floor(nm/15)*15):null;
-  const sales=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)),evs=evOn(ds);
-  const strip=Array.from({length:14},(_,i)=>addDays(today(),i)).map((d,i)=>{
-    const pk2=Math.max(...QS.map(q=>occ(d,q))),pc=Math.min(100,Math.round(pk2/cap*100)),ne=evOn(d).length;
-    return `<button class="dy ${d===ds?'on':''}" data-act="day" data-d="${d}"><small>${i===0?'Auj.':wdS(d)}</small><b class="num">${+d.slice(8,10)}</b><i class="dybar"><u class="${pc>=100?'full':pc>=80?'warn':''}" style="width:${pc}%"></u></i><small>${pc} %${ne?' · '+ne+' év.':''}</small></button>`}).join('');
-  const ns=Math.max(QSTART,Math.min(QEND,Math.ceil(nm/15)*15)),nextS=isT?ns:QSTART;
-  const tcol=QS.map(q=>`<div class="tr" style="height:${RH}px">${q%60===0?q/60+'h':q%60===30?'<small>30</small>':''}</div>`).join('');
-  const gcol=QS.map((q,i)=>{const o=occs[i],pc=o/cap,cls=o>=cap?'full':pc>=.8?'warn':'';
-    return `<button class="gr ${cls}" style="height:${RH}px" data-act="slot" data-m="${q}" aria-label="${fm(q)} : ${o} sur ${cap}"><i style="width:${Math.round(pc*100)}%"></i><b class="num">${o}</b></button>`}).join('');
-  const pcells=QS.map(q=>`<button class="cell k" style="height:${RH}px" data-act="slot" data-m="${q}" aria-label="Départ ${fm(q)}"></button>`).join('');
-  const ecells=QS.map(()=>`<div class="cell" style="height:${RH}px"></div>`).join('');
-  const grp={};sales.forEach(s=>{const st=+s.slot.split('|')[1],k=st+'|'+(s.dur||60);(grp[k]=grp[k]||{s:st,e:st+(s.dur||60),list:[]}).list.push(s)});const items=layoutBlocks(Object.values(grp));
-  const pblocks=items.map(it=>{const L=it.list,jp=L.reduce((a,x)=>a+x.jumpers,0),br=bracelet(it.s,it.e-it.s),top=(it.s-T0)/15*RH,h=Math.min(H-top,(it.e-it.s)/15*RH)-3;
-    const who=L.length===1?(L[0].clientId?esc(clientName(L[0].clientId)):'Au comptoir'):L.length+' réservations';
-    return `<button class="pb" style="top:${top}px;height:${h}px;left:calc(${it.lane}/${it.n}*100% + 3px);width:calc(100%/${it.n} - 6px);--bc:${br.color}" data-act="slot" data-m="${it.s}"><b>${jp} sauteur${jp>1?'s':''}</b><span>${who}</span><span class="num">${fm(it.s)} à ${fm(it.e)}</span></button>`}).join('');
-  const eblocks=r=>evs.filter(e=>e.room===r).map(e=>{const top=(e.h*60-T0)/15*RH,h=e.dur*4*RH-3;
-    return `<button class="pe ${r}" style="top:${top}px;height:${h}px" data-act="evinfo" data-id="${e.id}"><b>${esc(e.title)}</b><span>${e.guests} invités</span><span class="num">${ft(e.h)} à ${ft(e.h+e.dur)}</span></button>`}).join('');
-  const inRange=isT&&nm>=T0&&nm<T1,ny=(nm-T0)/15*RH;
-  const over=inRange?`<div class="pastov" style="height:${ny}px"></div><i class="nowl" style="top:${ny}px"><em class="num">${fm(nm)}</em></i>`:'';
-  const cols=`<div class="pcol tc">${tcol}</div><div class="pcol gc">${gcol}</div><div class="pcol">${pcells}<div class="lay">${pblocks||`<p class="phint">Aucune vente en caisse sur ce jour. Cliquez sur un horaire pour vendre.</p>`}</div></div>`
-    +Object.keys(ROOMS).map(r=>`<div class="pcol">${ecells}<div class="lay">${eblocks(r)}</div></div>`).join('');
-  m.innerHTML=`<div class="dys">${strip}</div>
-   <div class="plbar"><div class="pst"><span><b class="num">${cur!=null?cur:cap}</b> ${cur!=null?'présents maintenant sur '+cap:'places au total'}</span><span>Pic <b class="num">${peak}</b> à ${fm(pk)}</span><span><b class="num">${sales.length}</b> réservation${sales.length>1?'s':''}</span><span><b class="num">${evs.length}</b> événement${evs.length>1?'s':''}</span></div>
-     <div class="plact">${modeSeg()}<button class="btn primary" data-act="sellslot" data-m="${nextS}">${ic('plus')}Réserver un départ</button><button class="btn" data-act="newev">${ic('plus')}Événement</button></div></div>
-   <div class="pl" id="pl"><div class="pl-in" style="--rh:${RH}px">
-     <div class="pg phead"><div class="ph"></div><div class="ph">Présents<small>sur ${cap}</small></div><div class="ph">Park<small>réservations, couleur = bracelet</small></div>${Object.entries(ROOMS).map(([r,l])=>`<div class="ph">${l}<small>${evs.filter(e=>e.room===r).length||'Libre'}${evs.filter(e=>e.room===r).length?' événement(s)':''}</small></div>`).join('')}</div>
-     <div class="pg pbody" style="height:${H}px">${cols}<div class="ov">${over}</div></div></div></div>
-   <div class="legend"><span><i class="lg" style="background:color-mix(in srgb,var(--brand) 30%,#fff)"></i>Fréquentation</span><span><i class="lg" style="background:var(--pay)"></i>Plus de 80 %</span><span><i class="lg" style="background:var(--bad)"></i>Complet</span><span>Un bloc porte la couleur de son bracelet</span><span>Un départ = 15 minutes</span></div>`;
-  const sc=$('#pl');if(sc&&isT&&inRange)sc.scrollTop=Math.max(0,ny-RH*3);
-}
-
 /* ---------- planning staff façon feuille « Vacances de la Toussaint » ---------- */
 const DAYN=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const PSL=['10h-12h','12h-14h','14h-16h','16h-18h','18h-20h','20h-22h','22h-00h'];
@@ -1666,8 +1631,8 @@ document.addEventListener('change',e=>{if(e.target.id==='pinset'){const v=e.targ
 
 /* ---------- planning clients : dalles de 15 minutes ---------- */
 let planMode='timeline';
-const modeSeg=()=>`<div class="seg"><button class="${planMode==='timeline'?'on':''}" data-act="vmode" data-k="timeline">Timeline</button><button class="${planMode==='dalles'?'on':''}" data-act="vmode" data-k="dalles">Dalles</button><button class="${planMode==='grille'?'on':''}" data-act="vmode" data-k="grille">Grille</button></div>`;
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act="vmode"]');if(b){planMode=b.dataset.k;vDay($('#sub'))}});
+const modeSeg=()=>`<div class="seg"><button class="${planMode==='timeline'?'on':''}" data-act="vmode" data-k="timeline">Timeline</button><button class="${planMode==='dalles'?'on':''}" data-act="vmode" data-k="dalles">Dalles</button></div>`;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="vmode"]');if(b){planMode=b.dataset.k==='dalles'?'dalles':'timeline';vDay($('#sub'))}});
 const SAT=[[0,[232,241,255]],[.3,[255,240,205]],[.6,[255,184,120]],[.85,[240,92,80]],[1,[196,28,40]]];
 function satStyle(p){
   p=Math.max(0,Math.min(1,p));let a=SAT[0],b=SAT[SAT.length-1];
@@ -1683,7 +1648,6 @@ function dayStrip(ds){
     return `<button class="dy ${d===ds?'on':''}" data-act="day" data-d="${d}"><small>${i===0?'Auj.':wdS(d)}</small><b class="num">${+d.slice(8,10)}</b><i class="dybar"><u class="${pc>=100?'full':pc>=80?'warn':''}" style="width:${pc}%"></u></i><small>${pc} %${ne?' · '+ne+' év.':''}</small></button>`}).join('')}</div>`;
 }
 function vDay(m){
-  if(planMode==='grille')return vDayGrid(m);
   if(planMode==='timeline')return vTimeline(m);
   if(slotDay<today())slotDay=today();
   const ds=slotDay,cap=S.settings.cap,isT=ds===today(),nm=nowMin(),nowQ=isT?Math.floor(nm/15)*15:-1;
@@ -4448,7 +4412,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v69';
+const LAGO_V='v70';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5888,9 +5852,9 @@ document.addEventListener('click',e=>{
   else if(a==='docpdf')docPdf(d.t,d.k);
   else if(a==='docgo'){const m=$('#modal');if(m)m.innerHTML='';tab.controle='docs';docF=d.t||'all';location.hash!=='#controle'?(location.hash='#controle'):VIEWS.controle($('#main'));renderNav();window.scrollTo(0,0)}
 });
-/* ---------- PD. nouveau design du planning staff (v51) ---------- */
-/* Cases en teinte douce + liseré de couleur, blocs continus, en-têtes avec initiales,
-   vue d'ensemble de la semaine, totaux d'heures comparés. Mêmes données, mêmes actions. */
+/* ---------- PD. planning de l'équipe (v70) ---------- */
+/* Un jour à la fois : une ligne par personne, des blocs continus sur la frise des heures, la couverture de l'équipe en bas.
+   Le bandeau Lun…Dim montre d'un coup d'œil les jours à renforcer. Mêmes données, mêmes actions (pcell, plate, pltime…). */
 function plFill(p,d,ds,i,id,v){
   if(!v)return '';
   const g=plCellSeg(p,d,ds,i,id,v),a=10+2*i;
@@ -5910,55 +5874,88 @@ function plLowSlots(p,d,ds,dc){
   for(let i=0;i<n;i++){const c=(dc||p.cells[d]||{})[i]||{};if(S.staff.filter(s=>c[s.id]==='w'&&!(ds&&onLeave(s.id,ds))).length<MIN_STAFF)low++}
   return low;
 }
+/* état d'affichage (jour choisi, direction de la dernière glissade, vue semaine sur grand écran) */
+let plSel=null,plSelPlan=null,plWeekV=false,plDir=0;
+const plMQ=window.matchMedia?matchMedia('(max-width:640px)'):{matches:false};
+const plIsWeek=()=>plWeekV&&!plMQ.matches;
+const plTdIdx=p=>planFor(today())===p?dowOf(today()):-1;
+const plCls=k=>k<MIN_STAFF?'bad':k===MIN_STAFF?'warn':'ok';
+const plCnt=(p,d,ds,dc,i)=>{const c=(dc||p.cells[d]||{})[i]||{};return S.staff.filter(s=>c[s.id]==='w'&&!(ds&&onLeave(s.id,ds))).length};
+/* longueur (en créneaux) du bloc qui commence au créneau i */
+const plRun=(p,d,dc,i,id,v)=>{let k=0;while(i+k<nrows(p,d)&&((dc[i+k]||{})[id]||'')===v)k++;return k};
 function dayCard(p,d,ds){
-  const tdy=ds?ds===today():(planFor(today())===p&&d===((new Date().getDay()+6)%7));
-  const n=nrows(p,d),dc=ds?swDayCells(p,d,ds):(p.cells[d]||{}),ro=!isAdmin();
-  const head=visStaff().map(s=>{const c=scol(s);return `<th class="${ds&&onLeave(s.id,ds)?'lv':''}"><span class="pav" style="background:${c};color:${inkOn(c)}">${esc(initials(s.name))}</span><span class="pnm">${esc(fname(s))}</span></th>`}).join('');
-  const body=Array.from({length:n},(_,i)=>{const c=dc[i]||{},prev=i?dc[i-1]||{}:{},next=dc[i+1]||{},cnt=S.staff.filter(s=>c[s.id]==='w'&&!(ds&&onLeave(s.id,ds))).length;
-    return `<tr><th class="slc">${PSL[i]}<em class="cvm ${cnt<MIN_STAFF?'bad':cnt===MIN_STAFF?'warn':'ok'}" aria-hidden="true">${cnt}</em></th>${visStaff().map((s,si)=>{const v=c[s.id]||'',lv=ds&&onLeave(s.id,ds),bs=!!v&&prev[s.id]!==v,be=!!v&&(i+1>=n||next[s.id]!==v),col=scol(s);
+  const tdy=ds?ds===today():plTdIdx(p)===d;
+  const n=nrows(p,d),dc=ds?swDayCells(p,d,ds):(p.cells[d]||{}),ro=!isAdmin(),vs=visStaff();
+  const cnt=Array.from({length:n},(_,i)=>plCnt(p,d,ds,dc,i));
+  const head=PSL.slice(0,n).map(l=>`<th class="slh" scope="col"><span class="hxl">${l.replace('-','–')}</span><span class="hxs">${l.replace(/h/g,'').replace('-','–')}</span><span class="hxt">${l.slice(0,2).replace(/^0/,'')}</span></th>`).join('');
+  const body=vs.map((s,si)=>{
+    const col=scol(s),lv=!!(ds&&onLeave(s.id,ds));let w=0,g=0;
+    const cells=Array.from({length:n},(_,i)=>{
+      const v=lv?'':((dc[i]||{})[s.id]||''),prev=i?((dc[i-1]||{})[s.id]||''):'',next=(dc[i+1]||{})[s.id]||'';
+      const bs=!!v&&prev!==v,be=!!v&&(i+1>=n||next!==v);
+      if(v){const h=plLen(plCellSeg(p,d,ds,i,s.id,v));if(v==='w')w+=h;else g+=h}
       const lab=bs?(v==='g'?'Gestion':plBlock(p,d,ds,dc,i,s.id,v)):'';
-      return `<td class="${bs?'bs':''} ${be?'be':''} ${v&&!bs?'jn':''}"><button class="pc ${v} ${lv?'off':''} ${ro?'ro':''}" style="--c:${col};--k:${si}${plFill(p,d,ds,i,s.id,v)}" data-act="pcell" data-d="${d}" data-i="${i}" data-s="${s.id}" ${lv?'disabled':''} ${ro?'tabindex="-1"':''} aria-label="${esc(fname(s))}, ${DAYN[d]} ${PSL[i]} : ${v==='w'?'présent':v==='g'?'gestion':'libre'}">${lab?`<span class="bl" style="color:${v==='g'?'var(--ink-2)':inkOn(col)}"><span class="lg">${esc(lab)}</span><span class="sm">${esc(v==='g'?'Gest.':lab.replace(/h(?!\d)/g,''))}</span></span>`:''}</button></td>`}).join('')}<td class="cv"><span class="pill ${cnt<MIN_STAFF?'bad':cnt===MIN_STAFF?'warn':'ok'}">${cnt}</span></td></tr>`}).join('');
-  const low=plLowSlots(p,d,ds,dc);
+      const run=bs?plRun(p,d,dc,i,s.id,v):1;
+      return `<td class="${bs?'bs':''} ${be?'be':''}"><button type="button" class="pk ${v} ${lv?'off':''} ${ro?'ro':''}" style="--c:${col};--k:${si};--len:${run}${plFill(p,d,ds,i,s.id,v)}" data-act="pcell" data-d="${d}" data-i="${i}" data-s="${s.id}" ${lv?'disabled':''} ${ro?'tabindex="-1"':''} aria-label="${esc(fname(s))}, ${DAYN[d]} ${PSL[i]} : ${lv?'en congé':v==='w'?'présent':v==='g'?'gestion':'libre'}">${lab?`<span class="bl" style="color:${v==='g'?'var(--ink-2)':inkOn(col)}"><span class="hxl">${esc(lab)}</span><span class="hxs">${esc(v==='g'?'Gest.':lab.replace(/h(?!\d)/g,''))}</span></span>`:''}</button></td>`}).join('');
+    const hh=lv?'En congé':w||g?plHF(w||g)+(w&&g?' + '+plHF(g):'')+(!w&&g?' gestion':''):'Libre';
+    return `<tr class="pr${lv?' lv':''}"><th class="pn" scope="row"><span class="pnc"><span class="pav" style="background:${col};color:${inkOn(col)}">${esc(initials(s.name))}</span><span class="pnx"><span class="pnm">${esc(fname(s))}</span><em class="phr">${hh}</em></span></span></th>${cells}</tr>`}).join('');
+  const foot=`<tr class="cvr"><th class="pn" scope="row">Équipe</th>${cnt.map((k,i)=>`<td><span class="cvb ${plCls(k)}" role="img" aria-label="${PSL[i]} : ${k} personne${k>1?'s':''}">${k}</span></td>`).join('')}</tr>`;
+  const low=cnt.filter(k=>k<MIN_STAFF).length;
   const cov=n?`<span class="pill ${low?'bad':'ok'} plcov">${low?low+' créneau'+(low>1?'x':'')+' à renforcer':'Équipe complète'}</span>`:'';
-  return `<div class="card dcard${tdy?' today':''}" ${ds?'':`id="pld${d}"`}><div class="dch"><div class="dtl"><h3>${DAYN[d]}</h3>${tdy?'<span class="pill tdy">Aujourd’hui</span>':''}${cov}</div><span class="plbar">${plBtn(p,d,ro)}${ro?(n>5?'<span class="late">Nocturne jusqu’à minuit</span>':''):`<label class="late"><input type="checkbox" data-plate="${d}" ${n>5?'checked':''}> Nocturne jusqu’à minuit</label>`}</span></div>
-    <div class="dtw"><table class="dt"><thead><tr><th class="slc"></th>${head}<th class="cv">Équipe</th></tr></thead><tbody>${body}</tbody></table></div>${plNotes(p,d,ds,dc)}</div>`;
+  return `<div class="card dcard pln${tdy?' today':''}${n>5?' n7':''}" ${ds?'':`id="pld${d}"`}><div class="dch"><div class="dtl"><h3>${DAYN[d]}</h3>${tdy?'<span class="pill tdy">Aujourd’hui</span>':''}</div>${cov}<span class="plbar">${plBtn(p,d,ro)}</span></div>
+    <div class="ptw"><table class="ptb"><thead><tr><th class="pn"><span class="sr">Personne</span></th>${head}</tr></thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div>${plNotes(p,d,ds,dc)}${ro?(n>5?'<div class="plft"><span class="late">Nocturne jusqu’à minuit</span></div>':''):`<div class="plft"><label class="late"><input type="checkbox" data-plate="${d}" ${n>5?'checked':''}> Nocturne jusqu’à minuit</label></div>`}</div>`;
 }
-/* vue d'ensemble : combien de personnes par créneau, sur toute la semaine */
-function plOverview(p){
-  const head=PSL.map(l=>`<th>${l.replace(/h/g,'')}</th>`).join('');
-  const rows=[0,1,2,3,4,5,6].map(d=>{const n=nrows(p,d);
-    return `<tr><th><button type="button" class="wkd" data-act="plgo" data-d="${d}">${DAYN[d].slice(0,3)}</button></th>${PSL.map((_,i)=>{
-      if(i>=n)return '<td class="no" aria-label="fermé">·</td>';
-      const c=(p.cells[d]||{})[i]||{},k=S.staff.filter(s=>c[s.id]==='w').length;
-      return `<td><span class="wn ${k<MIN_STAFF?'bad':k===MIN_STAFF?'warn':'ok'}" aria-label="${DAYN[d]} ${PSL[i]} : ${k} personne${k>1?'s':''}">${k}</span></td>`}).join('')}</tr>`}).join('');
-  return `<details class="card wkc"><summary class="wkh"><h3>Vue de la semaine</h3><span class="wkleg"><i class="wn bad">0</i>sous ${MIN_STAFF}<i class="wn warn">${MIN_STAFF}</i>minimum<i class="wn ok">+</i>plus</span></summary>
-    <div class="wkw"><table class="wk"><thead><tr><th></th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
-    <p class="muted wkn">Nombre de personnes présentes par tranche de 2 heures. Touchez un jour pour l’ouvrir.</p></details>`;
-}
-/* sélecteur de jour collant : un toucher et on arrive au bon jour (le jour affiché pendant le défilement est mis en avant) */
-function plDayNav(p){
-  const td=planFor(today())===p?((new Date().getDay()+6)%7):-1;
-  return `<nav class="pldays" id="pldays" aria-label="Aller à un jour">${DAYN.map((n,d)=>`<button type="button" class="pld${d===td?' today':''}" data-act="plgo" data-d="${d}" data-pd="${d}">${n.slice(0,3)}${d===td?'<i aria-hidden="true"></i>':''}</button>`).join('')}</nav>`;
+/* bandeau Lun…Dim : chaque jour porte sa petite barre de couverture (une pastille par créneau de 2 h) */
+function plStrip(p,sel,td){
+  const wk=sel<0;
+  return `<nav class="plstrip" id="plstrip" role="${wk?'navigation':'tablist'}" aria-label="${wk?'Aller à un jour':'Choisir un jour'}">${DAYN.map((nm,d)=>{
+    const n=nrows(p,d),ks=Array.from({length:n},(_,i)=>plCnt(p,d,null,null,i)),low=ks.filter(k=>k<MIN_STAFF).length;
+    return `<button type="button" class="pls${d===sel?' on':''}${d===td?' today':''}" ${wk?'':`role="tab" aria-selected="${d===sel}" tabindex="${d===sel?0:-1}"`} data-act="${wk?'plgo':'plday'}" data-d="${d}" data-pd="${d}" aria-label="${nm}${d===td?' (aujourd’hui)':''} : ${low?low+' créneau'+(low>1?'x':'')+' à renforcer':'équipe complète'}"><b>${nm.slice(0,3)}</b><span class="cvs" aria-hidden="true">${ks.map(k=>`<i class="${plCls(k)}"></i>`).join('')}</span></button>`}).join('')}</nav>`;
 }
 function vTeam(m){
   const p=curPlan();
+  if(plSelPlan!==p.id){plSelPlan=p.id;plSel=null}
+  const td=plTdIdx(p);
+  if(plSel==null||plSel<0||plSel>6)plSel=td>=0?td:0;
+  const wk=plIsWeek();
   const chips=plOrder().map(x=>`<button class="chip ${x.id===p.id?'on':''}" data-act="planset" data-id="${x.id}">${esc(x.name)}</button>`).join('');
   const hs=visStaff().map(s=>({s,h:planHours(p,s.id)})),mx=Math.max(1,...hs.map(x=>x.h.w));
   const tot=hs.map(({s,h})=>{const c=scol(s);return `<div class="tt"><span class="pav" style="background:${c};color:${inkOn(c)}">${esc(initials(s.name))}</span><div class="ttx"><small>${esc(fname(s))}</small><b class="num">${plHF(h.w)}</b>${h.g?`<em>+ ${plHF(h.g)} gestion</em>`:''}</div><i class="tbar" style="--w:${Math.round(h.w/mx*100)}%;--c:${c}"></i></div>`}).join('');
-  const low=[];for(let d=0;d<7;d++)for(let i=0;i<nrows(p,d);i++){const c=(p.cells[d]||{})[i]||{};if(S.staff.filter(s=>c[s.id]==='w').length<MIN_STAFF)low.push(DAYN[d].slice(0,3)+' '+PSL[i])}
-  m.innerHTML=`<div class="plan-h"><div><h2 class="plan-t">${esc(p.name)}</h2><p class="muted">${prange(p)}</p></div>
+  const low=[];for(let d=0;d<7;d++)for(let i=0;i<nrows(p,d);i++){if(plCnt(p,d,null,null,i)<MIN_STAFF)low.push(DAYN[d].slice(0,3)+' '+PSL[i])}
+  const dir=plDir;plDir=0;
+  m.innerHTML=`<div class="plpg"><div class="plan-h"><div class="plh-t"><h2 class="plan-t">${esc(p.name)}</h2><p class="muted">${prange(p)}</p></div>
      <div class="plact sc"><button class="btn" data-act="planpdf">PDF</button>${isAdmin()?`<button class="btn" data-act="planarch">Sauvegardes</button><button class="btn" data-act="planedit" data-id="${p.id}">Modifier</button><button class="btn primary" data-act="plannew">${ic('plus')}Nouveau planning</button>`:`<span class="pill">Consultation seule</span>`}</div></div>
-    <div class="chips pch">${chips}</div>
+    <div class="plrow"><div class="chips pch">${chips}</div><div class="seg plview" role="group" aria-label="Affichage"><button type="button" class="${wk?'':'on'}" data-act="plwk" data-k="jour">Jour</button><button type="button" class="${wk?'on':''}" data-act="plwk" data-k="semaine">Semaine</button></div></div>
     ${low.length?`<div class="banner"><span>${low.length} créneau${low.length>1?'x':''} sous le minimum de ${MIN_STAFF} personnes (${low.slice(0,4).join(', ')}${low.length>4?'…':''}).</span></div>`:`<div class="banner ok"><span>Tous les créneaux respectent le minimum de ${MIN_STAFF} personnes.</span></div>`}
-    ${plOverview(p)}
-    ${plDayNav(p)}
-    <div class="dgrid">${[0,1,2,3,4,5,6].map(d=>dayCard(p,d,null)).join('')}</div>
-    <div class="card" style="margin-top:14px"><h3>Total des heures par semaine</h3><div class="tts">${tot}</div><p class="muted" style="margin-top:12px">CP : ${cpLabel()}${isAdmin()?' · Touchez une case pour la remplir : <b>présent</b>, puis <b>gestion</b>, puis vide.':' · Seul l’administrateur peut modifier le planning.'}</p></div>`;
+    ${plStrip(p,wk?-1:plSel,td)}
+    ${wk?`<div class="dgrid">${[0,1,2,3,4,5,6].map(d=>dayCard(p,d,null)).join('')}</div>`:`<div class="plday${dir?' sl'+(dir>0?'r':'l'):''}">${dayCard(p,plSel,null)}</div>`}
+    <div class="card plcard" style="margin-top:14px"><h3>Total des heures par semaine</h3><div class="tts">${tot}</div><p class="muted" style="margin-top:12px">CP : ${cpLabel()}${isAdmin()?' · Touchez une case pour la remplir : <b>présent</b>, puis <b>gestion</b>, puis vide.':' · Seul l’administrateur peut modifier le planning.'}</p></div></div>`;
+}
+/* changer de jour : toucher le bandeau, glisser vers la gauche / la droite, ou flèches du clavier */
+function plStep(k){
+  const n=Math.max(0,Math.min(6,(plSel==null?0:plSel)+k));if(n===plSel)return;
+  plDir=k;plSel=n;redrawStaff();
 }
 document.addEventListener('click',e=>{
-  const b=e.target.closest('[data-act="plgo"]');if(!b)return;
-  const c=document.getElementById('pld'+b.dataset.d);if(c)c.scrollIntoView({behavior:'smooth',block:'start'});
+  const b=e.target.closest('[data-act="plgo"],[data-act="plday"],[data-act="plwk"]');if(!b)return;
+  const a=b.dataset.act;
+  if(a==='plgo'){const c=document.getElementById('pld'+b.dataset.d);if(c)c.scrollIntoView({behavior:'smooth',block:'start'})}
+  else if(a==='plday'){const d=+b.dataset.d;if(d===plSel)return;plDir=d>plSel?1:-1;plSel=d;redrawStaff();const t=document.querySelector('.pls.on');if(t&&e.detail===0)t.focus()}
+  else{plWeekV=b.dataset.k==='semaine';redrawStaff()}
 });
+document.addEventListener('keydown',e=>{
+  const t=e.target.closest&&e.target.closest('#plstrip[role="tablist"]');if(!t)return;
+  const k=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(!k)return;
+  e.preventDefault();plStep(k);const on=document.querySelector('.pls.on');if(on)on.focus();
+});
+(()=>{let x0=0,y0=0,t0=0,on=false;
+  document.addEventListener('touchstart',e=>{const w=e.target.closest&&e.target.closest('.plday');on=!!w&&e.touches.length===1;if(on){x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now()}},{passive:true});
+  document.addEventListener('touchend',e=>{if(!on)return;on=false;const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;
+    if(Math.abs(dx)>56&&Math.abs(dx)>Math.abs(dy)*1.6&&Date.now()-t0<800)plStep(dx<0?1:-1)},{passive:true});
+  document.addEventListener('touchcancel',()=>{on=false},{passive:true});
+})();
+/* le passage téléphone ⇄ grand écran change la présentation (jour seul / semaine) */
+if(plMQ.addEventListener)plMQ.addEventListener('change',()=>{if(document.getElementById('plstrip'))redrawStaff()});
 /* ---------- SC. numériser un rapport d'incident papier avec l'IA (v52) ---------- */
 /* Photo ou scan → Claude lit le document → le formulaire se remplit ; l'employé vérifie avant de signer. */
 const SCAN_MAX=3;
@@ -8319,37 +8316,18 @@ function moBurst(host){
   b.innerHTML=h;document.body.appendChild(b);setTimeout(()=>b.remove(),1200);
   try{if(navigator.vibrate)navigator.vibrate([12,40,12])}catch(e){}
 }
-/* sélecteur de jour du planning : le jour visible pendant le défilement est mis en avant */
-function moSpy(){
-  const nav=document.getElementById('pldays');
-  if(MO2.sp){MO2.sp.disconnect();MO2.sp=null}
-  if(!nav||!('IntersectionObserver' in window))return;
-  const gb=document.getElementById('gbar')||document.querySelector('.gbar');
-  document.documentElement.style.setProperty('--stk',((gb&&gb.offsetHeight)||60)+'px');
-  const cards=[...document.querySelectorAll('.dcard[id^="pld"]')];if(!cards.length)return;
-  const vis=new Map();
-  MO2.sp=new IntersectionObserver(es=>{
-    es.forEach(x=>vis.set(x.target.id,x.isIntersecting?x.intersectionRect.height:0));
-    let best='',bh=0;vis.forEach((h,id)=>{if(h>bh){bh=h;best=id}});
-    nav.querySelectorAll('.pld').forEach(b=>b.classList.toggle('on','pld'+b.dataset.pd===best));
-  },{rootMargin:'-120px 0px -30% 0px',threshold:[0,.1,.3,.6,1]});
-  cards.forEach(c=>MO2.sp.observe(c));
-}
 {
-  let sched=0,spyNav=null;
+  let sched=0;
   const check=()=>{
     sched=0;
     const md=document.getElementById('modal');
     if(md){const s=md.querySelector('.success');if(s&&!MO2.seen.has(s)){MO2.seen.add(s);moBurst(s.querySelector('svg')||s)}}
     const main=document.getElementById('main');if(!main)return;
     if(main.querySelector('.kpis'))moKpi(main);
-    const nav=main.querySelector('#pldays');
-    if(nav!==spyNav){spyNav=nav;moSpy()}
   };
   const mo=new MutationObserver(()=>{if(!sched)sched=requestAnimationFrame(check)});
   const arm=()=>{const a=document.getElementById('modal'),b=document.getElementById('main');if(a&&b){mo.observe(a,{childList:true,subtree:true});mo.observe(b,{childList:true,subtree:true});return true}return false};
   if(!arm())addEventListener('DOMContentLoaded',arm);
-  addEventListener('resize',()=>{if(document.getElementById('pldays'))moSpy()});
 }
 moGovern();
 
