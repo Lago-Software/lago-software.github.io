@@ -4412,7 +4412,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v70';
+const LAGO_V='v71';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -7287,14 +7287,14 @@ const webDb=()=>{const c=cloudCfg();return c&&c.u?c.u.replace(/\/+$/,''):''};
 const webDbNow=()=>{const c=cloudCfg();return c&&c.u?cHostFor(c,c.alt):''};
 const webU=p=>webDbNow()+'/pub/'+webCfg().k+'/'+p+'.json';
 const webReady=()=>{const w=webCfg();return !!(w.on&&w.k&&w.pub&&w.priv&&cloudOn())};
-function webEmbedParam(){const w=webCfg();return wb64(new TextEncoder().encode(JSON.stringify({u:webDb(),k:w.k,p:w.pub})))}
+function webEmbedParam(){const w=webCfg();return wb64(new TextEncoder().encode(JSON.stringify({u:webDb(),k:w.k,p:w.pub,...(payCfg().pub?{s:payCfg().pub}:{})})))}
 const webLink=()=>WEB_PAGE+'?c='+webEmbedParam();
 function webIframe(){
   return `<iframe id="lago-resa" src="${webLink()}" title="Réserver une session" style="width:100%;min-height:760px;border:0" loading="lazy"></iframe>\n<scr`+`ipt>addEventListener('message',function(e){if(e.origin==='https://lago-software.github.io'&&e.data&&e.data.lagoHeight){document.getElementById('lago-resa').style.height=e.data.lagoHeight+'px'}})</scr`+`ipt>`;
 }
 function webRules(){
   const c=cloudCfg(),w=webCfg();
-  return `{\n  "rules": {\n    ".read": false,\n    ".write": false,\n    "${c?c.r:'room'}": { ".read": true, ".write": true },\n    "pub": {\n      "${w.k}": {\n        "cfg":  { ".read": true, ".write": true },\n        "base": { ".read": true, ".write": true },\n        "web": {\n          ".read": true, ".write": true,\n          "$d": { "$i": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" } }\n        },\n        "req": {\n          ".read": true, ".indexOn": ["ts"],\n          "$id": {\n            ".write": "!data.exists() || (!newData.exists() && data.child('ts').val() < now - 604800000)",\n            ".validate": "newData.hasChildren(['ts','k','iv','ct']) && newData.child('ts').isNumber() && newData.child('ts').val() > now - 600000 && newData.child('ts').val() < now + 600000 && newData.child('ct').isString() && newData.child('ct').val().length < 8000"\n          }\n        }\n      }\n    }\n  }\n}`;
+  return `{\n  "rules": {\n    ".read": false,\n    ".write": false,\n    "${c?c.r:'room'}": { ".read": true, ".write": true },\n    "pub": {\n      "${w.k}": {\n        "cfg":  { ".read": true, ".write": true },\n        "base": { ".read": true, ".write": true },\n        "web": {\n          ".read": true, ".write": true,\n          "$d": { "$i": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" } }\n        },\n        "pay": { ".read": true, ".write": true, ".validate": "newData.hasChildren(['b','s']) && newData.child('b').isString() && newData.child('b').val().length < 120000 && newData.child('s').isString() && newData.child('s').val().length < 200" },\n        "pn": {\n          ".read": true, ".indexOn": ["t"],\n          "$ref": {\n            ".write": "$ref.length >= 9 && $ref.length <= 11 && $ref.contains('-') && (!newData.exists() ? data.child('t').val() < now - 2592000000 : (!data.exists() || newData.child('s').val() >= data.child('s').val()))",\n            ".validate": "newData.hasChildren(['t','s','a']) && newData.child('t').isNumber() && newData.child('s').isNumber() && newData.child('s').val() >= 1 && newData.child('s').val() <= 2 && newData.child('a').isNumber() && newData.child('a').val() >= 0 && newData.child('a').val() <= 10000000"\n          }\n        },\n        "req": {\n          ".read": true, ".indexOn": ["ts"],\n          "$id": {\n            ".write": "!data.exists() || (!newData.exists() && data.child('ts').val() < now - 604800000)",\n            ".validate": "newData.hasChildren(['ts','k','iv','ct']) && newData.child('ts').isNumber() && newData.child('ts').val() > now - 600000 && newData.child('ts').val() < now + 600000 && newData.child('ct').isString() && newData.child('ct').val().length < 8000"\n          }\n        }\n      }\n    }\n  }\n}`;
 }
 /* ---------- publication des places libres ---------- */
 const webSlotCap=()=>S.settings.cap;
@@ -7440,9 +7440,10 @@ function webDetail(id){
   showModal(`${mh('Réservation '+esc(b.ref))}
    <p class="muted" style="text-transform:capitalize;margin:0 0 8px">${esc(dlong(b.date))} · ${fm(b.start)}</p>
    <div class="wbst ${s[1]}">${s[0]}</div>
+   ${payBlock(b)}
    ${b.st==='full'?'<p class="muted">Les places de ce créneau ont été prises entre-temps en caisse : contactez le client pour lui proposer un autre horaire, puis annulez-la.</p>':''}
    <div class="card" style="margin:10px 0"><b>${esc(b.name)}</b><div class="muted">${esc(b.phone)}${b.phone&&b.mail?' · ':''}${esc(b.mail)}</div>${b.note?`<p style="margin:8px 0 0"><i>« ${esc(b.note)} »</i></p>`:''}</div>
-   <div class="card" style="margin:10px 0">${b.items.map(x=>`<div class="row"><span class="grow">${x.q} × ${esc(x.n)}${x.dur?' <span class="muted">('+brDurLbl(x.dur)+')</span>':''}</span><b class="num">${eur(x.q*x.price)}</b></div>`).join('')}<div class="row"><span class="grow"><b>Total à régler sur place</b></span><b class="num">${eur(b.total)}</b></div></div>
+   <div class="card" style="margin:10px 0">${b.items.map(x=>`<div class="row"><span class="grow">${x.q} × ${esc(x.n)}${x.dur?' <span class="muted">('+brDurLbl(x.dur)+')</span>':''}</span><b class="num">${eur(x.q*x.price)}</b></div>`).join('')}<div class="row"><span class="grow"><b>${b.paid?'Total de la réservation':'Total à régler sur place'}</b></span><b class="num">${eur(b.total)}</b></div>${b.paid?`<div class="row"><span class="grow">Payé en ligne</span><b class="num">− ${eur(b.paid.a)}</b></div><div class="row"><span class="grow"><b>Reste à régler sur place</b></span><b class="num">${eur(Math.max(0,b.total-b.paid.a))}</b></div>`:''}</div>
    <div class="acts" style="flex-wrap:wrap">${live?`<button class="btn primary" data-act="web_cash" data-id="${b.id}">Encaisser</button>`:''}${tel}${mail}${live?`<button class="btn danger" data-act="web_cancel" data-id="${b.id}">Annuler la réservation</button>`:''}<button class="btn" data-act="close">Fermer</button></div>`);
 }
 async function webDoCancel(id){
@@ -7459,7 +7460,7 @@ function webCash(id){
   cart=newCart();cart.lines=lines;cart.slotDate=b.date;cart.slotM=b.start;cart.clientId=b.clientId||null;cart.web=b.id;
   closeModal();
   if(location.hash==='#caisse')render();else location.hash='caisse';
-  toast('Panier prérempli pour '+b.name);
+  toast(b.paid?'Panier prérempli pour '+b.name+' · '+eur(b.paid.a)+' déjà payés en ligne':'Panier prérempli pour '+b.name);
 }
 {const f0=afterSale;afterSale=function(sale,c){
   f0(sale,c);
@@ -7471,12 +7472,13 @@ function vWeb(m){
   const w=webCfg(),t0=today(),L=webArr().slice().sort((a,b)=>(a.date+fm(a.start)).localeCompare(b.date+fm(b.start)));
   const up=L.filter(b=>b.date>=t0&&(b.st==='ok'||b.st==='full')),past=L.filter(b=>b.date<t0||b.st==='done'||b.st==='cancel').sort((a,b)=>(b.date+fm(b.start)).localeCompare(a.date+fm(a.start))).slice(0,30);
   const pp=up.reduce((a,b)=>a+b.people,0),need=up.filter(b=>b.st==='full').length;
-  const row=b=>{const s=WEB_ST[b.st]||WEB_ST.ok;return `<button class="row rowbtn" data-act="web_open" data-id="${b.id}"><span class="tm num" style="font-weight:700;min-width:104px">${esc(webWhen(b))}</span><span class="grow"><b>${esc(b.name)}</b><span class="muted"> · ${b.people} pers. · ${esc(b.ref)}</span></span><span class="wbst ${s[1]}">${s[0]}</span><b class="num">${eur(b.total)}</b></button>`};
+  const row=b=>{const s=WEB_ST[b.st]||WEB_ST.ok;return `<button class="row rowbtn" data-act="web_open" data-id="${b.id}"><span class="tm num" style="font-weight:700;min-width:104px">${esc(webWhen(b))}</span><span class="grow"><b>${esc(b.name)}</b><span class="muted"> · ${b.people} pers. · ${esc(b.ref)}</span></span><span class="wbst ${s[1]}">${s[0]}</span>${payBadge(b)}<b class="num">${eur(b.total)}</b></button>`};
   const days={};up.forEach(b=>(days[b.date]=days[b.date]||[]).push(b));
   let st;
   if(!w.on)st=`<div class="banner"><span>La réservation en ligne n’est pas activée.${isAdmin()?' <button class="btn primary" data-act="web_goset" style="margin-left:8px">Activer</button>':''}</span></div>`;
   else if(!webReady())st=`<div class="banner"><span>Terminez l’installation dans Paramètres › Réservation en ligne.${isAdmin()?' <button class="btn primary" data-act="web_goset" style="margin-left:8px">Ouvrir</button>':''}</span></div>`;
   else st=`<div class="banner ok"><span>Réservation en ligne ouverte${WEBR.err?' · '+esc(WEBR.err):''}. Le planning se met à jour tout seul.</span></div>`;
+  const nchk=payToCheck().length;if(nchk)st+=`<div class="banner"><span><b>${nchk} paiement${nchk>1?'s':''} à vérifier</b> : le client indique avoir payé en ligne. Ouvrez la réservation pour contrôler dans Stripe.</span></div>`;
   m.innerHTML=st+`<div class="kpis"><div class="kpi"><div class="l">À venir</div><div class="v num">${up.length}</div></div><div class="kpi"><div class="l">Participants</div><div class="v num">${pp}</div></div><div class="kpi"><div class="l">À replacer</div><div class="v num">${need}</div></div></div>
    ${Object.keys(days).map(d=>`<div class="card"><h3 style="text-transform:capitalize">${esc(dlong(d))}${d===t0?' · aujourd’hui':''}</h3>${days[d].map(row).join('')}</div>`).join('')||'<div class="card"><p class="muted">Aucune réservation en ligne à venir.</p></div>'}
    ${past.length?`<details class="card"><summary><b>Passées, encaissées ou annulées</b></summary>${past.map(row).join('')}</details>`:''}`;
@@ -7551,13 +7553,424 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act^="web_"]');if(!b)return;
   const a=b.dataset.act,id=b.dataset.id;
   if(a==='web_open')webDetail(id);
-  else if(a==='web_cancel'){showModal(`${mh('Annuler cette réservation ?')}<p class="muted">Les places sont rendues tout de suite. Pensez à prévenir le client.</p><div class="acts"><button class="btn danger" data-act="web_cancel2" data-id="${id}">Oui, annuler</button><button class="btn" data-act="close">Non</button></div>`)}
+  else if(a==='web_cancel'){showModal(`${mh('Annuler cette réservation ?')}<p class="muted">Les places sont rendues tout de suite. Pensez à prévenir le client.${(webOf(id)||{}).paid?' <b>Il a payé '+eur(webOf(id).paid.a)+' en ligne : pensez à le rembourser depuis Stripe.</b>':''}</p><div class="acts"><button class="btn danger" data-act="web_cancel2" data-id="${id}">Oui, annuler</button><button class="btn" data-act="close">Non</button></div>`)}
   else if(a==='web_cancel2')webDoCancel(id);
   else if(a==='web_cash')webCash(id);
   else if(a==='web_goset'){view='params';tab.params='pweb';location.hash='params';route()}
   else if(a==='web_copy'){const txt=b.dataset.what==='rules'?webRules():webIframe();(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('Copié')).catch(()=>{const ta=b.closest('.card').querySelector('textarea'+(b.dataset.what==='rules'?':first-of-type':''));toast('Sélectionnez le texte et copiez-le')})}
   else if(a==='web_pub'){webMsg('Mise à jour…');webPublish(true).then(ok=>webMsg(ok?'Places mises à jour.':(WEBR.err||'Échec')))}
   else if(a==='web_rec'){webMsg('Recalcul…');webReconcile().then(()=>webMsg('Places recalculées.'))}
+});
+/* ===== PAYR : page de paiement personnalisable (partagé par payer.html, reserver.html et l'aperçu de Lago) =====
+   - Aucune donnée bancaire ne passe par nos pages : le client règle sur la page sécurisée Stripe de l'établissement (lien de paiement).
+   - La configuration publiée dans la base est SIGNÉE par Lago (ECDSA P-256) ; la clé de vérification est dans le lien de la page.
+     Si quelqu'un modifie la base (lien Stripe remplacé…), la signature ne correspond plus et la page refuse d'afficher le paiement.
+   - Tout texte venant de la configuration est nettoyé et échappé ; couleurs, logo et lien sont validés avant usage. */
+const PAYR=(()=>{
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const unb64u=t=>{t=String(t).replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a};
+  const HEX=/^#[0-9a-f]{6}$/i,REF=/^[A-Z0-9]{2,4}-[A-Z2-9]{6}$/;
+  /* lien de paiement Stripe : uniquement buy.stripe.com / donate.stripe.com, sans paramètres (les nôtres sont ajoutés à l'envoi) */
+  const LINK=/^https:\/\/(buy|donate)\.stripe\.com\/[A-Za-z0-9_-]{4,90}$/;
+  const LOGO=/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
+  const MODES=['total','pct','per'],BGS=['light','tint','brand'],RADII=['square','soft','round'],FONTS=['sans','round','serif'];
+  const NOTE='Paiement sécurisé par Stripe : vos informations bancaires ne sont jamais vues ni conservées par ce site.';
+  const THM='Votre paiement a bien été envoyé. Vous recevrez le reçu de Stripe par e-mail ; l’établissement le vérifie et confirme votre réservation.';
+  const cents=c=>Math.max(0,Math.round(+c||0));
+  const eur=c=>(c/100).toLocaleString('fr-FR',{minimumFractionDigits:c%100?2:0,maximumFractionDigits:2})+' €';
+  const eur2=c=>(c/100).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  function clean(o){
+    o=o&&typeof o==='object'?o:{};
+    const s=(v,n)=>String(v==null?'':v).replace(/[\u0000-\u001f]/g,' ').trim().slice(0,n);
+    const n=(v,lo,hi,d)=>{v=Math.floor(+v);return v>=lo&&v<=hi?v:d};
+    return{
+      on:o.on===true,name:s(o.name,80),tel:s(o.tel,30),mail:s(o.mail,120),addr:s(o.addr,160),
+      site:/^https:\/\/[^\s"'<>\\]{3,200}$/.test(o.site||'')?o.site:'',
+      link:LINK.test(o.link||'')?o.link:'',
+      logo:typeof o.logo==='string'&&o.logo.length<=90000&&LOGO.test(o.logo)?o.logo:'',
+      brand:HEX.test(o.brand||'')?o.brand:'#1D4FD7',accent:HEX.test(o.accent||'')?o.accent:'#FF7A1A',
+      bg:BGS.includes(o.bg)?o.bg:'tint',radius:RADII.includes(o.radius)?o.radius:'soft',font:FONTS.includes(o.font)?o.font:'sans',
+      title:s(o.title,80)||'Régler votre réservation',intro:s(o.intro,300),btn:s(o.btn,40)||'Payer en ligne',
+      note:s(o.note,300)||NOTE,thT:s(o.thT,80)||'Merci !',thM:s(o.thM,300)||THM,help:s(o.help,200),
+      cgv:s(o.cgv,1500),legal:s(o.legal,300),med:s(o.med,200),
+      mode:MODES.includes(o.mode)?o.mode:'total',pct:n(o.pct,1,100,30),per:n(o.per,100,100000,500)
+    };
+  }
+  /* montant demandé (en centimes) pour une réservation de `total` centimes et `people` participants */
+  function amount(c,total,people){
+    total=cents(total);people=Math.max(1,Math.floor(+people)||1);
+    if(c.mode==='pct')return Math.min(total,Math.max(100,Math.round(total*c.pct/100)));
+    if(c.mode==='per')return Math.min(total,c.per*people);
+    return total;
+  }
+  /* vérification de la signature : { b: "<json>", s: "<signature>" } avec la clé publique { x, y } du lien */
+  async function verify(pk,node){
+    try{
+      if(!pk||!pk.x||!pk.y||!node||typeof node.b!=='string'||typeof node.s!=='string'||node.b.length>150000)return null;
+      const key=await crypto.subtle.importKey('jwk',{kty:'EC',crv:'P-256',x:pk.x,y:pk.y,ext:true},{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+      const ok=await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},key,unb64u(node.s),new TextEncoder().encode(node.b));
+      return ok?clean(JSON.parse(node.b)):null;
+    }catch(e){return null}
+  }
+  /* lien envoyé à Stripe : le code de réservation sert de référence (rapprochement dans le tableau de bord Stripe) */
+  function href(c,ref){
+    if(!c.link)return '';
+    const q=['locale=fr'];if(REF.test(ref||''))q.push('client_reference_id='+encodeURIComponent(ref));
+    return c.link+'?'+q.join('&');
+  }
+  const FONT={sans:'system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif',round:'ui-rounded,"SF Pro Rounded","Hiragino Maru Gothic ProN",Quicksand,Nunito,"Varela Round",system-ui,sans-serif',serif:'"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif'};
+  const RAD={square:[6,3],soft:[18,12],round:[30,999]};
+  const lum=h=>{const n=parseInt(h.slice(1),16),f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};return .2126*f(n>>16)+.7152*f(n>>8&255)+.0722*f(n&255)};
+  const ink=h=>lum(h)>.42?'#0E1A3A':'#FFFFFF';
+  /* feuille de style, limitée à .pyr (utilisable dans un Shadow DOM ou dans la page) */
+  function css(c){
+    const r=RAD[c.radius],B=c.brand,A=c.accent;
+    const page=c.bg==='brand'?`linear-gradient(165deg,${B},color-mix(in srgb,${B} 62%,#000))`:c.bg==='tint'?`color-mix(in srgb,${B} 7%,#fff)`:'#fff';
+    return `.pyr{--b:${B};--a:${A};--bi:${ink(B)};--ai:${ink(A)};--r:${r[0]}px;--rb:${r[1]}px;--ink:#0E1A3A;--mut:#56638A;--line:#DCE3F2;
+      box-sizing:border-box;min-height:100%;display:block;padding:clamp(14px,4vw,40px) 14px 40px;background:${page};color:var(--ink);font:16px/1.5 ${FONT[c.font]};-webkit-text-size-adjust:100%}
+    .pyr *{box-sizing:border-box}
+    .pyr-w{max-width:480px;margin:0 auto}
+    .pyr-h{display:flex;align-items:center;gap:12px;margin:0 2px 16px;color:${c.bg==='brand'?'#fff':'var(--ink)'}}
+    .pyr-lg{width:44px;height:44px;object-fit:contain;border-radius:calc(var(--r)*.5);background:#fff;padding:3px;flex:none}
+    .pyr-mk{width:44px;height:44px;border-radius:calc(var(--r)*.55);background:var(--b);color:var(--bi);display:grid;place-items:center;font-weight:800;font-size:20px;flex:none;${c.bg==='brand'?'box-shadow:0 0 0 2px rgba(255,255,255,.55);':''}}
+    .pyr-nm{font-weight:750;font-size:17px;line-height:1.2;overflow-wrap:anywhere}
+    .pyr-c{background:#fff;border-radius:var(--r);padding:clamp(18px,5vw,28px);box-shadow:0 1px 2px rgba(14,26,58,.06),0 18px 40px -22px rgba(14,26,58,.35);border:1px solid color-mix(in srgb,var(--b) 10%,var(--line))}
+    .pyr h1{margin:0 0 6px;font-size:clamp(22px,6vw,27px);line-height:1.15;letter-spacing:-.015em}
+    .pyr-in{margin:0 0 16px;color:var(--mut);font-size:15.5px}
+    .pyr-tk{position:relative;margin:16px 0 18px;border:1.5px solid color-mix(in srgb,var(--b) 22%,var(--line));border-radius:calc(var(--r)*.8);background:color-mix(in srgb,var(--b) 4%,#fff);padding:14px 16px 12px}
+    .pyr-r{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:3px 0;font-size:14.5px;color:var(--mut)}
+    .pyr-r b{color:var(--ink);font-weight:700;text-align:right;overflow-wrap:anywhere}
+    .pyr-ref{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;font-size:15px}
+    .pyr-cut{position:relative;margin:12px -16px 10px;border-top:2px dashed color-mix(in srgb,var(--b) 28%,var(--line))}
+    .pyr-cut::before,.pyr-cut::after{content:'';position:absolute;top:-11px;width:20px;height:20px;border-radius:50%;background:#fff;border:1.5px solid color-mix(in srgb,var(--b) 22%,var(--line))}
+    .pyr-cut::before{left:-11px;clip-path:inset(0 0 0 50%)}.pyr-cut::after{right:-11px;clip-path:inset(0 50% 0 0)}
+    .pyr-am{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+    .pyr-am span{font-size:14.5px;color:var(--mut)}
+    .pyr-am b{font-size:clamp(30px,9vw,38px);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--b)}
+    .pyr-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;padding:12px 18px;border:0;border-radius:var(--rb);background:var(--a);color:var(--ai);font:inherit;font-weight:750;font-size:17px;text-decoration:none;cursor:pointer;box-shadow:0 10px 22px -12px var(--a);transition:transform .12s,filter .15s}
+    .pyr-btn:hover{filter:brightness(1.06)}.pyr-btn:active{transform:scale(.985)}
+    .pyr-btn[aria-disabled="true"]{opacity:.5;pointer-events:none;box-shadow:none}
+    .pyr-btn svg{width:20px;height:20px;flex:none}
+    .pyr :focus-visible{outline:3px solid color-mix(in srgb,var(--b) 60%,#fff);outline-offset:2px}
+    .pyr-hint{margin:12px 0 0;padding:10px 12px;background:color-mix(in srgb,var(--a) 9%,#fff);border-radius:min(calc(var(--rb)*.8),16px);font-size:14.5px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .pyr-cp{border:1.5px solid color-mix(in srgb,var(--b) 40%,#fff);background:#fff;color:var(--b);border-radius:999px;padding:5px 13px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+    .pyr-note{display:flex;gap:9px;align-items:flex-start;margin:14px 2px 0;color:var(--mut);font-size:13.5px}
+    .pyr-note svg{width:17px;height:17px;flex:none;margin-top:2px;color:var(--b)}
+    .pyr-f{margin:18px 4px 0;color:${c.bg==='brand'?'rgba(255,255,255,.88)':'var(--mut)'};font-size:13px}
+    .pyr-f p{margin:0 0 6px}.pyr-f a{color:inherit;font-weight:700}
+    .pyr-f details{margin:8px 0}.pyr-f summary{cursor:pointer;font-weight:700}
+    .pyr-f details div{white-space:pre-wrap;margin-top:6px;font-size:13px}
+    .pyr-ok{width:64px;height:64px;border-radius:50%;background:color-mix(in srgb,#12995A 14%,#fff);color:#0E7A47;display:grid;place-items:center;margin:2px auto 14px}
+    .pyr-ok svg{width:34px;height:34px}
+    .pyr-c.cn{text-align:center}.pyr-c.cn h1{margin-top:2px}
+    .pyr-err{padding:12px 14px;border-radius:min(calc(var(--rb)*.8),16px);background:#FDECEC;color:#A92424;font-size:14.5px}
+    .pyr-fm{display:grid;gap:10px;margin:14px 0 0}
+    .pyr-fm label{font-size:13.5px;font-weight:700;display:grid;gap:5px}
+    .pyr-fm input{font:inherit;font-size:16px;padding:12px 13px;border:1.5px solid var(--line);border-radius:min(calc(var(--rb)*.8),16px);background:#fff;color:var(--ink);min-width:0}
+    .pyr-sec{display:inline-flex;align-items:center;gap:6px}
+    @media (prefers-reduced-motion:reduce){.pyr-btn{transition:none}}`.replace(/\n\s*/g,'\n');
+  }
+  const I={
+    lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>',
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+  };
+  /* contenu : ctx = { st:'pay'|'thanks'|'error'|'ask', ref, amt (centimes), first, msg, href } */
+  function html(c,ctx){
+    ctx=ctx||{};const st=ctx.st||'pay';
+    const initial=esc((c.name||'•').trim().charAt(0).toUpperCase());
+    const head=`<header class="pyr-h">${c.logo?`<img class="pyr-lg" src="${c.logo}" alt="">`:`<span class="pyr-mk" aria-hidden="true">${initial}</span>`}<span class="pyr-nm">${esc(c.name||'Paiement en ligne')}</span></header>`;
+    const contact=[c.tel?esc(c.tel):'',c.mail?`<a href="mailto:${esc(c.mail)}">${esc(c.mail)}</a>`:''].filter(Boolean).join(' · ');
+    const foot=`<footer class="pyr-f">${c.help?`<p>${esc(c.help)}</p>`:''}${contact?`<p>Une question ? ${contact}</p>`:''}${c.cgv?`<details><summary>Conditions de réservation</summary><div>${esc(c.cgv)}</div></details>`:''}${c.legal?`<p>${esc(c.legal)}</p>`:''}${c.med?`<p>Médiation de la consommation : ${esc(c.med)}</p>`:''}<p>Prix en euros, toutes taxes comprises. Pas de droit de rétractation pour les activités de loisirs à date déterminée (art. L221-28, 12° du code de la consommation).</p></footer>`;
+    let body;
+    if(st==='thanks'){
+      body=`<main class="pyr-c cn"><div class="pyr-ok">${I.check}</div><h1>${esc(c.thT)}</h1><p class="pyr-in">${esc(c.thM)}</p>${ctx.ref?`<div class="pyr-tk"><div class="pyr-r"><span>Réservation</span><b class="pyr-ref">${esc(ctx.ref)}</b></div></div>`:''}${c.site?`<a class="pyr-btn" style="background:var(--b);color:var(--bi);box-shadow:none" href="${esc(c.site)}">Retour au site</a>`:''}</main>`;
+    }else if(st==='error'){
+      body=`<main class="pyr-c"><h1>${esc(ctx.title||'Paiement indisponible')}</h1><div class="pyr-err" role="alert">${esc(ctx.msg||'Le paiement en ligne n’est pas disponible pour le moment.')}</div></main>`;
+    }else if(st==='ask'){
+      body=`<main class="pyr-c"><h1>${esc(c.title)}</h1><p class="pyr-in">Ouvrez cette page depuis le lien de votre confirmation de réservation, ou saisissez votre code et le montant indiqués dans votre confirmation.</p>
+        <form class="pyr-fm" data-pyr="ask" novalidate><label>Code de réservation<input name="ref" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="RES-7KQ4M2" maxlength="14" required></label>
+        <label>Montant à régler (€)<input name="amt" inputmode="decimal" autocomplete="off" placeholder="48,00" maxlength="9" required></label>
+        ${ctx.msg?`<div class="pyr-err" role="alert">${esc(ctx.msg)}</div>`:''}<button class="pyr-btn" type="submit">Continuer</button></form></main>`;
+    }else{
+      const hf=ctx.href||'';
+      body=`<main class="pyr-c"><h1>${esc(c.title)}</h1>${c.intro?`<p class="pyr-in">${esc(c.intro)}</p>`:''}
+        <section class="pyr-tk" aria-label="Récapitulatif"><div class="pyr-r"><span>Réservation</span><b class="pyr-ref">${esc(ctx.ref||'RES-XXXXXX')}</b></div>${ctx.first?`<div class="pyr-r"><span>Au nom de</span><b>${esc(ctx.first)}</b></div>`:''}<div class="pyr-cut" aria-hidden="true"></div><div class="pyr-am"><span>${c.mode==='total'?'Total à régler':'Acompte à régler'}</span><b>${eur(ctx.amt||0)}</b></div></section>
+        <a class="pyr-btn" data-pyr="go" ${hf?`href="${esc(hf)}" target="_top" rel="noopener noreferrer"`:'aria-disabled="true" role="link"'}>${I.lock}<span>${esc(c.btn)}</span></a>
+        <p class="pyr-hint"><span>Sur la page de paiement, saisissez exactement <b>${eur2(ctx.amt||0)} €</b></span><button type="button" class="pyr-cp" data-pyr="copy" data-v="${eur2(ctx.amt||0)}">Copier</button></p>
+        <p class="pyr-note">${I.lock}<span>${esc(c.note)}</span></p></main>`;
+    }
+    return `<div class="pyr-w">${head}${body}${foot}</div>`;
+  }
+  return{esc,unb64u,clean,amount,verify,href,css,html,eur,eur2,REF,LINK,LOGO,NOTE,THM,ink,lum,MODES,BGS,RADII,FONTS};
+})();
+
+/* ===== Paiement en ligne (v71) ============================================================================
+   - Chaque établissement personnalise sa page de paiement (logo, couleurs, textes, montant demandé) dans Paramètres › Paiement en ligne.
+   - Le paiement lui-même se fait sur un lien de paiement Stripe de l'établissement : Lago ne touche jamais l'argent, ne voit aucune donnée bancaire,
+     et n'a besoin d'aucun serveur.
+   - La configuration publiée (nœud pub/<clé>/pay) est signée (ECDSA P-256) : la clé de vérification est dans le lien de la page de réservation.
+     Remplacer le lien Stripe dans la base ne sert donc à rien : la page refuse tout paiement dont la signature ne correspond pas.
+   - Le client signale « je pars payer » puis « je reviens de Stripe » (nœud pub/<clé>/pn/<code>) : ce n'est qu'une indication.
+     La réservation passe « À vérifier » ; c'est l'équipe qui contrôle dans Stripe et pointe le paiement. */
+const PAYER_PAGE='https://lago-software.github.io/payer.html';
+const PAY_DEF=()=>({on:false,link:'',logo:'',brand:'',accent:'',bg:'tint',radius:'soft',font:'sans',title:'',intro:'',btn:'',note:'',thT:'',thM:'',help:'',site:'',mode:'total',pct:30,per:500,pub:null,priv:null});
+const PAYS={h:'',t:0,err:'',busy:false,prev:'pay'};
+function payCfg(){const s=S.settings;s.pay=Object.assign(PAY_DEF(),s.pay||{});return s.pay}
+async function payKeys(){
+  const p=payCfg();if(p.pub&&p.priv)return;
+  const kp=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
+  const pub=await crypto.subtle.exportKey('jwk',kp.publicKey),priv=await crypto.subtle.exportKey('jwk',kp.privateKey);
+  p.pub={x:pub.x,y:pub.y};p.priv=priv;
+}
+async function paySign(txt){
+  const k=await crypto.subtle.importKey('jwk',payCfg().priv,{name:'ECDSA',namedCurve:'P-256'},false,['sign']);
+  return wb64(await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},k,new TextEncoder().encode(txt)));
+}
+/* configuration affichée au client (même nettoyage que la page publique) */
+function payCfgRaw(p){
+  const w=webCfg(),lg=S.settings.legal||{},c=cnf();
+  return{on:!!p.on,name:S.settings.name||'',tel:S.settings.phone||'',mail:S.settings.mail||'',addr:S.settings.addr||'',site:p.site,link:p.link,logo:p.logo,
+    brand:p.brand||S.settings.brand||'#1D4FD7',accent:p.accent||S.settings.accent||'#FF7A1A',bg:p.bg,radius:p.radius,font:p.font,
+    title:p.title,intro:p.intro,btn:p.btn,note:p.note,thT:p.thT,thM:p.thM,help:p.help,cgv:w.cgv||'',
+    legal:[lg.raison||'',lg.forme||'',lg.siret?'SIRET '+lg.siret:''].filter(Boolean).join(' · '),med:c.med&&c.med.n?c.med.n+(c.med.u?' – '+c.med.u:''):'',
+    mode:p.mode,pct:p.pct,per:p.per};
+}
+const payOut=()=>PAYR.clean(payCfgRaw(payCfg()));
+const payLinkOk=v=>PAYR.LINK.test(v||'');
+/* lien à indiquer dans Stripe (« après le paiement, rediriger vers… ») et lien à donner au client */
+const payBack=()=>PAYER_PAGE+'?c='+webEmbedParam()+'&ok=1';
+async function payPublish(force){
+  const p=payCfg();if(!webReady()||!p.pub||!p.priv)return false;
+  const o=payOut(),b=JSON.stringify(o);
+  if(!force&&b===PAYS.h&&Date.now()-PAYS.t<1800000)return true;
+  try{
+    const s=await paySign(b);
+    const r=await fetch(webU('pay'),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({b,s,t:Date.now()})});
+    if(!r.ok)throw new Error('http '+r.status);
+    PAYS.h=b;PAYS.t=Date.now();PAYS.err='';return true;
+  }catch(e){PAYS.err=/40[13]/.test(String(e.message))?'Règles Firebase à mettre à jour (voir ci-dessous)':'Hors ligne';return false}
+}
+/* la publication et la relève des signaux suivent celles de la réservation en ligne */
+{const f0=webPublish;webPublish=async function(force){const r=await f0(force);if(payCfg().pub)await payPublish(force).catch(()=>{});return r}}
+{const f0=webPoll;webPoll=async function(){await f0();await payPoll().catch(()=>{})}}
+{const f0=webKeys;webKeys=async function(w){await f0(w);await payKeys()}}
+{const f0=webTick;webTick=async function(){try{if(webCfg().on&&!payCfg().pub){await payKeys();save()}}catch(e){}return f0()}}
+/* ---------- signaux des clients ---------- */
+async function payPoll(){
+  const p=payCfg();if(!p.on||!webReady()||PAYS.busy)return;
+  PAYS.busy=true;
+  try{
+    let r=await fetch(webU('pn')+'?orderBy="t"&startAt='+(Date.now()-21*86400000),{cache:'no-store'});
+    if(r.status===400)r=await fetch(webU('pn'),{cache:'no-store'});
+    if(!r.ok)throw new Error('http '+r.status);
+    const J=await r.json()||{};let ch=0;const fresh=[];
+    for(const ref of Object.keys(J)){
+      const v=J[ref];if(!v||!(v.s>=1&&v.s<=2)||!(+v.t>0))continue;
+      const b=webArr().find(x=>x.ref===ref);if(!b||+v.t<=(b.pnx||0))continue;
+      const cur=b.pn||{s:0,t:0};
+      if(v.s>cur.s||(v.s===cur.s&&+v.t>cur.t)){
+        b.pn={s:v.s,a:Math.max(0,Math.min(10000000,Math.round(+v.a)||0)),t:+v.t};ch++;
+        if(v.s===2&&!b.paid&&cur.s<2)fresh.push(b);
+      }
+    }
+    if(ch){
+      save();
+      if(fresh.length)toast(fresh.length===1?'Paiement à vérifier : '+fresh[0].name+' · '+eur(fresh[0].pn.a):fresh.length+' paiements à vérifier');
+      if(view==='resa'&&tab.resa==='web')render();
+    }
+  }catch(e){}
+  finally{PAYS.busy=false}
+}
+/* ---------- état de paiement d'une réservation ---------- */
+const payOn=()=>{const p=payCfg();return !!(p.on&&payLinkOk(p.link))};
+function pyState(b){return b.paid?'ok':(b.pn&&b.pn.s===2?'chk':(b.pn&&b.pn.s===1?'go':''))}
+function payBadge(b){
+  const s=pyState(b);if(!s)return '';
+  const t=s==='ok'?(b.paid.a<b.total?'Acompte payé':'Payée en ligne'):s==='chk'?'À vérifier':'Paiement lancé';
+  return `<span class="wbpy ${s}">${t}</span>`;
+}
+const payToCheck=()=>webArr().filter(b=>(b.st==='ok'||b.st==='full')&&pyState(b)==='chk');
+const payAgo=t=>{const m=Math.max(0,Math.round((Date.now()-t)/60000));return m<2?'à l’instant':m<60?'il y a '+m+' min':m<1440?'il y a '+Math.round(m/60)+' h':'le '+new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})};
+function payBlock(b){
+  const s=pyState(b),live=b.st==='ok'||b.st==='full';
+  if(s==='ok'){
+    const left=Math.max(0,b.total-b.paid.a);
+    return `<div class="card wbpay ok" style="margin:10px 0"><b>Payée en ligne : ${eur(b.paid.a)}</b><div class="muted">Pointée ${esc(payAgo(b.paid.ts))}${b.paid.by?' par '+esc(b.paid.by):''}. ${left?'Reste à régler sur place : <b>'+eur(left)+'</b>.':'Rien à encaisser à l’accueil.'}</div>${live?`<div class="acts" style="margin-top:8px"><button class="btn" data-act="pay_undo" data-id="${b.id}">Annuler le pointage</button></div>`:''}</div>`;
+  }
+  if(!live)return '';
+  if(s==='chk'||s==='go'){
+    return `<div class="card wbpay ${s}" style="margin:10px 0"><b>${s==='chk'?'À vérifier : le client indique avoir payé '+eur(b.pn.a):'Le client est parti payer '+payAgo(b.pn.t)}</b>
+      <div class="muted">${s==='chk'?'Retour de Stripe':'Pas encore de retour de Stripe'} ${esc(payAgo(b.pn.t))}. Dans Stripe › Paiements, cherchez la référence <b>${esc(b.ref)}</b> et contrôlez le statut et le montant.</div>
+      <div class="acts" style="margin-top:8px"><button class="btn primary" data-act="pay_ok" data-id="${b.id}">Paiement reçu</button><button class="btn" data-act="pay_no" data-id="${b.id}">Pas de paiement</button></div></div>`;
+  }
+  return payOn()?`<div class="acts" style="margin:6px 0"><button class="btn" data-act="pay_ok" data-id="${b.id}">J’ai reçu un paiement en ligne</button></div>`:'';
+}
+/* la liste est redessinée d'abord (cela ferme la fenêtre), puis le détail est rouvert à jour */
+function payRefresh(id){if(view==='resa'&&tab.resa==='web')render();webDetail(id)}
+function payAsk(id){
+  const b=webOf(id);if(!b)return;
+  const exp=b.pn&&b.pn.a?b.pn.a:PAYR.amount(payOut(),b.total,b.people);
+  showModal(`${mh('Paiement reçu ?')}
+    <p class="muted" style="margin:0 0 10px">Dans Stripe › Paiements, cherchez la référence <b>${esc(b.ref)}</b>. Confirmez seulement si le paiement est « Réussi ».</p>
+    <div class="field"><label for="pay_amt">Montant reçu (€)</label><input id="pay_amt" inputmode="decimal" value="${esc(PAYR.eur2(Math.min(exp,b.total)))}" autocomplete="off"><small class="muted">Total de la réservation : ${eur(b.total)}</small></div>
+    <div class="acts"><button class="btn primary" data-act="pay_ok2" data-id="${id}">Confirmer le paiement</button><button class="btn" data-act="web_open" data-id="${id}">Retour</button></div>`);
+  setTimeout(()=>{const i=$('#pay_amt');if(i){i.focus();i.select()}},60);
+}
+function payConfirm(id){
+  const b=webOf(id),i=$('#pay_amt');if(!b||!i)return;
+  const a=Math.round(parseFloat(String(i.value).replace(/\s/g,'').replace(',','.'))*100);
+  if(!(a>=100)||a>b.total){toast('Montant non valide (entre 1 € et '+eur(b.total)+')');return}
+  b.paid={a,ts:Date.now(),by:(typeof ME!=='undefined'&&ME&&ME.name)||''};
+  save();toast('Paiement pointé : '+eur(a));payRefresh(id);
+}
+document.addEventListener('click',e=>{
+  const x=e.target.closest('[data-act^="pay_"]');if(!x)return;
+  const a=x.dataset.act,id=x.dataset.id;
+  if(a==='pay_ok')payAsk(id);
+  else if(a==='pay_ok2')payConfirm(id);
+  else if(a==='pay_no'){const b=webOf(id);if(b){b.pn=null;b.pnx=Date.now();save();payRefresh(id)}}
+  else if(a==='pay_undo'){const b=webOf(id);if(b){delete b.paid;save();payRefresh(id)}}
+});
+/* ---------- encaissement à l'accueil : la part déjà payée en ligne est préremplie ---------- */
+Object.defineProperty(METHODS,'stripe',{value:'Payé en ligne',enumerable:false,writable:true,configurable:true});
+{const f0=openPayBase;openPayBase=function(){
+  const b=cart&&cart.web?webOf(cart.web):null;
+  if(b&&b.paid&&!b.paidUsed){
+    const T=totals(cart);if(!T.total||!slotOk(T))return;
+    pay={list:[{m:'stripe',amt:Math.min(T.total,b.paid.a)}]};document.body.classList.remove('cart-open');renderPay();return;
+  }
+  f0();
+}}
+{const f0=afterSale;afterSale=function(sale,c){
+  f0(sale,c);
+  try{const b=c&&c.web?webOf(c.web):null;if(b&&b.paid&&sale.pay&&sale.pay.some(p=>p.m==='stripe'))b.paidUsed=sale.id}catch(e){}
+}}
+/* ---------- aperçu en direct (Shadow DOM : aucun style ne fuit dans Lago) ---------- */
+function payPrev(){
+  ['pay_prev','pay_prev2'].forEach(id=>{const h=document.getElementById(id);if(h)payPrevDraw(h)});
+}
+function payPrevDraw(host){
+  const root=host.shadowRoot||host.attachShadow({mode:'open'});
+  const c=payOut();c.on=true;if(!c.link)c.link='https://buy.stripe.com/exemple';
+  const people=4,total=9600,amt=PAYR.amount(c,total,people);
+  const ctx=PAYS.prev==='thanks'?{st:'thanks',ref:'RES-7KQ4M2'}:{st:'pay',ref:'RES-7KQ4M2',amt,first:'Camille',href:'#'};
+  root.innerHTML=`<style>:host{display:block}*{margin:0}${PAYR.css(c)}</sty`+`le><div class="pyr" style="min-height:0">${PAYR.html(c,ctx)}</div>`;
+  root.addEventListener('click',ev=>{if(ev.target.closest('a,button'))ev.preventDefault()});
+}
+const payTabs=(att)=>`<div class="paytabs" role="group" aria-label="Aperçu">${[['pay','Paiement'],['thanks','Après le paiement']].map(x=>`<button type="button" class="chip ${PAYS.prev===x[0]?'on':''}" ${att}="${x[0]}" aria-pressed="${PAYS.prev===x[0]}">${x[1]}</button>`).join('')}</div>`;
+function payOpenPrev(){showModal(`${mh('Aperçu de la page de paiement')}${payTabs('data-payprev2')}<div class="payframe"><div id="pay_prev2" role="img" aria-label="Aperçu de la page de paiement"></div></div><div class="acts" style="margin-top:10px"><button class="btn" data-act="close">Fermer</button></div>`);payPrev()}
+/* ---------- réglages ---------- */
+const PAY_BG=[['light','Blanc'],['tint','Teinte'],['brand','Couleur']],PAY_RAD=[['square','Droits'],['soft','Arrondis'],['round','Très ronds']],PAY_FNT=[['sans','Moderne'],['round','Doux'],['serif','Classique']];
+function paySeg(key,list,cur){return `<div class="payseg" role="group" aria-label="${esc(key)}">${list.map(x=>`<button type="button" class="chip ${cur===x[0]?'on':''}" data-payset="${key}" data-v="${x[0]}" aria-pressed="${cur===x[0]}">${x[1]}</button>`).join('')}</div>`}
+const payTxt=(id,label,v,max,ph,tag)=>`<div class="field"><label for="payf_${id}">${label}</label>${tag==='ta'?`<textarea id="payf_${id}" data-payf="${id}" rows="2" maxlength="${max}" placeholder="${esc(ph)}">${esc(v)}</textarea>`:`<input id="payf_${id}" data-payf="${id}" value="${esc(v)}" maxlength="${max}" placeholder="${esc(ph)}">`}</div>`;
+function vSetPay(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const p=payCfg(),w=webCfg(),ready=webReady(),okl=payLinkOk(p.link),cp=PAYR.clean({}),bc=p.brand||S.settings.brand||'#1D4FD7',ac=p.accent||S.settings.accent||'#FF7A1A';
+  const when=PAYS.t?new Date(PAYS.t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—';
+  const chk=payToCheck().length;
+  const copyBtn=(what,lbl)=>`<button class="btn" type="button" data-act="pay_copy" data-what="${what}">${lbl}</button>`;
+  m.innerHTML=`<div class="payset"><div class="paycol">
+   <div class="card"><h3>Paiement en ligne</h3>
+    <p class="muted" style="margin:0 0 10px">Après avoir réservé, votre client peut régler tout de suite ou verser un acompte, depuis une page à vos couleurs. L’argent va directement sur votre compte Stripe : Lago ne touche aucun paiement et ne voit aucune donnée bancaire.</p>
+    ${w.on&&ready?'':'<div class="banner"><span>Activez d’abord la réservation en ligne (Paramètres › Réservation en ligne) : le paiement s’ajoute à la fin d’une réservation.</span></div>'}
+    <div class="acts payonlym" style="margin:0 0 10px"><button class="btn" type="button" data-act="pay_prevopen">Voir l’aperçu</button></div>
+    <label class="wchk"><input type="checkbox" id="pay_on" ${p.on?'checked':''} ${w.on&&ready?'':'disabled'}> <b>Proposer le paiement en ligne</b></label>
+    <p class="muted" id="pay_stat" style="margin:8px 0 0">${p.on&&ready?(PAYS.err?'<b style="color:var(--bad)">'+esc(PAYS.err)+'</b>':'Page de paiement publiée à '+when+'.'):(p.on?'':'Désactivé : vos clients règlent sur place.')}${chk?` <b style="color:var(--warn)">${chk} paiement${chk>1?'s':''} à vérifier.</b>`:''}</p></div>
+   <div class="card"><h3>Votre lien de paiement Stripe</h3>
+    <div class="field"><label for="payf_link">Lien de paiement</label><input id="payf_link" data-payf="link" value="${esc(p.link)}" placeholder="https://buy.stripe.com/…" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url"><small id="pay_lnk" class="${okl||!p.link?'muted':''}" style="${!okl&&p.link?'color:var(--bad)':''}">${okl?'Lien valide.':p.link?'Ce n’est pas un lien de paiement Stripe (il commence par https://buy.stripe.com/).':'À créer dans Stripe (étapes ci-dessous). Il n’y a pas de frais Lago : seuls les frais Stripe s’appliquent.'}</small></div>
+    <details><summary><b>Comment créer ce lien ?</b></summary>
+     <ol class="muted" style="margin:8px 0 0 18px;padding:0">
+      <li>Dans Stripe, ouvrez <b>Liens de paiement</b> puis créez un nouveau lien.</li>
+      <li>Produit « Réservation », en euros, avec un <b>montant libre</b> : le client saisit lui-même le montant affiché sur votre page.</li>
+      <li>Réglage « après le paiement » : choisissez la <b>redirection vers une page web</b> et collez l’adresse ci-dessous.</li>
+      <li>Enregistrez, copiez le lien obtenu et collez-le dans la case ci-dessus.</li></ol>
+     <div class="field" style="margin-top:10px"><label for="pay_back">Adresse de retour à donner à Stripe</label><input id="pay_back" readonly onclick="this.select()" value="${esc(payBack())}"></div>
+     <div class="acts">${copyBtn('back','Copier l’adresse de retour')}</div>
+     <p class="muted" style="margin:10px 0 0">Stripe vous envoie un e-mail à chaque paiement. La référence de la réservation (ex. ${esc(w.pre||'RES')}-7KQ4M2) apparaît dans le paiement pour le retrouver.</p></details></div>
+   <div class="card"><h3>Montant demandé</h3>
+    <label class="wchk"><input type="radio" name="paymode" data-paymode="total" ${p.mode==='total'?'checked':''}> <b>Le total de la réservation</b></label>
+    <label class="wchk" style="margin-top:6px"><input type="radio" name="paymode" data-paymode="pct" ${p.mode==='pct'?'checked':''}> <b>Un acompte en pourcentage</b></label>
+    ${p.mode==='pct'?`<div class="field" style="margin:6px 0 0 26px"><label for="payf_pct">Pourcentage du total</label><select id="payf_pct" data-payf="pct">${[10,20,25,30,40,50,75].map(x=>`<option value="${x}" ${p.pct===x?'selected':''}>${x} %</option>`).join('')}</select></div>`:''}
+    <label class="wchk" style="margin-top:6px"><input type="radio" name="paymode" data-paymode="per" ${p.mode==='per'?'checked':''}> <b>Un acompte par participant</b></label>
+    ${p.mode==='per'?`<div class="field" style="margin:6px 0 0 26px"><label for="payf_per">Montant par participant (€)</label><input id="payf_per" data-payf="per" inputmode="decimal" value="${esc(PAYR.eur2(p.per))}" maxlength="7"></div>`:''}
+    <p class="muted" style="margin:10px 0 0">Le solde éventuel se règle à l’accueil. Exemple pour 4 participants, total 96 € : <b id="pay_ex">${eur(PAYR.amount(PAYR.clean({...payCfgRaw(p)}),9600,4))}</b> en ligne.</p></div>
+   <div class="card"><h3>Apparence</h3>
+    <div class="field"><label>Logo</label><div class="logoprev" style="min-height:70px">${p.logo?`<img src="${p.logo}" alt="Logo" style="max-height:56px;max-width:100%">`:'<span class="muted">Aucun logo : l’initiale de votre établissement est utilisée.</span>'}</div>
+     <div class="acts" style="margin-top:8px"><label class="btn" for="pay_logo">${p.logo?'Changer le logo':'Choisir un logo'}</label><input type="file" id="pay_logo" accept="image/png,image/jpeg,image/webp" hidden>${!p.logo&&S.settings.logo?'<button class="btn" type="button" data-act="pay_logo_use">Reprendre le logo de Lago</button>':''}${p.logo?'<button class="btn" type="button" data-act="pay_logo_rm">Retirer</button>':''}</div></div>
+    <div class="g2"><div class="field"><label for="pay_brand">Couleur principale</label><input type="color" id="pay_brand" value="${bc}"></div><div class="field"><label for="pay_accent">Couleur du bouton</label><input type="color" id="pay_accent" value="${ac}"></div></div>
+    ${p.brand||p.accent?'<div class="acts" style="margin:-4px 0 10px"><button class="btn" type="button" data-act="pay_col_reset">Reprendre les couleurs de Lago</button></div>':''}
+    <div class="field"><label>Fond de la page</label>${paySeg('bg',PAY_BG,p.bg)}</div>
+    <div class="field"><label>Coins</label>${paySeg('radius',PAY_RAD,p.radius)}</div>
+    <div class="field"><label>Police</label>${paySeg('font',PAY_FNT,p.font)}</div></div>
+   <div class="card"><h3>Textes</h3><p class="muted" style="margin:0 0 8px">Laissez vide pour garder le texte proposé.</p>
+    ${payTxt('title','Titre',p.title,80,cp.title)}${payTxt('intro','Message sous le titre',p.intro,300,'Ex. Un acompte garantit votre créneau.','ta')}${payTxt('btn','Texte du bouton',p.btn,40,cp.btn)}${payTxt('note','Mention de sécurité',p.note,300,cp.note,'ta')}
+    ${payTxt('thT','Titre après le paiement',p.thT,80,cp.thT)}${payTxt('thM','Message après le paiement',p.thM,300,cp.thM,'ta')}${payTxt('help','Aide en bas de page',p.help,200,'Ex. Un souci avec le paiement ? Appelez-nous.')}
+    ${payTxt('site','Adresse de votre site (bouton « Retour au site »)',p.site,200,'https://www.monparc.fr')}</div>
+   <div class="card"><h3>Règles Firebase</h3><p class="muted" style="margin:0 0 8px">Une seule fois : si vous utilisiez déjà la réservation en ligne, remplacez les règles Firebase par celles-ci (elles ajoutent la page de paiement), puis recopiez le code d’intégration sur votre site (il contient maintenant la clé de vérification).</p>
+    <textarea readonly rows="6" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%">${esc(webRules())}</textarea>
+    <div class="acts" style="margin-top:8px">${copyBtn('rules','Copier les règles')}${copyBtn('iframe','Copier le code d’intégration')}</div></div>
+  </div><div class="paycol payside"><div class="card"><h3>Aperçu</h3>
+    ${payTabs('data-payprev')}
+    <div class="payframe"><div id="pay_prev" role="img" aria-label="Aperçu de la page de paiement"></div></div>
+    <p class="muted" style="margin:8px 0 0">Aperçu en direct, avec des données d’exemple.</p></div></div></div>`;
+  payPrev();
+}
+TABS.params.splice(Math.max(1,TABS.params.findIndex(x=>x[0]==='pweb')+1),0,['ppay','Paiement en ligne']);SUBS.ppay=vSetPay;
+let payTm=0;
+const payDirty=()=>{clearTimeout(payTm);payTm=setTimeout(()=>{save();payPublish(true).then(()=>{const s=$('#pay_stat');if(s&&payCfg().on&&webReady()&&!PAYS.err)s.textContent='Page de paiement publiée à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'.'})},700)};
+let payRB=0;
+const payRedo=()=>{if(payRB)return;const sub=$('#sub');if(!sub)return;payRB=1;try{const y=window.scrollY;vSetPay(sub);window.scrollTo(0,y)}finally{payRB=0}};
+function payField(t){
+  const p=payCfg(),k=t.dataset.payf;let v=t.value;
+  if(k==='link'){v=v.trim().split(/[?#]/)[0].replace(/\/+$/,'');
+    const s=$('#pay_lnk');if(s){const ok=payLinkOk(v);s.className=ok||!v?'muted':'';s.style.color=!ok&&v?'var(--bad)':'';s.textContent=ok?'Lien valide.':v?'Ce n’est pas un lien de paiement Stripe (il commence par https://buy.stripe.com/).':'À créer dans Stripe (étapes ci-dessous).'}
+    if(v&&!payLinkOk(v)){p.link=v;payPrev();return false}p.link=v}
+  else if(k==='pct')p.pct=Math.max(1,Math.min(100,Math.floor(+v)||30));
+  else if(k==='per'){const c=Math.round(parseFloat(String(v).replace(',','.'))*100);if(c>=100&&c<=100000)p.per=c}
+  else if(k==='site'){v=v.trim();p.site=/^https:\/\/[^\s"'<>\\]{3,200}$/.test(v)?v:''}
+  else p[k]=v.replace(/[\u0000-\u001f]/g,' ');
+  return true;
+}
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t||view!=='params'||tab.params!=='ppay'||!isAdmin())return;
+  if(t.dataset.payf){if(payField(t)!==false){payPrev();const ex=$('#pay_ex');if(ex)ex.textContent=eur(PAYR.amount(payOut(),9600,4));payDirty()}else payDirty()}
+  else if(t.id==='pay_brand'||t.id==='pay_accent'){payCfg()[t.id==='pay_brand'?'brand':'accent']=t.value;payPrev();payDirty()}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;if(!t||view!=='params'||tab.params!=='ppay'||!isAdmin())return;
+  const p=payCfg();
+  if(t.id==='pay_on'){
+    if(t.checked){
+      if(!webReady()){t.checked=false;toast('Activez d’abord la réservation en ligne');return}
+      if(!payLinkOk(p.link)){t.checked=false;toast('Collez d’abord votre lien de paiement Stripe');const i=$('#payf_link');if(i)i.focus();return}
+      p.on=true;payKeys().then(()=>{save();return payPublish(true)}).then(ok=>{toast(ok?'Paiement en ligne activé':'Activé, mais la publication a échoué : '+(PAYS.err||'réessayez')); payRedo()});
+    }else{p.on=false;save();payPublish(true).catch(()=>{});toast('Paiement en ligne désactivé');payRedo()}
+    return;
+  }
+  if(t.dataset.paymode){p.mode=t.dataset.paymode;save();payPublish(true).catch(()=>{});payRedo();return}
+  if(t.id==='pay_logo'){
+    const f=t.files&&t.files[0];t.value='';if(!f)return;
+    fileToData(f,160,r=>{
+      const best=[r.png,r.jpg].find(x=>x.length<=60000&&PAYR.LOGO.test(x));
+      if(!best){toast('Image trop lourde : choisissez un logo plus simple');return}
+      p.logo=best;save();payPublish(true).catch(()=>{});payRedo();toast('Logo enregistré');
+    });return;
+  }
+  if(t.dataset.payf){payField(t);clearTimeout(payTm);save();payPublish(true).catch(()=>{})}
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-payset],[data-payprev],[data-act="pay_copy"],[data-act="pay_logo_use"],[data-act="pay_logo_rm"],[data-act="pay_col_reset"],[data-act="pay_prevopen"],[data-payprev2]');
+  if(!b||view!=='params'||tab.params!=='ppay'||!isAdmin())return;
+  const p=payCfg();
+  if(b.dataset.payset){p[b.dataset.payset]=b.dataset.v;save();payPublish(true).catch(()=>{});payRedo();return}
+  if(b.dataset.payprev){PAYS.prev=b.dataset.payprev;payRedo();return}
+  if(b.dataset.payprev2){PAYS.prev=b.dataset.payprev2;payOpenPrev();return}
+  if(b.dataset.act==='pay_prevopen'){payOpenPrev();return}
+  const a=b.dataset.act;
+  if(a==='pay_copy'){const w=b.dataset.what,txt=w==='rules'?webRules():w==='iframe'?webIframe():payBack();(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('Copié')).catch(()=>toast('Sélectionnez le texte et copiez-le'))}
+  else if(a==='pay_logo_use'){const l=S.settings.logo||'';if(PAYR.LOGO.test(l)&&l.length<=60000){p.logo=l;save();payPublish(true).catch(()=>{});payRedo()}else toast('Ce logo ne convient pas : choisissez-en un ici')}
+  else if(a==='pay_logo_rm'){p.logo='';save();payPublish(true).catch(()=>{});payRedo()}
+  else if(a==='pay_col_reset'){p.brand='';p.accent='';save();payPublish(true).catch(()=>{});payRedo()}
 });
 /* ---- v65 : filet de sécurité — incidents techniques, santé du système, sauvegardes automatiques ---- */
 const ERRK='lago-errlog';
