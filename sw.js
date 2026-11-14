@@ -11,6 +11,7 @@ self.addEventListener('fetch',e=>{
   if(r.method!=='GET')return;
   const same=u.origin===location.origin;
   if(!(same||/^fonts\.(googleapis|gstatic)\.com$/.test(u.host)))return;
+  if(same&&u.pathname.startsWith('/site/'))return; // l'ancien site redirige vers lago-caisse.fr : laisser le navigateur suivre
   const nav=r.mode==='navigate';
   const req=!same?r:nav?new Request(r.url,{cache:'no-cache',credentials:'same-origin'}):new Request(r,{cache:'no-cache'});
   e.respondWith(fetch(req).then(res=>{
