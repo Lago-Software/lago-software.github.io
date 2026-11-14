@@ -2766,6 +2766,9 @@ body.navmini .side .logo .lgm{display:block}
 
 .gnote{margin:14px 0 0;font-size:13px;text-align:center}
 .gsteps{padding-left:20px;margin:12px 0 14px;line-height:1.55;font-size:14px;text-align:left}.gsteps li{margin:0 0 10px}
+
+.gemp{border:1px solid var(--line);background:var(--surface-2);border-radius:14px;padding:12px 14px;margin:6px 0 4px}
+.gemp>b{display:block;font-size:16px;margin:0 0 4px}.gemp p{margin:0 0 10px;font-size:14px;line-height:1.45}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -2784,7 +2787,7 @@ body.navmini .side .logo .lgm{display:block}
 
 <div id="boot" style="position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(160deg,#1D4FD7,#0F2A7A);color:#fff;font:700 34px/1 system-ui,sans-serif">lago<small style="font:500 14px system-ui,sans-serif;opacity:.8">Chargement…</small></div>
 <script>setTimeout(function(){var b=document.getElementById("boot");if(b&&!window.__lagoUp)b.innerHTML="<small style=\"font:500 16px system-ui,sans-serif;text-align:center;padding:0 24px\">Lago ne démarre pas.<br>Vérifiez la connexion puis<br><button onclick=\"location.reload()\" style=\"margin-top:12px;padding:10px 18px;font:600 15px system-ui;border-radius:10px;border:0\">Réessayer</button></small>"},15000)</script>
-<script src="app.js?v=v77" defer></script>
+<script src="app.js?v=v78" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

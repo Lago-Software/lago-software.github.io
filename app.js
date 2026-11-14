@@ -2324,7 +2324,9 @@ function gateStart(){
    <div class="gfoot"><button class="btn" data-act="g_other">Autre compte</button>${signupOk()?`<button class="btn" data-act="g_new">${ic('plus')}Créer mon compte</button>`:''}</div>
    <p class="muted gnote">Votre prénom n’apparaît pas ? C’est l’administrateur qui crée les comptes.</p><button type="button" class="glink" data-act="g_noacc">Je n’ai pas de compte</button>`);
 }
-function gateSetup(){gateShell(`<h2>Bienvenue sur Lago</h2><p class="muted">Créez le compte administrateur. Il validera ensuite les comptes de l’équipe.</p>${gform('setup')}`)}
+function gateSetup(){gateShell(`<h2>Bienvenue sur Lago</h2>
+   <div class="gemp"><b>Vous êtes employé ?</b><p class="muted">C’est l’administrateur qui crée les comptes de l’équipe : vous n’avez rien à créer ici. Rejoignez l’équipe avec le lien d’équipe qu’il vous envoie, puis choisissez votre prénom.</p><button type="button" class="btn primary" data-act="g_join" style="width:100%">Rejoindre l’équipe avec un lien</button></div>
+   <h3 class="gsub">Vous êtes l’administrateur ?</h3><p class="muted" style="text-align:center">Créez le compte administrateur. Il validera ensuite les comptes de l’équipe.</p>${gform('setup')}`)}
 function gform(kind){
   const nw=kind==='new'||kind==='setup';
   return `<form id="gform" data-kind="${kind}">
@@ -4418,7 +4420,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v77';
+const LAGO_V='v78';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -4428,7 +4430,7 @@ function gateStat(){
   if(cloudOn()){const ok=CL.state==='ok';h=`<span class="${ok?'g-ok':'g-off'}">●</span> Équipe ${ok?'connectée':'hors ligne'} · ${accs().length} compte(s)`}
   else h='○ Cet appareil n’est pas connecté à l’équipe. Employé ? Utilisez le lien d’équipe envoyé par votre responsable, sans créer de compte ici.';
   const jb=card.querySelector('.gjoinb');
-  if(!cloudOn()&&!card.querySelector('#gjoin')&&!card.querySelector('.gempty')){if(!jb){const b=document.createElement('button');b.type='button';b.className='btn primary gjoinb';b.dataset.act='g_join';b.textContent='Rejoindre l’équipe avec un lien';card.insertBefore(b,el)}}
+  if(!cloudOn()&&!card.querySelector('#gjoin')&&!card.querySelector('.gempty')&&!card.querySelector('.gemp')){if(!jb){const b=document.createElement('button');b.type='button';b.className='btn primary gjoinb';b.dataset.act='g_join';b.textContent='Rejoindre l’équipe avec un lien';card.insertBefore(b,el)}}
   else if(jb)jb.remove();
   el.innerHTML=h+` <span class="gv">${LAGO_V}</span>`;
 }
