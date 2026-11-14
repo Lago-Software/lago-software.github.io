@@ -2321,7 +2321,8 @@ function gateStart(){
   const last=(()=>{try{return localStorage.getItem(LKEY)}catch(e){return null}})();
   act.sort((a,b)=>(b.id===last)-(a.id===last));
   gateShell(`<h2>Qui êtes-vous ?</h2><div class="gav">${act.map(a=>`<button class="gu${a.kind==='etab'?' etab':''}" data-act="g_pick" data-id="${a.id}">${avA(a,0)}<b>${esc(a.kind==='etab'?a.name:a.name.split(' ')[0])}</b></button>`).join('')}</div>
-   <div class="gfoot"><button class="btn" data-act="g_other">Autre compte</button>${signupOk()?`<button class="btn" data-act="g_new">${ic('plus')}Créer mon compte</button>`:''}</div>`);
+   <div class="gfoot"><button class="btn" data-act="g_other">Autre compte</button>${signupOk()?`<button class="btn" data-act="g_new">${ic('plus')}Créer mon compte</button>`:''}</div>
+   <p class="muted gnote">Votre prénom n’apparaît pas ? C’est l’administrateur qui crée les comptes.</p><button type="button" class="glink" data-act="g_noacc">Je n’ai pas de compte</button>`);
 }
 function gateSetup(){gateShell(`<h2>Bienvenue sur Lago</h2><p class="muted">Créez le compte administrateur. Il validera ensuite les comptes de l’équipe.</p>${gform('setup')}`)}
 function gform(kind){
@@ -2370,7 +2371,7 @@ document.addEventListener('submit',async e=>{
       const lk=LOCKS[a.id];if(lk&&lk.until>Date.now()){err('Trop d’essais. Réessayez dans '+Math.ceil((lk.until-Date.now())/1000)+' s.');return}
       if(a.status==='pending'){err('Compte en attente : l’administrateur doit le valider dans Paramètres › Comptes › Demandes à valider.');return}
       if(a.status!=='active'){err('Ce compte est désactivé. Contactez l’administrateur.');return}
-      if(!a.pwd){a.pwd=await hashPw(pw,a.id);save()}else if(!await pwOk(a,[pw,$('#gp').value])){const l=LOCKS[a.id]=LOCKS[a.id]||{n:0,until:0};l.n++;if(l.n>=5){l.until=Date.now()+30000;l.n=0}err('Mot de passe incorrect. Un oubli ? Touchez « Mot de passe oublié ? » ci-dessous.');$('#gp').value='';$('#gp').focus();return}
+      if(!a.pwd){a.pwd=await hashPw(pw,a.id);save()}else if(!await pwOk(a,[pw,$('#gp').value])){const l=LOCKS[a.id]=LOCKS[a.id]||{n:0,until:0};l.n++;if(l.n>=5){l.until=Date.now()+30000;l.n=0}err('Mot de passe incorrect. Un oubli ? Touchez « Mot de passe oublié ? » ci-dessous, ou demandez à l’administrateur de vous en définir un nouveau.');$('#gp').value='';$('#gp').focus();return}
       delete LOCKS[a.id];{const rm=$('#grem')?$('#grem').checked:true;remPrefSet(rm);remCred(a,ident,pw,rm);login(a,rm)}
     }
   }finally{btn.disabled=false}
@@ -4417,7 +4418,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v76';
+const LAGO_V='v77';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -9808,5 +9809,17 @@ function poRefresh(){
     if(kpi&&kpi.innerHTML!==poKpi(a))kpi.innerHTML=poKpi(a);
   }
 }
+/* ======== v77 : premier écran — « c’est l’administrateur qui crée les comptes » ======== */
+function gateNoAcc(){
+  const on=cloudOn();
+  gateShell(`<h2>Pas encore de compte ?</h2>
+   <p class="muted" style="text-align:center">Dans Lago, <b>c’est l’administrateur qui crée les comptes</b> de l’équipe. Vous n’avez rien à créer vous-même.</p>
+   <ol class="gsteps"><li>Demandez à l’administrateur de créer votre compte (Paramètres › Comptes). Il vous donne votre identifiant et un mot de passe provisoire.</li>
+   ${on?'':'<li>Cet appareil n’est pas encore relié à l’équipe : ouvrez le lien d’équipe qu’il vous envoie, ou touchez « Rejoindre l’équipe avec un lien » ci-dessous.</li>'}
+   <li>Revenez sur cet écran, touchez votre prénom et connectez-vous. Vous pourrez changer le mot de passe dans « Mon compte ».</li></ol>
+   ${on&&signupOk()?'<p class="muted" style="text-align:center;font-size:13px;margin:0 0 8px">Vous pouvez aussi lui envoyer une demande : il la validera.</p><button class="btn" data-act="g_new" style="width:100%">Demander mon compte</button>':''}
+   <div class="gfoot"><button type="button" class="btn" data-act="g_back">Retour</button></div>`);
+}
+document.addEventListener('click',e=>{if(e.target.closest('[data-act="g_noacc"]'))gateNoAcc()});
 init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();v61Init();hoursInit();applySettings();cart=newCart();chrome();route();bootGate();
 })();
