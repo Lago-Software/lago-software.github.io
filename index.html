@@ -2725,6 +2725,11 @@ body.navmini .side .logo .lgm{display:block}
 .sybar>span{flex:1;min-width:0}
 .sybar .btn{flex:none;min-height:34px;padding:4px 12px}
 @media (max-width:600px){.sybar{flex-wrap:wrap}.sybar>span{flex-basis:100%}}
+.mlprev{border:1px solid var(--line);border-radius:12px;max-height:44vh;overflow:auto;margin:10px 0 12px;background:#eef0f4}
+.mlbar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:4px 0 6px}.mlbar i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.mmsteps{padding-left:20px;margin:0;line-height:1.6;font-size:14px}.mmsteps li{margin:0 0 12px}
+.mmbox{margin:8px 0;border:1px solid var(--line);border-radius:12px;padding:2px 10px}
+.mmrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.mmrow code{background:var(--surface-2);padding:3px 7px;border-radius:6px;font-size:13px;word-break:break-all}.mmcp{min-height:34px;padding:4px 12px;flex:none}
 .cxfind{display:flex;gap:8px;flex-wrap:wrap}
 .cxfind input{flex:1 1 180px;width:auto}
 .cxul{margin:0;padding-left:18px;display:grid;gap:8px;font-size:14px;line-height:1.5}
@@ -2760,7 +2765,7 @@ body.navmini .side .logo .lgm{display:block}
 
 <div id="boot" style="position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(160deg,#1D4FD7,#0F2A7A);color:#fff;font:700 34px/1 system-ui,sans-serif">lago<small style="font:500 14px system-ui,sans-serif;opacity:.8">Chargement…</small></div>
 <script>setTimeout(function(){var b=document.getElementById("boot");if(b&&!window.__lagoUp)b.innerHTML="<small style=\"font:500 16px system-ui,sans-serif;text-align:center;padding:0 24px\">Lago ne démarre pas.<br>Vérifiez la connexion puis<br><button onclick=\"location.reload()\" style=\"margin-top:12px;padding:10px 18px;font:600 15px system-ui;border-radius:10px;border:0\">Réessayer</button></small>"},15000)</script>
-<script src="app.js?v=v74" defer></script>
+<script src="app.js?v=v75" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

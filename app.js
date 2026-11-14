@@ -263,7 +263,7 @@ function chromeV0(){
   $('#sidefoot').innerHTML=`<strong style="color:var(--ink)">${esc(S.settings.name)}</strong><span>${S.sales.some(s=>s.demo)?'Données de démonstration':''}</span><button data-act="reset">Réinitialiser la démo</button>`;
 }
 function route(){
-  const v=(location.hash||'#accueil').slice(1);view=VIEWS[v]?v:'accueil';if(view==='params'&&!isAdmin())view='accueil';if(opHidden(view))view='accueil';render();
+  const PV0=view,v=(location.hash||'#accueil').slice(1);view=VIEWS[v]?v:'accueil';if(view==='params'&&!isAdmin())view='accueil';if(opHidden(view))view='accueil';if(view!==PV0)try{dayReset(view)}catch(e){}render();
   document.body.classList.add('vin');setTimeout(()=>document.body.classList.remove('vin'),900);
   document.querySelectorAll('#main .kpi .v:not([data-count])').forEach(el=>{if(!el.children.length)countUp(el)});
 }
@@ -1054,7 +1054,7 @@ function vMailing(m){
 }
 function showMail(id){
   const x=S.mails.find(y=>y.id===id);if(!x)return;
-  showModal(`${mh('E-mail')}<div class="sum"><div class="r"><span>De</span><b>${esc(S.settings.mail)}</b></div><div class="r"><span>À</span><b>${esc(x.to)}${x.email?' · '+esc(x.email):''}</b></div><div class="r"><span>Date</span><b>${new Date(x.ts).toLocaleDateString('fr-FR')} ${hm(x.ts)}</b></div></div>
+  showModal(`${mh('E-mail')}<div class="sum"><div class="r"><span>De</span><b>${esc(mlMailStr())}</b></div><div class="r"><span>À</span><b>${esc(x.to)}${x.email?' · '+esc(x.email):''}</b></div><div class="r"><span>Date</span><b>${new Date(x.ts).toLocaleDateString('fr-FR')} ${hm(x.ts)}</b></div></div>
     <div class="mailprev"><b>${esc(x.subject)}</b>\n\n${esc(x.body)}</div><button class="btn" data-act="close">Fermer</button>`);
 }
 document.addEventListener('click',e=>{
@@ -1295,7 +1295,7 @@ const numIn=(path,v,min,max,step=1)=>`<input type="number" inputmode="decimal" d
 function vSetGen(m){
   const st=S.settings;
   m.innerHTML=`<div class="cols"><div class="card"><h3>Établissement</h3>${fld(tv('nom_etab'),`<input data-set="name" value="${esc(st.name)}">`)}
-    ${fld('E-mail d’envoi',`<input type="email" data-set="mail" value="${esc(st.mail)}">`,'Adresse affichée comme expéditeur des mails aux clients.')}</div>
+    ${fld('E-mail d’envoi',`<input type="email" data-set="mail" value="${esc(typeof st.mail==='string'?st.mail:'')}">`,'Adresse affichée comme expéditeur des mails aux clients.')}</div>
    <div class="card"><h3>Caisse</h3>${fld('Fond de caisse (€)',`<input inputmode="decimal" data-set="fond" data-ty="eur" value="${inEur(st.fond)}">`)}
     ${fld('Remises rapides (en %)',`<input data-set="discPct" data-ty="list" value="${st.discPct.join(', ')}">`,'Séparées par une virgule, par exemple 5, 10, 20.')}</div></div>
    <div class="card"><h3>Données de démonstration</h3><p class="muted" style="margin-bottom:12px">Remet les produits, clients, ventes et plannings d’exemple. Vos réglages sont conservés.</p><button class="btn danger" data-act="reset">Recharger la démonstration</button></div>`;
@@ -4123,9 +4123,10 @@ function treeToS(T,full){
 }
 function cloudNormalize(){
   S.settings=Object.assign(defaultSettings(),S.settings||{});
-  ['products','clients','sales','closures','events','mails','staff','leaves','plans','maint','incidents','profiles','planArchive','awards','qwres','web','gifts','waivers','accounts','board','passes','promos','entries'].forEach(k=>{if(!Array.isArray(S[k]))S[k]=[]});
+  ['products','clients','sales','closures','events','mails','staff','leaves','plans','maint','incidents','profiles','planArchive','awards','qwres','web','gifts','waivers','accounts','board','passes','promos','entries','mlog'].forEach(k=>{if(!Array.isArray(S[k]))S[k]=[]});
   ['shifts','checks','monthly','stock','hours','devs'].forEach(k=>{if(!isO(S[k])||Array.isArray(S[k]))S[k]={}});
   if(!S.profiles.length)S.profiles=defaultProfiles();
+  try{migrateM()}catch(e){}
   number();
 }
 function applyM(M,L){
@@ -4373,7 +4374,7 @@ function vSetAcc(m){
   const p=[...m.querySelectorAll('p.muted')].find(x=>/restent sur cet appareil/.test(x.textContent));
   if(p)p.textContent='Les accès sont définis par les profils (Paramètres › Profils). Les comptes sont partagés avec l’équipe quand « Équipe connectée » est active ; les mots de passe sont chiffrés. Un compte demandé depuis l’écran de connexion doit d’abord être validé ci-dessus.';
   if(p&&!m.querySelector('#x4_signup'))p.insertAdjacentHTML('afterend','<label class="check" style="margin:0 0 12px"><input type="checkbox" id="x4_signup" '+(S.settings.signup?'checked':'')+'><span>Afficher « Créer mon compte » sur l’écran de connexion des appareils d’équipe (sinon c’est vous qui créez les comptes)</span></label>');
-  if(typeof mailCard==='function')mailCard(m);
+  try{mlAccPointer(m)}catch(e){}
   if(typeof etabRows==='function')etabRows(m);
   m.querySelectorAll('[data-acprof]').forEach(x=>{const r=x.closest('.row');if(r)r.classList.add('acrow')});
   try{devRows(m)}catch(e){}
@@ -4415,7 +4416,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v74';
+const LAGO_V='v75';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -4595,7 +4596,7 @@ setInterval(()=>{if(PV&&!ME){PV=false;pvBanner()}},1500);
 const MAILRE=/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
 const mailOf=a=>{if(!a)return '';const e=String(a.email||'').trim();if(MAILRE.test(e))return e;const i=String(a.ident||'').trim();return MAILRE.test(i)?i:''};
 const maskMail=m=>{const [u,d]=String(m).split('@');return (u.length<=2?u.slice(0,1):u.slice(0,2))+'•••@'+d};
-const mailCfg=()=>{const m=(S.settings&&S.settings.mail)||{};return m.sid&&m.tid&&m.key?m:null};
+const mailCfg=()=>{const m=mjCfg();return m.sid&&m.tid&&m.key?m:null};
 const RALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789',RST_MIN=30,RST_WAIT=60,RST_TRIES=5;
 function rstCode(){let c='';try{const b=new Uint8Array(8);crypto.getRandomValues(b);for(const x of b)c+=RALPHA[x%RALPHA.length]}catch(e){c='';for(let i=0;i<8;i++)c+=RALPHA[Math.floor(Math.random()*RALPHA.length)]}return c}
 const rstNorm=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -4607,11 +4608,12 @@ async function mailSend(to,params){
   const ac=new AbortController(),to_=setTimeout(()=>ac.abort(),15000);
   try{
     const r=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({service_id:m.sid,template_id:m.tid,user_id:m.key,template_params:Object.assign({to_email:to,email:to,app_name:S.settings.name||'Lago'},params)})});
+      body:JSON.stringify({service_id:m.sid,template_id:m.tid,user_id:m.key,template_params:Object.assign({to_email:to,email:to,app_name:S.settings.name||'Lago',from_name:mlFrom(),reply_to:mlReply()},params)})});
     if(!r.ok){const t=await r.text().catch(()=>'');const e=new Error('http '+r.status+' '+t.slice(0,160));e.status=r.status;e.body=t;throw e}
   }finally{clearTimeout(to_)}
 }
 function mailErr(e){
+  if(e&&e.mlc)return mlErrTxt(e);
   const t=String((e&&e.body)||(e&&e.message)||e),s=e&&e.status;
   if(e&&e.name==='AbortError')return 'pas de réponse du service d’e-mails (connexion ?)';
   if(/service id/i.test(t))return 'Service ID incorrect';
@@ -4634,7 +4636,7 @@ async function rstRequest(a){
   if(w>0)return {wait:w,to};
   const code=rstCode(),prev=a.rst,now=Date.now();
   a.rst={h:await rstHash(code,a),ts:now,exp:now+RST_MIN*60000,n:0};save();
-  try{await mailSend(to,{to_name:a.name,code:rstShow(code),minutes:RST_MIN,login:a.ident})}
+  try{await mlSend(mlResetMsg(a,to,code))}
   catch(e){if(prev)a.rst=prev;else delete a.rst;save();console.warn('mail',e);return {err:'L’e-mail n’a pas pu être envoyé ('+mailErr(e)+'). Réessayez plus tard ou demandez un nouveau mot de passe à l’administrateur.'}}
   return {ok:true,to};
 }
@@ -4770,7 +4772,7 @@ function mailCard(m){
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act="ml_save"],[data-act="ml_test"],[data-act="ac_mail"]');if(!b||!isAdmin())return;
   const a=b.dataset.act,msg=t=>{const x=$('#mlmsg');if(x)x.textContent=t};
-  if(a==='ml_save'){const v=id=>(($('#'+id)||{}).value||'').trim();S.settings.mail={sid:v('mlsid'),tid:v('mltid'),key:v('mlkey')};save();vSetAcc($('#sub'));toast(mailCfg()?'E-mails activés':'Réglage enregistré (incomplet)')}
+  if(a==='ml_save'){const v=id=>(($('#'+id)||{}).value||'').trim();mjSet({sid:v('mlsid'),tid:v('mltid'),key:v('mlkey')});save();vSetAcc($('#sub'));toast(mailCfg()?'E-mails activés':'Réglage enregistré (incomplet)')}
   else if(a==='ml_test'){
     const to=mailOf(ME);if(!to){msg('Ajoutez d’abord votre adresse e-mail dans Mon compte.');return}
     b.disabled=true;msg('Envoi en cours…');
@@ -7324,9 +7326,9 @@ function webBase(w){
 }
 function webCfgOut(w){
   const P=(ids,adds)=>ids.map(webProd).filter(p=>p&&p.active!==false&&(adds||(p.jumper&&p.dur))).map(p=>{const o={id:p.id,n:p.name,d:(w.desc&&w.desc[p.id])||'',p:p.price};if(!adds)o.dur=p.dur;return o});
-  return{v:1,on:true,name:S.settings.name||'',tel:S.settings.phone||'',mail:S.settings.mail||'',addr:S.settings.addr||'',brand:S.settings.brand||'#1D4FD7',accent:S.settings.accent||'#FF7A1A',
+  return{v:1,on:true,name:S.settings.name||'',tel:S.settings.phone||'',mail:mlMailStr(),addr:S.settings.addr||'',brand:S.settings.brand||'#1D4FD7',accent:S.settings.accent||'#FF7A1A',
     cap:S.settings.cap,wcap:Math.min(S.settings.cap,w.cap),lead:w.lead,days:w.days,max:w.max,tz:(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Paris'}catch(e){return 'Europe/Paris'}})(),
-    info:w.info||'',cgv:w.cgv||'',...(()=>{const lg=S.settings.legal||{},c=cnf();return{lg:{r:lg.raison||'',f:lg.forme||'',a:lg.adr||'',s:lg.siret||'',t:lg.franchise?'':(lg.tva||''),fr:!!lg.franchise,m:lg.mail||S.settings.mail||''},med:{n:c.med.n||'',u:c.med.u||''},ret:c.ret.y,cv:'T1-'+cfSha(JSON.stringify([w.cgv||'',lg.raison,lg.siret,lg.adr,c.med.n,c.med.u])).slice(0,8)}})(),pre:(w.pre||'RES').slice(0,4),br:BR.map(b=>[b[0],b[1]]),prods:P(w.prods||[],false),adds:P(w.adds||[],true),upd:Date.now()};
+    info:w.info||'',cgv:w.cgv||'',...(()=>{const lg=S.settings.legal||{},c=cnf();return{lg:{r:lg.raison||'',f:lg.forme||'',a:lg.adr||'',s:lg.siret||'',t:lg.franchise?'':(lg.tva||''),fr:!!lg.franchise,m:lg.mail||mlMailStr()},med:{n:c.med.n||'',u:c.med.u||''},ret:c.ret.y,cv:'T1-'+cfSha(JSON.stringify([w.cgv||'',lg.raison,lg.siret,lg.adr,c.med.n,c.med.u])).slice(0,8)}})(),pre:(w.pre||'RES').slice(0,4),br:BR.map(b=>[b[0],b[1]]),prods:P(w.prods||[],false),adds:P(w.adds||[],true),upd:Date.now()};
 }
 async function webPublish(force){
   const w=webCfg();if(!webReady())return false;
@@ -7736,7 +7738,7 @@ async function paySign(txt){
 /* configuration affichée au client (même nettoyage que la page publique) */
 function payCfgRaw(p){
   const w=webCfg(),lg=S.settings.legal||{},c=cnf();
-  return{on:!!p.on,name:S.settings.name||'',tel:S.settings.phone||'',mail:S.settings.mail||'',addr:S.settings.addr||'',site:p.site,link:p.link,logo:p.logo,
+  return{on:!!p.on,name:S.settings.name||'',tel:S.settings.phone||'',mail:mlMailStr(),addr:S.settings.addr||'',site:p.site,link:p.link,logo:p.logo,
     brand:p.brand||S.settings.brand||'#1D4FD7',accent:p.accent||S.settings.accent||'#FF7A1A',bg:p.bg,radius:p.radius,font:p.font,
     title:p.title,intro:p.intro,btn:p.btn,note:p.note,thT:p.thT,thM:p.thM,help:p.help,cgv:w.cgv||'',
     legal:[lg.raison||'',lg.forme||'',lg.siret?'SIRET '+lg.siret:''].filter(Boolean).join(' · '),med:c.med&&c.med.n?c.med.n+(c.med.u?' – '+c.med.u:''):'',
@@ -8321,12 +8323,13 @@ function cnRegistre(){
   ];
   if(w.on)R.splice(1,0,{t:'Réservation en ligne',f:'Recevoir et gérer les réservations faites par les clients sur le site.',b:'Exécution du contrat (mesures précontractuelles) ; consentement pour les offres.',d:'Nom, e-mail, téléphone, message, créneau choisi. La demande est chiffrée avant son envoi et déchiffrée uniquement par l’établissement.',p:'Clients.',r:'Équipe habilitée ; hébergeur technique (Google Firebase) qui ne voit que des données chiffrées.',c:'Demande chiffrée supprimée du serveur après 8 jours ; réservation conservée '+cnAns(ret)+' après la dernière visite.'});
   if(S.clients.some(x=>x.optin)||w.on)R.push({t:'Offres et actualités (prospection)',f:'Envoyer des offres aux clients qui l’ont accepté.',b:'Consentement (case non cochée par défaut, retrait possible à tout moment).',d:'Nom, e-mail, téléphone.',p:'Clients ayant donné leur accord.',r:'Équipe habilitée ; prestataire d’envoi d’e-mails si utilisé (EmailJS).',c:'Jusqu’au retrait du consentement, ou '+cnAns(ret)+' sans interaction.'});
+  if(typeof mailCfg==='function'&&mailCfg())R.push({t:'Envoi de documents par e-mail',f:'Envoyer au client, à sa demande, son ticket, un avoir, sa carte cadeau ou la confirmation de sa réservation.',b:'Exécution du contrat ; demande du client.',d:'Nom, adresse e-mail et contenu du document envoyé. Un journal conserve la date, le destinataire, le type de document et l’auteur de l’envoi (pas le contenu du message).',p:'Clients.',r:'Prestataire d’envoi (EmailJS) et service de messagerie de l’établissement.',c:'Journal d’envoi : 12 mois.'});
   return R;
 }
 const CN_SUB=[
  ['GitHub, Inc. (GitHub Pages)','Héberge l’application (fichiers statiques). Ne reçoit aucune donnée de l’établissement.','États-Unis · clauses contractuelles types'],
  ['Google Ireland Ltd. (Firebase Realtime Database)','Héberge les données partagées de l’équipe (région Europe, Belgique).','Union européenne · contrat de sous-traitance Google Cloud'],
- ['EmailJS (seulement si vous activez l’envoi d’e-mails)','Envoie les e-mails demandés depuis l’application.','Voir leur politique de confidentialité'],
+ ['EmailJS (seulement si vous activez l’envoi d’e-mails)','Transmet à la messagerie de l’établissement les e-mails demandés depuis l’application (mot de passe oublié, tickets, avoirs, cartes cadeaux, confirmations de réservation) : adresse du destinataire et contenu du message.','Voir leur politique de confidentialité'],
  ['Anthropic (seulement si vous activez l’assistance par IA)','Traite le texte envoyé à l’assistant. N’y mettez aucune donnée de client.','Voir leur politique de confidentialité'],
  ['Google Apps Script (seulement si vous reliez une feuille de calcul)','Reçoit les exports que vous lui envoyez.','Voir les conditions Google']
 ];
@@ -8399,10 +8402,12 @@ function cnExportJson(c){
    reservations_en_ligne:d.bk.map(b=>({code:b.ref,date:b.date,heure_minutes:b.start,participants:b.people,nom:b.name,email:b.mail,telephone:b.phone,message:b.note,offres_commerciales_acceptees:!!b.optin})),
    decharges:d.wv.map(w=>({signee_le:new Date(w.ts).toISOString(),nom:w.name,date_naissance:w.birth||'',telephone:w.phone||'',email:w.mail||'',mineurs:(w.kids||[]).map(k=>({nom:k.name,date_naissance:k.birth})),valable_jusqu_au:w.exp})),
    carnets:d.ps.map(p=>({code:p.code,offre:p.name,seances:p.n,restantes:p.left,expire_le:p.exp})),
-   evenements:d.ev.map(e=>({date:e.date,titre:e.title,invites:e.guests}))};
+   evenements:d.ev.map(e=>({date:e.date,titre:e.title,invites:e.guests})),
+   courriels_envoyes:mlPersonLog(c)};
 }
 function cnAnon(c,withWaivers){
   const ws=cnWaivers(c),id=c.id;
+  try{mlForget([c.email].concat((S.web||[]).filter(b=>b.clientId===id).map(b=>b.mail)))}catch(e){}
   c.name='Client anonymisé';c.phone='';c.email='';c.note='';c.kid='';c.optin=false;c.anon=Date.now();
   (S.web||[]).forEach(b=>{if(b.clientId===id){b.name='Anonymisé';b.mail='';b.phone='';b.note='';b.optin=false}});
   let nw=0;
@@ -9373,5 +9378,360 @@ document.addEventListener('click',e=>{
   if(a==='sy_open')syOpen();else if(a==='sy_now')syNow(b);
   else{try{sessionStorage.setItem('lago-sy-x','1')}catch(x){}syDraw()}
 });
-init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();migrateImgs();v61Init();hoursInit();applySettings();cart=newCart();chrome();route();bootGate();
+/* ======== v75 : e-mails aux clients (ticket, avoir, carte cadeau, réservation) ======== */
+IC.mail='<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>';
+const MJ_QUOTA=200;
+/* Réglage EmailJS : dans S.settings.mailjs (l’ancien emplacement S.settings.mail est l’adresse de contact du parc) */
+function mjCfg(){const st=S.settings||{};return st.mailjs&&typeof st.mailjs==='object'?st.mailjs:(st.mail&&typeof st.mail==='object'?st.mail:{})}
+function mjSet(o){S.settings.mailjs=Object.assign({},mjCfg(),o)}
+function mlMailStr(){const m=S.settings&&S.settings.mail;return typeof m==='string'?m.trim():''}
+function mlContact(){const m=mlMailStr();return m==='contact@exemple.fr'?'':m}
+function migrateM(){
+  let ch=false;
+  try{
+    const st=S.settings;if(!st)return false;
+    if(st.mail&&typeof st.mail==='object'){
+      const o=st.mail,j=(st.mailjs&&typeof st.mailjs==='object')?Object.assign({},st.mailjs):{};
+      ['sid','tid','key'].forEach(k=>{if(o[k]&&!j[k])j[k]=String(o[k]).trim()});
+      st.mailjs=j;
+      const lm=String((st.legal&&st.legal.mail)||'').trim();
+      st.mail=MAILRE.test(lm)?lm:'';ch=true;
+    }
+    if(!Array.isArray(S.mlog)){S.mlog=[]}
+  }catch(e){}
+  return ch;
+}
+const mlE=c=>{const e=new Error(c);e.mlc=c;return e};
+const mlFrom=()=>String(mjCfg().name||'').trim()||S.settings.name||'Lago';
+const mlReply=()=>{const a=String(mjCfg().addr||'').trim();return MAILRE.test(a)?a:(MAILRE.test(mlContact())?mlContact():'')};
+function mlMonthUse(){const d=new Date(),y=d.getFullYear(),mo=d.getMonth();return (S.mlog||[]).filter(x=>{if(!x.ok)return false;const a=new Date(x.ts);return a.getFullYear()===y&&a.getMonth()===mo}).length}
+function mlQuota(){const q=Math.max(1,parseInt(mjCfg().quota)||MJ_QUOTA),u=mlMonthUse();return{q,u,left:q-u}}
+function mlErrTxt(e){
+  const c=e&&e.mlc;
+  if(c==='config')return 'l’envoi d’e-mails n’est pas activé (Paramètres › E-mails)';
+  if(c==='addr')return 'adresse e-mail invalide';
+  if(c==='size')return 'message trop volumineux pour le service d’e-mails';
+  if(c==='quota'){const q=mlQuota();return 'quota du mois atteint ('+q.u+' sur '+q.q+' e-mails)'}
+  return mailErr(e);
+}
+const ML_KIND={ticket:'Ticket',avoir:'Avoir',gift:'Carte cadeau',resa:'Réservation',mdp:'Mot de passe',test:'Test'};
+/* envoi + journal (le journal est partagé avec l’équipe : on voit qui a envoyé quoi, et on évite les doublons) */
+async function mlSend(o){
+  if(!mailCfg())throw mlE('config');
+  const to=String(o.to||'').trim().toLowerCase();
+  if(!MAILRE.test(to)||to.length>254)throw mlE('addr');
+  const subject=String(o.subject||'').replace(/[\r\n\t]+/g,' ').trim().slice(0,150),html=String(o.html||'');
+  if(html.length>40000)throw mlE('size');
+  if(o.kind!=='mdp'&&mlQuota().left<=0)throw mlE('quota');
+  const en={id:uid(),ts:Date.now(),k:o.kind||'doc',ref:String(o.ref||'').slice(0,40),to,ok:false,by:(typeof ME!=='undefined'&&ME)?String(ME.name||'').slice(0,60):''};
+  const log=()=>{
+    if(!Array.isArray(S.mlog))S.mlog=[];
+    S.mlog.push(en);
+    const lim=Date.now()-366*86400000;S.mlog=S.mlog.filter(x=>x.ts>=lim);
+    if(S.mlog.length>300)S.mlog=S.mlog.slice(-300);
+    save();
+  };
+  try{
+    await mailSend(to,Object.assign({to_name:String(o.toName||'').slice(0,80),subject,message_html:html},o.extra||{}));
+    en.ok=true;log();return en;
+  }catch(x){en.err=String(mlErrTxt(x)).slice(0,120);log();throw x}
+}
+/* ---------- documents ---------- */
+const mlCap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
+const mlFmtD=ts=>new Date(ts).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+const mlHello=n=>{n=String(n||'').trim();return n?'Bonjour '+firstName(n)+',':'Bonjour,'};
+const mlRate=r=>String(r).replace('.',',');
+function mlRender(d){
+  const brand=/^#[0-9a-fA-F]{6}$/.test(String(S.settings.brand||''))?S.settings.brand:'#1D4FD7';
+  const nm=S.settings.name||'Lago',F='font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;';
+  const nl=x=>esc(String(x).slice(0,2000)).replace(/\n/g,'<br>');
+  let h='',t=[];
+  (d.parts||[]).slice(0,60).forEach(p=>{
+    if(p.t==='p'){h+=`<p style="${F}margin:0 0 12px;font-size:15px;line-height:1.55;color:#1f2430">${nl(p.x)}</p>`;t.push(String(p.x))}
+    else if(p.t==='h'){h+=`<h2 style="${F}margin:16px 0 6px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#6b7280">${esc(p.x)}</h2>`;t.push('— '+p.x+' —')}
+    else if(p.t==='box'){h+=`<div style="${F}margin:0 0 14px;padding:10px 12px;background:#f3f5f9;border-left:4px solid ${brand};border-radius:6px;font-size:14px;line-height:1.5;color:#1f2430">${nl(p.x)}</div>`;t.push(String(p.x))}
+    else if(p.t==='small'){h+=`<p style="${F}margin:0 0 12px;font-size:12.5px;line-height:1.5;color:#6b7280">${nl(p.x)}</p>`;t.push(String(p.x))}
+    else if(p.t==='big'){h+=`<div style="margin:6px 0 16px;padding:16px;border:2px dashed ${brand};border-radius:10px;text-align:center"><div style="font-family:Menlo,Consolas,monospace;font-size:26px;letter-spacing:2px;font-weight:700;color:#111;word-break:break-all">${esc(p.x)}</div>${p.s?`<div style="${F}font-size:13px;color:#6b7280;margin-top:4px">${esc(p.s)}</div>`:''}</div>`;t.push(String(p.x)+(p.s?' ('+p.s+')':''))}
+    else if(p.t==='rows'){
+      h+=`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;border-collapse:collapse">`+p.r.slice(0,80).map(r=>`<tr><td style="${F}padding:6px 0;border-bottom:1px solid #e6e9ef;font-size:14px;color:${r[2]?'#111':'#374151'};${r[2]?'font-weight:700;':''}">${esc(r[0])}</td><td align="right" style="${F}padding:6px 0 6px 12px;border-bottom:1px solid #e6e9ef;font-size:14px;white-space:nowrap;color:#111;${r[2]?'font-weight:700;':''}">${esc(r[1])}</td></tr>`).join('')+`</table>`;
+      t.push(p.r.map(r=>r[0]+' : '+r[1]).join('\n'));
+    }
+  });
+  const foot=[];
+  try{if(typeof cfLegalLines==='function')cfLegalLines().forEach(x=>foot.push(x))}catch(e){}
+  if(S.settings.addr&&!foot.includes(S.settings.addr))foot.push(S.settings.addr);
+  const ct=[mlContact(),S.settings.phone].filter(Boolean).join(' · ');if(ct)foot.push(ct);
+  const fx=String(mjCfg().foot||'').trim().slice(0,400);if(fx)foot.push(fx);
+  h=`<div style="background:#eef0f4;padding:20px 10px"><div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(d.pre||d.title||'')}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden">`+
+    `<tr><td style="background:${brand};padding:18px 22px"><div style="${F}font-size:20px;font-weight:700;color:#ffffff">${esc(nm)}</div></td></tr>`+
+    `<tr><td style="padding:22px 22px 8px">${d.title?`<h1 style="${F}margin:0 0 14px;font-size:20px;line-height:1.25;color:#111">${esc(d.title)}</h1>`:''}${h}</td></tr>`+
+    (foot.length?`<tr><td style="background:#f8f9fb;padding:14px 22px;border-top:1px solid #e6e9ef;${F}font-size:12px;line-height:1.55;color:#6b7280">${foot.map(x=>esc(x)).join('<br>')}</td></tr>`:'')+
+    `</table></td></tr></table></div>`;
+  const text=[nm.toUpperCase(),d.title||''].concat(t,foot.length?['','--'].concat(foot):[]).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  return{subject:String(d.subject||nm).replace(/[\r\n\t]+/g,' ').trim().slice(0,150),html:h,text};
+}
+function mlTicketDoc(s){
+  const av=s.ty==='av',cl=s.clientId?clientById(s.clientId):null,nm=S.settings.name||'Lago',P=[];
+  P.push({t:'p',x:mlHello(cl&&!cl.anon?cl.name:'')});
+  P.push({t:'p',x:av?'Voici l’avoir établi le '+mlFmtD(s.ts)+' sur le ticket '+s.rf+'.':'Merci de votre visite ! Voici le ticket de votre achat du '+mlFmtD(s.ts)+' à '+hm(s.ts)+'.'});
+  if(av&&s.mt)P.push({t:'box',x:'Motif : '+s.mt});
+  if(s.slot){const sp=String(s.slot).split('|'),st=+sp[1],dur=s.dur||60,b=bracelet(st,dur);P.push({t:'box',x:'Créneau : '+fm(st)+' à '+fm(st+dur)+' le '+new Date(sp[0]+'T12:00').toLocaleDateString('fr-FR')+'\nBracelet '+b.name+', valable jusqu’à '+b.until+'h'})}
+  P.push({t:'rows',r:(s.lines||[]).map(l=>[Math.abs(l.qty)+' × '+l.name,eur(Math.abs(l.price*l.qty))])});
+  const R=[];
+  if(s.disc)R.push(['Remise'+(s.discLabel?' '+s.discLabel:''),'− '+eur(Math.abs(s.disc))]);
+  R.push([av?'Montant de l’avoir':'TOTAL TTC',eur(Math.abs(s.total)),true]);
+  Object.entries(s.vat||{}).forEach(([r,v])=>R.push(['dont TVA '+mlRate(r)+' %',eur(Math.abs(v.tva))]));
+  P.push({t:'rows',r:R});
+  if((s.pay||[]).length){P.push({t:'h',x:av?'Règlements concernés':'Règlement'});P.push({t:'rows',r:s.pay.map(p=>[METHODS[p.m]||p.m,eur(Math.abs(p.amt))])})}
+  if(!av&&s.change)P.push({t:'small',x:'Monnaie rendue : '+eur(s.change)});
+  if(s.passUse)P.push({t:'box',x:'Carnet '+s.passUse.code+' : '+s.passUse.k+' séance'+(s.passUse.k>1?'s':'')+' utilisée'+(s.passUse.k>1?'s':'')});
+  (s.newPasses||[]).forEach(cd=>P.push({t:'box',x:'Votre carnet de séances : '+cd+'\nPrésentez ce code à l’accueil à chaque venue.'}));
+  if(!av&&s.pts&&cl)P.push({t:'box',x:'Fidélité : +'+s.pts+' point'+(s.pts>1?'s':'')+' sur cet achat · total '+(cl.pts||0)+' point'+((cl.pts||0)>1?'s':'')});
+  if(!av&&S.settings.ticketMsg)P.push({t:'p',x:S.settings.ticketMsg});
+  if(!av&&s.jumpers>0&&s.no)P.push({t:'small',x:'Gardez ce message : le numéro de ticket '+s.no+' permet de retrouver votre venue.'});
+  P.push({t:'small',x:(av?'Avoir':'Ticket')+' n° '+s.no+(s.h?' · Lago '+LAGO_V+' · empreinte '+String(s.h).slice(0,16):'')});
+  const title=(av?'Avoir ':'Ticket ')+s.no;
+  return{kind:av?'avoir':'ticket',ref:s.no,to:cl&&!cl.anon?String(cl.email||''):'',toName:cl&&!cl.anon?cl.name:'',cid:cl?cl.id:'',title,pre:title+' · '+eur(Math.abs(s.total)),subject:nm+' : votre '+(av?'avoir':'ticket')+' '+s.no,parts:P};
+}
+function mlGiftDoc(g){
+  const nm=S.settings.name||'Lago',st=giftState(g),P=[];
+  P.push({t:'p',x:mlHello(g.to)});
+  P.push({t:'p',x:g.from?g.from+' vous offre une carte cadeau '+nm+'.':'Voici votre carte cadeau '+nm+'.'});
+  P.push({t:'big',x:g.code,s:'Montant : '+eurP(g.amt)+(g.bal!==g.amt?' · solde '+eurP(g.bal):'')});
+  const R=[['Montant',eurP(g.amt)]];
+  if(g.bal!==g.amt)R.push(['Solde actuel',eurP(g.bal),true]);
+  if(g.exp)R.push(['Valable jusqu’au',new Date(g.exp+'T12:00').toLocaleDateString('fr-FR')]);
+  if(g.to)R.push(['Pour',g.to]);
+  if(g.from)R.push(['De la part de',g.from]);
+  P.push({t:'rows',r:R});
+  if(g.msg)P.push({t:'box',x:g.msg});
+  if(st!=='ok')P.push({t:'box',x:'Attention : cette carte n’est plus utilisable ('+(GSL[st]?GSL[st][0].toLowerCase():st)+').'});
+  P.push({t:'p',x:'Présentez ce code en caisse pour régler tout ou partie de votre venue. Le solde restant reste utilisable jusqu’à la date de validité.'});
+  return{kind:'gift',ref:g.code,to:'',toName:g.to||'',cid:'',title:'Votre carte cadeau',pre:'Carte cadeau '+eurP(g.amt),subject:nm+' : votre carte cadeau',parts:P};
+}
+function mlResaDoc(b){
+  const nm=S.settings.name||'Lago',P=[],w=S.settings.web||{},left=Math.max(0,(b.total||0)-(b.paid?b.paid.a:0));
+  P.push({t:'p',x:mlHello(b.name)});
+  P.push({t:'p',x:'Votre réservation est confirmée. À très vite !'});
+  P.push({t:'box',x:mlCap(dlong(b.date))+' à '+fm(b.start)+'\n'+b.people+' personne'+(b.people>1?'s':'')+' · référence '+b.ref});
+  P.push({t:'rows',r:(b.items||[]).map(x=>[x.q+' × '+x.n,eur(x.q*x.price)])});
+  const R=[[b.paid?'Total de la réservation':'Total à régler sur place',eur(b.total||0),true]];
+  if(b.paid){R.push(['Payé en ligne','− '+eur(b.paid.a)]);R.push(['Reste à régler sur place',eur(left),true])}
+  P.push({t:'rows',r:R});
+  if(b.note)P.push({t:'small',x:'Votre message : '+b.note});
+  if(w.info)P.push({t:'h',x:'Informations pratiques'},{t:'p',x:w.info});
+  if(S.settings.addr)P.push({t:'small',x:'Adresse : '+S.settings.addr});
+  return{kind:'resa',ref:b.ref,to:String(b.mail||''),toName:b.name||'',cid:b.clientId||'',title:'Réservation '+b.ref,pre:mlCap(dlong(b.date))+' à '+fm(b.start),subject:'Votre réservation '+b.ref+' – '+nm,parts:P};
+}
+function mlResetMsg(a,to,code){
+  const nm=S.settings.name||'Lago',d={title:'Votre code de connexion',pre:'Code : '+rstShow(code),subject:nm+' : votre code de connexion',parts:[
+    {t:'p',x:mlHello(a.name)},{t:'p',x:'Voici le code pour choisir un nouveau mot de passe :'},
+    {t:'big',x:rstShow(code),s:'valable '+RST_MIN+' minutes'},
+    {t:'small',x:'Identifiant : '+a.ident+'\nSi vous n’êtes pas à l’origine de cette demande, ignorez ce message.'}]};
+  const r=mlRender(d);
+  return{to,toName:a.name,subject:r.subject,html:r.html,kind:'mdp',ref:'',extra:{code:rstShow(code),minutes:RST_MIN,login:a.ident}};
+}
+/* ---------- fenêtre « Envoyer par e-mail » ---------- */
+let MLD=null;
+function mlDlg(doc,back){
+  const r=mlRender(doc),ok=!!mailCfg(),cl=doc.cid?clientById(doc.cid):null;
+  MLD={doc,r,back:back||null,busy:false};
+  const prev=(S.mlog||[]).filter(x=>x.k===doc.kind&&x.ref===doc.ref&&x.ok).slice(-1)[0];
+  const q=mlQuota(),admin=isAdmin();
+  showModal(`${mh('Envoyer par e-mail')}
+   <div class="field"><label for="mld_to">Adresse du destinataire</label><input id="mld_to" type="email" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" value="${esc(doc.to||'')}" placeholder="prenom@exemple.fr"></div>
+   ${cl&&!cl.anon?`<label class="check mldsv" id="mld_svw" style="margin:0 0 8px"><input type="checkbox" id="mld_sv" ${cl.email?'':'checked'}><span>Enregistrer cette adresse sur la fiche de ${esc(cl.name)}</span></label>`:''}
+   ${prev?`<p class="muted mlden" style="margin:0 0 8px;font-size:13px">Déjà envoyé à ${esc(prev.to)} le ${new Date(prev.ts).toLocaleDateString('fr-FR')} à ${hm(prev.ts)}.</p>`:''}
+   <div class="mlprev" id="mld_prev" aria-label="Aperçu du message"></div>
+   ${ok?'':`<p class="muted" style="margin:0 0 8px;font-size:13px">L’envoi automatique n’est pas encore activé. ${admin?'Vous pouvez l’activer dans <b>Paramètres › E-mails</b> (5 minutes). En attendant, ouvrez le message dans votre messagerie.':'Demandez à l’administrateur de l’activer. En attendant, ouvrez le message dans votre messagerie.'}</p>`}
+   ${ok&&q.left<=Math.max(5,Math.round(q.q*.05))?`<p class="muted" style="margin:0 0 8px;font-size:13px">Quota du mois presque atteint : ${q.u} e-mail${q.u>1?'s':''} sur ${q.q}.</p>`:''}
+   <p id="mld_msg" class="muted" role="status" style="min-height:20px;margin:0 0 8px;font-size:13.5px"></p>
+   <div class="acts">${ok?`<button class="btn primary" id="mld_go" data-act="ml_go">${ic('mail')}Envoyer</button>`:`<button class="btn primary" data-act="ml_mt">${ic('mail')}Ouvrir ma messagerie</button>`}<button class="btn" data-act="ml_copy">Copier le texte</button>${!ok&&admin?'<button class="btn" data-act="goto" data-v="params" data-t="pmail">Activer l’envoi</button>':''}<button class="btn" data-act="ml_back">Retour</button></div>`);
+  try{const host=$('#mld_prev'),sr=host.attachShadow?host.attachShadow({mode:'open'}):null;if(sr)sr.innerHTML=r.html;else host.textContent=r.text}catch(e){}
+  setTimeout(()=>{const i=$('#mld_to');if(i&&!i.value)i.focus()},60);
+}
+function mlMsg(t,good){const x=$('#mld_msg');if(x){x.textContent=t;x.style.color=good?'var(--ok)':''}}
+function mlBack(){
+  const b=MLD&&MLD.back;
+  if(b&&b.k==='sale'){const s=S.sales.find(x=>x.id===b.id);if(s){showReceipt(s,!!b.isNew);return}}
+  else if(b&&b.k==='gift'){gcOpen(b.id);return}
+  else if(b&&b.k==='resa'){webDetail(b.id);return}
+  closeModal();
+}
+async function mlGo(){
+  if(!MLD||MLD.busy)return;
+  const to=(($('#mld_to')||{}).value||'').trim().toLowerCase();
+  if(!MAILRE.test(to)){mlMsg('Adresse e-mail invalide.');return}
+  const doc=MLD.doc,r=MLD.r,sv=$('#mld_sv'),cid=doc.cid,btn=$('#mld_go');
+  MLD.busy=true;if(btn)btn.disabled=true;mlMsg('Envoi en cours…');
+  try{
+    await mlSend({to,toName:doc.toName,subject:r.subject,html:r.html,kind:doc.kind,ref:doc.ref});
+    if(sv&&sv.checked&&cid){const c=clientById(cid);if(c&&!c.anon){c.email=to;save()}}
+    mlMsg('✓ E-mail envoyé à '+to+'.',true);toast('E-mail envoyé');
+  }catch(e){console.warn('mail',e);mlMsg('Échec : '+mlErrTxt(e)+'.')}
+  if(MLD)MLD.busy=false;const b2=$('#mld_go');if(b2)b2.disabled=false;
+}
+function mlMailtoHref(){
+  const to=(($('#mld_to')||{}).value||'').trim(),t=MLD.r.text.length>1400?MLD.r.text.slice(0,1400)+'…':MLD.r.text;
+  return 'mailto:'+encodeURIComponent(to).replace(/%40/g,'@')+'?subject='+encodeURIComponent(MLD.r.subject)+'&body='+encodeURIComponent(t);
+}
+async function mlCopy(){try{await zCopy(MLD.r.text,'Texte copié')}catch(e){toast('Copie impossible')}}
+/* envoi automatique du ticket (réglable) : seulement sur l’appareil qui encaisse, une seule fois par ticket */
+const mlAutoBusy={};
+function mlNote(id,t,good){
+  const x=document.getElementById('mlauto');
+  if(x&&x.dataset.id===id){x.textContent=t;x.style.color=good?'var(--ok)':''}else if(good)toast(t);
+}
+async function mlAuto(s){
+  try{
+    const j=mjCfg();if(!j.autoTicket||!mailCfg())return;
+    if(s.ty==='av'||s.qw||s.demo)return;
+    const cl=s.clientId?clientById(s.clientId):null,to=cl&&!cl.anon?String(cl.email||'').trim().toLowerCase():'';
+    if(!to||!MAILRE.test(to))return;
+    if((S.mlog||[]).some(x=>x.k==='ticket'&&x.ref===s.no&&x.ok)||mlAutoBusy[s.id])return;
+    mlAutoBusy[s.id]=1;
+    const r=mlRender(mlTicketDoc(s));
+    mlNote(s.id,'Envoi du ticket à '+to+'…');
+    await mlSend({to,toName:cl.name,subject:r.subject,html:r.html,kind:'ticket',ref:s.no});
+    mlNote(s.id,'✓ Ticket envoyé à '+to,true);
+  }catch(e){console.warn('mail',e);mlNote(s.id,'Le ticket n’a pas pu être envoyé par e-mail ('+mlErrTxt(e)+').')}
+}
+function mlReceiptBtn(s,isNew){
+  const m=document.querySelector('#modal .modal');if(!m||!s||s.qw)return;
+  const prim=m.querySelector('button.primary[data-act="close"]');if(!prim||m.querySelector('[data-act="ml_ticket"]'))return;
+  const btn=`<button class="btn" data-act="ml_ticket" data-id="${esc(s.id)}" data-new="${isNew?1:0}">${ic('mail')}E-mail</button>`;
+  let box=m.querySelector('.cfacts');
+  if(box)box.insertAdjacentHTML('afterbegin',btn);
+  else prim.insertAdjacentHTML('beforebegin','<div class="acts cfacts">'+btn+'</div>');
+  if(isNew&&s.ty!=='av'&&mjCfg().autoTicket&&mailCfg()){
+    const cl=s.clientId?clientById(s.clientId):null;
+    if(cl&&!cl.anon&&MAILRE.test(String(cl.email||'').trim())){
+      m.querySelector('.cfacts').insertAdjacentHTML('beforebegin','<p class="muted" id="mlauto" data-id="'+esc(s.id)+'" style="margin:8px 0;font-size:13px"></p>');
+      mlAuto(s);
+    }
+  }
+}
+{const f=showReceipt;showReceipt=function(s,isNew){f(s,isNew);try{mlReceiptBtn(s,isNew)}catch(e){console.warn(e)}}}
+{const f=gcOpen;gcOpen=function(id){f(id);try{const g=gifts().find(x=>x.id===id),a=document.querySelectorAll('#modal .modal .acts');if(g&&a.length&&!document.querySelector('#modal [data-act="ml_gift"]'))a[a.length-1].insertAdjacentHTML('beforeend',`<button class="btn" data-act="ml_gift" data-id="${esc(g.id)}">${ic('mail')}E-mail</button>`)}catch(e){console.warn(e)}}}
+{const f=webDetail;webDetail=function(id){f(id);try{
+  const b=webOf(id),a=document.querySelectorAll('#modal .modal .acts');
+  if(b&&(b.st==='ok'||b.st==='done')&&a.length&&!document.querySelector('#modal [data-act="ml_resa"]')){
+    const cl=a[a.length-1].querySelector('[data-act="close"]'),h=`<button class="btn" data-act="ml_resa" data-id="${esc(b.id)}">${ic('mail')}Confirmation par e-mail</button>`;
+    if(cl)cl.insertAdjacentHTML('beforebegin',h);else a[a.length-1].insertAdjacentHTML('beforeend',h);
+  }}catch(e){console.warn(e)}}}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act^="ml_"]');if(!b||b.disabled)return;const a=b.dataset.act;
+  if(a==='ml_ticket'){const s=S.sales.find(x=>x.id===b.dataset.id);if(s)mlDlg(mlTicketDoc(s),{k:'sale',id:s.id,isNew:b.dataset.new==='1'})}
+  else if(a==='ml_gift'){const g=gifts().find(x=>x.id===b.dataset.id);if(g)mlDlg(mlGiftDoc(g),{k:'gift',id:g.id})}
+  else if(a==='ml_resa'){const w=webOf(b.dataset.id);if(w)mlDlg(mlResaDoc(w),{k:'resa',id:w.id})}
+  else if(a==='ml_go')mlGo();
+  else if(a==='ml_back')mlBack();
+  else if(a==='ml_copy')mlCopy();
+  else if(a==='ml_mt'&&MLD){const to=(($('#mld_to')||{}).value||'').trim();if(!MAILRE.test(to)){mlMsg('Indiquez d’abord l’adresse du destinataire.');return}location.href=mlMailtoHref()}
+});
+/* ---------- Paramètres › E-mails ---------- */
+function mlSample(){
+  const k=Object.keys(METHODS)[0],lines=[{qty:2,name:'Entrée 1 h',price:1500,rate:10},{qty:1,name:'Chaussettes',price:300,rate:20}],tot=3300;
+  return{id:'smp',no:'TEST-0001',ts:Date.now(),lines,total:tot,disc:0,vat:{'10':{ttc:3000,tva:273},'20':{ttc:300,tva:50}},pay:[{m:k,amt:tot}],clientId:null,jumpers:0};
+}
+const MM_KINDS=ML_KIND;
+function vSetMail(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const c=mjCfg(),ok=!!mailCfg(),q=mlQuota(),pc=Math.min(100,Math.round(q.u/q.q*100));
+  const inp=(id,v,ph,ty)=>`<input id="${id}" ${ty?'type="'+ty+'" ':''}value="${esc(v||'')}" placeholder="${esc(ph||'')}" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off">`;
+  const cp=(t,what)=>`<button type="button" class="btn mmcp" data-act="mm_cp" data-v="${esc(what)}" aria-label="Copier ${esc(t)}">Copier</button>`;
+  const lg=(S.mlog||[]).slice().sort((a,b)=>b.ts-a.ts).slice(0,25);
+  const row=(l,v,w)=>`<div class="row mmrow"><span class="grow"><b>${l}</b></span><code>${esc(v)}</code>${cp(l,w)}</div>`;
+  m.innerHTML=`<div class="card"><h3>E-mails aux clients ${ok?'<span class="pill ok">Activé</span>':'<span class="pill warn">À configurer</span>'}</h3>
+   <p class="muted" style="font-size:13.5px;margin:0 0 12px">Envoyez en un geste le ticket, l’avoir, la carte cadeau ou la confirmation de réservation. Les e-mails partent <b>de votre propre adresse</b> (celle de votre nom de domaine) grâce à EmailJS, un service gratuit jusqu’à ${MJ_QUOTA} e-mails par mois, relié à votre messagerie.</p>
+   ${fld('Service ID',inp('mm_sid',c.sid,'service_xxxxxxx'))}${fld('Template ID',inp('mm_tid',c.tid,'template_xxxxxxx'))}${fld('Public Key',inp('mm_key',c.key,'xxxxxxxxxxxxxxxx'))}
+   ${fld('Nom d’expéditeur affiché',inp('mm_name',c.name,S.settings.name||'Nom de votre parc'),'Ce que le client voit à la place de l’adresse : « '+esc(mlFrom())+' ».')}
+   ${fld('Adresse de réponse',inp('mm_addr',c.addr,mlContact()||'contact@votre-parc.fr','email'),'Quand le client répond, sa réponse arrive ici. Laissez vide pour utiliser l’e-mail de contact du parc.')}
+   ${fld('Message en bas de chaque e-mail (facultatif)','<textarea id="mm_foot" maxlength="400" rows="3" placeholder="Ex. : Horaires, réseaux sociaux, mention de retour…">'+esc(c.foot||'')+'</textarea>')}
+   <label class="check" style="margin:6px 0 10px"><input type="checkbox" id="mm_auto" ${c.autoTicket?'checked':''}><span>Envoyer automatiquement le ticket après chaque vente quand la fiche client a une adresse e-mail</span></label>
+   ${fld('Quota mensuel de votre offre EmailJS',inp('mm_quota',String(c.quota||MJ_QUOTA),'200','number'),'À modifier seulement si vous passez à une offre payante.')}
+   <div class="mlq"><div class="mlbar"><i style="width:${pc}%"></i></div><span class="muted" style="font-size:13px">${q.u} e-mail${q.u>1?'s':''} envoyé${q.u>1?'s':''} ce mois-ci sur ${q.q}</span></div>
+   <p id="mm_msg" class="muted" style="min-height:20px;font-size:13.5px;margin:10px 0 0" role="status"></p>
+   <div class="acts"><button class="btn primary" data-act="mm_save">Enregistrer</button></div>
+   <div class="field" style="margin-top:14px"><label for="mm_to">E-mail de test</label>${inp('mm_to',mailOf(ME),'votre@adresse.fr','email')}<span class="muted" style="font-size:13px">Envoie un faux ticket à cette adresse pour vérifier le réglage et l’apparence.</span></div>
+   <div class="acts"><button class="btn" data-act="mm_test" ${ok?'':'disabled'}>Envoyer un e-mail de test</button></div></div>
+  <div class="card"><h3>Mise en place (10 minutes, une seule fois)</h3>
+   <ol class="mmsteps">
+    <li><b>Créez un compte gratuit</b> sur <b>emailjs.com</b>.</li>
+    <li><b>Email Services › Add New Service</b>. Pour envoyer avec l’adresse de votre nom de domaine (par exemple contact@votre-parc.fr), choisissez la messagerie qui l’héberge : <b>Gmail</b> (Google Workspace), <b>Outlook</b> (Microsoft 365) ou <b>SMTP server</b> pour les autres (OVH, IONOS, o2switch…). Les paramètres du serveur sortant (hôte, port, identifiant, mot de passe) sont dans l’espace de votre hébergeur de messagerie. Selon votre offre EmailJS, l’option SMTP peut ne pas être proposée : dans ce cas, utilisez Gmail ou Outlook ou passez à l’offre payante. Copiez le <b>Service ID</b>.</li>
+    <li><b>Email Templates › Create New Template</b>, puis remplissez ces champs :
+     <div class="mmbox">${row('To Email','{{to_email}}','to')}${row('Subject','{{subject}}','subject')}${row('From Name','{{from_name}}','from')}${row('Reply To','{{reply_to}}','reply')}${row('Contenu (Content)','{{{message_html}}}','body')}</div>
+     <span class="muted" style="font-size:13px">Pour le contenu, ouvrez l’éditeur en mode <b>code (Edit Content › Code Editor)</b> et collez uniquement <code>{{{message_html}}}</code> avec <b>trois</b> accolades de chaque côté : c’est ce qui affiche la mise en page. Enregistrez et copiez le <b>Template ID</b>.</span></li>
+    <li><b>Account › General</b> : copiez la <b>Public Key</b>.</li>
+    <li>Collez les trois codes ci-dessus, enregistrez, puis envoyez-vous un e-mail de test.</li>
+   </ol>
+   <p class="muted" style="font-size:13px;margin:8px 0 0">Bon à savoir : l’offre gratuite n’envoie pas de pièces jointes (le document est dans le corps du message) et limite chaque e-mail à 50 Ko. Pour que les messages n’arrivent pas en courrier indésirable, envoyez depuis une vraie boîte de votre domaine (réglages SPF/DKIM de votre hébergeur de messagerie).</p></div>
+  <div class="card"><h3>Journal des envois</h3>
+   ${lg.length?lg.map(x=>`<div class="row"><span class="grow"><b>${esc(MM_KINDS[x.k]||x.k)}${x.ref?' · '+esc(x.ref):''}</b><span class="muted">${new Date(x.ts).toLocaleDateString('fr-FR')} ${hm(x.ts)} · ${x.to?esc(x.to):'adresse effacée'}${x.by?' · par '+esc(x.by):''}${x.ok?'':' · <b style="color:var(--bad)">échec : '+esc(x.err||'')+'</b>'}</span></span><span class="pill ${x.ok?'ok':'bad'}">${x.ok?'Envoyé':'Échec'}</span></div>`).join(''):'<p class="muted">Aucun e-mail envoyé pour le moment.</p>'}
+   ${(S.mlog||[]).length?'<div class="acts" style="margin-top:10px"><button class="btn" data-act="mm_purge">Vider le journal</button></div>':''}
+   <p class="muted" style="font-size:13px;margin:8px 0 0">Le journal garde 12 mois (date, destinataire, type de document, auteur). Le contenu des messages n’est pas conservé.</p></div>`;
+}
+TABS.params.splice(Math.max(1,TABS.params.findIndex(x=>x[0]==='pacc')+1),0,['pmail','E-mails']);SUBS.pmail=vSetMail;
+function mlAccPointer(m){
+  if(!isAdmin()||!m)return;
+  m.insertAdjacentHTML('beforeend',`<div class="card" style="margin-top:14px"><h3>E-mails ${mailCfg()?'<span class="pill ok">Activé</span>':'<span class="pill warn">À configurer</span>'}</h3><p class="muted" style="font-size:13.5px;margin:0 0 8px">Mot de passe oublié, tickets, avoirs, cartes cadeaux et confirmations de réservation : tout se règle dans Paramètres › E-mails.</p><div class="acts"><button class="btn" data-act="goto" data-v="params" data-t="pmail">${ic('mail')}Ouvrir les réglages e-mails</button></div></div>`);
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act^="mm_"]');if(!b||b.disabled||!isAdmin())return;const a=b.dataset.act,msg=t=>{const x=$('#mm_msg');if(x)x.textContent=t};
+  const val=id=>String((($('#'+id)||{}).value)||'').trim();
+  if(a==='mm_save'){
+    const ad=val('mm_addr');if(ad&&!MAILRE.test(ad)){msg('Adresse de réponse invalide.');return}
+    const qn=Math.max(1,Math.min(100000,parseInt(val('mm_quota'))||MJ_QUOTA));
+    mjSet({sid:val('mm_sid'),tid:val('mm_tid'),key:val('mm_key'),name:val('mm_name').slice(0,60),addr:ad,foot:String((($('#mm_foot')||{}).value)||'').trim().slice(0,400),autoTicket:!!($('#mm_auto')||{}).checked,quota:qn});
+    save();vSetMail($('#sub'));const ok=!!mailCfg();toast(ok?'E-mails activés':'Réglage enregistré (incomplet)');
+    const x=$('#mm_msg');if(x)x.textContent=ok?'Réglage enregistré. Envoyez-vous un e-mail de test pour vérifier.':'Il manque encore le Service ID, le Template ID ou la Public Key.';
+  }else if(a==='mm_test'){
+    const to=val('mm_to').toLowerCase();if(!MAILRE.test(to)){msg('Indiquez une adresse e-mail valide pour le test.');return}
+    b.disabled=true;msg('Envoi en cours…');
+    try{const d=mlTicketDoc(mlSample());d.subject='[Test] '+d.subject;const r=mlRender(d);
+      await mlSend({to,toName:ME?ME.name:'',subject:r.subject,html:r.html,kind:'test',ref:'TEST'});
+      vSetMail($('#sub'));const x=$('#mm_msg');if(x)x.textContent='✓ E-mail de test envoyé à '+to+'. Ouvrez-le : si vous voyez le ticket mis en page, tout est prêt. Si vous voyez du texte brut ou un message vide, le contenu du modèle n’est pas {{{message_html}}}.';toast('E-mail de test envoyé')}
+    catch(x){console.warn('mail',x);msg('Échec : '+mlErrTxt(x)+'.');if(b.isConnected)b.disabled=false}
+  }else if(a==='mm_cp'){
+    const T={to:'{{to_email}}',subject:'{{subject}}',from:'{{from_name}}',reply:'{{reply_to}}',body:'{{{message_html}}}'};
+    try{await zCopy(T[b.dataset.v]||'','Copié')}catch(x){toast('Copie impossible')}
+  }else if(a==='mm_purge'){
+    askYes('Vider le journal des envois d’e-mails ? Le compteur du mois repart de zéro.',()=>{S.mlog=[];save();closeModal();vSetMail($('#sub'));toast('Journal vidé')},'Vider');
+  }
+});
+/* RGPD : effacer les adresses d’un client dans le journal */
+function mlForget(list){
+  const set=new Set((list||[]).map(x=>String(x||'').trim().toLowerCase()).filter(Boolean));if(!set.size)return;
+  (S.mlog||[]).forEach(x=>{if(x.to&&set.has(String(x.to).toLowerCase()))x.to=''});
+}
+function mlPersonLog(c){
+  const set=new Set([c.email].concat((S.web||[]).filter(b=>b.clientId===c.id).map(b=>b.mail)).map(x=>String(x||'').trim().toLowerCase()).filter(Boolean));
+  return (S.mlog||[]).filter(x=>x.to&&set.has(String(x.to).toLowerCase())).map(x=>({date:new Date(x.ts).toISOString(),type:ML_KIND[x.k]||x.k,reference:x.ref||'',destinataire:x.to,envoye:!!x.ok}));
+}
+/* ======== v75 : les plannings s’ouvrent sur le jour d’aujourd’hui et suivent le changement de jour ======== */
+let DAYSEEN=today(),DAYPEND=false;
+/* en entrant dans « Planning clients » ou « Planning staff » depuis une autre page : on repart d’aujourd’hui */
+function dayReset(v){
+  if(v==='staff'||v==='resa'){plSel=null;plSelPlan=null;slotDay=today();weekOff=0}
+}
+/* l’appli reste ouverte à minuit, ou est rouverte le lendemain : le jour affiché suit la date réelle */
+function dayFollow(){
+  const t=today();if(t===DAYSEEN)return;
+  const old=DAYSEEN;DAYSEEN=t;
+  if(slotDay===old||slotDay<t)slotDay=t;
+  if(cxDay===old)cxDay=t;
+  plSel=null;plSelPlan=null;weekOff=0;DAYPEND=true;
+}
+function dayDraw(){
+  if(!DAYPEND)return;
+  if(document.querySelector('#modal .modal'))return;
+  const a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='button'&&a.type!=='checkbox')return;
+  DAYPEND=false;
+  if(view==='accueil'||view==='resa'||view==='staff'){try{render()}catch(e){console.warn(e)}}
+}
+function dayTick(){try{dayFollow();dayDraw()}catch(e){console.warn(e)}}
+setInterval(dayTick,30000);
+addEventListener('focus',dayTick);addEventListener('pageshow',dayTick);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')dayTick()});
+init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();v61Init();hoursInit();applySettings();cart=newCart();chrome();route();bootGate();
 })();
