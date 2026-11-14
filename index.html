@@ -2769,6 +2769,180 @@ body.navmini .side .logo .lgm{display:block}
 
 .gemp{border:1px solid var(--line);background:var(--surface-2);border-radius:14px;padding:12px 14px;margin:6px 0 4px}
 .gemp>b{display:block;font-size:16px;margin:0 0 4px}.gemp p{margin:0 0 10px;font-size:14px;line-height:1.45}
+
+/* =====================================================================
+   v80 · « le billet » : nouvelle identité visuelle (posée en dernier, remplace la couche dégradés/verre de v59).
+   Aplats francs, bordures encre, boutons « à presser », tuiles-tickets, ticket de caisse déchiré, titres en minuscules.
+   Les écrans de gestion restent calmes : bordures fines, pas d'ombres dures sur les cartes.
+   ===================================================================== */
+:root{
+  --chalk:#EAF1FF; --sun:#FFC93C; --rule:#0A1F4D;
+  --g-blue:var(--brand); --g-orange:var(--pay); --g-sun:var(--brand); --g-ink:var(--ink);
+  --g-hair:#D7DFEE; --g-card:#FFFFFF;
+  --canvas:#FFFFFF; --hair:#D7DFEE;
+  --sh-1:none; --sh-2:none; --sh-3:0 14px 34px rgba(10,31,77,.16); --sh-blue:none;
+  --sh-btn-b:0 4px 0 var(--rule); --sh-btn-o:0 4px 0 var(--rule);
+  --ring:0 0 0 3px var(--sun),0 0 0 5px var(--rule);
+}
+html{scroll-behavior:auto}
+body{background:#FFFFFF!important;letter-spacing:0}
+*{scrollbar-color:color-mix(in srgb,var(--ink) 28%,transparent) transparent}
+h1,h2,h3{letter-spacing:-.03em}
+:focus-visible{outline:3px solid var(--sun)!important;outline-offset:2px}
+
+/* ----- barre de recherche du haut ----- */
+.gbar{background:#fff!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;border-bottom:0!important}
+.gbox{border:2.5px solid var(--rule)!important;border-radius:999px!important;background:#fff!important;box-shadow:none!important;min-height:48px}
+.gbox:focus-within{box-shadow:0 0 0 3px var(--sun)!important}
+.gb-go{background:var(--pay)!important;color:var(--ink)!important;border:2px solid var(--rule);border-radius:999px!important;box-shadow:none!important}
+.gb-ai .gb-ri{background:var(--chalk)!important;color:var(--ink)!important}
+.gb-res{border:2.5px solid var(--rule)!important;border-radius:18px!important;box-shadow:0 5px 0 var(--rule)!important}
+
+/* ----- menu de gauche : rail plein ----- */
+@media (min-width:901px){
+  .side{background:var(--side)!important;border:0!important;box-shadow:none!important;border-radius:26px!important}
+  .side .logo svg,.side .logo .lt{color:#fff}
+  .nav a{border-radius:14px!important;color:#fff!important;font-weight:650!important;letter-spacing:0!important;opacity:.92}
+  .nav a svg{opacity:1;color:#fff}
+  .nav a:hover{background:rgba(255,255,255,.16)!important;box-shadow:none!important;opacity:1}
+  .nav a.on{background:#fff!important;color:var(--ink)!important;box-shadow:0 3px 0 rgba(10,31,77,.45)!important;opacity:1}
+  .nav a.on svg{color:var(--pay)!important;filter:none!important}
+  .subnav{border-left:2px dashed rgba(255,255,255,.4)!important}
+  .subnav button{color:#fff!important;opacity:.9;border-radius:10px!important}
+  .subnav button:hover{background:rgba(255,255,255,.16)!important;box-shadow:none!important}
+  .subnav button.on{background:var(--chalk)!important;color:var(--ink)!important;box-shadow:none!important;opacity:1}
+  .navacc{border-top:2px dashed rgba(255,255,255,.4)!important}
+  .side-foot,.side-foot strong,.side-foot button{color:#fff!important}
+  .navtog{background:rgba(255,255,255,.18)!important}
+}
+.nav a .nbadge{background:var(--pay)!important;color:var(--ink)!important;box-shadow:none!important;border:2px solid var(--rule)}
+.lmark{background:var(--pay)!important;box-shadow:none!important}
+
+/* ----- titres de page ----- */
+.top h1{background:none!important;-webkit-text-fill-color:var(--ink)!important;color:var(--ink)!important;font-size:clamp(34px,4.2vw,52px)!important;font-weight:700;letter-spacing:-.045em!important;line-height:.95;text-transform:lowercase;width:auto}
+.top .sub{font-size:14px;font-weight:600;color:var(--muted)}
+.rolepill{background:#fff!important;border:2px solid var(--rule)!important;box-shadow:none!important;color:var(--ink)!important;font-weight:700}
+.rolepill.adm svg{color:var(--brand)}
+
+/* ----- boutons : les actions sont « à presser » ----- */
+.btn{background:#fff!important;color:var(--ink)!important;border:2px solid var(--rule)!important;border-radius:14px!important;box-shadow:0 3px 0 var(--rule)!important;font-weight:700!important;text-shadow:none!important;transition:transform .06s,box-shadow .06s,background .12s!important}
+.btn:hover{background:var(--chalk)!important;border-color:var(--rule)!important;filter:none!important}
+.btn:active{transform:translateY(3px)!important;box-shadow:0 0 0 var(--rule)!important}
+.btn.primary,.btn.primary:hover,.btn.primary:focus-visible,a.btn.primary,.btn.primary.gjoinb{background:var(--brand)!important;color:#fff!important;border-color:var(--rule)!important;box-shadow:0 3px 0 var(--rule)!important;filter:none!important}
+.btn.primary:hover{background:color-mix(in srgb,var(--brand) 88%,#000)!important}
+.btn.warnbtn,.btn.warnbtn:hover,.btn-pay,.btn-pay:hover:not(:disabled),.hero .btn.primary,.hero .btn.primary:hover{background:var(--pay)!important;color:var(--ink)!important;border:2.5px solid var(--rule)!important;box-shadow:0 5px 0 var(--rule)!important;text-shadow:none!important}
+.btn-pay:disabled{background:#EEF2FA!important;color:var(--muted)!important;border-color:#C6D0E6!important;box-shadow:0 4px 0 #C6D0E6!important}
+.btn-pay{font-size:20px!important;letter-spacing:-.02em}
+.btn.ghost,.btn.ghost:hover{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+.btn.ghost:hover{background:var(--chalk)!important}
+.btn.danger{background:#fff!important;color:var(--bad)!important;border-color:var(--bad)!important;box-shadow:0 3px 0 var(--bad)!important}
+.ix{background:#fff!important;border:2px solid var(--rule)!important;box-shadow:none!important}
+.chip{background:#fff!important;border:2px solid var(--rule)!important;color:var(--ink)!important;box-shadow:0 2px 0 var(--rule)!important;font-weight:700}
+.chip.on,.dy.on{background:var(--brand)!important;color:#fff!important;border-color:var(--rule)!important;box-shadow:0 2px 0 var(--rule)!important}
+.tabs,.seg{background:var(--chalk)!important;box-shadow:none!important;border:2px solid var(--rule);border-radius:14px!important}
+.tabs button,.seg button{font-weight:700}
+.tabs button.on,.seg button.on{background:var(--brand)!important;color:#fff!important;box-shadow:none!important;border-radius:10px!important}
+
+/* ----- cartes de gestion : calmes ----- */
+.card,.dcard,.kpi,.gu{background:#fff!important;border:1.5px solid var(--hair)!important;box-shadow:none!important;border-radius:18px!important}
+.mt:not(.todo) .mt-main{background:#fff!important;border:1.5px solid var(--hair)!important;box-shadow:none!important;border-radius:18px!important}
+/* contrôle du jour à faire : on garde le halo (animé, ou fixe si « réduire les animations ») */
+.mt.todo .mt-main{background:#FFF1DE!important;background-image:none!important;border:2.5px solid var(--pay)!important;border-radius:18px!important}
+.mt.todo:hover>.mt-main,.mt.todo:focus-within>.mt-main{border-color:var(--pay)!important}
+.card h3{font-family:var(--f-display);font-weight:700;letter-spacing:-.025em}
+input,select,textarea{border:2px solid #AAB8D6!important;border-radius:12px!important;box-shadow:none!important;background:#fff!important}
+input:focus,select:focus,textarea:focus{border-color:var(--rule)!important;box-shadow:0 0 0 3px var(--sun)!important;outline:none}
+
+/* ----- caisse ----- */
+.cat{background:#fff!important;color:var(--ink)!important;border:2.5px solid var(--rule)!important;border-radius:999px!important;box-shadow:0 3px 0 var(--rule)!important;min-height:50px;font-weight:700}
+.cat .dot{display:inline-block!important}
+.cat.on{background:var(--cat,var(--brand))!important;color:#fff!important;box-shadow:0 3px 0 var(--rule)!important}
+.cat:active{transform:translateY(3px)!important;box-shadow:0 0 0 var(--rule)!important}
+.search input{border:2.5px solid var(--rule)!important;border-radius:999px!important}
+
+.grid .tile,.tile{position:relative;border:2.5px solid var(--rule)!important;border-top:2.5px solid var(--rule)!important;border-radius:18px!important;background:#fff!important;box-shadow:0 4px 0 var(--rule)!important;overflow:hidden;padding:0!important;gap:0!important;transition:transform .06s,box-shadow .06s!important}
+.tile:hover{transform:translateY(-4px)!important;box-shadow:0 8px 0 var(--rule)!important;background:var(--chalk)!important}
+.tile:active{transform:translateY(4px)!important;box-shadow:0 0 0 var(--rule)!important}
+.tile .art{border-radius:0!important;border-bottom:2.5px dashed var(--rule)}
+.tile .n{background:#fff!important;color:var(--ink)!important;border-bottom:0!important;font-weight:700!important;position:relative;min-height:50px}
+.tile .n::before,.tile .n::after{content:"";position:absolute;top:-10px;width:16px;height:16px;border-radius:50%;background:#fff;border:2.5px solid var(--rule)}
+.tile .n::before{left:-10px}.tile .n::after{right:-10px}
+.tile .p,.grid .tile .p{background:var(--ink)!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-radius:0 0 0 12px!important;font-weight:700;font-size:15px!important}
+.tile .badge,.badge{background:var(--sun)!important;color:var(--ink)!important;border:2.5px solid var(--rule);box-shadow:none!important}
+
+.cbar{background:#fff!important;border:2.5px solid var(--rule)!important;box-shadow:0 4px 0 var(--rule)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+
+.cart{background:var(--chalk)!important;border:0!important;border-radius:20px 20px 0 0!important;box-shadow:none!important}
+.cart-h h2{font-size:22px;text-transform:lowercase;letter-spacing:-.04em}
+.pick{border:2px dashed var(--rule)!important;background:#fff!important;border-radius:12px!important;color:var(--ink)}
+.lines,.ln,.tot{border-color:rgba(10,31,77,.35)!important;border-style:dashed!important}
+.ln{border-left:0!important;border-right:0!important;border-top:0!important}
+.lines,.tot{border-left:0!important;border-right:0!important;border-bottom:0!important}
+.tot .r.big{font-size:32px!important;letter-spacing:-.04em;font-family:var(--f-display)}
+.step button{background:#fff!important;border:2px solid var(--rule);box-shadow:none!important}
+@media (min-width:901px){
+  .cart{padding-bottom:14px;-webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/18px 100%;mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/18px 100%}
+}
+
+/* ----- planning : dalles ----- */
+.dl{border:2.5px solid var(--rule)!important;border-radius:14px!important;box-shadow:0 3px 0 var(--rule)!important}
+.dl.cur{outline:3px solid var(--sun)!important;outline-offset:2px}
+.dl:active{transform:translateY(3px);box-shadow:0 0 0 var(--rule)!important}
+.hl{font-weight:700;font-family:var(--f-display);letter-spacing:-.04em}
+.dy{border:2.5px solid var(--rule)!important;border-radius:14px!important;background:#fff!important;box-shadow:0 3px 0 var(--rule)!important}
+
+/* ----- accueil et bandeaux ----- */
+.hero{background:var(--brand)!important;border:2.5px solid var(--rule)!important;box-shadow:0 6px 0 var(--rule)!important;border-radius:24px!important}
+.hero h1,.hero h2{text-transform:lowercase;letter-spacing:-.045em}
+
+/* ----- écran de connexion ----- */
+#gate{background:var(--brand)!important}
+.gcard{background:#fff!important;border:2.5px solid var(--rule)!important;border-radius:26px!important;box-shadow:0 8px 0 var(--rule)!important}
+.gcard h2{text-transform:lowercase;letter-spacing:-.045em;font-size:28px!important}
+.gbtn{background:var(--pay)!important;color:var(--ink)!important;border:2.5px solid var(--rule)!important;box-shadow:0 5px 0 var(--rule)!important;border-radius:16px!important;font-weight:700}
+.gbtn:active{transform:translateY(5px);box-shadow:0 0 0 var(--rule)!important}
+.gemp{background:var(--chalk)!important;border:2px dashed var(--rule)!important;border-radius:16px!important}
+
+/* ----- navigation mobile ----- */
+@media (max-width:900px){
+  .mnav{background:#fff!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-top:2.5px solid var(--rule)!important;box-shadow:none!important}
+  .mnav button.on,.mnav a.on{background:var(--brand)!important;color:#fff!important;box-shadow:0 3px 0 var(--rule)!important}
+}
+.toast{background:var(--ink)!important;color:#fff!important;border:2.5px solid var(--sun);border-radius:14px!important}
+.scrim{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(10,31,77,.55)!important}
+.modal{border:2.5px solid var(--rule)!important;border-radius:22px!important;box-shadow:0 8px 0 var(--rule)!important}
+
+/* ----- retouches (v80) ----- */
+.gbox input{border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important}
+.hero{background:var(--brand)!important;color:#fff!important;border:2.5px solid var(--rule)!important;box-shadow:0 6px 0 var(--rule)!important;border-radius:24px!important;overflow:visible!important}
+.hero h2,.hero h1,.hero p,.hero .eyebrow,.hero .wel{color:#fff!important}
+.hero::before,.hero::after{content:""!important;position:absolute!important;z-index:1;top:50%!important;bottom:auto!important;margin-top:-14px;width:28px!important;height:28px!important;border-radius:50%!important;background:#fff!important;border:2.5px solid var(--rule)!important;filter:none!important;opacity:1!important}
+.hero::before{left:-15px!important;right:auto!important}.hero::after{right:-15px!important;left:auto!important}
+.hero .btn,.hero .btn:hover{background:var(--pay)!important;color:var(--ink)!important;border:2.5px solid var(--rule)!important;box-shadow:0 4px 0 var(--rule)!important}
+.hero .btn.ghost,.hero a.btn.ghost{background:transparent!important;color:#fff!important;border-color:#fff!important;box-shadow:none!important}
+.banner,.banner.sfban{background:var(--chalk)!important;border:2px dashed var(--rule)!important;box-shadow:none!important;border-radius:16px!important}
+.avatar,.pav{background:var(--sun)!important;color:var(--ink)!important;border:2px solid var(--rule)!important;box-shadow:none!important;background-image:none!important}
+.mt-ic{box-shadow:none!important;border:2px solid var(--rule)!important;background-image:none!important}
+.mt-todo,em.mt-todo{box-shadow:none!important;border:2px solid var(--rule)}
+.pill{background:var(--chalk)!important;color:var(--ink)!important;border:1.5px solid var(--rule);box-shadow:none!important;background-image:none!important;font-weight:700}
+.pill.ok{background:#DDF5E8!important;color:#0E6B3F!important}
+.pill.warn{background:#FFE9D2!important;color:#9A4300!important}
+.pill.bad{background:#FFE0E0!important;color:#A12828!important}
+.kpi .v,.v.num{background:none!important;-webkit-text-fill-color:currentColor!important;color:var(--ink)}
+.bar{background-image:none!important;background-color:var(--chalk)!important;box-shadow:none!important}
+.tot{background:transparent!important}
+.tev.bleue{background:var(--brand)!important;background-image:none!important;border:2px solid var(--rule)!important}
+.tev.orange{background:var(--pay)!important;background-image:none!important;color:var(--ink)!important;border:2px solid var(--rule)!important}
+.streak{background:var(--chalk)!important;background-image:none!important;border:2px dashed var(--rule)!important}
+.gic{background:var(--chalk)!important;background-image:none!important;box-shadow:none!important}
+.tlw,.tc,.tt,.pls,i.ok,i.bad,i.warn,span.p.num,button.go{box-shadow:none!important}
+.cartbar{background:var(--ink)!important;color:#fff!important;border:2.5px solid var(--rule)!important;border-radius:20px!important;box-shadow:0 4px 0 var(--pay)!important}
+@media (max-width:900px){
+  .hero::before,.hero::after{display:none!important}
+  .mnav button,.mnav a{border-radius:14px!important}
+  .mnav button.on,.mnav a.on{margin:4px 2px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -2827,7 +3001,7 @@ body.navmini .side .logo .lgm{display:block}
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v79" defer></script>
+<script src="app.js?v=v80" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>
