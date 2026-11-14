@@ -1490,10 +1490,10 @@ function vHomeBase(m){
   const resaN=S.sales.filter(s=>s.slot&&s.slot.startsWith(td)).length+evOn(td).length;
   const duty=onDuty(td),c=checkToday(),pend=S.leaves.filter(l=>l.status==='pending'),done=c?CHECK_IDS.filter(k=>c.items[k]).length:0;
   const start=Math.max(QSTART,Math.min(QEND,Math.ceil(nm/15)*15)),deps=QS.filter(q=>q>=start).slice(0,4);
-  m.innerHTML=`<div class="top-actions" style="margin-bottom:10px;justify-content:flex-end">${rolePill()}</div><div class="hero"><div><p class="eyebrow">${dlong(td)}</p><h2>${greet()}</h2>${welcomeOn()?`<p class="wel">${esc(S.settings.welcome)}</p>`:''}<p>${esc(S.settings.name)} · ${openNow?here+' personnes présentes sur '+cap:'fermé pour le moment'} · ${duty.length} en poste</p></div>
+  m.innerHTML=`<div class="top-actions" style="margin-bottom:10px;justify-content:flex-end">${rolePill()}</div><div class="hero"><div><p class="eyebrow">${dlong(td)}</p><h2>${greet()}</h2>${welcomeOn()?`<p class="wel">${esc(S.settings.welcome)}</p>`:''}<p>${esc(S.settings.name)} · ${openNow?here+' personnes présentes sur '+cap:'fermé pour le moment'} · <span data-po="hero">${poHero(poNow(true))}</span></p></div>
     <div class="hero-actions"><a class="btn ghost" href="#resa">Planning clients</a></div></div>${homeTiles()}${ctrlBanner()}
    <div class="kpis"><div class="kpi"><div class="l">Ventes du jour</div><div class="v num">${eur(ca)}</div></div><div class="kpi"><div class="l">Présents</div><div class="v num">${here}<small> / ${cap}</small></div></div>
-     <div class="kpi"><div class="l">Réservations</div><div class="v num">${resaN}</div></div><div class="kpi"><div class="l">Équipe en poste</div><div class="v num">${duty.length}</div></div></div>
+     <div class="kpi"><div class="l">Réservations</div><div class="v num">${resaN}</div></div><div class="kpi"><div class="l">Équipe en poste</div><div class="v num" data-po="kpi">${poKpi(poNow(true))}</div></div></div>
    <div class="home"><div class="card"><h3>${tv('departs')}</h3>${deps.map(q=>{const l=leftFor(td,q,60);return `<div class="row"><span class="rt-time num"><b>${fm(q)}</b></span><span class="grow muted">${l<=0?'Complet':l+' places'}</span><button class="btn" data-act="sellslot" data-m="${q}" ${l<=0?'disabled':''}>Vendre</button></div>`}).join('')||'<p class="muted">'+tv('plus_de_depart')+'</p>'}</div>
     ${ctlOff()?'':`<div class="card"><h3>Contrôle quotidien <span class="pill ${c&&c.done?'ok':'warn'}">${c&&c.done?'Validé':'À faire'}</span></h3><div class="bar" style="margin:6px 0 10px"><i style="width:${c&&c.done?100:Math.round(done/CHECK_IDS.length*100)}%"></i></div>
      <p class="muted">${c&&c.done?'Signé par '+esc(staffOf(c.by).name)+' à '+hm(c.ts):done+' point'+(done>1?'s':'')+' sur '+CHECK_IDS.length+' contrôlés'}</p><a class="btn" style="margin-top:12px" href="#controle">${c&&c.done||!canCtl()?'Voir le contrôle':'Faire le contrôle'}</a></div>`}
@@ -1580,6 +1580,7 @@ function vStaffDay(m){
   const hrs=duty.reduce((a,s)=>a+plDayH(ds,s.id).w,0);
   const low=[];for(let i=0;i<nrows(p,d);i++){const c=(p.cells[d]||{})[i]||{};if(S.staff.filter(s=>c[s.id]==='w'&&!onLeave(s.id,ds)).length<MIN_STAFF)low.push(PSL[i])}
   m.innerHTML=dayChips(ds)+`<div class="pst" style="margin-bottom:12px"><span><b class="num">${duty.length}</b> en poste</span><span><b class="num">${plHn(hrs)}</b> h planifiées</span><span><b class="num">${lv.length}</b> en congé</span><span>${esc(p.name)}</span></div>
+    ${ds===today()?poCard('plan'):''}
     ${low.length?`<div class="banner"><span>Moins de ${MIN_STAFF} personnes sur : ${low.join(', ')}.</span><button class="btn" data-act="tab" data-id="equipe">Ouvrir le planning</button></div>`:`<div class="banner ok"><span>Équipe suffisante sur toute la journée.</span></div>`}
     <div class="dgrid one">${dayCard(p,d,ds)}</div>
     ${lv.length?`<div class="card" style="margin-top:14px"><h3>En congé payé</h3>${lv.map(s=>`<div class="row"><span class="avatar" style="background:${scol(s)};color:${inkOn(scol(s))}">${esc(initials(s.name))}</span><span class="grow"><b>${esc(s.name)}</b></span></div>`).join('')}</div>`:''}`;
@@ -4416,7 +4417,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v75';
+const LAGO_V='v76';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5894,9 +5895,9 @@ const plCnt=(p,d,ds,dc,i)=>{const c=(dc||p.cells[d]||{})[i]||{};return S.staff.f
 const plRun=(p,d,dc,i,id,v)=>{let k=0;while(i+k<nrows(p,d)&&((dc[i+k]||{})[id]||'')===v)k++;return k};
 function dayCard(p,d,ds){
   const tdy=ds?ds===today():plTdIdx(p)===d;
-  const n=nrows(p,d),dc=ds?swDayCells(p,d,ds):(p.cells[d]||{}),ro=!isAdmin(),vs=visStaff();
+  const n=nrows(p,d),dc=ds?swDayCells(p,d,ds):(p.cells[d]||{}),ro=!isAdmin(),vs=visStaff(),PON=tdy?poIdSet():null,PSLOT=tdy?poSlot():-1;
   const cnt=Array.from({length:n},(_,i)=>plCnt(p,d,ds,dc,i));
-  const head=PSL.slice(0,n).map(l=>`<th class="slh" scope="col"><span class="hxl">${l.replace('-','–')}</span><span class="hxs">${l.replace(/h/g,'').replace('-','–')}</span><span class="hxt">${l.slice(0,2).replace(/^0/,'')}</span></th>`).join('');
+  const head=PSL.slice(0,n).map((l,i)=>`<th class="slh${i===PSLOT?' nowc':''}" scope="col"><span class="hxl">${l.replace('-','–')}</span><span class="hxs">${l.replace(/h/g,'').replace('-','–')}</span><span class="hxt">${l.slice(0,2).replace(/^0/,'')}</span></th>`).join('');
   const body=vs.map((s,si)=>{
     const col=scol(s),lv=!!(ds&&onLeave(s.id,ds));let w=0,g=0;
     const cells=Array.from({length:n},(_,i)=>{
@@ -5907,7 +5908,7 @@ function dayCard(p,d,ds){
       const run=bs?plRun(p,d,dc,i,s.id,v):1;
       return `<td class="${bs?'bs':''} ${be?'be':''}"><button type="button" class="pk ${v} ${lv?'off':''} ${ro?'ro':''}" style="--c:${col};--k:${si};--len:${run}${plFill(p,d,ds,i,s.id,v)}" data-act="pcell" data-d="${d}" data-i="${i}" data-s="${s.id}" ${lv?'disabled':''} ${ro?'tabindex="-1"':''} aria-label="${esc(fname(s))}, ${DAYN[d]} ${PSL[i]} : ${lv?'en congé':v==='w'?'présent':v==='g'?'gestion':'libre'}">${lab?`<span class="bl" style="color:${v==='g'?'var(--ink-2)':inkOn(col)}"><span class="hxl">${esc(lab)}</span><span class="hxs">${esc(v==='g'?'Gest.':lab.replace(/h(?!\d)/g,''))}</span></span>`:''}</button></td>`}).join('');
     const hh=lv?'En congé':w||g?plHF(w||g)+(w&&g?' + '+plHF(g):'')+(!w&&g?' gestion':''):'Libre';
-    return `<tr class="pr${lv?' lv':''}"><th class="pn" scope="row"><span class="pnc"><span class="pav" style="background:${col};color:${inkOn(col)}">${esc(initials(s.name))}</span><span class="pnx"><span class="pnm">${esc(fname(s))}</span><em class="phr">${hh}</em></span></span></th>${cells}</tr>`}).join('');
+    return `<tr class="pr${lv?' lv':''}${PON&&PON.has(s.id)?' pon':''}" data-sid="${s.id}"><th class="pn" scope="row"><span class="pnc"><span class="pav" style="background:${col};color:${inkOn(col)}">${esc(initials(s.name))}</span><span class="pnx"><span class="pnm">${esc(fname(s))}</span><em class="phr">${hh}</em></span></span></th>${cells}</tr>`}).join('');
   const foot=`<tr class="cvr"><th class="pn" scope="row">Équipe</th>${cnt.map((k,i)=>`<td><span class="cvb ${plCls(k)}" role="img" aria-label="${PSL[i]} : ${k} personne${k>1?'s':''}">${k}</span></td>`).join('')}</tr>`;
   const low=cnt.filter(k=>k<MIN_STAFF).length;
   const cov=n?`<span class="pill ${low?'bad':'ok'} plcov">${low?low+' créneau'+(low>1?'x':'')+' à renforcer':'Équipe complète'}</span>`:'';
@@ -5936,6 +5937,7 @@ function vTeam(m){
      <div class="plact sc"><button class="btn" data-act="planpdf">PDF</button>${isAdmin()?`<button class="btn" data-act="planarch">Sauvegardes</button><button class="btn" data-act="planedit" data-id="${p.id}">Modifier</button><button class="btn primary" data-act="plannew">${ic('plus')}Nouveau planning</button>`:`<span class="pill">Consultation seule</span>`}</div></div>
     <div class="plrow"><div class="chips pch">${chips}</div><div class="seg plview" role="group" aria-label="Affichage"><button type="button" class="${wk?'':'on'}" data-act="plwk" data-k="jour">Jour</button><button type="button" class="${wk?'on':''}" data-act="plwk" data-k="semaine">Semaine</button></div></div>
     ${low.length?`<div class="banner"><span>${low.length} créneau${low.length>1?'x':''} sous le minimum de ${MIN_STAFF} personnes (${low.slice(0,4).join(', ')}${low.length>4?'…':''}).</span></div>`:`<div class="banner ok"><span>Tous les créneaux respectent le minimum de ${MIN_STAFF} personnes.</span></div>`}
+    ${td>=0?poCard('plan'):''}
     ${plStrip(p,wk?-1:plSel,td)}
     ${wk?`<div class="dgrid">${[0,1,2,3,4,5,6].map(d=>dayCard(p,d,null)).join('')}</div>`:`<div class="plday${dir?' sl'+(dir>0?'r':'l'):''}">${dayCard(p,plSel,null)}</div>`}
     <div class="card plcard" style="margin-top:14px"><h3>Total des heures par semaine</h3><div class="tts">${tot}</div><p class="muted" style="margin-top:12px">CP : ${cpLabel()}${isAdmin()?' · Touchez une case pour la remplir : <b>présent</b>, puis <b>gestion</b>, puis vide.':' · Seul l’administrateur peut modifier le planning.'}</p></div></div>`;
@@ -8176,6 +8178,7 @@ document.addEventListener('click',async e=>{
 /* accueil de l'administrateur : un bandeau seulement s'il y a quelque chose à voir */
 function vHome(m){
   vHomeY(m);
+  try{poHome(m)}catch(e){console.warn(e)}
   if(!isAdmin())return;
   try{
     const l=healthQuick().filter(x=>x.lv!=='ok'&&x.id!=='sw'&&x.id!=='sync'),bad=l.filter(x=>x.lv==='bad');
@@ -9729,9 +9732,81 @@ function dayDraw(){
   DAYPEND=false;
   if(view==='accueil'||view==='resa'||view==='staff'){try{render()}catch(e){console.warn(e)}}
 }
-function dayTick(){try{dayFollow();dayDraw()}catch(e){console.warn(e)}}
+function dayTick(){try{dayFollow();dayDraw();poRefresh()}catch(e){console.warn(e)}}
 setInterval(dayTick,30000);
 addEventListener('focus',dayTick);addEventListener('pageshow',dayTick);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')dayTick()});
+/* ======== v76 : « En poste maintenant » — qui travaille à l’heure qu’il est ========
+   Lit le planning du jour réel (échanges de shifts validés et congés compris) et l’heure de l’appareil.
+   Affiché sur l’Accueil (carte « Équipe en poste », bandeau et tuile), dans le planning équipe et dans l’onglet « Jour » du jour même.
+   Mis à jour sur place toutes les 30 s (sans redessiner la page) : on ne perd ni la saisie en cours, ni le défilement. */
+const poH=()=>{const n=new Date();return n.getHours()+n.getMinutes()/60};
+/* créneau de 2 h en cours dans la grille du jour (−1 : hors des heures du planning) */
+function poSlot(){const ds=today(),i=Math.floor((poH()-10)/2);return i>=0&&i<nrows(planFor(ds),dowOf(ds))?i:-1}
+/* all=true : toute l’équipe (pour un simple compteur) ; sinon seulement les personnes que cet appareil a le droit de voir */
+function poNow(all){
+  const ds=today(),h=poH(),E=1e-9,r={ds,h,on:[],soon:[],done:[],lv:[],planned:0,slot:poSlot()};
+  (all?S.staff:visStaff()).forEach(s=>{
+    if(onLeave(s.id,ds)){r.lv.push(s);return}
+    const c=cellsOf(planFor(ds),ds,s.id).map(([i,v])=>{const g=plSeg(ds,s.id,i,v);return {a:g[0],b:g[1],v}}).filter(x=>x.b>x.a+E).sort((x,y)=>x.a-y.a||x.b-y.b);
+    if(!c.length)return;
+    r.planned++;
+    /* des créneaux qui se suivent forment un seul bloc : « jusqu’à 18h », pas « jusqu’à 14h » puis « jusqu’à 16h » */
+    const B=[];c.forEach(x=>{const l=B[B.length-1];if(l&&x.a<=l.b+E)l.b=Math.max(l.b,x.b);else B.push({a:x.a,b:x.b})});
+    const cur=B.find(b=>b.a<=h+E&&h<b.b-E),nx=B.find(b=>b.a>h+E);
+    if(cur){const cc=c.find(x=>x.a<=h+E&&h<x.b-E);r.on.push({s,until:cur.b,g:!!cc&&cc.v==='g'})}
+    else if(nx)r.soon.push({s,from:nx.a,back:B.some(b=>b.b<=h+E)});
+    else r.done.push(s);
+  });
+  const nm=(x,y)=>x.s.name.localeCompare(y.s.name,'fr');
+  r.on.sort((x,y)=>x.until-y.until||nm(x,y));
+  r.soon.sort((x,y)=>x.from-y.from||nm(x,y));
+  return r;
+}
+const poIdSet=()=>new Set(poNow().on.map(x=>x.s.id));
+/* empreinte de l’état : la carte n’est redessinée que si quelqu’un arrive, part ou reprend */
+const poSig=r=>[r.on.map(x=>x.s.id+'@'+x.until+(x.g?'g':'')).join(','),r.soon.map(x=>x.s.id+'@'+x.from+(x.back?'b':'')).join(','),r.done.map(s=>s.id).join(','),r.planned].join('|');
+const poEnd=h=>h>=24?'minuit':plF(h);
+const poHero=r=>r.on.length?r.on.length+' en poste maintenant':r.planned?'personne en poste pour l’instant':'0 en poste';
+const poKpi=r=>r.on.length+'<small> / '+r.planned+'</small>';
+function poRow(s,pill,cls,sub){
+  const c=scol(s);
+  return `<div class="row ${cls}"><span class="avatar" style="background:${c};color:${inkOn(c)}">${esc(initials(s.name))}</span><span class="grow"><b>${esc(s.name)}</b><span class="muted">${esc(ROLE[s.role]||'')}${sub?' · <span class="nw">'+esc(sub)+'</span>':''}</span></span><span class="pill ${cls==='po-on'?'ok':''}">${esc(pill)}</span></div>`;
+}
+function poCard(kind){
+  const r=poNow(),sig=esc(poSig(r)),nb=r.on.length;
+  if(kind==='plan'){
+    const chips=r.on.map(x=>{const c=scol(x.s);return `<span class="poc"><span class="pav" style="background:${c};color:${inkOn(c)}">${esc(initials(x.s.name))}</span><span><b>${esc(fname(x.s))}</b><small>${x.g?'gestion · ':''}jusqu’à ${poEnd(x.until)}</small></span></span>`}).join('');
+    const nx=r.soon.slice(0,4).map(x=>esc(fname(x.s))+' à '+plF(x.from)).join(', ');
+    return `<div class="card ponow poplan" data-po="plan" data-sig="${sig}" role="status"><div class="poh"><h3>En poste maintenant</h3><span class="pill ${nb?'ok':''}">${nb}</span></div>${nb?`<div class="pochips">${chips}</div>`:`<p class="muted posub">${r.planned?'Personne n’est en poste à cette heure.':'Personne n’est planifié aujourd’hui.'}</p>`}${nx?`<p class="muted posub">Ensuite : ${nx}${r.soon.length>4?'…':''}.</p>`:''}</div>`;
+  }
+  const lab=s=>shiftLabel(r.ds,s.id);
+  const on=r.on.map(x=>poRow(x.s,'jusqu’à '+poEnd(x.until),'po-on',(x.g?'gestion · ':'')+lab(x.s))).join('');
+  const soon=r.soon.map(x=>poRow(x.s,(x.back?'reprend à ':'à ')+plF(x.from),'po-soon',lab(x.s))).join('');
+  const dn=r.done.length?`<p class="muted podone">Terminé pour aujourd’hui : ${r.done.map(s=>esc(fname(s))).join(', ')}.</p>`:'';
+  return `<div class="card ponow" data-po="home" data-sig="${sig}"><h3>Équipe en poste <span class="pill ${nb?'ok':''}">${nb} maintenant</span></h3>${on||`<p class="muted">${r.planned?'Personne n’est en poste à cette heure.':'Personne n’est planifié aujourd’hui.'}</p>`}${soon?`<p class="pogr">Plus tard aujourd’hui</p>${soon}`:''}${dn}</div>`;
+}
+/* Accueil : la carte « Équipe en poste » devient « En poste maintenant » (elle n’existe pas pour les appareils qui ne voient pas toute l’équipe) */
+function poHome(m){
+  const c=[...m.querySelectorAll('.home .card')].find(x=>{const h=x.querySelector('h3');return h&&/^Équipe en poste/.test(h.textContent)});
+  if(c)c.outerHTML=poCard('home');
+}
+/* mise à jour sur place */
+function poRefresh(){
+  const cards=document.querySelectorAll('.ponow[data-po]'),hero=document.querySelector('[data-po="hero"]'),kpi=document.querySelector('[data-po="kpi"]'),pl=document.querySelectorAll('.pln.today');
+  if(!cards.length&&!hero&&!kpi&&!pl.length)return;
+  if(cards.length||pl.length){
+    const r=poNow(),sg=poSig(r);
+    cards.forEach(el=>{if(el.dataset.sig!==sg)el.outerHTML=poCard(el.dataset.po)});
+    const ids=new Set(r.on.map(x=>x.s.id));
+    document.querySelectorAll('.pln.today tr.pr[data-sid]').forEach(tr=>tr.classList.toggle('pon',ids.has(tr.dataset.sid)));
+    document.querySelectorAll('.pln.today thead th.slh').forEach((th,i)=>th.classList.toggle('nowc',i===r.slot));
+  }
+  if(hero||kpi){
+    const a=poNow(true);
+    if(hero&&hero.textContent!==poHero(a))hero.textContent=poHero(a);
+    if(kpi&&kpi.innerHTML!==poKpi(a))kpi.innerHTML=poKpi(a);
+  }
+}
 init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();v61Init();hoursInit();applySettings();cart=newCart();chrome();route();bootGate();
 })();

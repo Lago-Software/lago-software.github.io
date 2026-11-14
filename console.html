@@ -317,6 +317,34 @@ async function csess(c){
   return s;
 }
 
+/* Les contrôles « fermés » sont verts mais les contrôles « ouverts » sont rouges : c’est exactement l’état d’une base aux règles par défaut (tout interdit).
+   La console le dit clairement et donne les étapes, au lieu de laisser deviner. */
+const CHK_T={base:'La base entière est fermée sans autorisation',link:'Le lien du client fonctionne',other:'Aucun autre chemin n’est accessible',susp:'L’état de suspension est lisible par Lago',only:'Seul le propriétaire peut suspendre',zone:'Zone propriétaire et sauvegardes verrouillées',own:'Le compte propriétaire a la main'};
+function chkHint(out){
+  if(!Array.isArray(out)||!out.length)return null;
+  const g=k=>out.find(x=>x.t===CHK_T[k]),ok=k=>{const x=g(k);return !!x&&x.ok};
+  const closed=ok('base')&&ok('other')&&ok('only')&&ok('zone'),lk=g('link'),sp=g('susp'),ow=g('own');
+  if(!closed||!lk||!sp)return null;
+  if(!lk.ok&&!sp.ok&&!(ow&&ow.ok))return 'def';
+  if(lk.ok&&sp.ok&&ow&&!ow.ok)return 'own';
+  return null;
+}
+function chkHintHtml(out,c){
+  const k=chkHint(out);if(!k)return '';
+  const host=esc(String((c&&c.u)||'').replace(/^https?:\/\//,'').replace(/\/.*$/,''));
+  if(k==='def')return `<div class="box warn" role="status" style="margin:12px 0 0"><h3>Les règles par défaut semblent encore en place</h3>
+   <p class="muted" style="margin:0 0 8px">La base est bien fermée, mais le chemin du client, la lecture de la suspension et votre compte sont aussi refusés : les règles de Lago n’ont probablement pas été publiées, ou l’ont été sur une autre base.</p>
+   <ol class="ol"><li>Dans la console Firebase, ouvrez le projet de ce client, puis <b>Realtime Database</b> (et non Firestore Database), onglet <b>Règles</b>.</li>
+   <li>Vérifiez que la base ouverte porte la même adresse que cette fiche : <b>${host}</b>. Un projet peut contenir plusieurs bases.</li>
+   <li>Remplacez tout le contenu par les règles proposées par cette console (bouton de copie), puis cliquez sur <b>Publier</b>.</li>
+   <li>Contrôlez qu’aucune erreur ne s’affiche et que l’heure de dernière publication est à jour. Attendez environ 10 secondes, puis relancez la vérification.</li></ol></div>`;
+  return `<div class="box warn" role="status" style="margin:12px 0 0"><h3>Votre compte propriétaire n’est pas reconnu par les règles</h3>
+   <p class="muted" style="margin:0 0 8px">Les règles sont publiées et fonctionnent, mais elles ont été écrites pour un autre compte que celui connecté dans ce projet.</p>
+   <ol class="ol"><li>Dans Firebase, ouvrez <b>Authentication</b> › Utilisateurs de ce projet : votre e-mail de console doit y figurer.</li>
+   <li>Copiez à nouveau les règles proposées par cette console (elles contiennent l’identifiant de ce compte) et publiez-les.</li>
+   <li>Relancez la vérification. Si le problème reste, vérifiez que les règles collées ne viennent pas d’un autre client ou d’un autre projet.</li></ol></div>`;
+}
+
 /* ---------- contrôles de sécurité (lecture seule, sans effet durable) ---------- */
 async function runChecks(c){
   const out=[],add=(ok,t,d)=>out.push({ok,t,d});
@@ -420,7 +448,7 @@ function vDetail(){
    <p class="small muted" style="margin:12px 0 0">Limite : ces sauvegardes sont lancées à la main. Une sauvegarde automatique quotidienne côté Google existe sur le plan payant (Blaze) de Firebase ; à vérifier dans la console Firebase du projet.</p></div>`;
   h+=`<div class="box"><h3>Sécurité de ce projet</h3><p class="muted">Contrôle en direct : la base est fermée, seul le chemin du client est ouvert, seul votre compte peut suspendre ou lire les sauvegardes.</p>
    <div class="acts" style="margin-top:0"><button class="btn pri" data-a="chk" type="button"${busy()}>Vérifier maintenant</button></div>
-   ${chk?`<ul class="chk">${chk.map(x=>`<li class="${x.ok?'':'x'}"><span class="m" aria-hidden="true">${x.ok?'✓':'!'}</span><div><b>${esc(x.t)}</b><span>${esc(x.d)}</span></div></li>`).join('')}</ul>`:''}
+   ${chk?`<ul class="chk">${chk.map(x=>`<li class="${x.ok?'':'x'}"><span class="m" aria-hidden="true">${x.ok?'✓':'!'}</span><div><b>${esc(x.t)}</b><span>${esc(x.d)}</span></div></li>`).join('')}</ul>${chkHintHtml(chk,c)}`:''}
    <details style="margin-top:12px"><summary><b>Règles à coller dans Firebase</b></summary><textarea id="dl_rules" readonly rows="10" onclick="this.select()" style="margin-top:8px">${esc(UIDOK.test(c.ou||'')?rulesClient(c.r,c.ou):'')}</textarea><div class="acts"><button class="btn sm" data-a="copyrules" type="button">Copier</button></div></details></div>
    <div class="box"><h3>Détails</h3><dl class="kv"><dt>Projet Firebase</dt><dd>${esc(c.pid||'—')}</dd><dt>Base de données</dt><dd>${esc(c.u)}</dd><dt>Modèle de départ</dt><dd>${esc(tplName(c.t))} v${esc(c.tv||'?')}</dd></dl>
    <label class="fld" style="margin-top:12px"><span>Notes (privées)</span><textarea id="dl_note" class="t1" rows="3" maxlength="1000">${esc(c.note||'')}</textarea></label>
@@ -450,7 +478,7 @@ function vWiz(){
    <ol class="ol"><li>Realtime Database › onglet <b>Règles</b>.</li><li>Remplacez tout le contenu par le texte ci-dessous, puis « Publier ».</li></ol>
    <textarea id="w_rules" readonly rows="12" onclick="this.select()">${esc(rulesClient(c.r,c.ou))}</textarea>
    <div class="acts"><button class="btn" data-a="wcopyrules" type="button">Copier les règles</button><button class="btn pri" data-a="w3" type="button"${busy()}>J’ai publié : vérifier</button></div>
-   ${w.chk?`<ul class="chk">${w.chk.map(x=>`<li class="${x.ok?'':'x'}"><span class="m" aria-hidden="true">${x.ok?'✓':'!'}</span><div><b>${esc(x.t)}</b><span>${esc(x.d)}</span></div></li>`).join('')}</ul>`:''}</div>`}
+   ${w.chk?`<ul class="chk">${w.chk.map(x=>`<li class="${x.ok?'':'x'}"><span class="m" aria-hidden="true">${x.ok?'✓':'!'}</span><div><b>${esc(x.t)}</b><span>${esc(x.d)}</span></div></li>`).join('')}</ul>${chkHintHtml(w.chk,c)}`:''}</div>`}
   else{const c=w.c,link=lagoLink(c);h+=`<div class="box okb"><h3>L’espace de ${esc(c.name)} est prêt et verrouillé</h3><p class="muted" style="margin:0">Tous les contrôles de sécurité sont passés.</p></div>
    <div class="box"><h3>Lien à envoyer au client</h3><label class="fld"><span>Lien secret (ouvre un espace neuf « ${esc(tplName(c.t))} »)</span><input id="w_link" type="text" readonly value="${esc(link)}" onclick="this.select()"></label>
    <div class="acts" style="margin-top:0"><button class="btn pri" data-a="wcopylink" type="button">Copier le lien</button><button class="btn" data-a="wcopymsg" type="button">Copier le message prêt à envoyer</button></div>
