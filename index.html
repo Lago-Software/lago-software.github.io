@@ -26,7 +26,7 @@
 :root{
   --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#EEF8FE; --ink:#0A1F4D; --muted:#566785; --line:#D7DFEE;
   --brand:#31ACF0; --brand-ink:#0A1F4D; --brand-t:#206ea8; --brand-soft:#D6EEFB; --side:#102F4E; --side-ink:#FFFFFF;
-  --pay:#F76300; --pay-ink:#1F0F00;
+  --pay:#F76300; --pay-ink:#1F0F00; --pay-t:#B84A00; --pay-soft:#FFEBDD;
   --ok:#1C8553; --warn:#E8690B; --bad:#C63A3A;
   --c-entree:#31ACF0; --c-anniv:#0F3B66; --c-snack:#F76300; --c-shop:#5A6B8C;
   --shadow:0 12px 40px rgba(8,20,50,.22);
@@ -2961,6 +2961,14 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
 .cat.on[style*="--c-snack"] .dot{background:var(--pay-ink)!important}
 .tk-q,.glink{color:var(--brand-t)!important}
 .cbar .go,.cbar .go *{color:var(--pay-ink)!important}
+/* ---------- v85 : mix bleu / orange — orange pour agir (boutons), bleu pour naviguer et choisir ; une dalle et une icône sur deux en orange ---------- */
+.btn.primary,.gb-go,.nav a.on{--brand:var(--pay);--brand-ink:var(--pay-ink);--brand-t:var(--pay-t);--brand-soft:var(--pay-soft);--g-brand:var(--g-pay)}
+.tile[style*="--c-entree"]:nth-child(even){--cat:var(--c-snack)!important}
+.tile[style*="--c-snack"]:nth-child(even){--cat:var(--c-entree)!important}
+.mt:nth-child(odd) .mt-ic{--brand-soft:var(--pay-soft);--brand-t:var(--pay-t)}
+.hero{background:linear-gradient(120deg,var(--dk-bg-fff1e6,#FFF1E6) 0%,var(--dk-bg-ffffff,#FFFFFF) 58%,var(--dk-bg-e8f5fd,#E8F5FD) 100%)!important}
+.hero .eyebrow{color:var(--pay-t)!important}
+#gate{background:linear-gradient(160deg,var(--dk-bg-fff1e6,#FFF1E6) 0%,var(--dk-bg-ffffff,#FFFFFF) 55%,var(--dk-bg-e8f5fd,#E8F5FD) 100%)!important}
 /* DARK-START */
 .thbtn{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink);box-shadow:var(--sh-1);flex:none}
 .thbtn:hover{background:var(--surface-2)}
@@ -3044,7 +3052,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v84" defer></script>
+<script src="app.js?v=v85" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

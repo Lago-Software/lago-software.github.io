@@ -539,10 +539,15 @@ const ART={
 };
 const ARTCAT={park:'p1',event:'a1',bar:'s3',gestion:'a4'};
 /* v83 : images des dalles (photos des activités). La dalle garde seulement une clé courte (p.tile) : légère à synchroniser. */
-const TILES={'jump-1h':'tiles/jump-1h.webp','jump-1h30':'tiles/jump-1h30.webp','laser-20':'tiles/laser-20.webp','barbe':'tiles/barbe.webp','coupe-homme':'tiles/coupe-homme.webp','cafe-gourmand':'tiles/cafe-gourmand.webp','menu-jour':'tiles/menu-jour.webp','t-shirt':'tiles/t-shirt.webp'};
-const TILE_RULES=[['jump-1h',/^(session|jump)1h$/],['jump-1h30',/^(session|jump)1h30$/],['laser-20',/^(partielaser|sessionlaser|laser)20min$/],['barbe',/^(taillede)?barbe$/],['coupe-homme',/^coupehomme$/],['cafe-gourmand',/^cafegourmand$/],['menu-jour',/^menudujour/],['t-shirt',/^t-?shirt(duparc)?$/]];
-const tileKey=name=>{const n=String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\s.]/g,'');for(const [k,r] of TILE_RULES)if(r.test(n))return k;return ''};
-const art=p=>p.img?`<img class="art" src="${p.img}" alt="">`:(p.tile&&TILES[p.tile])?`<img class="art tl" src="${TILES[p.tile]}" alt="" decoding="async">`:`<svg class="art" viewBox="0 0 120 76" aria-hidden="true"><rect class="bg" width="120" height="76"/>${artSvg(p)}</svg>`;
+const TILES={'jump-1h':'tiles/jump-1h.webp','jump-1h30':'tiles/jump-1h30.webp','laser-20':'tiles/laser-20.webp','barbe':'tiles/barbe.webp','coupe-homme':'tiles/coupe-homme.webp','cafe-gourmand':'tiles/cafe-gourmand.webp','menu-jour':'tiles/menu-jour.webp','t-shirt':'tiles/t-shirt.webp','chaussettes':'tiles/chaussettes.webp','gourde':'tiles/gourde.webp','mini-sauteur':'tiles/mini-sauteur.webp','anniversaire':'tiles/anniversaire.webp','boisson':'tiles/boisson.webp'};
+/* 3e élément : métier pour lequel l'image convient ('parc' = modèle trampoline park, ou parc de démonstration sans modèle). Absent = partout. */
+const TILE_RULES=[['jump-1h',/^(session|jump)1h$/],['jump-1h30',/^(session|jump)1h30$/],['laser-20',/^(partielaser|sessionlaser|laser)20min$/],['barbe',/^(taillede)?barbe$/],['coupe-homme',/^coupehomme$/],['cafe-gourmand',/^cafegourmand$/],['menu-jour',/^menudujour/],
+  ['t-shirt',/^t-?shirt(duparc)?$/,'parc'],['chaussettes',/^chaussettes(antiderapantes)?$/,'parc'],['gourde',/^gourde(duparc)?$/,'parc'],['mini-sauteur',/^minisauteur/,'parc'],['anniversaire',/^anniversaire(essentiel|premium)?$/,'parc'],['boisson',/^(eau(50cl)?|soda|jusdefruits|bouteilled.?eau)$/,'parc']];
+const tileKey=(name,tid)=>{const n=String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\s.]/g,'');
+  const tp=tid===undefined?((S&&S.settings&&S.settings.tpl&&S.settings.tpl.id)||''):String(tid||'');
+  for(const [k,r,v] of TILE_RULES)if(r.test(n)&&(!v||!tp||tp==='parc-trampoline'))return k;return ''};
+const TILE_POS={gourde:'50% 50%'};/* image dont l'étiquette n'est pas en bas : cadrage au centre pour qu'elle reste lisible sous la pastille de prix */
+const art=p=>p.img?`<img class="art" src="${p.img}" alt="">`:(p.tile&&TILES[p.tile])?`<img class="art tl" src="${TILES[p.tile]}"${TILE_POS[p.tile]?` style="object-position:${TILE_POS[p.tile]}"`:''} alt="" decoding="async">`:`<svg class="art" viewBox="0 0 120 76" aria-hidden="true"><rect class="bg" width="120" height="76"/>${artSvg(p)}</svg>`;
 
 /* ---------- équipe, congés, contrôle : données ---------- */
 const ROLE={resp:'Responsable',accueil:'Accueil et caisse',mon:'Animateur',anniv:'Anniversaires'};
@@ -1290,7 +1295,10 @@ function applyTheme(){
       r.setProperty('--side',relLum(st.brand)>.2?mixHex(st.brand,'#0B1B33',.86):st.brand);
       r.setProperty('--brand-soft',mixHex(st.brand,'#FFFFFF',.88));r.setProperty('--surface-2',mixHex(st.brand,'#FFFFFF',.94))}
     r.setProperty('--c-entree',bd);
-    r.setProperty('--pay',st.accent);r.setProperty('--pay-ink',contrastOf(st.accent,'#FFFFFF')>=contrastOf(st.accent,'#1F0F00')?'#FFFFFF':'#1F0F00');r.setProperty('--c-snack',st.accent)}catch(e){}
+    r.setProperty('--pay',st.accent);r.setProperty('--pay-ink',contrastOf(st.accent,'#FFFFFF')>=contrastOf(st.accent,'#1F0F00')?'#FFFFFF':'#1F0F00');r.setProperty('--c-snack',st.accent);
+    /* v85 : version « texte » et « fond doux » de l'orange (actions, sélections, bandeaux) */
+    let pt=st.accent;if(dk){for(let t=0;t<=1.001;t+=.04){pt=mixHex(st.accent,'#FFFFFF',t);if(contrastOf(pt,'#121B2E')>=6)break}}else pt=textTone(st.accent);
+    r.setProperty('--pay-t',pt);r.setProperty('--pay-soft',dk?mixHex(st.accent,'#0F1829',.82):mixHex(st.accent,'#FFFFFF',.88))}catch(e){}
   applyCustom();
 }
 function applySettings(){
@@ -4442,10 +4450,10 @@ function migrateImgs(){
   S.imgMig=1;save();
 }
 /* v83 : applique l'image qui correspond au nom du produit (sauf image personnelle ou retirée à la main) ; les anciens tickets « 1h00 » par défaut sont remplacés */
-function tileSync(){
+function tileSync(tid){
   if(!S||!Array.isArray(S.products))return false;
   const dflt=new Set(Object.values(SESS_IMG));let ch=false;
-  S.products.forEach(p=>{if(p.tile||p.tileOff)return;if(p.img&&!dflt.has(p.img))return;const k=tileKey(p.name);if(!k)return;p.tile=k;if(p.img)delete p.img;ch=true});
+  S.products.forEach(p=>{if(p.tile||p.tileOff)return;if(p.img&&!dflt.has(p.img))return;const k=tileKey(p.name,tid);if(!k)return;p.tile=k;if(p.img)delete p.img;ch=true});
   return ch;
 }
 function migrateTiles(){try{if(tileSync())save()}catch(e){}}
@@ -4500,7 +4508,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v84';
+const LAGO_V='v85';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -9021,7 +9029,7 @@ function tplApply(id,o){
   });
   if(mode==='replace')S.products=prods;
   else{const have=new Set(S.products.map(p=>p.cat+'|'+String(p.name).trim().toLowerCase()));prods.forEach(q=>{if(!have.has(q.cat+'|'+q.name.toLowerCase()))S.products.push(q)})}
-  try{tileSync()}catch(e){}
+  try{tileSync(id)}catch(e){}
   /* sous-catégories : en mode « add », on ajoute celles qui manquent */
   const sb=c.subs||{};st.subs=st.subs||{};
   if(mode==='replace')st.subs=JSON.parse(JSON.stringify(sb));
