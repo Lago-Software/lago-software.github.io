@@ -1275,10 +1275,17 @@ function textTone(h){let c=h;for(let t=0;t<=1.001;t+=.04){c=mixHex(h,'#0A1F4D',t
 function migratePalette(st){if(st.palV>=81)return;if(String(st.brand).toUpperCase()==='#1D4FD7')st.brand='#31ACF0';if(String(st.accent).toUpperCase()==='#FF7A1A')st.accent='#F76300';st.palV=81}
 function applyTheme(){
   try{const r=document.documentElement.style,st=S.settings;migratePalette(st);
-    const ink=inkFor(st.brand);
-    r.setProperty('--brand',st.brand);r.setProperty('--brand-ink',ink);r.setProperty('--brand-t',textTone(st.brand));
-    r.setProperty('--side',relLum(st.brand)>.2?mixHex(st.brand,'#0B1B33',.86):st.brand);r.setProperty('--c-entree',st.brand);
-    r.setProperty('--brand-soft',mixHex(st.brand,'#FFFFFF',.88));r.setProperty('--surface-2',mixHex(st.brand,'#FFFFFF',.94));
+    const dk=r===document.documentElement.style&&document.documentElement.getAttribute('data-theme')==='dark';
+    /* sombre : la couleur de marque est éclaircie si elle se confond avec le fond */
+    let bd=st.brand;if(dk){for(let t=0;t<=1.001&&contrastOf(bd,'#121B2E')<3;t+=.05)bd=mixHex(st.brand,'#FFFFFF',t)}
+    const ink=inkFor(bd);
+    r.setProperty('--brand',bd);r.setProperty('--brand-ink',ink);
+    if(dk){let bt=bd;for(let t=0;t<=1.001;t+=.04){bt=mixHex(bd,'#FFFFFF',t);if(contrastOf(bt,'#121B2E')>=6)break}r.setProperty('--brand-t',bt);
+      r.setProperty('--side',mixHex(bd,'#050B16',.9));r.setProperty('--brand-soft',mixHex(bd,'#0F1829',.82));r.setProperty('--surface-2',mixHex(bd,'#18233A',.93))}
+    else{r.setProperty('--brand-t',textTone(st.brand));
+      r.setProperty('--side',relLum(st.brand)>.2?mixHex(st.brand,'#0B1B33',.86):st.brand);
+      r.setProperty('--brand-soft',mixHex(st.brand,'#FFFFFF',.88));r.setProperty('--surface-2',mixHex(st.brand,'#FFFFFF',.94))}
+    r.setProperty('--c-entree',bd);
     r.setProperty('--pay',st.accent);r.setProperty('--pay-ink',contrastOf(st.accent,'#FFFFFF')>=contrastOf(st.accent,'#1F0F00')?'#FFFFFF':'#1F0F00');r.setProperty('--c-snack',st.accent)}catch(e){}
   applyCustom();
 }
@@ -2807,7 +2814,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act="aiq"]
 });
 document.addEventListener('submit',e=>{if(e.target.id==='aiqf'){e.preventDefault();aiAsk($('#aiqin').value)}});
 function aiBtn(){return false?`<button class="btn aisearch" data-act="aiq">${ic('wave')}<span>Demander à l’IA</span></button>`:''}
-function rolePill(){const a=ME,adm=isAdmin(),n=pendingCount()+(adm?0:0);return aiBtn()+`<button class="rolepill ${adm?'adm':''}" data-act="rolesw" aria-label="Mon compte">${a&&a.photo?`<span class="pp"><img src="${a.photo}" alt=""></span>`:ic(adm?'shield':'users')}${a?esc(a.kind==='etab'?'Établissement':a.name.split(' ')[0]):'Compte'}${adm&&n?`<b class="nbadge">${n}</b>`:''}${unreadN()?`<b class="nbadge msg">${unreadN()}</b>`:''}</button>`}
+function rolePill(){const a=ME,adm=isAdmin(),n=pendingCount()+(adm?0:0);return aiBtn()+themeBtn()+`<button class="rolepill ${adm?'adm':''}" data-act="rolesw" aria-label="Mon compte">${a&&a.photo?`<span class="pp"><img src="${a.photo}" alt=""></span>`:ic(adm?'shield':'users')}${a?esc(a.kind==='etab'?'Établissement':a.name.split(' ')[0]):'Compte'}${adm&&n?`<b class="nbadge">${n}</b>`:''}${unreadN()?`<b class="nbadge msg">${unreadN()}</b>`:''}</button>`}
 function accountMenu(){
   const a=ME;if(!a)return;
   showModal(`${mh('Mon compte')}<div class="gpick" style="margin-bottom:12px">${avA(a,1)}<h2 style="margin:0">${esc(a.name)}</h2><span class="muted">${esc(a.ident)} · ${a.admin?'Administrateur':esc(curProf().name||'Opérateur')}</span>
@@ -2845,7 +2852,7 @@ const SV=(b,i)=>`<svg viewBox="0 0 120 80" class="cillu" aria-hidden="true"><rec
 const CART={
  visuel:SV('#D6EEFB','<circle cx="96" cy="20" r="9" fill="#FFB23F"/><path d="M10 62h100" stroke="#31ACF0" stroke-width="3"/><path d="M20 62l10-14h26l10 14" fill="#31ACF0"/><circle cx="43" cy="30" r="5" fill="#0A1F4D"/><path d="M43 35v8l-7 5M43 43l7 5M43 38l-8-3M43 38l8-3" stroke="#0A1F4D" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M78 56l7 7 14-16" stroke="#1F9D55" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'),
  mensuel:SV('#FFE9D2','<rect x="30" y="12" width="54" height="58" rx="7" fill="#fff" stroke="#F76300" stroke-width="3"/><rect x="44" y="8" width="26" height="10" rx="4" fill="#F76300"/><path d="M40 32h8M40 44h8M40 56h8" stroke="#31ACF0" stroke-width="3" stroke-linecap="round"/><path d="M54 32h22M54 44h22M54 56h16" stroke="#C9D5EF" stroke-width="4" stroke-linecap="round"/><circle cx="92" cy="58" r="13" fill="#1F9D55"/><path d="M86 58l5 5 8-10" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>'),
- maint:SV('#E7F5EC','<circle cx="60" cy="40" r="22" fill="#fff"/><path d="M60 24v-6M60 62v-6M44 40h-6M82 40h-6M49 29l-4-4M75 55l-4-4M71 29l4-4M45 55l4-4" stroke="#1F9D55" stroke-width="4" stroke-linecap="round"/><circle cx="60" cy="40" r="9" fill="#1F9D55"/><path d="M90 14l-14 14 6 6 14-14z" fill="#F76300"/>'),
+ maint:SV('#DDEEFA','<circle cx="48" cy="44" r="19" fill="none" stroke="#31ACF0" stroke-width="8" stroke-dasharray="7.46 7.46" transform="rotate(11 48 44)"/><circle cx="48" cy="44" r="16" fill="#31ACF0"/><circle cx="48" cy="44" r="7" fill="#fff"/><g transform="rotate(38 88 42)"><rect x="84" y="30" width="8" height="40" rx="4" fill="#F76300"/><circle cx="88" cy="27" r="12" fill="#F76300"/><rect x="84" y="12" width="8" height="15" rx="1.500" fill="#DDEEFA"/></g>'),
  incident:SV('#FDE3E3','<path d="M60 12l30 52H30z" fill="#fff" stroke="#E04646" stroke-width="4" stroke-linejoin="round"/><path d="M60 28v18" stroke="#E04646" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="55" r="3.5" fill="#E04646"/><rect x="88" y="44" width="22" height="22" rx="5" fill="#fff" stroke="#E04646" stroke-width="3"/><path d="M99 49v12M93 55h12" stroke="#E04646" stroke-width="3.5" stroke-linecap="round"/>'),
  ia:SV('#EDE6FF','<circle cx="60" cy="40" r="24" fill="#fff"/><path d="M60 22l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#6A4DF0"/><path d="M92 18l2.500 6 6 2.500-6 2.500-2.500 6-2.500-6-6-2.500 6-2.500z" fill="#F76300"/><path d="M22 58l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#F76300"/>')
 };
@@ -4481,7 +4488,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v82';
+const LAGO_V='v83';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5813,6 +5820,7 @@ function accountMenu(){
   accountMenuV0();
   const m=document.querySelector('#modal .modal');if(!m||m.querySelector('.auv'))return;
   m.insertAdjacentHTML('beforeend',`<div class="auv"><div><b>Lago ${esc(LAGO_V)}</b><span class="muted" id="auvs">${AU.ver?'Nouvelle version '+esc(AU.ver)+' disponible':'Les mises à jour s’installent toutes seules.'}</span></div><button type="button" class="btn" data-act="${AU.ver?'au_go':'au_check'}" id="auvb">${AU.ver?'Mettre à jour':'Rechercher une mise à jour'}</button></div><button type="button" class="glink cflegb" data-act="cf_legal">Mentions légales et propriété du logiciel</button>`);
+  m.insertAdjacentHTML('beforeend',accThemeHtml());
   m.insertAdjacentHTML('beforeend',accAnimHtml());
   try{appSyncRow(m)}catch(e){}
 }
@@ -6391,6 +6399,53 @@ CART.visuel=`<svg viewBox="0 0 120 80" class="cillu" aria-hidden="true">
 <path d="M88 8l13.500 5v11.500c0 8.200-5.600 13.800-13.500 16.500-7.900-2.700-13.500-8.300-13.500-16.500V13z" fill="#fff" stroke="#0A1F4D" stroke-width="2.400" stroke-linejoin="round"/>
 <path d="M81 24.500l5.200 5.200 9.300-10.400" fill="none" stroke="#1F9D55" stroke-width="3.800" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
+/* ---------- IL. illustration de la maintenance : même décor que le contrôle quotidien, médaillon engrenage + clé (v83) ---------- */
+CART.maint=`<svg viewBox="0 0 120 80" class="cillu" aria-hidden="true">
+<defs><linearGradient id="cm-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CDEBFA"/><stop offset=".7" stop-color="#E9F4FB"/></linearGradient>
+<pattern id="cm-net" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0h5M0 0v5" stroke="#fff" stroke-width=".8"/></pattern>
+<clipPath id="cm-clip"><rect width="120" height="80" rx="14"/></clipPath></defs>
+<g clip-path="url(#cm-clip)">
+<rect width="120" height="80" fill="url(#cm-sky)"/>
+<rect y="60" width="120" height="20" fill="#31ACF0"/><rect y="60" width="120" height="1.800" fill="#4DB8F3"/>
+<rect x="14" y="26" width="52" height="36" fill="#D6EEFB" opacity=".55"/><rect x="14" y="26" width="52" height="36" fill="url(#cm-net)" opacity=".9"/>
+<path d="M14 62V26M66 62V26" stroke="#0A1F4D" stroke-width="2.600" stroke-linecap="round"/><path d="M13 26.500h54" stroke="#0A1F4D" stroke-width="2.600" stroke-linecap="round"/>
+<path d="M17 65v6M63 65v6" stroke="#0A1F4D" stroke-width="2.200" stroke-linecap="round"/>
+<ellipse cx="40" cy="64" rx="27" ry="7" fill="#0A1F4D"/><ellipse cx="40" cy="63.200" rx="24" ry="5.600" fill="#F76300"/><ellipse cx="40" cy="62.600" rx="17" ry="3.700" fill="#FF9A45"/>
+</g>
+<circle cx="91" cy="28" r="22" fill="#fff" stroke="#0A1F4D" stroke-width="2.400"/>
+<g transform="translate(90.500 29) scale(.41) translate(-65 -41)">
+<circle cx="48" cy="44" r="19" fill="none" stroke="#31ACF0" stroke-width="8" stroke-dasharray="7.46 7.46" transform="rotate(11 48 44)"/>
+<circle cx="48" cy="44" r="16" fill="#31ACF0"/><circle cx="48" cy="44" r="7" fill="#fff"/>
+<g transform="rotate(38 88 42)"><rect x="84" y="30" width="8" height="40" rx="4" fill="#F76300"/><circle cx="88" cy="27" r="12" fill="#F76300"/><rect x="84" y="12" width="8" height="15" rx="1.500" fill="#fff"/></g>
+</g>
+</svg>`;
+/* ---------- DK. mode sombre : Clair / Sombre / Auto, au choix, propre à chaque appareil (v83) ---------- */
+const THEME_KEY='lago-theme';
+function themePref(){try{const v=localStorage.getItem(THEME_KEY);return v==='dark'||v==='auto'?v:'light'}catch(e){return 'light'}}
+function sysDark(){try{return !!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)}catch(e){return false}}
+function themeEff(){const p=themePref();return p==='dark'||(p==='auto'&&sysDark())?'dark':'light'}
+function themeBtn(){const d=themeEff()==='dark';return `<button class="thbtn" type="button" data-act="thtoggle" aria-label="${d?'Passer en mode clair':'Passer en mode sombre'}" title="${d?'Mode clair':'Mode sombre'}">${ic(d?'sun':'moon')}</button>`}
+function applyDark(){
+  const d=themeEff()==='dark',r=document.documentElement;
+  if(d)r.setAttribute('data-theme','dark');else r.removeAttribute('data-theme');
+  try{r.style.colorScheme=d?'dark':'light'}catch(e){}
+  try{let m=document.querySelector('meta[name="theme-color"]');if(!m){m=document.createElement('meta');m.name='theme-color';document.head.appendChild(m)}m.content=d?'#0B1220':((S&&S.settings&&S.settings.brand)||'#31ACF0')}catch(e){}
+  try{applyTheme()}catch(e){}
+  document.querySelectorAll('.thbtn').forEach(b=>{b.outerHTML=themeBtn()});
+  try{document.querySelectorAll('img.lgw[data-lk="l"]').forEach(i=>{i.src=LAGO_LOGOS[d?'d':'l']})}catch(e){}
+  const sel=document.getElementById('acc_theme');if(sel)sel.value=themePref();
+}
+function setThemePref(v){try{if(v==='light')localStorage.removeItem(THEME_KEY);else localStorage.setItem(THEME_KEY,v)}catch(e){}applyDark()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="thtoggle"]');if(!b)return;setThemePref(themeEff()==='dark'?'light':'dark')});
+document.addEventListener('change',e=>{if(e.target.id==='acc_theme')setThemePref(e.target.value)});
+try{const mq=matchMedia('(prefers-color-scheme: dark)'),f=()=>{if(themePref()==='auto')applyDark()};mq.addEventListener?mq.addEventListener('change',f):mq.addListener&&mq.addListener(f)}catch(e){}
+const accThemeHtml=()=>`<div class="field" style="margin:0 0 12px"><label for="acc_theme">Apparence (cet appareil)</label><select id="acc_theme">${[['light','Clair'],['dark','Sombre'],['auto','Automatique : suit l’appareil']].map(([v,l])=>`<option value="${v}" ${themePref()===v?'selected':''}>${l}</option>`).join('')}</select></div>`;
+Object.assign(IC,{
+  moon:'<path d="M20 14.500A8 8 0 0 1 9.500 4a8 8 0 1 0 10.500 10.500z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.500v2.200M12 19.300v2.200M2.500 12h2.200M19.300 12h2.200M5.300 5.300l1.500 1.500M17.200 17.200l1.500 1.500M18.700 5.300l-1.500 1.500M6.800 17.200l-1.500 1.500"/>'
+});
+applyDark();
+
 /* ---------- CP. congés payés : ajout automatique chaque mois (v53) ---------- */
 /* Principe : un solde de départ par personne (à une date donnée), puis +N jours le 1er de chaque mois,
    moins les jours ouvrés des congés posés (validés ou en attente) après la date du solde.
@@ -8847,7 +8902,7 @@ function occ(date,m){
 /* généré par logo/build_logo.py : mot-symbole « lago » (l = fond clair, d = fond sombre, e = emblème seul) */
 const LAGO_LOGOS={l:"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%22-10 -760 2014 1000%22 role=%22img%22 aria-label=%22lago%22%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%230A1F4D%22 d=%22M66 0V-715H208V0Z%22/%3E%3C/g%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%230A1F4D%22 d=%22M437 14Q393 14 359.0 -3.5Q325 -21 306.0 -54.0Q287 -87 287 -136Q287 -179 303.5 -208.0Q320 -237 352.0 -255.0Q384 -273 431.0 -285.0Q478 -297 538 -306Q570 -311 590.5 -315.5Q611 -320 621.0 -330.5Q631 -341 631 -361Q631 -389 611.0 -409.0Q591 -429 548 -429Q519 -429 494.5 -419.0Q470 -409 452.5 -389.0Q435 -369 427 -338L300 -377Q312 -418 334.5 -448.0Q357 -478 389.0 -498.5Q421 -519 462.0 -529.0Q503 -539 551 -539Q628 -539 676.5 -514.5Q725 -490 749.0 -438.5Q773 -387 773 -306V-216Q773 -181 774.5 -145.0Q776 -109 778.5 -72.5Q781 -36 784 0H657Q653 -25 649.5 -57.5Q646 -90 644 -123H626Q612 -85 586.0 -54.0Q560 -23 522.5 -4.5Q485 14 437 14ZM498 -90Q517 -90 536.5 -97.0Q556 -104 574.5 -116.5Q593 -129 608.5 -148.0Q624 -167 634 -191L632 -275L655 -270Q637 -257 613.0 -249.5Q589 -242 563.5 -238.0Q538 -234 513.0 -229.0Q488 -224 468.5 -216.0Q449 -208 437.5 -194.5Q426 -181 426 -157Q426 -126 446.0 -108.0Q466 -90 498 -90Z%22/%3E%3C/g%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%230A1F4D%22 d=%22M1081 183Q995 183 939.5 169.5Q884 156 858.0 130.0Q832 104 832 65Q832 19 868.5 -10.0Q905 -39 976 -45V-65Q922 -65 893.0 -76.5Q864 -88 864 -117Q864 -145 892.5 -167.0Q921 -189 987 -202V-222Q925 -226 890.0 -262.0Q855 -298 855 -355Q855 -405 883.0 -444.5Q911 -484 966.5 -507.5Q1022 -531 1103 -531H1369V-421L1204 -444V-421Q1268 -412 1296.5 -389.0Q1325 -366 1325 -325Q1325 -284 1298.0 -253.0Q1271 -222 1221.5 -204.5Q1172 -187 1103 -187Q1090 -187 1075.0 -188.0Q1060 -189 1025 -193Q1006 -179 995.5 -168.5Q985 -158 985 -149Q985 -142 992.5 -137.0Q1000 -132 1012.5 -130.0Q1025 -128 1038 -128H1188Q1208 -128 1240.0 -125.5Q1272 -123 1304.0 -110.0Q1336 -97 1358.0 -68.5Q1380 -40 1380 13Q1380 71 1347.5 109.0Q1315 147 1248.5 165.0Q1182 183 1081 183ZM1097 68Q1158 68 1192.0 61.5Q1226 55 1240.5 40.5Q1255 26 1255 4Q1255 -16 1246.5 -27.0Q1238 -38 1224.5 -42.5Q1211 -47 1197.5 -48.5Q1184 -50 1174 -50H1048Q1006 -46 987.5 -27.5Q969 -9 969 15Q969 37 983.0 48.0Q997 59 1025.5 63.5Q1054 68 1097 68ZM1095 -262Q1143 -262 1167.0 -285.5Q1191 -309 1191 -347Q1191 -387 1166.5 -413.0Q1142 -439 1095 -439Q1049 -439 1023.0 -413.5Q997 -388 997 -348Q997 -323 1008.5 -303.5Q1020 -284 1042.0 -273.0Q1064 -262 1095 -262Z%22/%3E%3C/g%3E%3Csvg x=%221416%22 y=%22-562%22 width=%22578%22 height=%22578%22 viewBox=%220 0 100 100%22%3E%3Cdefs%3E%3CclipPath id=%22cwl%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22/%3E%3C/clipPath%3E%3ClinearGradient id=%22swl%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23FF9A45%22/%3E%3Cstop offset=%221%22 stop-color=%22%23F76300%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22wwl%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%2331ACF0%22/%3E%3Cstop offset=%221%22 stop-color=%22%231B7FBE%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path=%22url(%23cwl)%22%3E%3Cpath fill=%22url(%23swl)%22 d=%22M-16.7 50 Q-0.05 28 16.6 50 T49.9 50 T83.2 50 T116.5 50 T149.8 50 L130 -20 L-20 -20Z%22/%3E%3Cpath fill=%22url(%23wwl)%22 d=%22M-16.7 59 Q-0.05 37 16.6 59 T49.9 59 T83.2 59 T116.5 59 T149.8 59 L130 130 L-20 130Z%22/%3E%3C/g%3E%3C/svg%3E%3C/svg%3E",d:"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%22-10 -760 2014 1000%22 role=%22img%22 aria-label=%22lago%22%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%23FFFFFF%22 d=%22M66 0V-715H208V0Z%22/%3E%3C/g%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%23FFFFFF%22 d=%22M437 14Q393 14 359.0 -3.5Q325 -21 306.0 -54.0Q287 -87 287 -136Q287 -179 303.5 -208.0Q320 -237 352.0 -255.0Q384 -273 431.0 -285.0Q478 -297 538 -306Q570 -311 590.5 -315.5Q611 -320 621.0 -330.5Q631 -341 631 -361Q631 -389 611.0 -409.0Q591 -429 548 -429Q519 -429 494.5 -419.0Q470 -409 452.5 -389.0Q435 -369 427 -338L300 -377Q312 -418 334.5 -448.0Q357 -478 389.0 -498.5Q421 -519 462.0 -529.0Q503 -539 551 -539Q628 -539 676.5 -514.5Q725 -490 749.0 -438.5Q773 -387 773 -306V-216Q773 -181 774.5 -145.0Q776 -109 778.5 -72.5Q781 -36 784 0H657Q653 -25 649.5 -57.5Q646 -90 644 -123H626Q612 -85 586.0 -54.0Q560 -23 522.5 -4.5Q485 14 437 14ZM498 -90Q517 -90 536.5 -97.0Q556 -104 574.5 -116.5Q593 -129 608.5 -148.0Q624 -167 634 -191L632 -275L655 -270Q637 -257 613.0 -249.5Q589 -242 563.5 -238.0Q538 -234 513.0 -229.0Q488 -224 468.5 -216.0Q449 -208 437.5 -194.5Q426 -181 426 -157Q426 -126 446.0 -108.0Q466 -90 498 -90Z%22/%3E%3C/g%3E%3Cg transform=%22translate(0 0)%22%3E%3Cpath fill=%22%23FFFFFF%22 d=%22M1081 183Q995 183 939.5 169.5Q884 156 858.0 130.0Q832 104 832 65Q832 19 868.5 -10.0Q905 -39 976 -45V-65Q922 -65 893.0 -76.5Q864 -88 864 -117Q864 -145 892.5 -167.0Q921 -189 987 -202V-222Q925 -226 890.0 -262.0Q855 -298 855 -355Q855 -405 883.0 -444.5Q911 -484 966.5 -507.5Q1022 -531 1103 -531H1369V-421L1204 -444V-421Q1268 -412 1296.5 -389.0Q1325 -366 1325 -325Q1325 -284 1298.0 -253.0Q1271 -222 1221.5 -204.5Q1172 -187 1103 -187Q1090 -187 1075.0 -188.0Q1060 -189 1025 -193Q1006 -179 995.5 -168.5Q985 -158 985 -149Q985 -142 992.5 -137.0Q1000 -132 1012.5 -130.0Q1025 -128 1038 -128H1188Q1208 -128 1240.0 -125.5Q1272 -123 1304.0 -110.0Q1336 -97 1358.0 -68.5Q1380 -40 1380 13Q1380 71 1347.5 109.0Q1315 147 1248.5 165.0Q1182 183 1081 183ZM1097 68Q1158 68 1192.0 61.5Q1226 55 1240.5 40.5Q1255 26 1255 4Q1255 -16 1246.5 -27.0Q1238 -38 1224.5 -42.5Q1211 -47 1197.5 -48.5Q1184 -50 1174 -50H1048Q1006 -46 987.5 -27.5Q969 -9 969 15Q969 37 983.0 48.0Q997 59 1025.5 63.5Q1054 68 1097 68ZM1095 -262Q1143 -262 1167.0 -285.5Q1191 -309 1191 -347Q1191 -387 1166.5 -413.0Q1142 -439 1095 -439Q1049 -439 1023.0 -413.5Q997 -388 997 -348Q997 -323 1008.5 -303.5Q1020 -284 1042.0 -273.0Q1064 -262 1095 -262Z%22/%3E%3C/g%3E%3Csvg x=%221416%22 y=%22-562%22 width=%22578%22 height=%22578%22 viewBox=%220 0 100 100%22%3E%3Cdefs%3E%3CclipPath id=%22cwd%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22/%3E%3C/clipPath%3E%3ClinearGradient id=%22swd%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23FF9A45%22/%3E%3Cstop offset=%221%22 stop-color=%22%23F76300%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22wwd%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%239BDCFF%22/%3E%3Cstop offset=%221%22 stop-color=%22%2331ACF0%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path=%22url(%23cwd)%22%3E%3Cpath fill=%22url(%23swd)%22 d=%22M-16.7 50 Q-0.05 28 16.6 50 T49.9 50 T83.2 50 T116.5 50 T149.8 50 L130 -20 L-20 -20Z%22/%3E%3Cpath fill=%22url(%23wwd)%22 d=%22M-16.7 59 Q-0.05 37 16.6 59 T49.9 59 T83.2 59 T116.5 59 T149.8 59 L130 130 L-20 130Z%22/%3E%3C/g%3E%3C/svg%3E%3C/svg%3E",e:"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cdefs%3E%3CclipPath id=%22cem%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22/%3E%3C/clipPath%3E%3ClinearGradient id=%22sem%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23FF9A45%22/%3E%3Cstop offset=%221%22 stop-color=%22%23F76300%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22wem%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%239BDCFF%22/%3E%3Cstop offset=%221%22 stop-color=%22%2331ACF0%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path=%22url(%23cem)%22%3E%3Cpath fill=%22url(%23sem)%22 d=%22M-16.7 50 Q-0.05 28 16.6 50 T49.9 50 T83.2 50 T116.5 50 T149.8 50 L130 -20 L-20 -20Z%22/%3E%3Cpath fill=%22url(%23wem)%22 d=%22M-16.7 59 Q-0.05 37 16.6 59 T49.9 59 T83.2 59 T116.5 59 T149.8 59 L130 130 L-20 130Z%22/%3E%3C/g%3E%3C/svg%3E"};
 
-function lagoLogo(k){return '<img class="lgw" alt="lago" src="'+LAGO_LOGOS[k]+'">'+(k==='d'?'<img class="lgm" alt="" aria-hidden="true" src="'+LAGO_LOGOS.e+'">':'')}
+function lagoLogo(k){return '<img class="lgw" alt="lago" data-lk="'+k+'" src="'+LAGO_LOGOS[k==='l'&&document.documentElement.getAttribute('data-theme')==='dark'?'d':k]+'">'+(k==='d'?'<img class="lgm" alt="" aria-hidden="true" src="'+LAGO_LOGOS.e+'">':'')}
 
 /* ===== v72 : modèles métier · espace client neuf · suspension =====
    - Les modèles (templates/*.json) sont intégrés à la construction de Lago : TPL_DATA.
