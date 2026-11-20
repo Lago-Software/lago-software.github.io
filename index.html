@@ -2994,6 +2994,37 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
 
 }
 /* DARK-END */
+
+/* ---- statistiques : pilotage (v82) ---- */
+.sx-bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sx-bar .stseg{margin-bottom:0}
+.sx-tabs{overflow-x:auto;flex-wrap:nowrap;max-width:100%;scrollbar-width:none}.sx-tabs::-webkit-scrollbar{display:none}.sx-tabs button{white-space:nowrap}
+.sx-per{margin:0 0 14px;font-size:13px}
+.sx-d{font-weight:800;font-size:12px}.sx-d.up{color:var(--ok)}.sx-d.dn{color:var(--bad)}
+.sx-note{font-size:12.5px;margin:10px 0 0}
+.sx-h4{font-size:13px;font-weight:700;margin:16px 0 8px;color:var(--muted)}
+.sx-ins{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+.sx-i{padding:14px 14px 14px 16px;border-radius:14px;background:var(--surface-2);border-left:4px solid var(--brand)}
+.sx-i.sx-warn{border-left-color:var(--warn)}.sx-i.sx-ok{border-left-color:var(--ok)}
+.sx-i h4{margin:0 0 4px;font-size:15px;line-height:1.3}
+.sx-i p{margin:0;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.sx-i p.sx-a{margin-top:8px;color:var(--ink);font-weight:600}
+.sx-goal .mtitle{margin-bottom:12px}.card .mtitle{flex-wrap:wrap;gap:2px 12px}
+.sx-gbar{position:relative;height:16px;border-radius:99px;background:var(--surface-2);overflow:visible}
+.sx-gbar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--brand)}
+.sx-gbar u{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1px;border-radius:2px;background:var(--pay);text-decoration:none}
+.sx-gl{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:13.5px;flex-wrap:wrap}
+.sx-gv{margin:12px 0;font-size:14.5px;line-height:1.45}.sx-gv .ok{color:var(--ok)}.sx-gv .bad{color:var(--bad)}
+.sx-gr{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}.sx-gr input{width:150px;min-height:44px}
+.sx-callout{margin:12px 0 0;padding:10px 12px;border-radius:12px;background:var(--surface-2);font-size:14px}.sx-callout.ok{color:var(--ok);font-weight:600}
+.sx-t{width:100%;border-collapse:collapse;font-size:14px}.sx-t th{text-align:right;font-size:12px;color:var(--muted);font-weight:700;padding:6px 8px;border-bottom:1px solid var(--line)}.sx-t th:first-child,.sx-t td:first-child{text-align:left}
+.sx-t td{text-align:right;padding:9px 8px;border-bottom:1px solid var(--line)}.sx-t tr.sx-tot td{font-weight:800;border-bottom:0}
+.sx-rk{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.sx-rk li{display:grid;grid-template-columns:26px 1fr auto auto;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:var(--surface-2);font-size:14px}
+.sx-rk li span{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;background:var(--brand);color:#0A1F4D}
+.sx-rk li b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sx-rk small{color:var(--muted);font-size:12.5px}.sx-rk em{font-style:normal;font-weight:700;color:var(--brand-t)}
+.sx-heat .heat i{color:#0A1F4D}:root[data-theme="dark"] .sx-heat .heat i{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.55)}.sx-ul{margin:10px 0 0;padding-left:18px;font-size:14px}.sx-ul small{color:var(--muted)}
+@media (max-width:640px){.sx-tabs{flex-wrap:wrap}.sx-ins{grid-template-columns:1fr}.sx-rk li{grid-template-columns:26px 1fr auto}.sx-rk li em{grid-column:2/-1}.sx-rk li small{text-align:right}}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -3052,7 +3083,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v85" defer></script>
+<script src="app.js?v=v86" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

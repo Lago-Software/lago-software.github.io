@@ -168,7 +168,7 @@ function seedClientsOld(){
 }
 function seedSales(){
   let r=11;const rnd=()=>{r=(r*16807)%2147483647;return r/2147483647};
-  const now=new Date(),d0=today(),list=[];
+  const now=new Date(),d0=today(),list=[];const TP=[1,3,4,5].map(i=>S.clients[i]).filter(Boolean);if(!TP.length)TP.push(...S.clients);
   for(let i=0;i<18;i++){
     const h=10+Math.floor(rnd()*8),m=Math.floor(rnd()*60);
     const ts=new Date(now.getFullYear(),now.getMonth(),now.getDate(),h,m).getTime();
@@ -177,19 +177,47 @@ function seedSales(){
     if(rnd()<.5)lines.push({pid:'p4',qty:1});
     if(rnd()<.6)lines.push({pid:['s1','s2','s3','s4','s5','s6'][Math.floor(rnd()*6)],qty:1+Math.floor(rnd()*3)});
     if(rnd()<.4)lines.push({pid:'b1',qty:Math.min(q1,3)});
-    const c={lines,disc:{t:'pct',v:0},clientId:rnd()<.25?S.clients[Math.floor(rnd()*S.clients.length)].id:null,slotDate:d0,slotM:h*60};
+    const c={lines,disc:{t:'pct',v:0},clientId:rnd()<.25?TP[Math.floor(rnd()*TP.length)].id:null,slotDate:d0,slotM:h*60};
     const T=totals(c);const x=rnd();
     const pays=x<.6?[{m:'card',amt:T.total}]:x<.85?[{m:'cash',amt:T.total,given:T.total}]:[{m:'ancv',amt:T.total}];
     list.push(finalize(c,pays,ts,true));
   }
   list.sort((a,b)=>a.ts-b.ts);
-  return list;
+  /* historique de démonstration : 60 jours, plus chargés le week-end et le mercredi */
+  const WD=[.45,.55,1.25,.6,.95,1.75,1.5],hist=[],cl=S.clients||[];
+  for(let k=60;k>=1;k--){
+    const ds=addDays(d0,-k),w=(new Date(ds+'T12:00').getDay()+6)%7,vac=k>30?.9:1;
+    const n=Math.max(4,Math.round(17*WD[w]*vac*(.82+.5*rnd())*(1+(60-k)/500)));
+    for(let i=0;i<n;i++){
+      const h=10+Math.floor(Math.pow(rnd(),.85)*9),m=Math.floor(rnd()*60),ts=new Date(ds+'T12:00').setHours(h,m,0,0);
+      const q1=1+Math.floor(rnd()*4),pk=rnd();
+      const lines=[{pid:pk<.4?'p1':pk<.7?'p2':pk<.9?'p3':'p1',qty:q1}];
+      if(rnd()<.45)lines.push({pid:'p4',qty:1});
+      if(rnd()<(w===2||w>=5?.65:.35))lines.push({pid:['s1','s2','s3','s4','s5','s6'][Math.floor(rnd()*6)],qty:1+Math.floor(rnd()*3)});
+      if(rnd()<.3)lines.push({pid:'b1',qty:Math.min(q1,3)});
+      if(rnd()<.03)lines.push({pid:'b2',qty:1});
+      const rd=rnd(),disc=rd<.1?{t:'pct',v:10}:rd<.14?{t:'pct',v:20}:{t:'pct',v:0};
+      const c={lines,disc,clientId:(pl=>rnd()<.3&&pl.length?pl[Math.floor(rnd()*pl.length)].id:null)(cl.filter((c,ci)=>!(k<=45&&(ci===0||ci===2))&&!(k>20&&ci===5))),slotDate:ds,slotM:h*60};
+      const T=totals(c),x=rnd();
+      const pays=x<.58?[{m:'card',amt:T.total}]:x<.85?[{m:'cash',amt:T.total,given:T.total}]:[{m:'ancv',amt:T.total}];
+      hist.push(finalize(c,pays,ts,true));
+    }
+    if(rnd()<.1)hist.push(finalize({lines:[{pid:'a1',qty:1}],disc:{t:'pct',v:0},clientId:null,slotDate:null,slotM:null},[{m:'card',amt:24900}],new Date(ds+'T11:00').getTime(),true));
+  }
+  return hist.concat(list).sort((a,b)=>a.ts-b.ts);
+}
+function seedClosures(){
+  const o=[];
+  for(let k=1;k<=21;k++){const ds=addDays(today(),-k),L=S.sales.filter(s=>dkey(new Date(s.ts))===ds);if(!L.length)continue;
+    const exp=L.reduce((a,s)=>a+s.pay.filter(p=>p.m==='cash').reduce((b,p)=>b+p.amt,0),0),df=k===5?-500:k===12?200:k===17?-100:0;
+    o.push({ts:new Date(ds+'T19:20').getTime(),expected:exp,counted:exp+df,diff:df})}
+  return o.reverse();
 }
 function init(){
   let st=null,raw=msBoot();try{st=JSON.parse(raw||'null')}catch(e){msCorrupt(raw)}
-  if(st&&st.products){S=st;S.settings=Object.assign(defaultSettings(),S.settings);migratePalette(S.settings);if(S.seedDay!==today()&&!cloudOn()&&!S.noDemo&&S.sales.every(s=>s.demo)){S.sales=seedSales();S.events=seedEvents();S.seedDay=today();S.closures=[];save()}}
+  if(st&&st.products){S=st;S.settings=Object.assign(defaultSettings(),S.settings);migratePalette(S.settings);if(S.seedDay!==today()&&!cloudOn()&&!S.noDemo&&S.sales.every(s=>s.demo)){S.sales=seedSales();S.events=seedEvents();S.seedDay=today();S.closures=seedClosures();save()}}
   else{S={products:seedProducts(),clients:seedClients(),sales:[],closures:[],settings:defaultSettings(),seedDay:today()};
-    S.sales=seedSales();number();save()}
+    S.sales=seedSales();S.closures=seedClosures();number();save()}
   number();
   if(!S.staff){S.events=seedEvents();S.mails=[];S.staff=seedStaff();S.leaves=seedLeaves();S.shifts={};S.checks=seedChecks();seedShifts();save()}
   S.shifts=S.shifts||{};S.events=S.events||[];S.mails=S.mails||[];
@@ -570,7 +598,7 @@ const CHECKS=[
 const CHECK_IDS=CHECKS.flatMap(g=>g.items.map(i=>i[0]));
 function seedChecks(){
   const o={};
-  for(let i=1;i<=6;i++){const d=addDays(today(),-i),items={};CHECK_IDS.forEach(k=>items[k]={s:'ok',note:''});
+  for(let i=1;i<=30;i++){if(i>3&&i%9===0)continue;const d=addDays(today(),-i),items={};CHECK_IDS.forEach(k=>items[k]={s:'ok',note:''});
     if(i===3){items.filets={s:'ko',note:'Maille déchirée côté fosse, réparée par Yanis'}}
     o[d]={items,press:'',by:S.staff[i%S.staff.length].id,ts:new Date(d+'T09:'+pad(10+i*3)+':00').getTime(),done:true};}
   return o;
@@ -2708,6 +2736,184 @@ function countUpBase(el){
 }
 NAV.splice(NAV.length-1,0,['stats','Statistiques','chart','Stats']);VIEWS.stats=vStats;
 MTL.splice(MTL.length-1,0,['Statistiques','chart','stats','',[]]);
+/* ---- statistiques : tableau de bord de pilotage ---- */
+let stTab='pilotage';
+const STTABS=[['pilotage','Pilotage'],['ventes','Ventes'],['frequentation','Fréquentation'],['clients','Clients'],['exploitation','Exploitation']];
+const sxDay=s=>dkey(new Date(s.ts)),sxTk=s=>!s.qw&&s.ty!=='av';
+const sxWd=d=>(new Date(d+'T12:00').getDay()+6)%7,WDN=['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
+const sxPct=(a,b)=>b?Math.round(a/b*100):0,sxN=n=>Math.round(n).toLocaleString('fr-FR'),sxS=(n,w)=>n>1?w+'s':w;
+const sxDeltaTxt=v=>v==null?'':(v>=0?'+':'−')+Math.abs(v)+' %';
+function sxCalc(days){
+  const set=new Set(days),all=S.sales.filter(s=>set.has(sxDay(s))),T=all.filter(sxTk),AV=all.filter(s=>s.ty==='av');
+  const tt=sumBy(T,s=>s.total);
+  return{all,T,AV,ca:sumBy(all,s=>s.total),n:T.length,avg:T.length?tt/T.length:0,jp:sumBy(all,s=>s.jumpers||0),brut:sumBy(T,s=>s.sub),rem:sumBy(T,s=>s.disc||0),avo:Math.abs(sumBy(AV,s=>s.total))};
+}
+function sxCats(c){const o={};c.all.forEach(s=>s.lines.forEach(l=>{o[l.cat]=(o[l.cat]||0)+l.ttc}));return o}
+function sxProds(c){const o={};c.all.forEach(s=>s.lines.forEach(l=>{const p=o[l.pid]=o[l.pid]||{n:l.name,q:0,v:0,cat:l.cat};p.q+=l.qty;p.v+=l.ttc}));return o}
+function sxHeat(c){const h={};c.all.forEach(s=>{if(!s.slot||!s.jumpers)return;const [d,mm]=s.slot.split('|'),k=sxWd(d)+'|'+Math.floor(+mm/60);h[k]=(h[k]||0)+s.jumpers});return h}
+function sxWeek(R,c){
+  const occ=Array(7).fill(0),ca=Array(7).fill(0),jp=Array(7).fill(0);
+  R.days.forEach(d=>{if(d<=today())occ[sxWd(d)]++});
+  c.all.forEach(s=>{const w=sxWd(sxDay(s));ca[w]+=s.total;jp[w]+=s.jumpers||0});
+  return WDN.map((n,w)=>({n,w,occ:occ[w],ca:occ[w]?ca[w]/occ[w]:0,jp:occ[w]?jp[w]/occ[w]:0}));
+}
+function sxClients(R){
+  const first={},last={},inP={},set=new Set(R.days);
+  S.sales.forEach(s=>{if(!s.clientId||s.ty==='av'||s.qw)return;const d=sxDay(s);
+    if(!first[s.clientId]||d<first[s.clientId])first[s.clientId]=d;if(!last[s.clientId]||d>last[s.clientId])last[s.clientId]=d;
+    if(set.has(d)){const x=inP[s.clientId]=inP[s.clientId]||{n:0,v:0};x.n++;x.v+=s.total}});
+  return{first,last,inP};
+}
+const sxSince=(d,t)=>Math.round((new Date(t+'T12:00')-new Date(d+'T12:00'))/864e5);
+/* constats chiffrés et actions : règles simples, sans IA */
+function sxInsights(R,cur,prev,cl,wk,heat){
+  const out=[],add=(t,h,p,a)=>out.push({t,h,p,a:a||''});
+  if(!cur.n&&!cur.jp)return[{t:'info',h:'Pas encore de vente sur cette période',p:'Encaissez des tickets ou choisissez une période plus longue : les analyses apparaissent dès les premières ventes.',a:''}];
+  const dc=dlt(cur.ca,prev.ca);
+  if(dc!=null&&prev.ca>0){
+    const dt=dlt(cur.n,prev.n)||0,da=dlt(cur.avg,prev.avg)||0,why=Math.abs(dt)>=Math.abs(da)?`Cela vient surtout du nombre de tickets (${sxDeltaTxt(dt)}).`:`Cela vient surtout du panier moyen (${sxDeltaTxt(da)}).`;
+    if(dc>=5)add('ok',`Chiffre d’affaires en hausse de ${dc} %`,`${eurN(cur.ca)} contre ${eurN(prev.ca)} sur la période précédente. ${why}`);
+    else if(dc<=-5)add('warn',`Chiffre d’affaires en baisse de ${Math.abs(dc)} %`,`${eurN(cur.ca)} contre ${eurN(prev.ca)} sur la période précédente. ${why}`,'Consultez l’onglet Fréquentation pour repérer les jours ou créneaux qui ont décroché.');
+    else add('info','Activité stable',`${eurN(cur.ca)} (${sxDeltaTxt(dc)} par rapport à la période précédente).`);
+  }
+  const ws=wk.filter(x=>x.occ>=2);
+  if(R.n>=14&&ws.length>=5){
+    const best=ws.reduce((a,b)=>b.ca>a.ca?b:a),low=ws.reduce((a,b)=>b.ca<a.ca?b:a);
+    if(best.ca>0&&low.ca<best.ca*.6)add('info',`Le ${low.n} est votre jour le plus calme`,`${eurN(low.ca)} en moyenne, contre ${eurN(best.ca)} le ${best.n}.`,'Testez une offre ciblée ce jour-là : tarif réduit, pack famille, groupes ou privatisation.');
+  }
+  const hs={};for(let h=S.settings.open;h<S.settings.close;h++)hs[h]=0;
+  Object.entries(heat).forEach(([k,v])=>{const h=+k.split('|')[1];if(h in hs)hs[h]+=v});
+  const hv=Object.entries(hs).map(([h,v])=>[+h,v]),hmax=Math.max(0,...hv.map(x=>x[1]));
+  if(hmax>0&&hv.length>3){const lo=hv.reduce((a,b)=>b[1]<a[1]?b:a),hi=hv.reduce((a,b)=>b[1]>a[1]?b:a);
+    if(lo[1]<hmax*.35)add('info',`Créneau de ${lo[0]} h : le moins rempli`,`${sxN(lo[1])} ${PLUR()} sur la période, contre ${sxN(hi[1])} à ${hi[0]} h.`,'Proposez un tarif heures creuses ou ciblez les groupes et scolaires sur ce créneau.')}
+  if(cur.brut>0){const rate=Math.round(cur.rem/cur.brut*1000)/10;
+    if(rate>=8){const lb={};cur.T.forEach(s=>{if(s.disc>0){const k=s.discLabel||'Remise';lb[k]=(lb[k]||0)+s.disc}});const top=Object.entries(lb).sort((a,b)=>b[1]-a[1])[0];
+      add('warn',`Remises : ${String(rate).replace('.',',')} % du chiffre d’affaires brut`,`${eurN(cur.rem)} offerts sur la période${top?`, dont ${eurN(top[1])} au titre de « ${top[0]} »`:''}.`,'Vérifiez que ces remises amènent bien des ventes en plus, sinon limitez-les.')}}
+  const tj=cur.T.filter(s=>s.jumpers>0),wb=tj.filter(s=>s.lines.some(l=>l.cat==='bar'));
+  if(tj.length>=10){const r=sxPct(wb.length,tj.length),bn=cat('bar').name.toLowerCase();
+    if(r<40)add('warn',`Seuls ${r} % des tickets avec entrée incluent un produit « ${bn} »`,`${wb.length} tickets sur ${tj.length}. Chaque vente associée augmente directement le panier moyen (${eurN(cur.avg)} aujourd’hui).`,'Faites proposer systématiquement une boisson ou un snack à l’encaissement, ou créez un pack entrée + goûter.');
+    else if(r>=60)add('ok',`${r} % des tickets avec entrée incluent un produit « ${bn} »`,`Bonne vente additionnelle : ${wb.length} tickets sur ${tj.length}.`)}
+  const low=Object.entries(S.stock||{}).filter(([id,s])=>prod(id)&&s.q<=s.min);
+  if(low.length)add('warn',`${low.length} ${sxS(low.length,'produit')} à réapprovisionner`,low.slice(0,4).map(([id,s])=>`${prod(id).name} (${s.q})`).join(', ')+(low.length>4?'…':''),'Passez commande avant la rupture : une case vide en caisse, c’est une vente perdue.');
+  const dead=S.products.filter(p=>p.active&&['park','bar'].includes(p.cat)&&!cur.all.some(s=>s.lines.some(l=>l.pid===p.id)));
+  if(R.n>=7&&dead.length&&cur.n>=10)add('info',`${dead.length} ${sxS(dead.length,'produit')} sans aucune vente`,dead.slice(0,4).map(p=>p.name).join(', ')+(dead.length>4?'…':''),'Mettez-les en avant en caisse, ou retirez-les pour alléger l’écran.');
+  const idr=sxPct(cur.T.filter(s=>s.clientId).length,cur.n);
+  if(cur.n>=10&&idr<30)add('warn',`Seulement ${idr} % des tickets sont rattachés à un client`,'Sans fiche client, impossible de relancer, de fidéliser ou de mesurer le retour des clients.','Demandez le nom ou le téléphone à l’encaissement et proposez la carte de fidélité.');
+  const relance=Object.entries(cl.last).filter(([id,d])=>{const c=S.clients.find(x=>x.id===id);return c&&c.optin&&(c.email||c.phone)&&sxSince(d,today())>=45&&sxSince(d,today())<=365}).length;
+  if(relance)add('info',`${relance} ${sxS(relance,'client')} à relancer`,'Clients ayant accepté les communications, sans visite depuis plus de 45 jours.','Envoyez-leur une offre de retour depuis l’onglet Clients.');
+  const past=R.days.filter(d=>d<=today()).length,chk=R.days.filter(d=>S.checks[d]&&S.checks[d].done).length;
+  if(past&&chk<past&&R.n<=31)add('warn',`Contrôle quotidien : ${chk} jour${chk>1?'s':''} sur ${past}`,'Le contrôle visuel du parc n’est pas validé tous les jours.','Validez-le chaque matin : c’est une obligation de sécurité et votre preuve en cas de contrôle.');
+  const up=(S.events||[]).filter(e=>e.date>=today()&&e.date<=addDays(today(),30));
+  if(up.length)add('info',`${up.length} ${sxS(up.length,'événement')} à venir sur 30 jours`,`${sxN(sumBy(up,e=>e.guests||0))} invités attendus au total.`,'Anticipez l’équipe et les salles, et relancez les anniversaires de l’an dernier.');
+  const rk={warn:0,ok:1,info:2};out.sort((a,b)=>rk[a.t]-rk[b.t]);return out.slice(0,7);
+}
+function sxGoalCard(){
+  const t=today(),m0=t.slice(0,8)+'01',dim=new Date(+t.slice(0,4),+t.slice(5,7),0).getDate(),el=+t.slice(8);
+  const c=sxCalc(Array.from({length:el},(_,i)=>addDays(m0,i))),goal=S.settings.goal||0,proj=el?Math.round(c.ca/el*dim):0;
+  const mois=new Date(t+'T12:00').toLocaleDateString('fr-FR',{month:'long'});
+  const pace=Math.round(el/dim*100),done=goal?Math.min(100,Math.round(c.ca/goal*100)):0;
+  const verdict=goal?(proj>=goal?`<b class="ok">Objectif atteignable</b> : à ce rythme vous finirez à ${eurN(proj)} (${sxPct(proj,goal)} % de l’objectif).`:`<b class="bad">En retard sur l’objectif</b> : à ce rythme vous finirez à ${eurN(proj)} (${sxPct(proj,goal)} %). Il manque ${eurN(goal-proj)}.`):'Fixez un objectif pour suivre votre avancement et votre projection de fin de mois.';
+  return `<div class="card sx-goal"><div class="mtitle"><h3>Objectif de ${mois}</h3><span class="muted">${el} jour${el>1?'s':''} sur ${dim}</span></div>
+   ${goal?`<div class="sx-gbar" role="img" aria-label="${done} % de l’objectif atteint"><i style="width:${done}%"></i><u style="left:${pace}%" title="Où vous devriez en être : ${pace} %"></u></div>
+   <div class="sx-gl"><span><b class="num">${eurN(c.ca)}</b> réalisés</span><span>objectif <b class="num">${eurN(goal)}</b></span></div>`:''}
+   <p class="sx-gv">${verdict}</p>
+   <form class="sx-gf" data-act="sx_goalf"><label class="muted" for="sxgoal">${goal?'Modifier l’objectif':'Objectif de chiffre d’affaires du mois (TTC)'}</label>
+   <div class="sx-gr"><input id="sxgoal" type="number" inputmode="decimal" min="0" step="100" placeholder="ex. 25000" value="${goal?Math.round(goal/100):''}"><span class="muted">€</span><button class="btn" type="submit">Enregistrer</button></div></form></div>`;
+}
+function sxChart(R,cur,prev){
+  const step=R.n>62?7:1,B=[];
+  for(let i=0;i<R.n;i+=step){const ds=R.days.slice(i,i+step),set=new Set(ds);
+    B.push({d:ds[0],n:ds.length,v:sumBy(cur.all.filter(s=>set.has(sxDay(s))),s=>s.total)})}
+  const mx=Math.max(1,...B.map(x=>x.v)),act=B.filter(x=>x.v>0),avg=act.length?sumBy(act,x=>x.v)/act.length:0;
+  return `<div class="bchw"><div class="cols2" role="img" aria-label="Chiffre d’affaires par ${step>1?'semaine':'jour'}">${B.map((x,i)=>`<div class="cc" title="${step>1?'Semaine du ':''}${dshort(x.d)} : ${eurN(x.v)}"><i class="cbr ${x.d===today()?'td':''}" style="height:${Math.max(x.v?3:0,Math.round(x.v/mx*100))}%;animation-delay:${Math.min(i*15,600)}ms"></i>${B.length<=14?`<small>${step>1?+x.d.slice(8):(R.n<=7?dshort(x.d).split(' ')[0]:+x.d.slice(8))}</small>`:''}</div>`).join('')}<u class="avgl" style="bottom:calc(${Math.round(avg/mx*100)}% * .86 + 22px)"></u></div></div>
+   <p class="muted sx-note">Chaque barre = ${step>1?'une semaine':'un jour'} · ligne orange = moyenne (${eurN(avg)}) · ${eurN(cur.ca)} sur la période${prev.ca?` · ${eurN(prev.ca)} sur la période précédente`:''}</p>`;
+}
+const sxD=v=>v==null?'':`<span class="sx-d ${v>=0?'up':'dn'}">${v>=0?'▲':'▼'} ${Math.abs(v)} %</span>`;
+const sxKpi=(l,v,d,sub)=>`<div class="kpi st"><div class="l">${l}</div><div class="v num">${v}</div><div class="sub2">${sxD(d)} ${sub||''}</div></div>`;
+const sxEmpty=t=>`<p class="muted">${t}</p>`;
+function sxHeatHtml(heat){
+  const hrs=[];for(let h=S.settings.open;h<S.settings.close;h++)hrs.push(h);
+  const mx=Math.max(1,...Object.values(heat)),dn=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  return `<div class="heatw sx-heat"><div class="heat" style="--c:${hrs.length}"><span></span>${hrs.map(h=>`<b>${h}h</b>`).join('')}${dn.map((n,w)=>`<b class="hd">${n}</b>${hrs.map(h=>{const v=heat[w+'|'+h]||0;return `<i style="--a:${(v/mx).toFixed(2)}" title="${n} ${h}h : ${v} ${PLUR()}">${v||''}</i>`}).join('')}`).join('')}</div></div>
+   <p class="muted sx-note">Plus la couleur est intense, plus le créneau est rempli. Les cases pâles sont vos créneaux creux.</p>`;
+}
+function sxTabPilotage(R,cur,prev,cl,wk,heat){
+  const ins=sxInsights(R,cur,prev,cl,wk,heat);
+  const idr=cur.n?sxPct(cur.T.filter(s=>s.clientId).length,cur.n)+' %':'–';
+  return `<div class="kpis st6">${sxKpi('Chiffre d’affaires',eurN(cur.ca),dlt(cur.ca,prev.ca),'vs période précédente')}${sxKpi('Tickets',sxN(cur.n),dlt(cur.n,prev.n))}${sxKpi('Panier moyen',eurN(cur.avg),dlt(cur.avg,prev.avg))}${sxKpi(CAPP(),sxN(cur.jp),dlt(cur.jp,prev.jp))}${sxKpi('CA par '+NOUN(),cur.jp>0?eurN(cur.ca/cur.jp):'–',cur.jp>0&&prev.jp>0?dlt(cur.ca/cur.jp,prev.ca/prev.jp):null)}${sxKpi('Clients identifiés',idr,null,'des tickets')}</div>
+   ${aiOk()?`<div class="card ai-sum"><button class="btn ai" data-act="stai" ${ctl.busy?'disabled':''}>${ic('wave')}Résumé et conseils IA</button><p class="aiout" id="stai">${esc(ctl.stAi||'')}</p></div>`:''}
+   <div class="card"><div class="mtitle"><h3>À retenir</h3><span class="muted">constats et actions, calculés sur vos ventes</span></div><div class="sx-ins">${ins.map(i=>`<div class="sx-i sx-${i.t}"><h4>${esc(i.h)}</h4><p>${esc(i.p)}</p>${i.a?`<p class="sx-a">→ ${esc(i.a)}</p>`:''}</div>`).join('')}</div></div>
+   ${sxGoalCard()}
+   ${cur.ca?`<div class="card"><div class="mtitle"><h3>Chiffre d’affaires</h3><span class="muted">${R.n>62?'par semaine':'par jour'}</span></div>${sxChart(R,cur,prev)}</div>`:''}`;
+}
+function sxTabVentes(R,cur,prev){
+  const cats=sxCats(cur),pc=sxCats(prev),catL=Object.entries(cats).sort((a,b)=>b[1]-a[1]),catT=sumBy(catL,x=>x[1])||1;
+  const prods=Object.values(sxProds(cur)).sort((a,b)=>b.v-a.v),top=prods.slice(0,10);
+  const pays={};cur.all.forEach(s=>s.pay.forEach(p=>{const k=METHODS[p.m]||p.m;pays[k]=(pays[k]||0)+p.amt}));const payT=sumBy(Object.values(pays),x=>x)||1;
+  const vat={};cur.all.forEach(s=>Object.entries(s.vat||{}).forEach(([r,v])=>{const x=vat[r]=vat[r]||{ttc:0,tva:0};x.ttc+=v.ttc;x.tva+=v.tva}));
+  const lb={};cur.T.forEach(s=>{if(s.disc>0){const k=s.discLabel||'Remise';const x=lb[k]=lb[k]||{n:0,v:0};x.n++;x.v+=s.disc}});
+  const nd=cur.T.filter(s=>s.disc>0).length,promoN=cur.T.filter(s=>s.promo).length,rwN=cur.T.filter(s=>s.rewardPal).length;
+  const items=sumBy(cur.T,s=>sumBy(s.lines,l=>l.qty));
+  return `<div class="kpis st6">${sxKpi('Chiffre d’affaires',eurN(cur.ca),dlt(cur.ca,prev.ca),'net des avoirs')}${sxKpi('Panier moyen',eurN(cur.avg),dlt(cur.avg,prev.avg))}${sxKpi('Articles par ticket',cur.n?(items/cur.n).toFixed(1).replace('.',','):'–',null,'en moyenne')}${sxKpi('Remises',eurN(cur.rem),null,cur.brut?sxPct(cur.rem,cur.brut)+' % du CA brut':'')}${sxKpi('Avoirs',eurN(cur.avo),null,cur.AV.length+' '+sxS(cur.AV.length,'annulation'))}</div>
+   ${cur.ca?`<div class="card"><div class="mtitle"><h3>Chiffre d’affaires</h3><span class="muted">${R.n>62?'par semaine':'par jour'}</span></div>${sxChart(R,cur,prev)}</div>`:''}
+   <div class="cols"><div class="card"><h3>Ventes par catégorie</h3>${bars(catL.map(([c,v])=>{const d=dlt(v,pc[c]||0);return[cat(c).name+' · '+Math.round(v/catT*100)+' %'+(d!=null&&pc[c]?' ('+sxDeltaTxt(d)+')':''),v]}),eurN)}<p class="muted sx-note">Entre parenthèses : évolution par rapport à la période précédente.</p></div>
+   <div class="card"><h3>Produits les plus vendus</h3>${bars(top.map(p=>[p.n+' ×'+p.q,p.v]),eurN,'var(--pay)')}</div></div>
+   <div class="cols"><div class="card"><h3>Modes de paiement</h3>${bars(Object.entries(pays).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k+' · '+Math.round(v/payT*100)+' %',v]),eurN)}</div>
+   <div class="card"><h3>Remises, codes promo et avoirs</h3><div class="mini"><div><b class="num">${nd}</b><span>${sxS(nd,'ticket')} avec remise (${cur.n?sxPct(nd,cur.n):0} %)</span></div><div><b class="num">${promoN}</b><span>${sxS(promoN,'utilisation')} de code promo</span></div><div><b class="num">${rwN}</b><span>récompense${rwN>1?'s':''} fidélité utilisée${rwN>1?'s':''}</span></div><div><b class="num">${cur.AV.length}</b><span>avoir${cur.AV.length>1?'s':''} · ${eurN(cur.avo)}</span></div></div>
+   ${Object.keys(lb).length?bars(Object.entries(lb).sort((a,b)=>b[1].v-a[1].v).slice(0,5).map(([k,x])=>[k+' ×'+x.n,x.v]),eurN,'var(--warn)'):''}</div></div>
+   <div class="card"><h3>TVA collectée <span class="muted" style="font-weight:500">pour votre comptable</span></h3>${Object.keys(vat).length?`<table class="sx-t"><thead><tr><th>Taux</th><th>Ventes TTC</th><th>Hors taxe</th><th>TVA</th></tr></thead><tbody>${Object.entries(vat).sort((a,b)=>+a[0]-+b[0]).map(([r,v])=>`<tr><td>${String(r).replace('.',',')} %</td><td class="num">${eurN(v.ttc)}</td><td class="num">${eurN(v.ttc-v.tva)}</td><td class="num">${eurN(v.tva)}</td></tr>`).join('')}<tr class="sx-tot"><td>Total</td><td class="num">${eurN(sumBy(Object.values(vat),v=>v.ttc))}</td><td class="num">${eurN(sumBy(Object.values(vat),v=>v.ttc-v.tva))}</td><td class="num">${eurN(sumBy(Object.values(vat),v=>v.tva))}</td></tr></tbody></table>`:sxEmpty('Aucune vente sur la période.')}</div>`;
+}
+function sxTabFreq(R,cur,prev,wk,heat){
+  const hv=Object.entries(heat).sort((a,b)=>b[1]-a[1]),dn=['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
+  const days=R.days.filter(d=>d<=today()),jpD=days.map(d=>[d,sumBy(cur.all.filter(s=>sxDay(s)===d),s=>s.jumpers||0)]),open=jpD.filter(x=>x[1]>0),rec=open.length?open.reduce((a,b)=>b[1]>a[1]?b:a):null;
+  const dur={};cur.T.forEach(s=>{if(s.jumpers>0){const k=(s.dur||60)+' min';dur[k]=(dur[k]||0)+s.jumpers}});
+  const cap=S.settings.cap||0,fut=Array.from({length:7},(_,i)=>addDays(today(),i)).map(d=>{let pk=0;for(let m=S.settings.open*60;m<S.settings.close*60;m+=30)pk=Math.max(pk,occ(d,m));return[d,pk]});
+  const ev=(S.events||[]).filter(e=>e.date>=R.from&&e.date<=R.to),evU=(S.events||[]).filter(e=>e.date>today()&&e.date<=addDays(today(),30));
+  const best=hv[0]?hv[0][0].split('|'):null,haveWk=R.n>=14;
+  return `<div class="kpis st6">${sxKpi(CAPP(),sxN(cur.jp),dlt(cur.jp,prev.jp),'sur la période')}${sxKpi('Moyenne par jour ouvert',open.length?sxN(cur.jp/open.length):'–',null,open.length+' '+sxS(open.length,'jour')+' d’activité')}${sxKpi('Jour record',rec?sxN(rec[1]):'–',null,rec?dshort(rec[0]):'')}${sxKpi('Événements',ev.length,null,sxN(sumBy(ev,e=>e.guests||0))+' invités')}</div>
+   <div class="card"><h3>Heures de pointe <span class="muted" style="font-weight:500">${PLUR()} par créneau</span></h3>${hv.length?sxHeatHtml(heat):sxEmpty('Pas encore de créneaux réservés sur la période.')}${best?`<p class="sx-callout">Votre créneau le plus chargé : <b>${dn[+best[0]]} à ${best[1]} h</b>. Placez-y le maximum d’équipe.</p>`:''}</div>
+   <div class="cols"><div class="card"><h3>Moyenne par jour de la semaine</h3>${haveWk?bars(wk.map(x=>[x.n,x.jp]),v=>sxN(v)+' '+PLUR()):sxEmpty('Choisissez « 30 jours » ou plus pour comparer les jours de la semaine.')}${haveWk?`<h4 class="sx-h4">Chiffre d’affaires moyen</h4>${bars(wk.map(x=>[x.n,x.ca]),eurN,'var(--pay)')}`:''}</div>
+   <div class="card"><h3>Affluence des 7 prochains jours</h3>${bars(fut.map(([d,v])=>[dshort(d),v]),v=>sxN(v)+' / '+sxN(cap))}<p class="muted sx-note">Pic de présence prévu dans la journée d’après les réservations, sur ${sxN(cap)} places. Pour anticiper le planning de l’équipe.</p>
+   <h4 class="sx-h4">Durées choisies</h4>${bars(Object.entries(dur).sort((a,b)=>b[1]-a[1]),v=>sxN(v),'var(--pay)')}</div></div>
+   <div class="card"><h3>Événements et anniversaires</h3><div class="mini"><div><b class="num">${ev.length}</b><span>sur la période</span></div><div><b class="num">${evU.length}</b><span>à venir (30 jours)</span></div><div><b class="num">${sxN(sumBy(evU,e=>e.guests||0))}</b><span>invités attendus</span></div><div><b class="num">${eurN(sumBy(cur.all,s=>sumBy(s.lines.filter(l=>l.cat==='event'),l=>l.ttc)))}</b><span>CA événements encaissé</span></div></div></div>`;
+}
+function sxTabClients(R,cur,prev,cl){
+  const rows=Object.entries(cl.inP).map(([id,x])=>({c:S.clients.find(c=>c.id===id),n:x.n,v:x.v})).filter(x=>x.c).sort((a,b)=>b.v-a.v);
+  const nouv=rows.filter(x=>cl.first[x.c.id]>=R.from).length,rec=rows.length-nouv,caCl=sumBy(rows,x=>x.v);
+  const rel=Object.entries(cl.last).map(([id,d])=>({c:S.clients.find(c=>c.id===id),d})).filter(x=>x.c&&x.c.optin&&(x.c.email||x.c.phone)).map(x=>({...x,j:sxSince(x.d,today())})).filter(x=>x.j>=45&&x.j<=365).sort((a,b)=>a.j-b.j);
+  const pts=sumBy(S.clients,c=>c.pts||0),pal=Object.fromEntries((S.settings.pal||[]).map(p=>[p.id,p.amt])),rw=S.clients.reduce((a,c)=>a.concat((c.rewards||[]).filter(r=>!r.used)),[]),rwV=sumBy(rw,r=>pal[r.pal]||0);
+  const ps=(S.passes||[]).filter(p=>p.left>0&&(!p.exp||p.exp>=today())),idN=cur.T.filter(s=>s.clientId).length;
+  return `<div class="kpis st6">${sxKpi('Clients actifs',rows.length,null,'ont acheté sur la période')}${sxKpi('Nouveaux clients',nouv,null,'première visite')}${sxKpi('Clients fidèles',rec,null,'déjà venus avant')}${sxKpi('Tickets identifiés',cur.n?sxPct(idN,cur.n)+' %':'–',null,'rattachés à une fiche')}${sxKpi('CA des clients identifiés',eurN(caCl),null,cur.ca?sxPct(caCl,cur.ca)+' % du CA':'')}</div>
+   <div class="cols"><div class="card"><h3>Vos meilleurs clients</h3>${rows.length?`<ol class="sx-rk">${rows.slice(0,6).map((x,i)=>`<li><span>${i+1}</span><b>${esc(x.c.name)}</b><small>${x.n} ${sxS(x.n,'passage')}</small><em class="num">${eurN(x.v)}</em></li>`).join('')}</ol>`:sxEmpty('Aucun client identifié sur la période. Rattachez les tickets à une fiche pour suivre vos meilleurs clients.')}</div>
+   <div class="card"><h3>À relancer</h3><p class="muted sx-note" style="margin-top:0">Clients qui acceptent d’être contactés, sans visite depuis 45 jours ou plus.</p>${rel.length?`<ol class="sx-rk">${rel.slice(0,6).map(x=>`<li><span>›</span><b>${esc(x.c.name)}</b><small>il y a ${x.j} j</small><em>${x.c.email?'e-mail':'téléphone'}</em></li>`).join('')}</ol>${rel.length>6?`<p class="muted sx-note">+ ${rel.length-6} autres</p>`:''}`:sxEmpty('Personne à relancer pour le moment.')}</div></div>
+   <div class="card"><h3>Fidélité et carnets</h3><div class="mini"><div><b class="num">${sxN(pts)}</b><span>points en circulation</span></div><div><b class="num">${rw.length}</b><span>récompense${rw.length>1?'s':''} à utiliser · ${eurN(rwV)}</span></div><div><b class="num">${ps.length}</b><span>carnet${ps.length>1?'s':''} actif${ps.length>1?'s':''}</span></div><div><b class="num">${sxN(sumBy(ps,p=>p.left))}</b><span>séance${sumBy(ps,p=>p.left)>1?'s':''} déjà payée${sumBy(ps,p=>p.left)>1?'s':''} à venir</span></div></div></div>`;
+}
+function sxTabExpl(R,cur){
+  const past=R.days.filter(d=>d<=today()),done=past.filter(d=>S.checks[d]&&S.checks[d].done),miss=past.filter(d=>!(S.checks[d]&&S.checks[d].done));
+  const inc=S.incidents.filter(x=>x.date>=R.from&&x.date<=R.to),mn=S.maint.filter(x=>x.statut!=='Terminé');
+  const stk=Object.entries(S.stock||{}).filter(([id])=>prod(id)).map(([id,s])=>({p:prod(id),q:s.q,min:s.min,r:s.min?s.q/s.min:9})).sort((a,b)=>a.r-b.r);
+  const lowN=stk.filter(x=>x.q<=x.min).length,cl=(S.closures||[]).filter(c=>R.days.includes(dkey(new Date(c.ts))));
+  const diff=sumBy(cl,c=>c.diff||0),bad=cl.filter(c=>c.diff);
+  return `<div class="kpis st6">${sxKpi('Contrôles quotidiens',done.length+'/'+past.length,null,past.length?sxPct(done.length,past.length)+' % validés':'')}${sxKpi('Incidents',inc.length,null,'déclarés sur la période')}${sxKpi('Maintenances ouvertes',mn.length)}${sxKpi('Produits à réapprovisionner',lowN)}${sxKpi('Écart de caisse',eurN(diff),null,cl.length+' '+sxS(cl.length,'clôture'))}</div>
+   <div class="cols"><div class="card"><h3>Stocks</h3>${stk.length?`<div class="hb">${stk.slice(0,8).map(x=>`<div class="hbr"><span class="hbl">${esc(x.p.name)}</span><span class="hbb"><i style="width:${Math.min(100,Math.round(x.q/Math.max(1,x.min*3)*100))}%;background:${x.q<=x.min?'var(--bad)':'var(--ok)'}"></i></span><b class="num">${x.q}</b></div>`).join('')}</div><p class="muted sx-note">Rouge : au niveau d’alerte ou en dessous. Les produits les plus bas sont en haut.</p>`:sxEmpty('Aucun stock suivi.')}</div>
+   <div class="card"><h3>Sécurité et conformité</h3>${miss.length&&past.length<=45?`<p class="sx-callout">Contrôle quotidien non validé : ${miss.slice(-5).map(d=>dshort(d)).join(', ')}${miss.length>5?'…':''}</p>`:`<p class="sx-callout ok">Contrôles quotidiens à jour sur la période.</p>`}
+   <div class="mini"><div><b class="num">${inc.length}</b><span>incident${inc.length>1?'s':''}</span></div><div><b class="num">${mn.length}</b><span>maintenance${mn.length>1?'s':''} ouverte${mn.length>1?'s':''}</span></div></div>
+   ${mn.length?`<ul class="sx-ul">${mn.slice(0,4).map(x=>`<li>${esc(x.equip||x.type||'Intervention')} <small>${esc(x.statut||'')}</small></li>`).join('')}</ul>`:''}</div></div>
+   <div class="card"><h3>Caisse</h3>${cl.length?`<div class="mini"><div><b class="num">${cl.length}</b><span>clôture${cl.length>1?'s':''} sur la période</span></div><div><b class="num">${bad.length}</b><span>avec écart</span></div><div><b class="num">${eurN(diff)}</b><span>écart cumulé</span></div></div>`:sxEmpty('Aucune clôture de caisse sur la période.')}</div>`;
+}
+function vStatsPro(m){
+  const R=stRange(stP),cur=sxCalc(R.days),prev=sxCalc(R.pdays),heat=sxHeat(cur),wk=sxWeek(R,cur),cl=sxClients(R);
+  const body=stTab==='ventes'?sxTabVentes(R,cur,prev):stTab==='frequentation'?sxTabFreq(R,cur,prev,wk,heat):stTab==='clients'?sxTabClients(R,cur,prev,cl):stTab==='exploitation'?sxTabExpl(R,cur):sxTabPilotage(R,cur,prev,cl,wk,heat);
+  m.innerHTML=head('Statistiques')+`<div class="sx-bar"><div class="seg stseg sx-tabs" role="tablist" aria-label="Rubriques">${STTABS.map(([k,l])=>`<button role="tab" aria-selected="${stTab===k}" class="${stTab===k?'on':''}" data-act="sx_t" data-k="${k}">${l}</button>`).join('')}</div>
+   <div class="seg stseg" role="group" aria-label="Période">${stPeriods.map(([k,l])=>`<button class="${stP===k?'on':''}" data-act="sx_p" data-k="${k}">${l}</button>`).join('')}</div></div>
+   <p class="muted sx-per">${R.n>1?`Du ${dshort(R.from)} au ${dshort(R.to)}`:'Aujourd’hui'} · comparé à ${R.n>1?`les ${R.n} jours précédents`:'hier'}</p>${body}`;
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="sx_t"],[data-act="sx_p"]');if(!b||!$('#main'))return;
+  if(b.dataset.act==='sx_t')stTab=b.dataset.k;else stP=b.dataset.k;vStatsPro($('#main'))});
+document.addEventListener('submit',e=>{const f=e.target.closest('[data-act="sx_goalf"]');if(!f)return;e.preventDefault();
+  const v=Math.round((parseFloat(String($('#sxgoal').value).replace(',','.'))||0)*100);S.settings.goal=v>0?v:0;save();toast(v>0?'Objectif enregistré':'Objectif supprimé');vStatsPro($('#main'))});
+VIEWS.stats=vStatsPro;
+
 
 /* ---- inventaire ---- */
 let invCat='all',invCount=false;
