@@ -538,7 +538,11 @@ const ART={
   b3:'<path class="a1" d="M42 14l-20 11 9 13 8-5v28h42V33l8 5 9-13-20-11q-7 8-19 8t-19-8z"/>'
 };
 const ARTCAT={park:'p1',event:'a1',bar:'s3',gestion:'a4'};
-const art=p=>p.img?`<img class="art" src="${p.img}" alt="">`:`<svg class="art" viewBox="0 0 120 76" aria-hidden="true"><rect class="bg" width="120" height="76"/>${artSvg(p)}</svg>`;
+/* v83 : images des dalles (photos des activités). La dalle garde seulement une clé courte (p.tile) : légère à synchroniser. */
+const TILES={'jump-1h':'tiles/jump-1h.webp','jump-1h30':'tiles/jump-1h30.webp','laser-20':'tiles/laser-20.webp','barbe':'tiles/barbe.webp','coupe-homme':'tiles/coupe-homme.webp','cafe-gourmand':'tiles/cafe-gourmand.webp','menu-jour':'tiles/menu-jour.webp','t-shirt':'tiles/t-shirt.webp'};
+const TILE_RULES=[['jump-1h',/^(session|jump)1h$/],['jump-1h30',/^(session|jump)1h30$/],['laser-20',/^(partielaser|sessionlaser|laser)20min$/],['barbe',/^(taillede)?barbe$/],['coupe-homme',/^coupehomme$/],['cafe-gourmand',/^cafegourmand$/],['menu-jour',/^menudujour/],['t-shirt',/^t-?shirt(duparc)?$/]];
+const tileKey=name=>{const n=String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\s.]/g,'');for(const [k,r] of TILE_RULES)if(r.test(n))return k;return ''};
+const art=p=>p.img?`<img class="art" src="${p.img}" alt="">`:(p.tile&&TILES[p.tile])?`<img class="art tl" src="${TILES[p.tile]}" alt="" decoding="async">`:`<svg class="art" viewBox="0 0 120 76" aria-hidden="true"><rect class="bg" width="120" height="76"/>${artSvg(p)}</svg>`;
 
 /* ---------- équipe, congés, contrôle : données ---------- */
 const ROLE={resp:'Responsable',accueil:'Accueil et caisse',mon:'Animateur',anniv:'Anniversaires'};
@@ -4288,7 +4292,7 @@ async function cloudBoot(){
       saveBase();
     }
   }
-  CL.ready=true;migrateImgs();cloudListen();await cloudSync();
+  CL.ready=true;migrateImgs();migrateTiles();cloudListen();await cloudSync();
 }
 /* démarrage : avant l’écran de connexion */
 function bootGate(){
@@ -4437,6 +4441,14 @@ function migrateImgs(){
     P.push({id:'p6',name:'Session 2 h',cat:'park',price:2200,tva:10,active:false,jumper:true,dur:120,img:SESS_IMG.h2});
   S.imgMig=1;save();
 }
+/* v83 : applique l'image qui correspond au nom du produit (sauf image personnelle ou retirée à la main) ; les anciens tickets « 1h00 » par défaut sont remplacés */
+function tileSync(){
+  if(!S||!Array.isArray(S.products))return false;
+  const dflt=new Set(Object.values(SESS_IMG));let ch=false;
+  S.products.forEach(p=>{if(p.tile||p.tileOff)return;if(p.img&&!dflt.has(p.img))return;const k=tileKey(p.name);if(!k)return;p.tile=k;if(p.img)delete p.img;ch=true});
+  return ch;
+}
+function migrateTiles(){try{if(tileSync())save()}catch(e){}}
 /* ---- comptes : création directe par l'administrateur, écran de connexion à jour ---- */
 function vSetAcc(m){
   vSetAccBase(m);
@@ -4488,7 +4500,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v83';
+const LAGO_V='v84';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -9000,6 +9012,7 @@ function tplApply(id,o){
   const prods=t.products.map(p=>{
     const old=keep(p,S.products||[]),q={id:old?old.id:uid(),name:p.name,cat:p.cat,price:tplEuros(p.price),tva:p.tva,active:true};
     if(old&&old.img)q.img=old.img;
+    if(old&&old.tile)q.tile=old.tile;if(old&&old.tileOff)q.tileOff=1;
     if(p.scat)q.scat=p.scat;
     if(p.art)q.art=p.art;
     if(p.jumper){q.jumper=true;q.dur=p.dur}else if(p.dur)q.dur=p.dur;
@@ -9008,6 +9021,7 @@ function tplApply(id,o){
   });
   if(mode==='replace')S.products=prods;
   else{const have=new Set(S.products.map(p=>p.cat+'|'+String(p.name).trim().toLowerCase()));prods.forEach(q=>{if(!have.has(q.cat+'|'+q.name.toLowerCase()))S.products.push(q)})}
+  try{tileSync()}catch(e){}
   /* sous-catégories : en mode « add », on ajoute celles qui manquent */
   const sb=c.subs||{};st.subs=st.subs||{};
   if(mode==='replace')st.subs=JSON.parse(JSON.stringify(sb));
@@ -9204,7 +9218,7 @@ document.addEventListener('click',e=>{
     case 'reset':
       if(cfLocked()){toast('Réinitialisation impossible : des tickets de caisse sont archivés. Exportez l’archive fiscale (Paramètres › Conformité).');break}
       if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Confirmer la réinitialisation';break}
-      msClear();init();cart=newCart();chrome();render();toast('Données de démonstration rechargées');break;
+      msClear();init();migrateTiles();cart=newCart();chrome();render();toast('Données de démonstration rechargées');break;
   }
 });
 document.addEventListener('input',e=>{
@@ -9231,6 +9245,7 @@ document.addEventListener('submit',e=>{
     const id=e.target.dataset.id,o={name:$('#pn').value.trim(),cat:$('#pc').value,price:parseEur($('#pp').value),tva:+$('#pt').value,jumper:$('#pj').checked,active:$('#pa').checked};
     if(!o.name)return;
     if(pimg!==undefined)o.img=pimg||undefined;
+    if(pimg===null){o.tile=undefined;o.tileOff=1}
     o.scat=$('#psub').value||undefined;
     if(id)Object.assign(prod(id),o);else S.products.push({id:uid(),...o});
     save();closeModal();vProducts($('#sub'));toast('Produit enregistré');
@@ -9940,5 +9955,5 @@ function gateNoAcc(){
    <div class="gfoot"><button type="button" class="btn" data-act="g_back">Retour</button></div>`);
 }
 document.addEventListener('click',e=>{if(e.target.closest('[data-act="g_noacc"]'))gateNoAcc()});
-init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();v61Init();hoursInit();applySettings();cart=newCart();chrome();route();bootGate();
+init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();applySettings();cart=newCart();chrome();route();bootGate();
 })();
