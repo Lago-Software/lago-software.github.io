@@ -1270,14 +1270,14 @@ function contrastOf(a,b){const x=relLum(a),y=relLum(b);return (Math.max(x,y)+.05
 /* texte lisible sur la couleur de marque : encre foncée sur une couleur claire, blanc sur une couleur foncée */
 function inkFor(h){return contrastOf(h,'#FFFFFF')>=contrastOf(h,'#0A1F4D')?'#FFFFFF':'#0A1F4D'}
 /* version de la couleur de marque assez foncée pour du texte sur fond clair (contraste 4,5) */
-function textTone(h){let c=h;for(let t=0;t<=1.001;t+=.04){c=mixHex(h,'#0A1F4D',t);if(contrastOf(c,'#FFFFFF')>=4.5)break}return c}
+function textTone(h){let c=h;for(let t=0;t<=1.001;t+=.04){c=mixHex(h,'#0A1F4D',t);if(contrastOf(c,'#FFFFFF')>=5.2)break}return c}
 /* v81 : nouvelle palette Lago (bleu #31ACF0, orange #F76300) — les anciennes couleurs par défaut sont remplacées une fois */
 function migratePalette(st){if(st.palV>=81)return;if(String(st.brand).toUpperCase()==='#1D4FD7')st.brand='#31ACF0';if(String(st.accent).toUpperCase()==='#FF7A1A')st.accent='#F76300';st.palV=81}
 function applyTheme(){
   try{const r=document.documentElement.style,st=S.settings;migratePalette(st);
     const ink=inkFor(st.brand);
     r.setProperty('--brand',st.brand);r.setProperty('--brand-ink',ink);r.setProperty('--brand-t',textTone(st.brand));
-    r.setProperty('--side',relLum(st.brand)>.2?mixHex(st.brand,'#0A1F4D',.78):st.brand);r.setProperty('--c-entree',st.brand);
+    r.setProperty('--side',relLum(st.brand)>.2?mixHex(st.brand,'#0B1B33',.86):st.brand);r.setProperty('--c-entree',st.brand);
     r.setProperty('--brand-soft',mixHex(st.brand,'#FFFFFF',.88));r.setProperty('--surface-2',mixHex(st.brand,'#FFFFFF',.94));
     r.setProperty('--pay',st.accent);r.setProperty('--pay-ink',contrastOf(st.accent,'#FFFFFF')>=contrastOf(st.accent,'#1F0F00')?'#FFFFFF':'#1F0F00');r.setProperty('--c-snack',st.accent)}catch(e){}
   applyCustom();
