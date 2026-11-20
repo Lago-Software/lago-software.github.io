@@ -10,6 +10,7 @@ self.addEventListener('fetch',e=>{
   const r=e.request,u=new URL(r.url);
   if(r.method!=='GET')return;
   const same=u.origin===location.origin;
+  if(same&&u.pathname.startsWith('/site/'))return; /* les anciennes adresses /site/ redirigent vers lago-caisse.fr : on ne les intercepte pas */
   if(!(same||/^fonts\.(googleapis|gstatic)\.com$/.test(u.host)))return;
   const nav=r.mode==='navigate';
   const req=!same?r:nav?new Request(r.url,{cache:'no-cache',credentials:'same-origin'}):new Request(r,{cache:'no-cache'});

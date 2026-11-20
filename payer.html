@@ -48,7 +48,7 @@ const PAYR=(()=>{
       site:/^https:\/\/[^\s"'<>\\]{3,200}$/.test(o.site||'')?o.site:'',
       link:LINK.test(o.link||'')?o.link:'',
       logo:typeof o.logo==='string'&&o.logo.length<=90000&&LOGO.test(o.logo)?o.logo:'',
-      brand:HEX.test(o.brand||'')?o.brand:'#1D4FD7',accent:HEX.test(o.accent||'')?o.accent:'#FF7A1A',
+      brand:HEX.test(o.brand||'')?o.brand:'#31ACF0',accent:HEX.test(o.accent||'')?o.accent:'#F76300',
       bg:BGS.includes(o.bg)?o.bg:'tint',radius:RADII.includes(o.radius)?o.radius:'soft',font:FONTS.includes(o.font)?o.font:'sans',
       title:s(o.title,80)||'Régler votre réservation',intro:s(o.intro,300),btn:s(o.btn,40)||'Payer en ligne',
       note:s(o.note,300)||NOTE,thT:s(o.thT,80)||'Merci !',thM:s(o.thM,300)||THM,help:s(o.help,200),
@@ -81,7 +81,7 @@ const PAYR=(()=>{
   const FONT={sans:'system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif',round:'ui-rounded,"SF Pro Rounded","Hiragino Maru Gothic ProN",Quicksand,Nunito,"Varela Round",system-ui,sans-serif',serif:'"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif'};
   const RAD={square:[6,3],soft:[18,12],round:[30,999]};
   const lum=h=>{const n=parseInt(h.slice(1),16),f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};return .2126*f(n>>16)+.7152*f(n>>8&255)+.0722*f(n&255)};
-  const ink=h=>lum(h)>.42?'#0E1A3A':'#FFFFFF';
+  const ink=h=>lum(h)>.21?'#0E1A3A':'#FFFFFF';
   /* feuille de style, limitée à .pyr (utilisable dans un Shadow DOM ou dans la page) */
   function css(c){
     const r=RAD[c.radius],B=c.brand,A=c.accent;
