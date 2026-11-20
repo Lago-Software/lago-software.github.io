@@ -1,4 +1,4 @@
-const V='lago-v80';
+const V='lago-v81';
 const CORE=['./','index.html','fonts/display-700.woff','fonts/body-400.woff','fonts/body-700.woff','app.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
@@ -10,6 +10,7 @@ self.addEventListener('fetch',e=>{
   const r=e.request,u=new URL(r.url);
   if(r.method!=='GET')return;
   const same=u.origin===location.origin;
+  if(same&&u.pathname.startsWith('/site/'))return; /* les anciennes adresses /site/ redirigent vers lago-caisse.fr : on ne les intercepte pas */
   if(!(same||/^fonts\.(googleapis|gstatic)\.com$/.test(u.host)))return;
   const nav=r.mode==='navigate';
   const req=!same?r:nav?new Request(r.url,{cache:'no-cache',credentials:'same-origin'}):new Request(r,{cache:'no-cache'});
