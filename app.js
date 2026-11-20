@@ -651,9 +651,9 @@ function leaveForm(){
     <p id="lvinfo" class="muted" style="margin-bottom:12px"></p><button class="btn primary" type="submit" style="width:100%">Envoyer la demande</button></form>`);
   leaveInfo();
 }
-function leaveInfo(){
+function leaveInfo(src){
   const el=$('#lvinfo');if(!el)return;
-  const id=$('#ls').value,f=$('#lf').value,t=$('#lt').value;
+  const id=$('#ls').value,f=$('#lf').value;if(src&&src.id==='lf'&&f){const lt=$('#lt');lt.min=f;if(!lt.value||lt.value<f)lt.value=f}const t=$('#lt').value;
   if(!f||!t||t<f){el.textContent='Vérifiez les dates.';el.style.color='var(--bad)';return}
   const ds=leaveDays(f,t),low=ds.filter(d=>onDuty(d).filter(s=>s.id!==id).length<MIN_STAFF);
   el.textContent=ds.length+' jour'+(ds.length>1?'s':'')+' ouvré'+(ds.length>1?'s':'')+(low.length?'. Attention : moins de '+MIN_STAFF+' personnes en poste le '+dshort(low[0])+(low.length>1?' et '+(low.length-1)+' autre'+(low.length>2?'s':''):'')+'.':'.');
@@ -661,7 +661,7 @@ function leaveInfo(){
 }
 
 /* ---------- contrôle quotidien ---------- */
-function ensureCheck(){const t=CHKDAY||today();if(!S.checks[t])S.checks[t]={items:{},press:'',press2:'',by:(typeof curStaff==='function'&&S.staff.some(x=>x.id===curStaff())?curStaff():''),ts:0,done:false};return S.checks[t]}
+function ensureCheck(){const t=CHKDAY||today();if(!S.checks[t])S.checks[t]={items:{},press:'',press2:'',note:'',by:(typeof curStaff==='function'&&S.staff.some(x=>x.id===curStaff())?curStaff():''),ts:0,done:false};return S.checks[t]}
 function ctrlReady(c){
   return CHECK_IDS.every(k=>c.items[k]&&(c.items[k].s==='ok'||c.items[k].note.trim()))&&String(c.press||'').trim()&&String(c.press2||'').trim()&&c.by;
 }
@@ -704,21 +704,21 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{
   const t=e.target;
-  if(t.id==='ls'||t.id==='lf'||t.id==='lt'){leaveInfo();return}
+  if(t.id==='ls'||t.id==='lf'||t.id==='lt'){leaveInfo(t);return}
   if(view!=='controle'||tab.controle!=='visuel')return;
   const c=ensureCheck();
   if(t.dataset.note){c.items[t.dataset.note].note=t.value}
-  else if(t.id==='press'){c.press=t.value}else if(t.id==='press2'){c.press2=t.value}
+  else if(t.id==='press'){c.press=t.value}else if(t.id==='press2'){c.press2=t.value}else if(t.id==='chknote'){c.note=t.value}
   else return;
   save();const ok=$('#chkok');if(ok)ok.disabled=!ctrlReady(c);
 });
 document.addEventListener('change',e=>{
-  if(e.target.id==='ls'||e.target.id==='lf'||e.target.id==='lt'){leaveInfo();return}
+  if(e.target.id==='ls'||e.target.id==='lf'||e.target.id==='lt'){leaveInfo(e.target);return}
   if(e.target.id==='chkby'){const c=ensureCheck();c.by=e.target.value;save();const ok=$('#chkok');if(ok)ok.disabled=!ctrlReady(c)}
 });
 document.addEventListener('submit',e=>{
   if(e.target.id!=='lform')return;
-  const f=$('#lf').value,t=$('#lt').value;if(!f||t<f)return;
+  const f=$('#lf').value,t=$('#lt').value;if(!f||!t||t<f){leaveInfo();return}
   S.leaves.push({id:uid(),staffId:$('#ls').value,from:f,to:t,status:'pending'});save();closeModal();
   if(view==='staff'&&tab.staff==='conges')vLeaves($('#sub'));toast('Demande envoyée');
 });
@@ -1862,9 +1862,11 @@ function vVisuel(m){
     <button class="ko ${a&&a.s==='ko'?'on':''}" data-act="chk" data-k="${k}" data-s="ko" ${done?'disabled':''}>Anomalie</button></div>
     ${t==='val'?`<div class="prs"><label class="prl"><span>Airbag 1 (hPa)</span><input id="press" inputmode="decimal" placeholder="Pression" value="${esc(c.press)}" ${done?'disabled':''} aria-label="Pression de l’airbag 1 en hPa"></label><label class="prl"><span>Airbag 2 (hPa)</span><input id="press2" inputmode="decimal" placeholder="Pression" value="${esc(c.press2||'')}" ${done?'disabled':''} aria-label="Pression de l’airbag 2 en hPa"></label></div>`:''}
     ${a&&a.s==='ko'?`<input data-note="${k}" placeholder="Décrivez l’anomalie" value="${esc(a.note)}" ${done?'disabled':''} aria-label="Anomalie">`:''}</div>`}).join('')}</div>`).join('')+
+  (done&&c.note&&String(c.note).trim()?`<div class="card chknote-done" style="margin-bottom:14px"><h3>Note</h3><p style="margin:0;white-space:pre-wrap;overflow-wrap:anywhere">${esc(c.note)}</p></div>`:'')+
   (done?'':`<div class="card" style="margin-bottom:14px"><h3>Validation</h3><p class="muted" style="margin:-6px 0 10px">Contrôle du ${chkLong(CHKDAY||today())}</p><div class="field"><label for="chkby">Contrôle réalisé par</label><select id="chkby"><option value="">Choisir</option>${S.staff.map(s=>`<option value="${s.id}" ${c.by===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
+    <div class="field chknote"><label for="chknote">Note</label><textarea id="chknote" rows="3" maxlength="600" placeholder="Remarque, constat, information à transmettre… (facultatif)">${esc(c.note||'')}</textarea></div>
     <button class="btn-pay" id="chkok" data-act="chkdone" ${ctrlReady(c)?'':'disabled'}>Valider le contrôle</button>
-    <p class="muted" style="margin-top:8px;font-size:13px">Tous les points, les deux pressions d’airbag et le nom sont nécessaires. Une anomalie demande une description.</p></div>`)+
+    <p class="muted" style="margin-top:8px;font-size:13px">Tous les points, les deux pressions d’airbag et le nom sont nécessaires. Une anomalie demande une description. La note est facultative.</p></div>`)+
   `<div class="card"><h3>7 derniers jours</h3><div class="hist">${hist}</div>
     ${issues.length?`<div style="margin-top:12px">${issues.map(([d,k,nt])=>`<div class="row"><span class="grow"><b>${esc(label(k))}</b><span class="muted">${esc(nt)}</span></span><span class="pill bad">${dshort(d)}</span></div>`).join('')}</div>`:''}</div>`;
 }
@@ -2044,7 +2046,7 @@ endstream`));
 function pdfFor(k,id){
   if(k==='daily'){const c=ensureCheck();return['Contrôle visuel quotidien-'+(CHKDAY||today()),pdfBuild('CONTRÔLE VISUEL QUOTIDIEN',dfr(CHKDAY||today()),'REGISTRE DES CONTRÔLES QUOTIDIENS',w=>{
     w.kv('Réalisé par',c.by?sname(c.by):'-');if(c.press2!==undefined){w.kv('Pression airbag 1',c.press?c.press+' hPa':'-');w.kv('Pression airbag 2',c.press2?c.press2+' hPa':'-')}else w.kv('Pression relevée',c.press?c.press+' hPa':'-');w.kv('Statut',c.done?'Validé à '+hm(c.ts):'En cours');w.gap(6);
-    CHECKS.forEach(g=>{w.sec(g.g);g.items.forEach(([kk,l])=>{const a=c.items[kk];w.row(l+(a&&a.s==='ko'&&a.note?' - '+a.note:''),a?(a.s==='ok'?'C':'NC'):'-')})});w.sig('Contrôleur',c.by?sname(c.by):'')})]}
+    CHECKS.forEach(g=>{w.sec(g.g);g.items.forEach(([kk,l])=>{const a=c.items[kk];w.row(l+(a&&a.s==='ko'&&a.note?' - '+a.note:''),a?(a.s==='ok'?'C':'NC'):'-')})});if(c.note&&String(c.note).trim()){w.gap(4);w.sec('Note');w.kv('Note',String(c.note).trim())}w.sig('Contrôleur',c.by?sname(c.by):'')})]}
   if(k==='monthly'){const r=monRec(),y=monLabel(ctl.mon);return['Controle mensuel-'+ctl.mon,pdfBuild(y.toUpperCase()+' – CONTRÔLE MENSUEL DES ÉQUIPEMENTS',dfr(r.date),'REGISTRE DES CONTRÔLES MENSUELS',w=>{
     w.kv('Date du contrôle',dfr(r.date));w.kv('Contrôle réalisé par',sname(r.by));w.gap(6);w.sec('Points de contrôle (C conforme / NC non conforme / SO sans objet)');
     MPTS.forEach((l,i)=>w.row((i+1)+'. '+l,r.items[i]||'-'));w.gap(6);w.kv('Pression gonflable 1',r.p1?r.p1+' hPa':'-');w.kv('Pression gonflable 2',r.p2?r.p2+' hPa':'-');w.gap(4);
@@ -2479,42 +2481,91 @@ function syncEnvelope(){
   hoursInit();const all=[...Object.values(S.hours.week),...S.hours.exc].filter(x=>!x.closed);if(!all.length)return;
   S.settings.open=Math.floor(Math.min(...all.map(x=>x.o))/60);S.settings.close=Math.ceil(Math.max(...all.map(x=>x.c))/60);applySettings();
 }
+/* ---- v82 : planning d'ouverture simplifié — jours fériés en un geste, calendrier mensuel, dates qui se suivent ---- */
+function frFeries(y){
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=(h+l-7*m+114)%31+1;
+  const p=n=>String(n).padStart(2,'0'),fx=(mm,dd)=>y+'-'+p(mm)+'-'+p(dd),ea=fx(mo,da);
+  return [[fx(1,1),'Jour de l’an'],[addDays(ea,1),'Lundi de Pâques'],[fx(5,1),'Fête du travail'],[fx(5,8),'Victoire 1945'],[addDays(ea,39),'Ascension'],[addDays(ea,50),'Lundi de Pentecôte'],[fx(7,14),'Fête nationale'],[fx(8,15),'Assomption'],[fx(11,1),'Toussaint'],[fx(11,11),'Armistice 1918'],[fx(12,25),'Noël']];
+}
+function feriesFrom(t0,days){const y=+t0.slice(0,4),end=addDays(t0,days);return [...frFeries(y),...frFeries(y+1)].filter(x=>x[0]>=t0&&x[0]<=end).sort((p,q)=>p[0].localeCompare(q[0]))}
+const ferName=ds=>{const f=frFeries(+ds.slice(0,4)).find(x=>x[0]===ds);return f?f[1]:''};
+const hShort=m=>{const h=Math.floor(m/60),mi=m%60;return h+'h'+(mi?String(mi).padStart(2,'0'):'')};
+const hRange=h=>h.closed?'Fermé':hShort(h.o)+'–'+hShort(h.c);
+let hxMon=null;
+function hxMode(ds){const f=S.hours.exc.find(x=>x.fer&&x.from===ds);return f?(f.closed?'closed':'special'):'normal'}
+function hxSetFer(d,m,batch){
+  hoursInit();S.hours.exc=S.hours.exc.filter(x=>!(x.fer&&x.from===d));
+  if(m!=='normal'){const w=S.hours.week[new Date(d+'T12:00').getDay()],o=w.closed?S.settings.open*60:w.o,c=w.closed?S.settings.close*60:w.c;
+    S.hours.exc.push({id:'fer-'+d,fer:1,label:ferName(d),from:d,to:d,closed:m==='closed',o,c})}
+  if(!batch){syncEnvelope();save();vHours($('#sub'))}
+}
 function vHours(m){
-  hoursInit();const ad=isAdmin(),W=S.hours.week,dis=ad?'':'disabled';
+  hoursInit();const ad=isAdmin(),W=S.hours.week,dis=ad?'':'disabled',t0=today();
   const order=[1,2,3,4,5,6,0];
-  const t0=today();
-  const cal=Array.from({length:28},(_,i)=>addDays(t0,i)).map(d=>{const h=hoursFor(d),sp=h.label||(S.hours.exc.some(x=>d>=x.from&&d<=x.to));
-    return `<div class="hc ${h.closed?'cl':sp?'sp':''}"><small>${wdS(d)} ${+d.slice(8)}</small><b>${h.closed?'Fermé':hmm(h.o).replace(':00','h').replace(':','h')+'–'+hmm(h.c).replace(':00','h').replace(':','h')}</b>${h.label?`<i>${esc(h.label)}</i>`:''}</div>`}).join('');
-  m.innerHTML=`<div class="cols"><div class="card"><h3>Semaine type</h3>
+  const fers=feriesFrom(t0,365);
+  const ferRows=fers.map(([d,name])=>{
+    const mode=hxMode(d),h=hoursFor(d),cov=S.hours.exc.find(x=>!x.fer&&d>=x.from&&d<=x.to),fx=S.hours.exc.find(x=>x.fer&&x.from===d);
+    const b=(k,l)=>`<button type="button" class="${mode===k?'on':''}${k==='closed'?' cl':''}" data-act="hfer" data-d="${d}" data-m="${k}" ${dis} aria-pressed="${mode===k}">${l}</button>`;
+    return `<div class="fer"><span class="fd"><b>${esc(name)}</b><small>${esc(dshort(d))} · ${mode==='normal'?(cov?'Selon « '+esc(cov.label||'Horaires spéciaux')+' » : ':'Horaires normaux : '):''}${hRange(h)}</small></span>
+      <span class="seg3" role="group" aria-label="${esc(name)}">${b('normal','Normal')}${b('closed','Fermé')}${b('special','Horaires')}</span>
+      ${mode==='special'?`<span class="ftm"><input type="time" data-fo="${d}" value="${hmm(fx.o)}" ${dis} aria-label="Ouverture, ${esc(name)}"><span>à</span><input type="time" data-fc="${d}" value="${hmm(fx.c)}" ${dis} aria-label="Fermeture, ${esc(name)}"></span>`:''}</div>`}).join('');
+  const exc=S.hours.exc.filter(x=>!x.fer),up=exc.filter(x=>x.to>=t0).sort((a,b)=>a.from.localeCompare(b.from)),past=exc.length-up.length;
+  const periods=up.length?up.map(x=>`<div class="row"><span class="grow"><b>${esc(x.label||'Horaires spéciaux')}</b><span class="muted">${dshort(x.from)}${x.to!==x.from?' → '+dshort(x.to):''} · ${x.closed?'Fermé':hmm(x.o)+' – '+hmm(x.c)}</span></span>${ad?`<button class="btn" data-act="hexedit" data-id="${x.id}">Modifier</button>`:''}</div>`).join(''):'<p class="muted">Aucune période à venir.</p>';
+  const mk=hxMon||t0.slice(0,7),y=+mk.slice(0,4),mo=+mk.slice(5,7),dim=new Date(y,mo,0).getDate(),off=(new Date(y,mo-1,1).getDay()+6)%7;
+  const FM={};frFeries(y).forEach(x=>{FM[x[0]]=x[1]});
+  let cells='';for(let i=0;i<off;i++)cells+='<span class="blank"></span>';
+  for(let d=1;d<=dim;d++){const ds=mk+'-'+String(d).padStart(2,'0'),h=hoursFor(ds),pst=ds<t0,sp=h.label||S.hours.exc.some(x=>ds>=x.from&&ds<=x.to),lab=h.label||FM[ds]||'';
+    cells+=`<button type="button" class="hc ${h.closed?'cl':sp?'sp':''}${pst?' past':''}${ds===t0?' today':''}" ${ad&&!pst?`data-act="hday" data-d="${ds}"`:'disabled'} aria-label="${esc(dlong(ds))} : ${esc(hRange(h))}${lab?', '+esc(lab):''}"><span class="dn2">${d}</span><b>${hRange(h)}</b>${lab?`<i>${esc(lab)}</i>`:''}</button>`}
+  const cur=t0.slice(0,7),lastK=(()=>{const d=new Date(+cur.slice(0,4),+cur.slice(5,7)-1+24,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')})();
+  m.innerHTML=`<div class="cols"><div><div class="card"><h3>Semaine type</h3>
    ${order.map(d=>`<div class="hrow"><b>${dayShort[d]}</b><label class="check" style="margin:0"><input type="checkbox" data-hopen="${d}" ${W[d].closed?'':'checked'} ${dis}>Ouvert</label><input type="time" data-ho="${d}" value="${hmm(W[d].o)}" ${W[d].closed?'disabled':dis} aria-label="Ouverture ${dayShort[d]}"><span>à</span><input type="time" data-hc="${d}" value="${hmm(W[d].c)}" ${W[d].closed?'disabled':dis} aria-label="Fermeture ${dayShort[d]}"></div>`).join('')}
    ${ad?`<button class="btn" style="margin-top:10px" data-act="hcopy">Copier le lundi sur toute la semaine</button>`:''}</div>
-   <div class="card"><h3>Vacances, jours fériés, fermetures</h3><p class="muted" style="font-size:13px;margin-bottom:8px">Horaires spéciaux ou fermetures sur une période. Ils remplacent la semaine type.</p>
-   ${S.hours.exc.length?S.hours.exc.slice().sort((a,b)=>a.from.localeCompare(b.from)).map(x=>`<div class="row"><span class="grow"><b>${esc(x.label||'Horaires spéciaux')}</b><span class="muted">${dshort(x.from)}${x.to!==x.from?' → '+dshort(x.to):''} · ${x.closed?'Fermé':hmm(x.o)+' – '+hmm(x.c)}</span></span>${ad?`<button class="btn" data-act="hexedit" data-id="${x.id}">Modifier</button>`:''}</div>`).join(''):'<p class="muted">Aucune période spéciale.</p>'}
-   ${ad?`<button class="btn primary" style="margin-top:10px" data-act="hexnew">${ic('plus')}Ajouter une période</button>`:''}</div></div>
-   <div class="card" style="margin-top:14px"><h3>Les 4 prochaines semaines</h3><div class="hcal">${cal}</div>${ad?'':'<p class="muted" style="font-size:13px;margin-top:8px">Seul l’administrateur modifie les horaires.</p>'}</div>`;
+   <div class="card" style="margin-top:14px"><h3>Vacances et autres jours spéciaux</h3><p class="muted" style="font-size:13px;margin-bottom:8px">Un jour ou une période fermée, ou avec d’autres horaires (vacances, pont, nocturne…). Ils remplacent la semaine type.</p>
+   ${periods}${past?`<p class="muted" style="font-size:13px;margin-top:8px">${past} période${past>1?'s':''} passée${past>1?'s':''} masquée${past>1?'s':''}.</p>`:''}
+   ${ad?`<button class="btn primary" style="margin-top:10px" data-act="hexnew">${ic('plus')}Ajouter un jour ou une période</button>`:''}</div>
+   </div>
+   <div class="card"><h3>Jours fériés</h3><p class="muted" style="font-size:13px;margin-bottom:8px">Pour chaque jour férié des 12 prochains mois (France métropolitaine) : horaires normaux, fermé, ou horaires spéciaux. Les réservations en ligne suivent ces choix.</p>
+   ${ad?`<div class="bacts" style="margin-bottom:6px"><button class="btn" data-act="hferall">Fermer tous les jours fériés</button>${S.hours.exc.some(x=>x.fer)?'<button class="btn" data-act="hferclear">Tout remettre en normal</button>':''}</div>`:''}
+   ${ferRows}</div></div>
+   <div class="card" style="margin-top:14px"><div class="hmon"><button class="btn" data-act="hmon" data-d="-1" ${mk<=cur?'disabled':''} aria-label="Mois précédent">${ic('left')}</button><h3 style="margin:0">${MOIS[mo-1]} ${y}</h3><button class="btn" data-act="hmon" data-d="1" ${mk>=lastK?'disabled':''} aria-label="Mois suivant">${ic('right')}</button></div>
+   <div class="hcal7">${['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(w=>`<span class="hh">${w}</span>`).join('')}${cells}</div>
+   <p class="muted" style="font-size:13px;margin-top:8px">${ad?'Touchez un jour pour le fermer ou changer ses horaires. Orange : horaires spéciaux · rouge : fermé.':'Seul l’administrateur modifie les horaires.'}</p></div>`;
 }
-function hexForm(id){
-  const x=id?S.hours.exc.find(y=>y.id===id):{id:'',label:'',from:today(),to:today(),closed:true,o:S.settings.open*60,c:S.settings.close*60};
-  showModal(`${mh(id?'Modifier la période':'Nouvelle période')}<form id="hexform" data-id="${id||''}">
-   ${fld('Intitulé',`<input id="hxl" value="${esc(x.label)}" placeholder="ex : Vacances de Noël, Jour de l’an">`)}
-   <div class="two">${fld('Du',`<input id="hxf" type="date" required value="${x.from}">`)}${fld('Au',`<input id="hxt" type="date" required value="${x.to}">`)}</div>
+function hexForm(id,ds){
+  const old=id?S.hours.exc.find(y=>y.id===id):null,w0=hoursFor(ds||today()),
+  x=old||{id:'',label:ds?ferName(ds):'',from:ds||today(),to:ds||today(),closed:true,o:w0.closed?S.settings.open*60:w0.o,c:w0.closed?S.settings.close*60:w0.c};
+  showModal(`${mh(id?'Modifier le jour ou la période':'Nouveau jour spécial')}<form id="hexform" data-id="${id||''}">
+   ${fld('Intitulé',`<input id="hxl" value="${esc(x.label)}" placeholder="ex : Vacances de Noël, Pont, Nocturne" list="hxlist"><datalist id="hxlist"><option value="Jour férié"><option value="Vacances scolaires"><option value="Pont"><option value="Fermeture exceptionnelle"><option value="Nocturne"><option value="Inventaire"></datalist>`)}
+   <div class="two">${fld('Du',`<input id="hxf" type="date" required value="${x.from}" ${old?'':'min="'+today()+'"'}>`)}${fld('Au',`<input id="hxt" type="date" required value="${x.to}" min="${x.from}">`)}</div>
    <label class="check"><input type="checkbox" id="hxc" ${x.closed?'checked':''}>Établissement fermé</label>
-   <div class="two">${fld('Ouverture',`<input id="hxo" type="time" value="${hmm(x.o)}">`)}${fld('Fermeture',`<input id="hxe" type="time" value="${hmm(x.c)}">`)}</div>
+   <div class="two" id="hxtimes" style="${x.closed?'display:none':''}">${fld('Ouverture',`<input id="hxo" type="time" value="${hmm(x.o)}">`)}${fld('Fermeture',`<input id="hxe" type="time" value="${hmm(x.c)}">`)}</div>
    <div style="display:flex;gap:8px"><button class="btn primary" type="submit" style="flex:1">Enregistrer</button>${id?`<button class="btn danger" type="button" data-act="hexdel" data-id="${id}">Supprimer</button>`:''}</div></form>`);
 }
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||!isAdmin())return;const a=b.dataset.act;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
+  if(a==='hmon'){const mk=hxMon||today().slice(0,7),dt=new Date(+mk.slice(0,4),+mk.slice(5,7)-1+(+b.dataset.d),1),nk=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0');if(nk<today().slice(0,7))return;hxMon=nk;vHours($('#sub'));return}
+  if(!isAdmin())return;
   if(a==='hexnew')hexForm('');else if(a==='hexedit')hexForm(b.dataset.id);
+  else if(a==='hday'){const d=b.dataset.d,one=S.hours.exc.find(x=>x.from===d&&x.to===d);hexForm(one?one.id:'',d)}
+  else if(a==='hfer')hxSetFer(b.dataset.d,b.dataset.m);
+  else if(a==='hferall'){feriesFrom(today(),365).forEach(([d])=>hxSetFer(d,'closed',1));syncEnvelope();save();vHours($('#sub'));toast('Jours fériés fermés')}
+  else if(a==='hferclear'){S.hours.exc=S.hours.exc.filter(x=>!x.fer);syncEnvelope();save();vHours($('#sub'));toast('Jours fériés remis en normal')}
   else if(a==='hexdel'){S.hours.exc=S.hours.exc.filter(x=>x.id!==b.dataset.id);syncEnvelope();save();closeModal();vHours($('#sub'))}
   else if(a==='hcopy'){const m=S.hours.week[1];for(let d=0;d<7;d++)S.hours.week[d]={...m};syncEnvelope();save();vHours($('#sub'));toast('Horaires copiés')}
 });
 document.addEventListener('submit',e=>{if(e.target.id!=='hexform'||!isAdmin())return;e.preventDefault();
-  const id=e.target.dataset.id,x={id:id||uid(),label:$('#hxl').value.trim(),from:$('#hxf').value,to:$('#hxt').value,closed:$('#hxc').checked,o:pmm($('#hxo').value),c:pmm($('#hxe').value)};
+  const id=e.target.dataset.id,old=id?S.hours.exc.find(y=>y.id===id):null,x={id:id||uid(),label:$('#hxl').value.trim(),from:$('#hxf').value,to:$('#hxt').value,closed:$('#hxc').checked,o:pmm($('#hxo').value),c:pmm($('#hxe').value)};
   if(x.to<x.from){toast('La date de fin précède le début');return}if(!x.closed&&x.c<=x.o){toast('La fermeture doit suivre l’ouverture');return}
+  if(old&&old.fer&&x.from===old.from&&x.to===old.from)x.fer=1;
   if(id)S.hours.exc[S.hours.exc.findIndex(y=>y.id===id)]=x;else S.hours.exc.push(x);syncEnvelope();save();closeModal();vHours($('#sub'));toast('Période enregistrée')});
-document.addEventListener('change',e=>{const t=e.target;if(!isAdmin())return;hoursInit();
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.id==='hxf'){const to=$('#hxt');if(to){to.min=t.value;if(!to.value||to.value<t.value)to.value=t.value}return}
+  if(t.id==='hxc'){const r=$('#hxtimes');if(r)r.style.display=t.checked?'none':'';return}
+  if(!isAdmin())return;hoursInit();
   if(t.dataset.hopen!==undefined){S.hours.week[t.dataset.hopen].closed=!t.checked;syncEnvelope();save();vHours($('#sub'))}
   else if(t.dataset.ho!==undefined||t.dataset.hc!==undefined){const d=t.dataset.ho!==undefined?t.dataset.ho:t.dataset.hc,k=t.dataset.ho!==undefined?'o':'c',w=S.hours.week[d];const v=pmm(t.value);
     if(k==='o'&&v>=w.c||k==='c'&&v<=w.o){toast('Horaires incohérents');vHours($('#sub'));return}w[k]=v;syncEnvelope();save();toast('Horaires enregistrés')}
+  else if(t.dataset.fo!==undefined||t.dataset.fc!==undefined){const d=t.dataset.fo!==undefined?t.dataset.fo:t.dataset.fc,k=t.dataset.fo!==undefined?'o':'c',x=S.hours.exc.find(y=>y.fer&&y.from===d);if(!x)return;const v=pmm(t.value);
+    if(k==='o'&&v>=x.c||k==='c'&&v<=x.o){toast('Horaires incohérents');vHours($('#sub'));return}x[k]=v;syncEnvelope();save();vHours($('#sub'));toast('Horaires enregistrés')}
 });
 TABS.resa.push(['horaires','Ouverture']);SUBS.horaires=vHours;
 function leftFor(date,start,dur){let mx=0;for(let t=start;t<start+dur;t+=15){if(!openAt(date,t)||(S.closed&&S.closed[date+'|'+t]))return 0;mx=Math.max(mx,occ(date,t))}return S.settings.cap-mx}
@@ -3930,7 +3981,7 @@ function sheetItem(kind,rec,key){
     const ko=Object.entries(rec.items||{}).filter(([k,v])=>v&&v.s==='ko'),nc=ko.length;
     return{id:'visuel-'+key,type:'Contrôle quotidien',date:key,time:rec.ts?hm(rec.ts):'',author:rec.by||'',
       summary:nc?nc+' point'+(nc>1?'s':'')+' non conforme'+(nc>1?'s':''):'Tout conforme',
-      details:(ko.length?ko.map(([k,v])=>ckLabel(k)+' : '+(v.note||'')).join(' | ')+' | ':'')+(rec.press||rec.press2?(rec.press2!==undefined?'Pression airbag 1 : '+(rec.press||'-')+' hPa | Pression airbag 2 : '+(rec.press2||'-')+' hPa':'Pression airbags : '+rec.press):''),status:rec.done?'Validé':'En cours'};
+      details:(()=>{const d0=(ko.length?ko.map(([k,v])=>ckLabel(k)+' : '+(v.note||'')).join(' | ')+' | ':'')+(rec.press||rec.press2?(rec.press2!==undefined?'Pression airbag 1 : '+(rec.press||'-')+' hPa | Pression airbag 2 : '+(rec.press2||'-')+' hPa':'Pression airbags : '+rec.press):''),nt=String(rec.note||'').replace(/\s*\|\s*/g,' / ').replace(/\s+/g,' ').trim();return nt?d0+(d0&&!/\| $/.test(d0)?' | ':'')+'Note : '+nt:d0})(),status:rec.done?'Validé':'En cours'};
   }
   if(kind==='mensuel'){
     const nc=MPTS.map((p,i)=>rec.items&&rec.items[i]==='NC'?p:null).filter(Boolean);
@@ -4420,7 +4471,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v80';
+const LAGO_V='v82';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5025,7 +5076,7 @@ function chkDayBar(){
    <button type="button" class="btn${d===t?' primary':''}" data-act="chkday" data-d="${t}">Aujourd’hui</button><button type="button" class="btn${d===addDays(t,-1)?' primary':''}" data-act="chkday" data-d="${addDays(t,-1)}">Hier</button></div></div>
    ${late?`<p class="chkd-note">Vous remplissez le contrôle du <b>${chkLong(d)}</b> (rattrapage). La validation sera enregistrée avec cette date.</p>`:`<p class="chkd-note muted">${chkLong(d)}</p>`}</div>`;
 }
-function chkPrune(d){const c=S.checks&&S.checks[d];if(c&&!c.done&&!Object.keys(c.items||{}).length&&!c.press&&!c.press2&&!c.by)delete S.checks[d]}
+function chkPrune(d){const c=S.checks&&S.checks[d];if(c&&!c.done&&!Object.keys(c.items||{}).length&&!c.press&&!c.press2&&!(c.note&&String(c.note).trim())&&!c.by)delete S.checks[d]}
 function chkSetDay(d){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(d||''))return;
   const t=today();if(d>t)d=t;
@@ -7532,6 +7583,7 @@ function vSetWeb(m){
 }
 TABS.params.splice(Math.max(1,TABS.params.findIndex(x=>x[0]==='pcf')+1),0,['pweb','Réservation en ligne']);SUBS.pweb=vSetWeb;
 TABS.resa.splice(Math.max(1,TABS.resa.findIndex(x=>x[0]==='resas')+1),0,['web','En ligne']);SUBS.web=vWeb;
+TABS.resa.splice(Math.max(1,TABS.resa.findIndex(x=>x[0]==='web')+1),0,['horaires','Horaires']);if(!TABS.resa.some(x=>x[0]==='devis'))TABS.resa.splice(Math.max(1,TABS.resa.findIndex(x=>x[0]==='events')+1),0,['devis','Devis']);
 {const r=PMODS.find(x=>x[0]==='resa');if(r&&r[2])r[2].push(['web','Réservations en ligne'])}
 SIC['resa:web']='globe';
 function webInit(){
