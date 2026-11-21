@@ -4714,7 +4714,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v85';
+const LAGO_V='v87';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5990,7 +5990,7 @@ function auBar(){
 }
 function auShow(){
   const e=auBar();if(!AU.ver)return;
-  e.innerHTML=`<span class="au-i" aria-hidden="true">${ic('refresh')}</span><span class="au-t"><b>Nouvelle version disponible</b><small>Lago ${esc(AU.ver)} · vos données sont conservées</small></span><button type="button" class="btn primary" data-act="au_go">Mettre à jour</button><button type="button" class="au-x" data-act="au_x" aria-label="Plus tard">${ic('x')}</button>`;
+  e.innerHTML=`<span class="au-i" aria-hidden="true">${ic('refresh')}</span><span class="au-t"><b>Nouvelle version disponible</b><small>Lago ${esc(AU.ver)} · données conservées</small></span><button type="button" class="btn primary" data-act="au_go">Mettre à jour</button><button type="button" class="au-x" data-act="au_x" aria-label="Plus tard">${ic('x')}</button>`;
   e.hidden=false;
 }
 function auHide(){const e=document.getElementById('aubar');if(e)e.hidden=true}
@@ -8368,11 +8368,13 @@ async function bkSnap(auto,why){
   BK.last=ts;return ts;
 }
 async function bkGet(ts){const db=await bkOpen();try{const b=await bkReq(db.transaction('blob').objectStore('blob').get(ts));return b&&b.json}finally{db.close()}}
-const BK={last:0,err:''};
+const BK={last:0,err:'',ok:false};
+async function bkLoad(){try{if(window.indexedDB){const l=await bkList();BK.last=l.length?Math.max(...l.filter(x=>x.auto).map(x=>x.ts),0):0}}catch(e){}BK.ok=true}
+setTimeout(bkLoad,200);
 async function bkAuto(force){
   try{
     if(!ME||!ME.admin||!window.indexedDB)return;
-    const l=await bkList();BK.last=l.length?Math.max(...l.filter(x=>x.auto).map(x=>x.ts),0):0;
+    const l=await bkList();BK.last=l.length?Math.max(...l.filter(x=>x.auto).map(x=>x.ts),0):0;BK.ok=true;
     if(force||!BK.last||Date.now()-BK.last>20*3600e3){await bkSnap(true,'quotidienne');BK.err=''}
   }catch(e){BK.err=String((e&&e.message)||e);noteErr('sauvegarde',BK.err,'')}
 }
@@ -8411,8 +8413,9 @@ function hSync(){
 }
 function hBackup(){
   if(!window.indexedDB)return{id:'bk',lv:'warn',t:'Sauvegarde automatique',d:'Non disponible sur ce navigateur. Utilisez l’export manuel (Paramètres › Personnaliser).'};
+  if(!BK.ok&&!BK.err)return{id:'bk',lv:'ok',t:'Sauvegarde automatique',d:'Vérification en cours…'};
   const age=BK.last?Date.now()-BK.last:Infinity;
-  const lv=BK.err?'bad':age<36*3600e3?'ok':age<4*864e5?'warn':'bad';
+  const lv=BK.err?'bad':!BK.last?'warn':age<36*3600e3?'ok':age<4*864e5?'warn':'bad';
   return{id:'bk',lv,t:'Sauvegarde automatique',d:BK.err?'Erreur : '+BK.err:BK.last?'Dernière copie : '+new Date(BK.last).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})+'.':'Aucune copie pour le moment (la première se fait dans la minute qui suit la connexion de l’administrateur).'}
 }
 function hAccounts(){
@@ -8529,7 +8532,8 @@ function vHome(m){
   try{
     const l=healthQuick().filter(x=>x.lv!=='ok'&&x.id!=='sw'&&x.id!=='sync'),bad=l.filter(x=>x.lv==='bad');
     if(!l.length||!m.querySelector('.hero'))return;
-    m.querySelector('.hero').insertAdjacentHTML('afterend',`<div class="banner sfban" role="status"><span><b>Santé du système :</b> ${l.slice(0,2).map(x=>esc(x.t)).join(', ')}${l.length>2?' et '+(l.length-2)+' autre(s)':''}.</span><button type="button" class="btn ${bad.length?'primary':''}" data-act="goto" data-v="params" data-t="psante">Voir</button></div>`);
+    const msg=bad.length?`<b>À corriger :</b> ${bad.slice(0,2).map(x=>esc(x.t)).join(', ')}${bad.length>2?' et '+(bad.length-2)+' autre(s)':''}.`:`<b>Santé du système :</b> ${l.length} point${l.length>1?'s':''} à surveiller.`;
+    m.querySelector('.hero').insertAdjacentHTML('afterend',`<div class="banner sfban${bad.length?'':' calm'}" role="status"><span>${msg}</span><button type="button" class="btn ${bad.length?'primary':''}" data-act="goto" data-v="params" data-t="psante">Voir</button></div>`);
   }catch(e){}
 }
 /* ---- v66 : conformité étendue — données personnelles (RGPD), obligations réglementaires, tableau de conformité ----
@@ -8628,8 +8632,8 @@ function cnChecks(){
   add('zip',needZ?'warn':'ok','Archive fiscale des années écoulées',needZ?'L’archive '+Math.max(...prevY)+' n’est pas encore faite (Paramètres › Conformité). À conserver 6 ans.':'À jour.','pcf');
   const lv0=S.cf&&S.cf.lastVerify;
   add('chain',!lv0?'warn':!lv0.ok?'bad':now-lv0.ts>32*CN_DAY?'warn':'ok','Intégrité des tickets',!lv0?'Jamais vérifiée.':(lv0.ok?'Aucune anomalie':'Anomalies détectées')+' le '+cnTs(lv0.ts)+'.','pcf');
-  const bkAge=typeof BK!=='undefined'&&BK.last?now-BK.last:Infinity;
-  add('bk',bkAge<36*3600e3?'ok':bkAge<4*CN_DAY?'warn':'bad','Sauvegarde automatique',BK&&BK.last?'Dernière copie : '+new Date(BK.last).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})+'.':'Aucune copie pour le moment.','psante');
+  const bkAge=typeof BK!=='undefined'&&BK.last?now-BK.last:(typeof BK!=='undefined'&&!BK.ok?0:Infinity);
+  add('bk',typeof BK!=='undefined'&&!BK.last?'warn':bkAge<36*3600e3?'ok':bkAge<4*CN_DAY?'warn':'bad','Sauvegarde automatique',BK&&BK.last?'Dernière copie : '+new Date(BK.last).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})+'.':'Aucune copie pour le moment.','psante');
   const regAge=c.reg.at?now-c.reg.at:Infinity;
   add('reg',regAge<366*CN_DAY?'ok':'warn','Registre des traitements (RGPD)',c.reg.at?'Révisé le '+cnTs(c.reg.at)+'.':'À générer et à relire (Paramètres › Données personnelles).','prgpd');
   const webOn=!!w.on;
