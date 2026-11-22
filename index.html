@@ -578,7 +578,7 @@ body{background:var(--dk-bg-ffffff,#FFFFFF)}
 .dalles{display:flex;flex-direction:column;gap:10px}
 .hrow{display:grid;grid-template-columns:44px 1fr;gap:10px}
 .hl{font-family:var(--f-display);font-weight:800;font-size:20px;padding-top:12px;color:var(--ink)}
-.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tiles{display:grid;grid-template-columns:repeat(var(--tpr,4),minmax(0,1fr));gap:8px}
 .dl{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:4px;min-height:96px;padding:10px 12px;border-radius:14px;text-align:left;box-shadow:inset 0 0 0 1px rgba(10,31,77,.07),0 1px 2px rgba(10,31,77,.08);transition:transform .1s,box-shadow .15s}
 .dl:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(10,31,77,.2)}
 .dl .dt1{font-size:13px;font-weight:700;opacity:.85}
@@ -3113,7 +3113,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v89" defer></script>
+<script src="app.js?v=v90" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

@@ -27,6 +27,7 @@
       ]
     },
     "capacite": 4,
+    "intervalle_depart_minutes": 15,
     "equipe_minimum": 1,
     "horaires": {
       "ouverture": "09:00",

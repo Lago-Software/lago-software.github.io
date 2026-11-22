@@ -238,6 +238,7 @@ function nowPark(){
 }
 const hm=m=>pad(Math.floor(m/60)%24)+':'+pad(m%60);
 const hmH=h=>pad(h%24)+':00';
+const every=v=>v===15?'tous les quarts d’heure':v===60?'toutes les heures':v<60?'toutes les '+v+' minutes':'toutes les '+durL(v);
 const durL=d=>d<60?d+' min':(d%60?Math.floor(d/60)+' h '+pad(d%60):(d/60)+' h');
 function left(sec){sec=Math.max(0,Math.round(sec));if(sec>=3600)return Math.floor(sec/3600)+' h '+pad(Math.floor(sec%3600/60));return pad(Math.floor(sec/60))+':'+pad(sec%60)}
 
@@ -254,7 +255,7 @@ function clean(o){
   const ui={th:u.th==='dark'?'dark':'light',t1:S(u.t1,60)||DEF.t1,t2:S(u.t2,60)||DEF.t2,t3:S(u.t3,60)||DEF.t3,m3:S(u.m3,140)||DEF.m3,tick:S(u.tick,400),
     qty:u.qty!==false,warn:N(u.warn,1,30,DEF.warn),win:N(u.win,5,180,DEF.win),done:N(u.done,1,60,DEF.done),snd:SNDS.includes(u.snd)?u.snd:DEF.snd,ann:u.ann!==false,voice:u.voice===true};
   const x=o.x===true;
-  return{v:1,t:+o.t||0,d:/^\d{4}-\d{2}-\d{2}$/.test(o.d||'')?o.d:'',tz,n:S(o.n,80),it,br,x,o:x?null:N(o.o,0,1440,null),c:x?null:N(o.c,0,1440,null),ui,lg:/^[a-f0-9]{8,64}$/.test(o.lg||'')?o.lg:''};
+  return{v:1,st:[10,15,20,30,45,60,90,120].includes(+o.st)?+o.st:15,t:+o.t||0,d:/^\d{4}-\d{2}-\d{2}$/.test(o.d||'')?o.d:'',tz,n:S(o.n,80),it,br,x,o:x?null:N(o.o,0,1440,null),c:x?null:N(o.c,0,1440,null),ui,lg:/^[a-f0-9]{8,64}$/.test(o.lg||'')?o.lg:''};
 }
 
 /* ---------- signature ---------- */
@@ -437,7 +438,7 @@ function liveCard(M){
 function upCard(M){
   const ui=M.ui;
   const body=M.up.length?M.up.map(g=>`<div class="grp"><div class="gh"><b class="num">${hm(g.s)}</b><span class="num">dans ${X('in',g.s*60,left(g.s*60-M.now))}</span></div>${Object.values(g.rows).sort((a,b)=>a.h-b.h).map(r=>{const b=bracelet(r.h);return`<div class="mini" style="${vars(b.hex)}"><span class="dot"></span><div class="lb"><b>${esc(b.name)}</b><small>${r.d.sort((x,y)=>x-y).map(durL).join(', ')} · jusqu’à ${hmH(r.h)}</small></div>${ui.qty?`<div class="qty num">${I.user}${r.n}</div>`:''}</div>`}).join('')}</div>`).join('')
-    :`<p class="empty">${M.next!=null?'Prochain départ à '+hm(M.next)+'.':'Aucun départ prévu dans les '+ui.win+' prochaines minutes.'}<br>Les sessions démarrent tous les quarts d’heure.</p>`;
+    :`<p class="empty">${M.next!=null?'Prochain départ à '+hm(M.next)+'.':'Aucun départ prévu dans les '+ui.win+' prochaines minutes.'}<br>Les sessions démarrent ${every(DATA.st)}.</p>`;
   return`<div class="card cup grow"><h2 class="t"><span>${esc(ui.t1)}</span><span class="tag" aria-hidden="true"></span></h2>${body}</div>`;
 }
 function doneCard(M){
