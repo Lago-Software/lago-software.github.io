@@ -15,6 +15,8 @@ Logiciel de gestion pour parcs de loisirs (planning clients, planning staff, éc
 Application web installable (PWA), un seul fichier `index.html`, sans dépendance.
 Les données sont partagées en direct entre les appareils via Firebase Realtime Database (configurée dans Paramètres › Studio › Équipe connectée).
 
+Écran TV (`ecran.html`) : page à ouvrir sur une télé ou une tablette de l’accueil (bracelets en piste, comptes à rebours, départs, fins de session). Elle s’associe avec le code ou le lien de Paramètres › Écran TV et ne reçoit que des données anonymes signées par Lago.
+
 Mise en ligne : GitHub Pages publie automatiquement ce dépôt à chaque modification de `main` (dossier racine, pas de build) sur https://lago-software.github.io/
 
 ## Mises à jour
@@ -23,7 +25,7 @@ L'appli installée se met à jour toute seule : elle compare son numéro de vers
 
 Un simple rafraîchissement de la page (ou la réouverture de l'appli) charge toujours la dernière version : `sw.js` revalide les fichiers auprès du serveur à chaque chargement, sans attendre le cache du navigateur.
 
-Pour publier une version : changer `LAGO_V` dans `index.html` et `V` dans `sw.js` (même numéro), puis pousser sur `main`.
+Pour publier une version : changer `LAGO_V` dans `app.js`, `V` dans `sw.js` et `app.js?v=` dans `index.html` (même numéro), puis pousser sur `main`.
 
 ## Propriété et licence
 

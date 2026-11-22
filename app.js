@@ -4727,7 +4727,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v88';
+const LAGO_V='v89';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -10503,5 +10503,268 @@ document.addEventListener('submit',e=>{
  const g=MTL.find(x=>x[2]==='gestion'&&x[3]==='produits');if(g)g[4].push(['QR codes','gestion','qr'],['CSE','gestion','cse']);
  const pr=PMODS.find(x=>x[0]==='resa');if(pr&&pr[2])pr[2].push(['deroule','Déroulé anniversaire']);
  const pg=PMODS.find(x=>x[0]==='gestion');if(pg&&pg[2])pg[2].push(['qr','QR codes'],['cse','CSE (comités d’entreprise)']);}
+/* ===== v89 : Écran TV pour les clients (ecran.html) ======================================================
+   - Une télé (ou une tablette) à l'accueil affiche en direct les bracelets en piste avec leur compte à rebours,
+     les prochains départs, les sessions terminées, l'horloge, le logo et un texte défilant ; carillon et annonce vocale
+     à chaque fin de session. Inspiré du « Time Tracker Display » de Qweekle, aux couleurs de Lago.
+   - La télé ne reçoit AUCUNE donnée client : seulement les horaires, les durées et les nombres de personnes du jour
+     (nœud tv/<clé>/d), plus le logo (tv/<clé>/l). Tout est SIGNÉ par Lago (ECDSA P-256) : la télé refuse un contenu
+     modifié ou non signé, personne ne peut donc y afficher autre chose.
+   - Association : un code à taper sur la télé (lago-software.github.io/ecran) ou un lien à ouvrir. Un nouveau code
+     dissocie tous les écrans. Les mises à jour partent de chaque appareil où Lago est ouvert (après chaque enregistrement,
+     et toutes les 5 minutes au plus tard). */
+const TV_PAGE='https://lago-software.github.io/ecran.html';
+const TV_DEF=()=>({on:false,k:'',pub:null,priv:null,th:'light',t1:'',t2:'',t3:'',m3:'',tick:'',qty:true,warn:5,win:30,done:10,snd:'carillon',ann:true,voice:true});
+const TV_TXT={t1:'Prochains départs',t2:'En piste',t3:'Terminé',m3:'Merci de quitter les pistes'};
+const TVS={h:'',t:0,lh:'',lgh:'',err:'',busy:false,again:false,lsrc:'',lhash:''};
+/* même objet à chaque appel (les réglages modifiés après un await ne se perdent pas) */
+function tvCfg(){const s=S.settings;if(!s.tv||typeof s.tv!=='object'||Array.isArray(s.tv))s.tv=TV_DEF();else{const d=TV_DEF();for(const k in d)if(!(k in s.tv))s.tv[k]=d[k]}return s.tv}
+const TV_KC='abcdefghjkmnpqrstuvwxyz23456789';
+function tvNewKey(){let k='';while(k.length<8){const a=crypto.getRandomValues(new Uint8Array(16));for(const x of a){if(x<248&&k.length<8)k+=TV_KC[x%31]}}return k}
+async function tvKeys(t){
+  if(t.pub&&t.priv)return;
+  const kp=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
+  const pub=await crypto.subtle.exportKey('jwk',kp.publicKey),priv=await crypto.subtle.exportKey('jwk',kp.privateKey);
+  t.pub={x:pub.x,y:pub.y};t.priv=priv;
+}
+async function tvSign(txt){
+  const k=await crypto.subtle.importKey('jwk',tvCfg().priv,{name:'ECDSA',namedCurve:'P-256'},false,['sign']);
+  return wb64(await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},k,new TextEncoder().encode(txt)));
+}
+const tvReady=()=>{const t=tvCfg();return !!(t.on&&t.k&&t.pub&&t.priv&&cloudOn())};
+const tvDbNow=()=>{const c=cloudCfg();return c&&c.u?cHostFor(c,c.alt):''};
+const tvU=p=>tvDbNow()+'/tv/'+tvCfg().k+'/'+p+'.json';
+/* code à taper sur la télé : nom de la base + 8 caractères (la télé retrouve la base à partir de son nom) */
+const TV_HOSTS=L=>[`https://${L}-default-rtdb.europe-west1.firebasedatabase.app`,`https://${L}-default-rtdb.firebaseio.com`,`https://${L}.europe-west1.firebasedatabase.app`,`https://${L}.firebaseio.com`,`https://${L}-default-rtdb.asia-southeast1.firebasedatabase.app`,`https://${L}.asia-southeast1.firebasedatabase.app`];
+function tvLabel(){const u=webDb(),m=/^https:\/\/([a-z0-9-]+)\./.exec(u);if(!m)return '';const L=m[1].replace(/-default-rtdb$/,'');return TV_HOSTS(L).includes(u)?L:''}
+function tvCode(){const t=tvCfg(),L=tvLabel();if(!L||!t.k)return '';const K=t.k.toUpperCase();return L.toUpperCase()+' · '+K.slice(0,4)+'-'+K.slice(4)}
+const tvPageShort=()=>TV_PAGE.replace(/^https:\/\//,'').replace(/\.html$/,'');
+function tvLink(){const t=tvCfg();return TV_PAGE+'#c='+wb64(new TextEncoder().encode(JSON.stringify({u:webDb(),k:t.k,p:t.pub})))}
+/* ---------- contenu envoyé à la télé (aucune donnée personnelle) ---------- */
+function tvItems(ds){
+  const agg={};
+  brItems(ds).forEach(x=>{const s=Math.round(+x.start),u=Math.round(+x.dur||60),n=Math.round(+x.n||0);if(!(n>0&&s>=0&&s<1440&&u>0&&u<=720))return;const k=s+'|'+u;agg[k]=(agg[k]||0)+n});
+  return Object.keys(agg).map(k=>{const p=k.split('|').map(Number);return [p[0],p[1],Math.min(agg[k],9999)]}).sort((a,b)=>a[0]-b[0]||a[1]-b[1]).slice(0,400);
+}
+function tvUi(t){
+  const tx=(v,n)=>String(v||'').replace(/[\u0000-\u001f]/g,' ').trim().slice(0,n);
+  return{th:t.th==='dark'?'dark':'light',t1:tx(t.t1,60)||TV_TXT.t1,t2:tx(t.t2,60)||TV_TXT.t2,t3:tx(t.t3,60)||TV_TXT.t3,m3:tx(t.m3,140)||TV_TXT.m3,tick:tx(t.tick,400),
+    qty:t.qty!==false,warn:+t.warn||5,win:+t.win||30,done:+t.done||10,snd:['carillon','gong','bip','off'].includes(t.snd)?t.snd:'carillon',ann:t.ann!==false,voice:t.voice!==false};
+}
+function tvOut(t){
+  const ds=today(),h=hoursFor(ds),closed=!!h.closed||!(h.c>h.o);
+  let tz='Europe/Paris';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||tz}catch(e){}
+  return{v:1,d:ds,tz,n:S.settings.name||'',it:tvItems(ds),br:BR.map(b=>[b[0],b[1]]),x:closed,o:closed?null:h.o,c:closed?null:h.c,ui:tvUi(t),lg:TVS.lgh||''};
+}
+const tvLogoSrc=()=>{const l=S.settings.logo||(typeof payCfg==='function'?payCfg().logo:'')||'';return /^data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]/.test(l)?l:''};
+async function tvShrink(src){
+  try{
+    const img=new Image();img.src=src;await img.decode();
+    const k=Math.min(1,640/Math.max(img.naturalWidth||1,img.naturalHeight||1)),c=document.createElement('canvas');
+    c.width=Math.max(1,Math.round((img.naturalWidth||1)*k));c.height=Math.max(1,Math.round((img.naturalHeight||1)*k));
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    for(const q of [.9,.8,.65]){const d=c.toDataURL('image/webp',q);if(d.startsWith('data:image/webp')&&d.length<180000)return d}
+    const p=c.toDataURL('image/png');return p.length<180000?p:'';
+  }catch(e){return ''}
+}
+async function tvLogoPub(force){
+  const lg=tvLogoSrc();if(lg!==TVS.lsrc){TVS.lsrc=lg;TVS.lhash=lg?cfSha(lg).slice(0,16):''}
+  const h=TVS.lhash;
+  if(!force&&h===TVS.lh)return;
+  if(!lg){TVS.lh='';TVS.lgh='';return}
+  const img=lg.length<180000?lg:await tvShrink(lg);
+  if(!img){TVS.lh=h;TVS.lgh='';return}
+  const b=JSON.stringify({h,img}),s=await tvSign(b);
+  const r=await fetch(tvU('l'),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({b,s})});
+  if(!r.ok)throw new Error('http '+r.status);
+  TVS.lh=h;TVS.lgh=h;
+}
+async function tvPublish(force){
+  const t=tvCfg();if(!tvReady())return false;
+  if(TVS.busy){TVS.again=force?'f':(TVS.again||'n');return false}
+  TVS.busy=true;
+  try{
+    await tvLogoPub(force);
+    const o=tvOut(t),h=JSON.stringify(o);
+    if(!force&&h===TVS.h&&Date.now()-TVS.t<300000)return true;
+    const b=JSON.stringify({...o,t:Date.now()}),s=await tvSign(b);
+    const r=await fetch(tvU('d'),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({b,s,p:t.pub})});
+    if(!r.ok)throw new Error('http '+r.status);
+    TVS.h=h;TVS.t=Date.now();TVS.err='';return true;
+  }catch(e){TVS.err=/40[13]/.test(String(e&&e.message))?'Règles Firebase à mettre à jour (voir ci-dessous)':'Hors ligne : nouvel essai dans une minute';return false}
+  finally{TVS.busy=false;if(TVS.again){const f=TVS.again==='f';TVS.again=false;setTimeout(()=>{tvPublish(f).catch(()=>{})},50)}}
+}
+/* écran désactivé ou code changé : un contenu signé « off » (les règles interdisent d'effacer le nœud, pour que personne ne puisse vider l'écran) */
+async function tvUnpublish(){
+  const t=tvCfg();if(!cloudOn()||!t.k||!t.pub||!t.priv)return;
+  try{const b=JSON.stringify({v:1,off:true,t:Date.now()}),s=await tvSign(b);await fetch(tvU('d'),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({b,s,p:t.pub})})}catch(e){}
+  TVS.h='';TVS.lh='';TVS.lgh='';TVS.t=0;TVS.lsrc='';TVS.lhash='';
+}
+let tvTimer=0;
+function tvSched(){if(!tvCfg().on)return;clearTimeout(tvTimer);tvTimer=setTimeout(()=>{tvPublish().catch(()=>{})},3000)}
+{const f0=save;save=function(){f0();tvSched()}}
+async function tvTick(){if(typeof ME==='undefined'||!ME||!tvReady())return;await tvPublish().catch(()=>{})}
+setInterval(()=>{tvTick().catch(()=>{})},60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')tvTick().catch(()=>{})});
+/* ---------- règles Firebase : celles de la réservation en ligne, plus l'écran TV ---------- */
+function tvRulesBlock(k){
+  const v=n=>`newData.hasChildren(['b','s']) && newData.child('b').isString() && newData.child('b').val().length < ${n} && newData.child('s').isString() && newData.child('s').val().length < 200`;
+  return{[k]:{'.read':true,'d':{'.write':'newData.exists()','.validate':v(60000)},'l':{'.write':'newData.exists()','.validate':v(200000)}}};
+}
+{const f0=webRules;webRules=function(){
+  const t=tvCfg(),w=webCfg(),txt=f0();
+  if(!t.k&&w.k)return txt;
+  let o;try{o=JSON.parse(txt)}catch(e){return txt}
+  if(!o||!o.rules)return txt;
+  if(!w.k)delete o.rules.pub;
+  if(t.k)o.rules.tv=tvRulesBlock(t.k);
+  return JSON.stringify(o,null,2);
+}}
+/* ---------- son (même carillon que la télé) ---------- */
+let tvAC=null;
+function tvChime(kind,snd){
+  try{
+    const C=window.AudioContext||window.webkitAudioContext;if(!C)return 0;
+    tvAC=tvAC||new C();if(tvAC.state==='suspended')tvAC.resume();
+    const c=tvAC,m=c.createGain();m.gain.value=.9;m.connect(c.destination);const t0=c.currentTime+.06;
+    const note=(f,t,d,type,g)=>{const o=c.createOscillator(),e=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);e.gain.setValueAtTime(.0001,t);e.gain.exponentialRampToValueAtTime(g||.4,t+.015);e.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(e);e.connect(m);o.start(t);o.stop(t+d+.05)};
+    const bell=(f,t,d)=>{note(f,t,d,'sine',.42);note(f*2,t,d*.55,'sine',.11);note(f*3.01,t,d*.3,'sine',.05)};
+    if(snd==='off')return 0;
+    if(kind==='warn'){bell(784,t0,1.2);bell(1046.5,t0+.38,1.5);return 1.9}
+    if(snd==='gong'){note(98,t0,4.6,'sine',.55);note(196.4,t0,3.2,'sine',.24);note(293.7,t0,2.2,'sine',.12);note(416,t0,1.3,'triangle',.05);return 4.2}
+    if(snd==='bip'){for(let i=0;i<3;i++)note(880,t0+i*.34,.2,'square',.16);return 1.2}
+    [659.25,523.25,587.33,392].forEach((f,i)=>bell(f,t0+i*.62,1.7));return 3.9;
+  }catch(e){return 0}
+}
+function tvSay(txt,after){
+  if(!window.speechSynthesis)return;
+  setTimeout(()=>{try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt),v=speechSynthesis.getVoices().find(x=>/^fr/i.test(x.lang));u.lang='fr-FR';u.rate=.96;if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}},Math.round((after||0)*1000));
+}
+/* ---------- Paramètres › Écran TV ---------- */
+const TV_SND=[['carillon','Carillon'],['gong','Gong'],['bip','Bips'],['off','Aucun']];
+const tvSel=(id,label,cur,opts,suf)=>`<div class="field"><label for="tvf_${id}">${label}</label><select id="tvf_${id}" data-tvf="${id}">${opts.map(x=>`<option value="${x}" ${+cur===x?'selected':''}>${x} ${suf}</option>`).join('')}</select></div>`;
+const tvTxt=(id,label,v,max,ph,ta)=>`<div class="field"><label for="tvf_${id}">${label}</label>${ta?`<textarea id="tvf_${id}" data-tvf="${id}" rows="2" maxlength="${max}" placeholder="${esc(ph)}">${esc(v)}</textarea>`:`<input id="tvf_${id}" data-tvf="${id}" value="${esc(v)}" maxlength="${max}" placeholder="${esc(ph)}">`}</div>`;
+function tvStat(){
+  const t=tvCfg();
+  if(!t.on)return 'Désactivé : aucune donnée n’est envoyée.';
+  if(!cloudOn())return '';
+  if(TVS.err)return `<b style="color:var(--bad)">${esc(TVS.err)}</b>`;
+  return TVS.t?'Écran à jour : dernier envoi à '+new Date(TVS.t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'.':'Envoi en cours…';
+}
+function vSetTv(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const t=tvCfg(),cl=cloudOn(),on=t.on&&!!t.k,code=on&&cl?tvCode():'',link=on&&cl?tvLink():'';
+  const btn=(act,lbl,cls,extra)=>`<button class="btn ${cls||''}" type="button" data-act="${act}" ${extra||''}>${lbl}</button>`;
+  m.innerHTML=`<div class="payset"><div class="paycol">
+   <div class="card"><h3>Écran TV</h3>
+    <p class="muted" style="margin:0 0 10px">Une télé ou une tablette à l’accueil affiche en direct les bracelets en piste avec leur compte à rebours, les prochains départs et les sessions terminées. Un carillon et une annonce vocale préviennent à chaque fin de session : vos clients savent quand sortir, l’équipe n’a plus à le crier.</p>
+    ${cl?'':`<div class="banner"><span>Reliez d’abord vos appareils (Paramètres › Studio › Équipe connectée) : l’écran TV lit les données en ligne. <button class="btn primary" type="button" data-act="tv_studio" style="margin-left:8px">Ouvrir</button></span></div>`}
+    <label class="wchk"><input type="checkbox" id="tv_on" ${t.on?'checked':''} ${cl?'':'disabled'}> <b>Activer l’écran TV</b></label>
+    <p class="muted" id="tv_stat" style="margin:8px 0 0">${tvStat()}</p>
+    <div class="acts" style="margin-top:12px">${btn('tv_prev','Voir l’aperçu','primary')}${btn('tv_listen','Écouter l’annonce')}</div></div>
+   ${on&&cl?`<div class="card"><h3>Associer une télé</h3>
+    ${code?`<ol class="tvsteps"><li><span>Sur la télé, dans le navigateur, ouvrez</span><b class="tvcode">${esc(tvPageShort())}</b></li><li><span>Tapez ce code, puis « Associer »</span><b class="tvcode" id="tv_code">${esc(code)}</b></li></ol>
+     <div class="acts" style="margin:4px 0 12px">${btn('tv_copy','Copier le code','','data-what="code"')}</div>`:'<p class="muted" style="margin:0 0 8px">Votre base n’a pas une adresse standard : associez la télé avec le lien ci-dessous.</p>'}
+    <p class="muted" style="margin:0 0 8px">${code?'Ou, sur un ordinateur ou une tablette branchés à l’écran, ouvrez directement ce lien :':'Ouvrez ce lien sur la télé, l’ordinateur ou la tablette branchés à l’écran :'}</p>
+    <div class="field"><input id="tv_link" readonly onclick="this.select()" value="${esc(link)}"></div>
+    <div class="acts">${btn('tv_copy','Copier le lien','','data-what="link"')}${btn('tv_share','Envoyer…')}</div>
+    <details style="margin-top:10px"><summary><b>QR code (tablette)</b></summary><div style="display:flex;justify-content:center;margin:10px 0"><div style="background:#fff;padding:8px;border-radius:12px;line-height:0">${qrSvg(link,260)}</div></div></details>
+    <p class="muted" style="margin:10px 0 0">Touchez l’écran de la télé (ou appuyez sur OK) une fois pour autoriser le son, puis « Plein écran ». L’écran reste allumé et se met à jour tout seul. Gardez Lago ouvert sur au moins un appareil, la caisse par exemple.</p></div>`:''}
+   <div class="card"><h3>Affichage</h3>
+    <div class="field"><label>Fond</label>${paySeg('th',[['light','Clair'],['dark','Sombre']],t.th).replace(/data-payset=/g,'data-tvset=')}</div>
+    <div class="g2">${tvTxt('t2','Titre des sessions en cours',t.t2,60,TV_TXT.t2)}${tvTxt('t1','Titre des départs',t.t1,60,TV_TXT.t1)}</div>
+    <div class="g2">${tvTxt('t3','Titre des sessions terminées',t.t3,60,TV_TXT.t3)}${tvTxt('m3','Message de fin',t.m3,140,TV_TXT.m3)}</div>
+    <div class="g2">${tvSel('warn','Mettre en avant la fin',t.warn,[2,3,5,10],'min avant')}${tvSel('win','Départs affichés',t.win,[15,30,45,60,90],'min à l’avance')}</div>
+    <div class="g2">${tvSel('done','Sessions terminées affichées',t.done,[5,10,15,20],'min')}<div class="field"><label>&nbsp;</label><label class="wchk"><input type="checkbox" data-tvf="qty" ${t.qty?'checked':''}> Afficher le nombre de personnes</label></div></div></div>
+   <div class="card"><h3>Texte défilant</h3>${tvTxt('tick','Message en bas de l’écran (laisser vide pour le masquer)',t.tick,400,'Ex. Chaussettes antidérapantes obligatoires · Anniversaires : réservez à l’accueil',1)}</div>
+   <div class="card"><h3>Son et annonces</h3>
+    <div class="field"><label>Son à chaque fin de session</label>${paySeg('snd',TV_SND,t.snd).replace(/data-payset=/g,'data-tvset=')}</div>
+    <label class="wchk"><input type="checkbox" data-tvf="voice" ${t.voice?'checked':''}> Annonce vocale (« Bracelet orange, votre session est terminée »)</label>
+    <label class="wchk" style="margin-top:6px"><input type="checkbox" data-tvf="ann" ${t.ann?'checked':''}> Prévenir aussi ${+t.warn||5} minutes avant la fin</label>
+    <div class="acts" style="margin-top:12px">${btn('tv_listen','Écouter l’annonce')}${btn('tv_listen','Écouter l’avertissement','','data-k="warn"')}</div></div>
+  </div><div class="paycol tvside">
+   <div class="card"><h3>Ce que voit la télé</h3>
+    <ul class="muted tvlist"><li><b>En piste</b> : une couleur de bracelet par ligne, avec le compte à rebours jusqu’au retrait. La prochaine fin grossit et clignote.</li><li><b>Prochains départs</b> : l’heure, la couleur à porter et le nombre de personnes.</li><li><b>Terminé</b> : les couleurs à faire sortir, avec votre message.</li><li>L’horloge, votre logo, le texte défilant, et un écran plein à chaque fin de session.</li></ul>
+    <p class="muted" style="margin:8px 0 0">Aucune donnée client n’est envoyée à la télé : seulement les horaires, les durées et le nombre de personnes de la journée, signés par Lago. Personne ne peut y afficher autre chose.</p></div>
+   ${t.k&&cl?`<div class="card"><h3>Règles Firebase</h3><p class="muted" style="margin:0 0 8px">Une seule fois, puis après chaque nouveau code : dans Firebase › Realtime Database › Règles, remplacez tout par ce texte, puis « Publier ». Elles gardent vos réglages actuels et ajoutent l’écran TV.</p>
+    <textarea id="tv_rules" readonly rows="7" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%">${esc(webRules())}</textarea>
+    <div class="acts" style="margin-top:8px">${btn('tv_copy','Copier les règles','','data-what="rules"')}</div></div>
+   <div class="card"><h3>Dissocier les écrans</h3><p class="muted" style="margin:0 0 8px">Un nouveau code coupe tous les écrans associés (télé remplacée, tablette perdue…). Recollez ensuite les règles Firebase, puis associez à nouveau vos télés.</p>
+    <div class="acts">${btn('tv_new','Créer un nouveau code','danger')}</div></div>`:''}
+  </div></div>`;
+}
+TABS.params.splice(Math.max(1,TABS.params.findIndex(x=>x[0]==='ppay')+1),0,['ptv','Écran TV']);SUBS.ptv=vSetTv;
+let tvRB=0;
+const tvRedo=()=>{if(tvRB||view!=='params'||tab.params!=='ptv')return;const sub=$('#sub');if(!sub)return;tvRB=1;try{const y=window.scrollY;vSetTv(sub);window.scrollTo(0,y)}finally{tvRB=0}};
+let tvTm=0;
+const tvStatDraw=()=>{const s=$('#tv_stat');if(s)s.innerHTML=tvStat()};
+const tvDirty=()=>{clearTimeout(tvTm);tvTm=setTimeout(()=>{save();tvPublish(true).then(tvStatDraw)},700)};
+const tvHere=()=>view==='params'&&tab.params==='ptv'&&isAdmin();
+document.addEventListener('input',e=>{
+  const x=e.target;if(!x||!tvHere()||!x.dataset||!x.dataset.tvf)return;
+  const k=x.dataset.tvf,t=tvCfg();
+  if(x.type==='checkbox'||x.tagName==='SELECT')return;
+  t[k]=String(x.value||'').replace(/[\u0000-\u001f]/g,' ').slice(0,k==='tick'?400:k==='m3'?140:60);tvDirty();
+});
+document.addEventListener('change',async e=>{
+  const x=e.target;if(!x||!tvHere())return;
+  const t=tvCfg();
+  if(x.id==='tv_on'){
+    if(x.checked){
+      if(!cloudOn()){x.checked=false;toast('Reliez d’abord vos appareils (Paramètres › Studio)');return}
+      t.on=true;if(!t.k)t.k=tvNewKey();
+      try{await tvKeys(t)}catch(err){t.on=false;x.checked=false;toast('Ce navigateur ne permet pas de signer les données : utilisez un navigateur récent');return}
+      save();tvRedo();await tvPublish(true);tvRedo();
+    }else{t.on=false;save();await tvUnpublish();tvRedo()}
+    return;
+  }
+  const k=x.dataset&&x.dataset.tvf;if(!k)return;
+  if(x.type==='checkbox'){t[k]=!!x.checked}
+  else if(x.tagName==='SELECT'){t[k]=+x.value;if(k==='warn')tvRedo()}
+  else return;
+  tvDirty();
+});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-tvset],[data-act^="tv_"]');if(!b)return;
+  if(b.dataset.act==='tv_goset'){view='params';tab.params='ptv';location.hash='params';route();return}
+  if(!tvHere())return;
+  const t=tvCfg();
+  if(b.dataset.tvset){t[b.dataset.tvset]=b.dataset.v;save();tvRedo();tvPublish(true).then(tvStatDraw);if(b.dataset.tvset==='snd'&&b.dataset.v!=='off')tvChime('end',b.dataset.v);return}
+  const a=b.dataset.act;
+  if(a==='tv_studio'){tab.params='pstudio';render();return}
+  if(a==='tv_prev'){
+    const ui=tvUi(t),o={n:S.settings.name||'',ui,br:BR.map(x=>[x[0],x[1]])},lg=tvLogoSrc();
+    try{localStorage.setItem('lago-ecran-demo',JSON.stringify(lg&&lg.length<1500000?{...o,logo:lg}:o))}catch(err){try{localStorage.setItem('lago-ecran-demo',JSON.stringify(o))}catch(e2){}}
+    const w=window.open(new URL('ecran.html#demo',location.href).href,'_blank');if(!w)toast('Autorisez l’ouverture des fenêtres pour voir l’aperçu');
+    return;
+  }
+  if(a==='tv_listen'){
+    const ui=tvUi(t),warn=b.dataset.k==='warn',d=tvChime(warn?'warn':'end',ui.snd);
+    if(ui.voice)tvSay(warn?'Bracelet orange, plus que '+ui.warn+' minute'+(ui.warn>1?'s':'')+'.':'Bracelet orange, votre session est terminée. '+ui.m3,d+.2);
+    else if(!d)toast('Son et annonce vocale désactivés');
+    return;
+  }
+  if(a==='tv_copy'){const w=b.dataset.what,txt=w==='code'?tvCode():w==='link'?tvLink():webRules();zCopy(txt,w==='code'?'Code copié':w==='link'?'Lien copié':'Règles copiées');return}
+  if(a==='tv_share'){
+    const l=tvLink(),msg='Écran TV Lago : ouvrez ce lien sur la télé ou la tablette de l’accueil.';
+    if(navigator.share){try{await navigator.share({title:'Écran TV Lago',text:msg,url:l})}catch(err){if(err&&err.name!=='AbortError')zCopy(l,'Lien copié')}}
+    else zCopy(l,'Lien copié');
+    return;
+  }
+  if(a==='tv_new'){
+    if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Confirmer : couper tous les écrans';return}
+    b.disabled=true;
+    await tvUnpublish();
+    t.k=tvNewKey();t.pub=null;t.priv=null;
+    try{await tvKeys(t)}catch(err){}
+    save();tvRedo();await tvPublish(true);tvRedo();
+    toast('Nouveau code créé : recollez les règles Firebase, puis associez vos écrans');
+  }
+});
+/* Planning clients › Bracelets : lien vers l'écran TV */
+{const f0=vBracelets;vBracelets=function(m){f0(m);if(!isAdmin())return;const t=tvCfg(),c=m.querySelector('.brlcard');
+  const card=`<div class="card brlcard tvcard"><div><h3>Écran TV pour vos clients</h3><p class="muted">${t.on?'Activé : la télé de l’accueil affiche les bracelets en piste, les comptes à rebours et les fins de session.':'Affichez sur une télé de l’accueil les bracelets en piste avec leur compte à rebours, les prochains départs et les fins de session, avec carillon et annonce vocale.'}</p></div><button type="button" class="btn ${t.on?'':'primary'}" data-act="tv_goset">${t.on?'Réglages de l’écran TV':'Configurer l’écran TV'}</button></div>`;
+  if(c)c.insertAdjacentHTML('afterend',card);else m.insertAdjacentHTML('afterbegin',card)};SUBS.bracelets=vBracelets}
+
 init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();try{if(evDemoFill())save()}catch(e){}applySettings();cart=newCart();chrome();route();bootGate();
 })();
