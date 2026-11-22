@@ -2649,6 +2649,15 @@ html.lite .plday .dcard,html.noanim .plday .dcard{animation:none}
 }
 @media (max-width:979px){.payside{display:none}}
 @media (min-width:980px){.payonlym{display:none}}
+/* ===== v88 : écran TV ===== */
+.tvsteps{list-style:none;margin:0 0 6px;padding:0;display:grid;gap:12px;counter-reset:tvs}
+.tvsteps li{display:grid;gap:7px;counter-increment:tvs}
+.tvsteps li>span{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+.tvsteps li>span::before{content:counter(tvs);display:inline-grid;place-items:center;flex:none;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FF8A2B,#F76300);color:#fff;font-size:12px;font-weight:800}
+.tvcode{display:block;font:800 clamp(17px,2.4vw,24px)/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.05em;padding:12px 14px;border-radius:14px;background:var(--surface-2);border:2px dashed color-mix(in srgb,var(--brand) 40%,var(--line));color:var(--ink);overflow-wrap:anywhere;user-select:all;-webkit-user-select:all}
+.tvlist{margin:0;padding-left:18px;display:grid;gap:6px;font-size:14px;line-height:1.45}
+.tvlist b{color:var(--ink)}
+@media (min-width:980px){.tvside{position:sticky;top:12px}}
 /* v72 : Mon métier, lien ignoré, espace suspendu */
 .tpg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
 .tpc{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:16px 16px 14px;border:2px solid var(--line);border-radius:16px;background:var(--surface);color:inherit;font:inherit;cursor:pointer;min-height:132px;transition:border-color .15s,box-shadow .15s}
@@ -3084,7 +3093,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v87" defer></script>
+<script src="app.js?v=v88" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>
