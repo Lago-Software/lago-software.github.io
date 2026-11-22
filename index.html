@@ -3026,6 +3026,26 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
 .sx-rk li b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sx-rk small{color:var(--muted);font-size:12.5px}.sx-rk em{font-style:normal;font-weight:700;color:var(--brand-t)}
 .sx-heat .heat i{color:#0A1F4D}:root[data-theme="dark"] .sx-heat .heat i{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.55)}.sx-ul{margin:10px 0 0;padding-left:18px;font-size:14px}.sx-ul small{color:var(--muted)}
 @media (max-width:640px){.sx-tabs{flex-wrap:wrap}.sx-ins{grid-template-columns:1fr}.sx-rk li{grid-template-columns:26px 1fr auto}.sx-rk li em{grid-column:2/-1}.sx-rk li small{text-align:right}}
+
+/* v88 : déroulé anniversaire, QR, CSE */
+.dv-al{display:grid;gap:6px;margin:0 0 12px}.dv-a{display:flex;gap:8px;align-items:flex-start;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--warn) 12%,var(--surface));font-size:13.5px}
+.dv-a.bad{background:color-mix(in srgb,var(--bad) 12%,var(--surface))}.dv-ai{flex:none;width:18px;height:18px;margin-top:1px}.dv-ai svg{width:18px;height:18px}
+.dv-list{display:grid;gap:10px}.dv-card{display:flex;gap:10px;align-items:stretch;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;box-shadow:0 1px 2px rgba(10,31,77,.05)}
+.dv-card.done{opacity:.6}.dv-card.arr{border-color:var(--ok)}.dv-card.tea{border-color:var(--pay)}
+.dv-main{display:flex;gap:12px;flex:1;min-width:0;text-align:left;background:none;border:0;padding:2px;cursor:pointer;color:inherit;font:inherit}
+.dv-time{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:58px;padding:8px;border-radius:12px;background:var(--brand-soft,#E8F0FE);color:var(--brand)}
+.dv-time b{font-size:19px;font-variant-numeric:tabular-nums}.dv-time small{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em}
+.dv-body{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}.dv-t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dv-t b{font-size:15.5px}
+.dv-facts{display:flex;flex-wrap:wrap;gap:6px}.dv-f{display:inline-flex;gap:5px;align-items:center;padding:3px 9px;border-radius:999px;background:var(--bg,#F3F6FB);border:1px solid var(--line);font-size:12.5px}.dv-f svg{width:14px;height:14px}.dv-f.warn,.warn-t{color:var(--warn);font-weight:600}
+.dv-staff{font-size:13px;color:var(--muted)}.dv-note{font-size:12.5px;color:var(--muted);font-style:italic}
+.dv-adv{align-self:center;flex:none;white-space:normal;max-width:112px;min-height:44px}
+.dv-tb{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line)}.dv-tb:last-child{border:0}.dv-tb>b{min-width:64px}
+.dv-tc{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:4px 9px;font-size:12.5px;cursor:pointer;color:inherit}.dv-tc.bad{border-color:var(--bad);color:var(--bad)}
+.dv-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.dv-sec{margin:14px 0}.dv-sec h4{margin:0 0 6px;font-size:14px}
+.dv-g{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}.dv-g.in b{color:var(--ok)}.dv-g .check{display:flex;gap:10px;align-items:center;flex:1}.dv-g input[type=checkbox]{width:22px;height:22px}
+.dv-add{display:flex;gap:8px;margin-top:8px}.dv-add textarea{flex:1}
+.cse-ch{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;width:100%}
+@media (max-width:640px){.dv-card{flex-direction:column}.dv-adv{max-width:none;width:100%}.dv-time{min-width:52px}}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -3084,7 +3104,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v87" defer></script>
+<script src="app.js?v=v88" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

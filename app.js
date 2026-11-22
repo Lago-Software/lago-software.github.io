@@ -2955,11 +2955,16 @@ let qd=null;
 const quotes=()=>S.quotes||(S.quotes=[]);
 const qTot=q=>q.lines.reduce((a,l)=>a+Math.round(l.price*100)*l.qty,0);
 const QST=[['draft','Brouillon',''],['sent','Envoyé','warn'],['ok','Accepté','ok'],['no','Refusé','bad']];
+let qFlt='all';
+const qBr=q=>{const t=qTot(q),r=q.tva==null?20:+q.tva,ht=Math.round(t/(1+r/100)),dp=q.dep==null?30:+q.dep;return{t,r,ht,tva:t-ht,dp,ac:Math.round(t*dp/100)}};
+const qTotHtml=q=>{const b=qBr(q);return `<span class="muted">HT ${eurN(b.ht)} · TVA ${b.r} % ${eurN(b.tva)}</span><br>Total TTC <b class="num">${eurN(b.t)}</b>${b.dp?`<br><span class="muted">Acompte ${b.dp} % à la réservation : <b class="num">${eurN(b.ac)}</b></span>`:''}`};
+const qLate=q=>q.status==='sent'&&Date.now()-(q.sentTs||q.ts)>5*864e5;
 function quoteNo(){const y=new Date().getFullYear(),n=quotes().filter(q=>String(q.no).includes('-'+y+'-')).length+1;return 'D-'+y+'-'+String(n).padStart(3,'0')}
 function vDevis(m){
-  const L=[...quotes()].sort((a,b)=>b.ts-a.ts),open=L.filter(q=>q.status==='sent').reduce((a,q)=>a+qTot(q),0);
-  m.innerHTML=`<div class="impo"><span><b class="num">${eurN(open)}</b> de devis en attente de réponse</span><button class="btn primary" data-act="qnew">${ic('plus')}Nouveau devis</button></div>
-   <div class="card">${L.length?L.map(q=>{const st=QST.find(x=>x[0]===q.status);return `<div class="row"><span class="grow"><b>${esc(q.no)} · ${esc(q.title||'Devis')}</b><span class="muted">${esc(q.name||'Client')} · ${q.date?dshort(q.date):'date à définir'} · ${q.guests||0} invités</span></span><b class="num">${eurN(qTot(q))}</b><span class="pill ${st[2]}">${st[1]}</span><button class="btn" data-act="qopen" data-id="${q.id}">Ouvrir</button><button class="btn" data-act="qpdf" data-id="${q.id}">PDF</button></div>`}).join(''):'<p class="muted">Aucun devis. Créez-en un pour un anniversaire, une privatisation ou un team building.</p>'}</div>`;
+  const A=[...quotes()].sort((a,b)=>b.ts-a.ts),open=A.filter(q=>q.status==='sent').reduce((a,q)=>a+qTot(q),0),late=A.filter(qLate).length,L=qFlt==='all'?A:A.filter(q=>q.status===qFlt);
+  m.innerHTML=`<div class="impo"><span><b class="num">${eurN(open)}</b> de devis en attente de réponse${late?` · <b class="warn-t">${late} à relancer</b>`:''}</span><button class="btn primary" data-act="qnew">${ic('plus')}Nouveau devis</button></div>
+   <div class="chips" style="margin-bottom:10px">${[['all','Tous',A.length],...QST.map(s=>[s[0],s[1],A.filter(q=>q.status===s[0]).length])].map(([k,l,n])=>`<button class="chip ${qFlt===k?'on':''}" data-act="qflt" data-v="${k}">${l} · ${n}</button>`).join('')}</div>
+   <div class="card">${L.length?L.map(q=>{const st=QST.find(x=>x[0]===q.status);return `<div class="row"><span class="grow"><b>${esc(q.no)} · ${esc(q.title||'Devis')}</b><span class="muted">${esc(q.name||'Client')} · ${q.date?dshort(q.date):'date à définir'} · ${q.guests||0} invités${qLate(q)?' · <b class="warn-t">sans réponse depuis '+Math.floor((Date.now()-(q.sentTs||q.ts))/864e5)+' j</b>':''}</span></span><b class="num">${eurN(qTot(q))}</b><span class="pill ${st[2]}">${st[1]}</span><button class="btn" data-act="qopen" data-id="${q.id}">Ouvrir</button><button class="btn" data-act="qpdf" data-id="${q.id}">PDF</button><button class="btn" data-act="qdup" data-id="${q.id}" aria-label="Dupliquer ce devis">Dupliquer</button></div>`}).join(''):'<p class="muted">Aucun devis'+(qFlt==='all'?'. Créez-en un pour un anniversaire, une privatisation ou un team building.':' dans ce statut.')+'</p>'}</div>`;
 }
 function qForm(){
   const q=qd,pr=S.products.filter(p=>p.active&&(p.event||p.cat==='event'||p.cat==='gestion'));
@@ -2969,31 +2974,39 @@ function qForm(){
    <div class="two">${fld('Invités',`<input data-q="guests" type="number" min="0" value="${q.guests||''}">`)}${fld('Valable jusqu’au',`<input data-q="valid" type="date" value="${q.valid||''}">`)}</div>
    <div class="field"><label>Lignes</label>${q.lines.map((l,i)=>`<div class="qline"><input data-ql="${i}:label" value="${esc(l.label)}" placeholder="Désignation"><input data-ql="${i}:qty" type="number" min="1" value="${l.qty}" style="width:64px"><input data-ql="${i}:price" inputmode="decimal" value="${l.price}" style="width:92px" aria-label="Prix TTC"><button type="button" class="btn" data-act="qdl" data-i="${i}" aria-label="Retirer">${ic('x')}</button></div>`).join('')}
     <div class="acts"><select id="qadd"><option value="">Ajouter un produit…</option>${pr.map(p=>`<option value="${p.id}">${esc(p.name)} · ${eurN(p.price)}</option>`).join('')}</select><button type="button" class="btn" data-act="qaddfree">${ic('plus')}Ligne libre</button></div></div>
+   <div class="two">${fld('Heure de début',`<select data-q="h" data-n="1">${hOpts(q.h||14,9,22)}</select>`)}${fld('Salle',`<select data-q="room">${Object.keys(ROOMS).map(k=>`<option value="${k}" ${(q.room||Object.keys(ROOMS)[0])===k?'selected':''}>${esc(ROOMS[k])}</option>`).join('')}</select>`)}</div>
+   <div class="two">${fld('Acompte (%)',`<input data-q="dep" data-n="1" type="number" min="0" max="100" value="${q.dep==null?30:q.dep}">`)}${fld('TVA',`<select data-q="tva" data-n="1">${[20,10,5.5].map(r=>`<option value="${r}" ${(q.tva==null?20:+q.tva)===r?'selected':''}>${String(r).replace('.',',')} %</option>`).join('')}</select>`)}</div>
    ${fld('Notes et conditions',`<textarea data-q="notes" rows="2">${esc(q.notes||'')}</textarea>`)}
-   <p class="qtot">Total TTC <b class="num">${eurN(qTot(q))}</b></p>
+   <p class="qtot">${qTotHtml(q)}</p>
    ${fld('Statut',`<div class="tgs">${QST.map(s=>`<button type="button" class="tg ${q.status===s[0]?'on':''}" data-act="qst" data-v="${s[0]}">${s[1]}</button>`).join('')}</div>`)}
-   <div class="acts"><button class="btn primary" type="submit">Enregistrer</button><button class="btn" type="button" data-act="qpdfd">PDF</button>${q.status==='ok'&&!q.evDone?`<button class="btn" type="button" data-act="qev">Créer l’événement</button>`:''}${q.fresh?'':`<button class="btn danger" type="button" data-act="qdel">Supprimer</button>`}</div></form>`);
+   <div class="acts"><button class="btn primary" type="submit">Enregistrer</button><button class="btn" type="button" data-act="qpdfd">PDF</button><button class="btn" type="button" data-act="qmail">Envoyer par e-mail</button>${q.status==='ok'&&!q.evDone?`<button class="btn" type="button" data-act="qev">Créer l’événement</button>`:''}${q.evDone?'<span class="pill ok">Événement créé</span>':''}${q.fresh?'':`<button class="btn danger" type="button" data-act="qdel">Supprimer</button>`}</div></form>`);
 }
 function qPdf(q){return['Devis '+q.no,pdfBuild('DEVIS '+q.no,dfr(dkey(new Date(q.ts))),'DEVIS',w=>{
-  w.sec('Client');w.kv('Nom',q.name);w.kv('E-mail',q.email);w.sec('Prestation');w.kv('Intitulé',q.title);w.kv('Date prévue',q.date?dfr(q.date):'à définir');w.kv('Invités',q.guests);
-  w.sec('Détail');q.lines.forEach(l=>w.kv(l.qty+' x '+l.label,eurN(Math.round(l.price*100)*l.qty)));w.gap(6);w.kv('TOTAL TTC',eurN(qTot(q)));
+  w.sec('Client');w.kv('Nom',q.name);w.kv('E-mail',q.email);w.sec('Prestation');w.kv('Intitulé',q.title);w.kv('Date prévue',q.date?dfr(q.date)+(q.h?' à '+ft(q.h):''):'à définir');w.kv('Invités',q.guests);
+  w.sec('Détail');q.lines.forEach(l=>w.kv(l.qty+' x '+l.label,eurN(Math.round(l.price*100)*l.qty)));w.gap(6);{const b=qBr(q);w.kv('Total HT',eurN(b.ht));w.kv('TVA '+String(b.r).replace('.',',')+' %',eurN(b.tva));w.kv('TOTAL TTC',eurN(b.t));if(b.dp)w.kv('Acompte '+b.dp+' % à la réservation',eurN(b.ac))}
   if(q.valid)w.kv('Valable jusqu’au',dfr(q.valid));if(q.notes)w.kv('Conditions',q.notes);w.gap(8);w.p('Pour accord, merci de retourner ce devis daté et signé, précédé de la mention « Bon pour accord ».',9);w.sig('Bon pour accord (date et signature du client)','')})]}
-function qSyncForm(){document.querySelectorAll('[data-q]').forEach(i=>{qd[i.dataset.q]=i.type==='number'?+i.value:i.value});
+function qSyncForm(){document.querySelectorAll('[data-q]').forEach(i=>{qd[i.dataset.q]=(i.type==='number'||i.dataset.n)?+i.value:i.value});
   document.querySelectorAll('[data-ql]').forEach(i=>{const [n,f]=i.dataset.ql.split(':'),l=qd.lines[+n];if(!l)return;l[f]=f==='label'?i.value:f==='qty'?Math.max(1,+i.value||1):parseFloat(String(i.value).replace(',','.'))||0})}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act^="q"]');if(!b)return;const a=b.dataset.act;if(!/^q(new|open|pdf|pdfd|dl|addfree|st|ev|del)$/.test(a))return;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act^="q"]');if(!b)return;const a=b.dataset.act;if(!/^q(new|open|pdf|pdfd|dl|addfree|st|ev|del|dup|mail|flt)$/.test(a))return;
   if(a==='qnew'){qd={id:uid(),no:quoteNo(),name:'',email:'',title:'',date:'',guests:10,valid:addDays(today(),15),notes:'Acompte de 30 % à la réservation.',lines:[],status:'draft',ts:Date.now(),fresh:true};qForm();return}
   if(a==='qopen'){qd=JSON.parse(JSON.stringify(quotes().find(x=>x.id===b.dataset.id)));qForm();return}
   if(a==='qpdf'){const r=qPdf(quotes().find(x=>x.id===b.dataset.id));saveBytes(r[0]+'.pdf',r[1]);return}
+  if(a==='qflt'){qFlt=b.dataset.v;vDevis($('#sub'));return}
+  if(a==='qdup'){const o=quotes().find(x=>x.id===b.dataset.id);if(!o)return;const c=JSON.parse(JSON.stringify(o));Object.assign(c,{id:uid(),no:quoteNo(),status:'draft',ts:Date.now(),sentTs:0,evDone:false,evId:null,fresh:true});delete c.sale;qd=c;qForm();toast('Copie créée : ajustez-la puis enregistrez');return}
   if(!qd)return;qSyncForm();
   if(a==='qpdfd'){const r=qPdf(qd);saveBytes(r[0]+'.pdf',r[1])}
   else if(a==='qdl'){qd.lines.splice(+b.dataset.i,1);qForm()}
   else if(a==='qaddfree'){qd.lines.push({label:'',qty:1,price:0});qForm()}
   else if(a==='qst'){qd.status=b.dataset.v;qForm()}
   else if(a==='qdel'){const qid=qd.id;askYes('Supprimer ce devis ?',()=>{S.quotes=quotes().filter(x=>x.id!==qid);save();vDevis($('#sub'))},'Supprimer')}
-  else if(a==='qev'){const r=Object.keys(ROOMS)[0],cl=S.clients.find(c=>c.name===qd.name);S.events.push({id:uid(),date:qd.date||today(),h:14,dur:2,room:r,title:qd.title||'Événement',guests:qd.guests||10,pack:'',clientId:cl?cl.id:null,sale:qd.no});qd.evDone=true;toast('Événement créé dans le planning')}
+  else if(a==='qmail'){const b=qBr(qd),sub=encodeURIComponent('Devis '+qd.no+' · '+(qd.title||S.settings.name||'')),body=encodeURIComponent(`Bonjour ${qd.name||''},\n\nVoici notre devis ${qd.no}${qd.title?' pour « '+qd.title+' »':''}${qd.date?' le '+dfr(qd.date):''} : ${eurN(b.t)} TTC${b.dp?', acompte de '+b.dp+' % ('+eurN(b.ac)+') à la réservation':''}.\n${qd.valid?'Il est valable jusqu’au '+dfr(qd.valid)+'.\n':''}\nLe PDF est joint à ce message (à ajouter avant l’envoi).\n\nCordialement,\n${S.settings.name||''}`);
+    const r=qPdf(qd);saveBytes(r[0]+'.pdf',r[1]);if(qd.status==='draft')qd.status='sent';qd.sentTs=Date.now();location.href='mailto:'+encodeURIComponent(qd.email||'').replace('%40','@')+'?subject='+sub+'&body='+body;toast('PDF enregistré : joignez-le à l’e-mail')}
+  else if(a==='qev'){const r=qd.room||Object.keys(ROOMS)[0],h=qd.h||14,ds=qd.date||today();
+    if(!roomFree(ds,h,r,2)){toast(ROOMS[r]+' déjà réservée à cette heure : changez la salle ou l’heure');return}
+    const cl=S.clients.find(c=>c.name===qd.name),eid=uid();S.events.push({id:eid,date:ds,h,dur:2,room:r,title:qd.title||'Événement',guests:qd.guests||10,pack:'',clientId:cl?cl.id:null,sale:qd.no,quoteId:qd.id});qd.evDone=true;qd.evId=eid;{const q0=quotes().findIndex(x=>x.id===qd.id);if(q0>=0){quotes()[q0].evDone=true;quotes()[q0].evId=eid}}save();toast('Événement créé dans le planning');qForm()}
 });
 document.addEventListener('change',e=>{if(e.target.id==='qadd'&&qd&&e.target.value){qSyncForm();const p=S.products.find(x=>x.id===e.target.value);qd.lines.push({label:p.name,qty:1,price:p.price/100});qForm()}
-  else if(qd&&(e.target.dataset.ql||e.target.dataset.q)){qSyncForm();const t=document.querySelector('.qtot b');if(t)t.textContent=eurN(qTot(qd))}});
+  else if(qd&&(e.target.dataset.ql||e.target.dataset.q)){qSyncForm();const t=document.querySelector('.qtot');if(t)t.innerHTML=qTotHtml(qd)}});
 document.addEventListener('submit',e=>{if(e.target.id!=='qform'||!qd)return;e.preventDefault();qSyncForm();if(!qd.name.trim()){toast('Indiquez le client');return}
   const q={...qd};delete q.fresh;const i=quotes().findIndex(x=>x.id===q.id);i<0?quotes().push(q):quotes()[i]=q;save();qd=null;closeModal();vDevis($('#sub'));toast('Devis enregistré')});
 TABS.resa.push(['devis','Devis']);SUBS.devis=vDevis;
@@ -3244,7 +3257,7 @@ document.addEventListener('change',e=>{
       const o=JSON.parse(rd.result),d=o&&o.data;
       if(!d||!d.settings||!Array.isArray(d.products)){toast('Ce fichier n’est pas une sauvegarde Lago');return}
       askYes('Remplacer toutes les données actuelles par cette sauvegarde ? Les comptes seront ceux de la sauvegarde.',()=>{
-        if(!cfRestoreOk(d)){toast('Restauration refusée : cette sauvegarde ne contient pas tous les tickets et clôtures déjà enregistrés.');return}S=d;cfLog('restore','Sauvegarde restaurée');save();migrateSubs();migrateQ();migrateR();migrateT();migrateV();migrateImgs();v61Init();hoursInit();applySettings();applyTheme();applyLook();cart=newCart();
+        if(!cfRestoreOk(d)){toast('Restauration refusée : cette sauvegarde ne contient pas tous les tickets et clôtures déjà enregistrés.');return}S=d;cfLog('restore','Sauvegarde restaurée');save();migrateSubs();migrateQ();migrateR();migrateT();migrateV();migrateImgs();v61Init();hoursInit();try{evDemoFill()}catch(e){}applySettings();applyTheme();applyLook();cart=newCart();
         ME=null;ROLEMODE='operator';PROF='-';try{localStorage.removeItem(SKEY);sessionStorage.removeItem(SKEY)}catch(_){}
         chrome();route();gateStart();toast('Sauvegarde restaurée')},'Restaurer');
     }catch(err){toast('Fichier illisible')}};
@@ -4714,7 +4727,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v87';
+const LAGO_V='v88';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -10173,5 +10186,322 @@ function gateNoAcc(){
    <div class="gfoot"><button type="button" class="btn" data-act="g_back">Retour</button></div>`);
 }
 document.addEventListener('click',e=>{if(e.target.closest('[data-act="g_noacc"]'))gateNoAcc()});
-init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();applySettings();cart=newCart();chrome();route();bootGate();
+/* ======== v88 : déroulé d’anniversaire, QR codes, espace CSE, devis complet ======== */
+IC.qr='<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M14 14h2.500v2.500H14zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/>';
+IC.cake='<path d="M4.500 20h15M5.500 20v-6.500h13V20M5.500 15.500c2.200-1.600 3.300 1.200 6.500 0s4.300 1.200 6.500 0M12 13V9.500M12 5.500c1 1 1 2.200 0 3-1-.8-1-2 0-3z"/>';
+const hOpts=(v,from,to)=>{let o='';for(let h=Math.max(6,from);h<=Math.min(23,to)+.001;h+=.25)o+=`<option value="${h}" ${Math.abs(h-v)<.01?'selected':''}>${ft(h)}</option>`;return o};
+const evTablesL=()=>{const t=S.settings.tables;return Array.isArray(t)&&t.length?t:['Table 1','Table 2','Table 3','Table 4']};
+function evx(e){const k=e.kids!=null?e.kids:(e.guests||0);return{...e,kids:k,adults:e.adults||0,arr:e.arr!=null?e.arr:e.h,tea:e.tea!=null?e.tea:e.h+1,socks:e.socks!=null?e.socks:k,stage:e.stage||'todo',staff:e.staff||[],list:e.list||[],table:e.table||'',cake:e.cake||'',notes:e.notes||''}}
+const EVST=[['todo','À préparer','','Marquer prêt'],['ready','Prêt','ok','Groupe arrivé'],['arr','Sur place','warn','Goûter servi'],['tea','Goûter','warn','Terminer'],['done','Terminé','','']];
+const CAKES={'':'Non précisé',famille:'Apporté par la famille',parc:'À préparer par le parc'};
+const ovl=(a1,a2,b1,b2)=>a1<b2-.001&&b1<a2-.001;
+const evEnd=e=>e.h+e.dur;
+function evAlerts(ds){
+  const L=evOn(ds).map(evx).sort((a,b)=>a.arr-b.arr),A=[],NT=[],NS=[],soon=ds<=addDays(today(),2);
+  for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){
+    const a=L[i],b=L[j];
+    if(a.room===b.room&&ovl(a.h,evEnd(a),b.h,evEnd(b)))A.push({t:'bad',k:'room',ids:[a.id,b.id],x:`${ROOMS[a.room]} réservée deux fois : ${a.title} et ${b.title}.`});
+    if(a.table&&a.table===b.table&&ovl(a.arr,evEnd(a),b.arr,evEnd(b)))A.push({t:'bad',k:'table',ids:[a.id,b.id],x:`${a.table} encore occupée : ${a.title} (jusqu’à ${ft(evEnd(a))}) et ${b.title} (dès ${ft(b.arr)}).`});
+    if(Math.abs(a.arr-b.arr)<=.34)A.push({t:'warn',k:'arr',ids:[a.id,b.id],x:`Arrivées en même temps vers ${ft(Math.min(a.arr,b.arr))} : ${a.title} (${a.kids}) et ${b.title} (${b.kids}), soit ${a.kids+b.kids} enfants à accueillir.`});
+    a.staff.filter(s=>b.staff.includes(s)&&ovl(a.h,evEnd(a),b.h,evEnd(b))).forEach(s=>A.push({t:'bad',k:'staff',ids:[a.id,b.id],x:`${sname(s)} est affecté(e) à ${a.title} et ${b.title} en même temps.`}));
+  }
+  L.forEach(e=>{
+    if(e.stage==='done')return;
+    if(!e.table)NT.push(e);
+    if(soon&&!e.staff.length)NS.push(e);
+    e.staff.forEach(s=>{const sh=shiftOf(ds,s);if(sh==='L'||sh==='R')A.push({t:'warn',k:'off',ids:[e.id],x:`${sname(s)} (${e.title}) n’est pas planifié(e) ce jour-là${sh==='L'?' : en congé':''}.`})});
+  });
+  const nm=L2=>L2.map(e=>e.title).join(', ');
+  if(NT.length)A.push({t:'warn',k:'notable',ids:NT.map(e=>e.id),x:`Aucune table choisie : ${nm(NT)}.`});
+  if(NS.length)A.push({t:'warn',k:'nostaff',ids:NS.map(e=>e.id),x:`Personne d’affecté : ${nm(NS)}.`});
+  return A;
+}
+const evAlHtml=A=>A.length?`<div class="dv-al">${A.map(a=>`<div class="dv-a ${a.t}"><span class="dv-ai">${ic(a.t==='bad'?'shield':'clock')}</span><span>${esc(a.x)}</span></div>`).join('')}</div>`:'';
+function evDemoFill(){
+  let ch=false;const T=evTablesL(),st=S.staff.map(s=>s.id);
+  (S.events||[]).filter(e=>isDemoEv(e)&&!e.dx).forEach((e,i)=>{
+    e.dx=1;ch=true;const ann=/^Anniversaire/.test(e.title);
+    e.kids=e.guests;e.adults=ann?2:3;e.table=ann?T[(i===2?1:i)%T.length]:'';e.arr=ann?e.h-.25:e.h;e.tea=ann?e.h+1:e.h+.5;
+    e.cake=ann?(i%2?'parc':'famille'):'';e.socks=ann?e.guests:0;{const ok=S.staff.filter(s=>{const sh=shiftOf(e.date,s.id);return sh!=='L'&&sh!=='R'}).map(s=>s.id),k=ok.length;e.staff=ann&&k?[ok[(i*2)%k],ok[(i*2+1)%k]].filter((x,j,r)=>r.indexOf(x)===j).slice(0,i%3?2:1):[]}
+    e.notes=ann&&i%3===0?'Un enfant allergique aux arachides.':'';
+    const N=['Léo','Jade','Noé','Emma','Gabin','Lina','Hugo','Inès','Théo','Zoé','Adam','Mila'];
+    if(ann)e.list=N.slice(0,Math.min(e.guests,8)).map((n,k)=>({id:uid(),n,age:6+((k+i)%4),note:k===2&&i%3===0?'arachides':'',in:e.date===today()&&k<3&&e.h<=nowMin()/60+1}));
+  });
+  return ch;
+}
+function evStageNext(id){const e=S.events.find(x=>x.id===id);if(!e)return;const i=EVST.findIndex(s=>s[0]===(e.stage||'todo'));if(i<EVST.length-1){e.stage=EVST[i+1][0];save();evRefresh()}}
+function evRefresh(){if(view==='resa'&&tab.resa==='deroule')vDeroule($('#sub'));else if(view==='resa'&&tab.resa==='events')vEvents($('#sub'))}
+function vDeroule(m){
+  const ds=slotDay<today()?today():slotDay;slotDay=ds;
+  const L=evOn(ds).map(evx).sort((a,b)=>a.arr-b.arr||a.h-b.h),A=evAlerts(ds);
+  const kids=sumBy(L,e=>e.kids),socks=sumBy(L,e=>e.socks),cakes=L.filter(e=>e.cake==='parc'&&e.stage!=='done').length;
+  const days=Array.from({length:7},(_,i)=>addDays(today(),i));
+  const bad=ids=>A.some(a=>a.t==='bad'&&a.ids.includes(ids));
+  const tblRows=evTablesL().map(t=>{const es=L.filter(e=>e.table===t);return `<div class="dv-tb"><b>${esc(t)}</b>${es.length?es.map(e=>`<button class="dv-tc ${bad(e.id)&&A.some(a=>a.k==='table'&&a.ids.includes(e.id))?'bad':''}" data-act="evinfo" data-id="${e.id}">${ft(e.arr)}–${ft(evEnd(e))} · ${esc(e.title)}</button>`).join(''):'<span class="muted">Libre</span>'}</div>`}).join('');
+  m.innerHTML=`<div class="chips">${days.map((d,i)=>`<button class="chip ${d===ds?'on':''}" data-act="dv_day" data-d="${d}">${i===0?'Aujourd’hui':dshort(d)}</button>`).join('')}</div>
+   <div class="kpis"><div class="kpi"><div class="l">Groupes</div><div class="v num">${L.length}</div></div><div class="kpi"><div class="l">Enfants attendus</div><div class="v num">${kids}</div></div><div class="kpi"><div class="l">Chaussettes à préparer</div><div class="v num">${socks}</div></div><div class="kpi"><div class="l">Gâteaux à préparer</div><div class="v num">${cakes}</div></div></div>
+   ${evAlHtml(A)}
+   ${L.length?`<div class="dv-list">${L.map(e=>{const st=EVST.find(x=>x[0]===e.stage),arrived=e.list.filter(g=>g.in).length,tot=e.list.length||e.kids;
+     return `<article class="dv-card ${e.stage}"><button class="dv-main" data-act="evinfo" data-id="${e.id}"><span class="dv-time"><b>${ft(e.arr)}</b><small>arrivée</small></span>
+      <span class="dv-body"><span class="dv-t"><b>${esc(e.title)}</b><span class="pill ${st[2]}">${st[1]}</span></span><span class="muted">${ROOMS[e.room]||''} · ${ft(e.h)} à ${ft(evEnd(e))}${e.pack?' · '+esc(e.pack):''}</span>
+      <span class="dv-facts"><span class="dv-f">${ic('users')}${e.list.length?arrived+'/':''}${e.kids} enfant${e.kids>1?'s':''}${e.adults?' + '+e.adults+' adulte'+(e.adults>1?'s':''):''}</span>
+       <span class="dv-f ${e.table?'':'warn'}">${e.table?esc(e.table):'Table à choisir'}</span>
+       <span class="dv-f">${ic('cake')}${e.cake==='parc'?'Gâteau à préparer':e.cake==='famille'?'Gâteau de la famille':'Pas de gâteau'}</span>
+       <span class="dv-f">${e.socks} paire${e.socks>1?'s':''} de chaussettes</span><span class="dv-f">${ic('clock')}Goûter ${ft(e.tea)}</span></span>
+      <span class="dv-staff">${e.staff.length?e.staff.map(s=>esc(firstName(sname(s)))).join(', '):'<span class="warn-t">Personne d’affecté</span>'}</span>${e.notes?`<span class="dv-note">${esc(e.notes)}</span>`:''}</span></button>
+      ${st[3]?`<button class="btn dv-adv" data-act="ev_stage" data-id="${e.id}">${st[3]}</button>`:''}</article>`}).join('')}</div>
+    <div class="card"><h3>Occupation des tables</h3>${tblRows}<p class="muted" style="margin:8px 0 0">Une table est occupée de l’arrivée du groupe à la fin de l’événement.</p></div>`
+   :`<div class="card"><div class="empty">Aucun événement ce jour-là.</div><div class="acts" style="justify-content:center"><button class="btn primary" data-act="newev">${ic('plus')}Réserver un événement</button></div></div>`}
+   <div class="acts" style="margin-top:12px"><button class="btn" data-act="dv_pdf">PDF du jour</button></div>`;
+}
+function evPdf(list,ds){
+  return pdfBuild('Déroulé du '+dfr(ds),dfr(ds),'DEROULE',w=>{
+    list.forEach(e=>{const cl=e.clientId?clientById(e.clientId):null;
+      w.sec(`${ft(e.arr)} · ${e.title}`);w.kv('Salle / horaire',`${ROOMS[e.room]||''}, ${ft(e.h)} à ${ft(evEnd(e))}`);if(cl)w.kv('Client',cl.name+(cl.phone?' · '+cl.phone:''));
+      w.kv('Enfants / adultes',e.kids+' / '+e.adults);w.kv('Table',e.table||'à choisir');w.kv('Goûter',ft(e.tea));w.kv('Gâteau',CAKES[e.cake]);w.kv('Chaussettes',String(e.socks));
+      w.kv('Équipe',e.staff.map(sname).join(', ')||'à affecter');if(e.notes)w.kv('Notes',e.notes);
+      if(e.list.length){w.p('Invités',10);e.list.forEach(g=>w.row(g.n+(g.age?' ('+g.age+' ans)':'')+(g.note?' : '+g.note:''),g.in?'OK':' '))}
+      w.gap(6)});
+    if(!list.length)w.p('Aucun événement.')});
+}
+/* --- fiche événement (remplace la fiche simple) --- */
+let evd=null;
+function evGuestRows(e){return e.list.length?e.list.map(g=>`<div class="dv-g ${g.in?'in':''}"><label class="check"><input type="checkbox" data-gin="${g.id}" ${g.in?'checked':''}><span><b>${esc(g.n)}</b>${g.age?' <span class="muted">'+g.age+' ans</span>':''}${g.note?' <span class="warn-t">'+esc(g.note)+'</span>':''}</span></label><button class="ix" data-act="ev_delg" data-id="${g.id}" aria-label="Retirer ${esc(g.n)}">${ic('x')}</button></div>`).join(''):'<p class="muted" style="margin:0 0 8px">Aucun invité saisi. Ajoutez-les ci-dessous, ou scannez leur QR code à l’arrivée.</p>'}
+function showEvent(id){
+  const e0=S.events.find(x=>x.id===id);if(!e0)return;evd=id;const e=evx(e0),cl=e.clientId?clientById(e.clientId):null,st=EVST.find(x=>x[0]===e.stage)||EVST[0],arrived=e.list.filter(g=>g.in).length;
+  showModal(`${mh(esc(e.title))}
+   <div class="dv-top"><span class="pill ${st[2]}">${st[1]}</span><span class="muted">${dlong(e.date)} · ${ft(e.h)} à ${ft(evEnd(e))} · ${ROOMS[e.room]||''}${e.pack?' · '+esc(e.pack):''}</span></div>
+   ${cl?`<p class="muted" style="margin:6px 0 0">${esc(cl.name)}${cl.phone?' · '+esc(cl.phone):''}${cl.email?' · '+esc(cl.email):''}</p>`:''}
+   <div id="ev_al">${evAlHtml(evAlerts(e.date).filter(a=>a.ids.includes(e.id)))}</div>
+   <div class="dv-sec"><h4>Déroulé</h4>
+    <div class="two">${fld('Arrivée du groupe',`<select data-ev="arr">${hOpts(e.arr,e.h-1,evEnd(e))}</select>`)}${fld('Goûter',`<select data-ev="tea">${hOpts(e.tea,e.h,evEnd(e))}</select>`)}</div>
+    <div class="two">${fld('Enfants',`<input data-ev="kids" type="number" min="0" inputmode="numeric" value="${e.kids}">`)}${fld('Adultes accompagnants',`<input data-ev="adults" type="number" min="0" inputmode="numeric" value="${e.adults}">`)}</div>
+    <div class="two">${fld('Table',`<select data-ev="table"><option value="">À choisir</option>${evTablesL().map(t=>`<option ${e.table===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`)}${fld('Paires de chaussettes',`<input data-ev="socks" type="number" min="0" inputmode="numeric" value="${e.socks}">`)}</div>
+    ${fld('Gâteau',`<select data-ev="cake">${Object.entries(CAKES).map(([k,l])=>`<option value="${k}" ${e.cake===k?'selected':''}>${l}</option>`).join('')}</select>`)}
+    ${fld('Notes pour l’équipe',`<textarea data-ev="notes" rows="2" placeholder="Allergies, souhaits, déco…">${esc(e.notes)}</textarea>`)}</div>
+   <div class="dv-sec"><h4>Équipe affectée</h4><div class="tgs" id="ev_staff">${S.staff.map(s=>`<button type="button" class="tg ${e.staff.includes(s.id)?'on':''}" data-act="ev_staff" data-id="${s.id}">${esc(s.name)}</button>`).join('')}</div></div>
+   <div class="dv-sec"><h4>Invités <span class="muted" id="ev_cnt">${arrived}/${e.list.length||e.kids} arrivés</span></h4><div id="ev_gl">${evGuestRows(e)}</div>
+    <div class="dv-add"><textarea id="ev_add" rows="2" placeholder="Un invité par ligne : Prénom, âge, allergie (facultatif)" aria-label="Ajouter des invités"></textarea><button class="btn" data-act="ev_addg">Ajouter</button></div></div>
+   <div class="acts">${st[3]?`<button class="btn primary" data-act="ev_stage" data-id="${e.id}" data-m="1">${st[3]}</button>`:''}<button class="btn" data-act="ev_pdf" data-id="${e.id}">PDF du déroulé</button><button class="btn" data-act="ev_qr" data-id="${e.id}">${ic('qr')}QR codes</button><button class="btn" data-act="ev_quote" data-id="${e.id}">Faire un devis</button></div>
+   <div class="acts" style="margin-top:8px"><button class="btn danger" data-act="ev_del" data-id="${e.id}">Supprimer l’événement</button><button class="btn" data-act="close">Fermer</button></div>`);
+}
+function evCur(){return S.events.find(x=>x.id===evd)}
+function evUpdAl(){const e=evCur();if(!e)return;const a=$('#ev_al');if(a)a.innerHTML=evAlHtml(evAlerts(e.date).filter(x=>x.ids.includes(e.id)));const c=$('#ev_cnt');if(c){const x=evx(e);c.textContent=x.list.filter(g=>g.in).length+'/'+(x.list.length||x.kids)+' arrivés'}}
+document.addEventListener('change',e=>{
+  const t=e.target,f=t.dataset&&t.dataset.ev;
+  if(f){const ev=evCur();if(!ev)return;const num=['kids','adults','socks','arr','tea'].includes(f);let v=num?parseFloat(t.value):t.value;if(num&&isNaN(v))v=0;
+    ev[f]=v;if(f==='kids'){ev.guests=Math.max(ev.guests||0,v);if(ev._sk!==1){ev.socks=v;const s=document.querySelector('[data-ev="socks"]');if(s)s.value=v}}
+    if(f==='socks')ev._sk=1;save();evUpdAl();evRefresh();return}
+  if(t.dataset&&t.dataset.gin){const ev=evCur();if(!ev)return;const g=(ev.list||[]).find(x=>x.id===t.dataset.gin);if(g){g.in=t.checked;save();const r=t.closest('.dv-g');if(r)r.classList.toggle('in',g.in);evUpdAl();evRefresh()}}
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act^="ev_"],[data-act="dv_day"],[data-act="dv_pdf"]');if(!b)return;const a=b.dataset.act,d=b.dataset;
+  if(a==='dv_day'){slotDay=d.d;vDeroule($('#sub'));return}
+  if(a==='dv_pdf'){const ds=slotDay<today()?today():slotDay,L=evOn(ds).map(evx).sort((x,y)=>x.arr-y.arr);saveBytes('Deroule-'+ds+'.pdf',evPdf(L,ds));return}
+  const ev=d.id?S.events.find(x=>x.id===d.id):evCur();
+  if(a==='ev_stage'){evStageNext(d.id);if(d.m){showEvent(d.id)}return}
+  if(!ev)return;
+  if(a==='ev_staff'){ev.staff=ev.staff||[];const i=ev.staff.indexOf(d.id);i<0?ev.staff.push(d.id):ev.staff.splice(i,1);save();b.classList.toggle('on',i<0);evUpdAl();evRefresh()}
+  else if(a==='ev_addg'){const ta=$('#ev_add'),L=String(ta.value||'').split(/\n|;/).map(x=>x.trim()).filter(Boolean);if(!L.length)return;ev.list=ev.list||[];
+    L.forEach(l=>{const p=l.split(',').map(x=>x.trim());const n=p[0];if(!n||ev.list.some(g=>norm(g.n)===norm(n)))return;ev.list.push({id:uid(),n,age:parseInt(p[1])||0,note:p.slice(2).join(', '),in:false})});
+    const k=ev.list.length;if(k>(ev.kids!=null?ev.kids:ev.guests||0)){ev.kids=k;ev.guests=Math.max(ev.guests||0,k)}save();showEvent(ev.id);evRefresh()}
+  else if(a==='ev_delg'){ev.list=(ev.list||[]).filter(g=>g.id!==d.id);save();const x=evx(ev),gl=$('#ev_gl');if(gl)gl.innerHTML=evGuestRows(x);evUpdAl();evRefresh()}
+  else if(a==='ev_pdf'){const x=evx(ev);saveBytes('Deroule-'+norm(ev.title).replace(/[^a-z0-9]+/g,'-')+'.pdf',evPdf([x],ev.date))}
+  else if(a==='ev_qr')evQrModal(ev.id);
+  else if(a==='ev_quote'){const cl=ev.clientId?clientById(ev.clientId):null,pk=S.products.find(p=>p.event&&ev.pack&&norm(p.name).includes(norm(ev.pack)));
+    qd={id:uid(),no:quoteNo(),name:cl?cl.name:'',email:cl&&cl.email||'',title:ev.title,date:ev.date,h:ev.h,room:ev.room,guests:ev.guests||ev.kids||10,valid:addDays(today(),15),dep:30,notes:'Acompte de 30 % à la réservation, solde le jour de l’événement.',lines:pk?[{label:pk.name,qty:1,price:pk.price/100,vat:pk.vat||10}]:[],status:'draft',ts:Date.now(),fresh:true,evId:ev.id};qForm()}
+  else if(a==='ev_del')askYes('Supprimer cet événement du planning ?',()=>{S.events=S.events.filter(x=>x.id!==ev.id);save();closeModal();evRefresh()},'Supprimer');
+});
+/* --- impression, QR : création, téléchargement, scan --- */
+function printHtml(title,body,css){
+  const f=document.createElement('iframe');f.setAttribute('aria-hidden','true');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);
+  const d=f.contentWindow.document;d.open();
+  d.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><style>*{box-sizing:border-box}body{font:14px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;color:#0A1F4D;margin:18mm}h1,h2{margin:.2em 0}.qc{text-align:center;page-break-inside:avoid}.qc svg{width:70mm;height:70mm}${css||''}@page{margin:10mm}</style></head><body>${body}</body></html>`);d.close();
+  setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){toast('Impression impossible ici : téléchargez le fichier')}setTimeout(()=>f.remove(),5000)},350);
+}
+const qrX=(t,px)=>{const s=qrSvg(t,px);return s?s.replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" '):''};
+function qrDownload(text,name,kind){
+  const s=qrX(text,512);if(!s){toast('Contenu trop long pour un QR code');return}
+  const fn=String(name||'qr-code').replace(/[^\w\-À-ÿ ]/g,'').trim()||'qr-code';
+  if(kind==='svg'){saveBytes(fn+'.svg',new TextEncoder().encode(s),'image/svg+xml');return}
+  const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=c.height=1024;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,1024,1024);x.imageSmoothingEnabled=false;x.drawImage(img,0,0,1024,1024);
+    c.toBlob(b=>{if(!b){toast('Export impossible');return}b.arrayBuffer().then(ab=>saveBytes(fn+'.png',new Uint8Array(ab),'image/png'))},'image/png')};
+  img.onerror=()=>toast('Export impossible');img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);
+}
+/* --- QR de l’événement et des invités --- */
+const evCode=(e,g)=>'EV-'+e.id+(g?'.'+g.id:'');
+function evQrModal(id){
+  const e=S.events.find(x=>x.id===id);if(!e)return;const x=evx(e);
+  showModal(`${mh('QR codes · '+esc(e.title))}<p class="muted" style="margin:0 0 8px">Le QR code de l’événement ouvre sa fiche ; celui d’un invité enregistre son arrivée. Scannez depuis Gestion › QR codes ou avec une douchette.</p>
+   <div class="x3q" style="margin:10px 0">${qrSvg(evCode(e),170)}<br><span class="num">${evCode(e)}</span></div>
+   <div class="acts"><button class="btn" data-act="qr_pe" data-id="${e.id}">Imprimer l’événement</button><button class="btn" data-act="qr_pg" data-id="${e.id}" ${x.list.length?'':'disabled'}>Imprimer les invités (${x.list.length})</button></div><div class="acts" style="margin-top:8px"><button class="btn" data-act="ev_back" data-id="${e.id}">Retour à la fiche</button></div>`);
+}
+function evScan(raw){
+  const m=/^EV-([a-z0-9]+)(?:\.([a-z0-9]+))?$/i.exec(String(raw).trim());if(!m){toast('QR événement illisible');return}
+  const e=S.events.find(x=>x.id.toLowerCase()===m[1].toLowerCase());if(!e){toast('Événement introuvable');return}
+  if(m[2]){const g=(e.list||[]).find(x=>x.id.toLowerCase()===m[2].toLowerCase());if(g){const was=g.in;g.in=true;save();const x=evx(e),k=x.list.filter(y=>y.in).length;
+    showModal(`${mh(esc(g.n))}<div class="gc-card"><strong>${was?'Déjà arrivé(e)':'Arrivée enregistrée'}</strong><span>${esc(e.title)} · ${k}/${x.list.length} arrivés</span></div>${g.note?`<p class="warn-t" style="margin:10px 0 0">À noter : ${esc(g.note)}</p>`:''}<div class="acts" style="margin-top:12px"><button class="btn primary" data-act="ev_back" data-id="${e.id}">Ouvrir la fiche</button><button class="btn" data-act="close">Fermer</button></div>`);evRefresh();return}}
+  showEvent(e.id);
+}
+function qrScanned(c){
+  const url=/^https?:\/\//i.test(c),wifi=/^WIFI:/i.test(c);let txt=c;
+  if(wifi){const s=/S:((?:\\.|[^;])*)/i.exec(c);txt='Réseau Wi-Fi : '+(s?s[1].replace(/\\(.)/g,'$1'):'')}
+  showModal(`${mh('QR code scanné')}<p style="word-break:break-all;margin:0 0 12px">${esc(txt)}</p><div class="acts">${url?`<a class="btn primary" href="${esc(c)}" target="_blank" rel="noopener noreferrer">Ouvrir le lien</a>`:''}<button class="btn" data-act="qr_copy" data-v="${esc(c)}">Copier</button><button class="btn" data-act="close">Fermer</button></div>`);
+}
+{const ciL0=ciLookup;ciLookup=function(raw){
+  const c=String(raw||'').trim().replace(/^LAGO:/i,'');if(!c)return;
+  if(/^EV-/i.test(c)){evScan(c);return}
+  const cs=typeof cseFind==='function'&&cseFind(c);if(cs){cseOpen(cs.id);return}
+  if(/^(https?:\/\/|WIFI:|tel:|mailto:)/i.test(c)){qrScanned(c);return}
+  return ciL0(raw)}}
+/* --- Gestion › QR codes --- */
+const QRT=[['url','Lien'],['wifi','Wi-Fi'],['text','Texte'],['tel','Téléphone'],['mail','E-mail']];
+let qrx={t:'url',f:{},name:'',id:null};
+const qrs=()=>S.qrs||(S.qrs=[]);
+function qrData(t,f){
+  const ws=v=>String(v||'').replace(/([\;,:"])/g,'\\$1');
+  if(t==='url'){let u=String(f.u||'').trim();if(!u)return '';return /^[a-z][a-z0-9+.-]*:/i.test(u)?u:'https://'+u}
+  if(t==='wifi'){if(!String(f.ssid||'').trim())return '';const sec=f.sec||'WPA';return `WIFI:T:${sec==='nopass'?'nopass':sec};S:${ws(f.ssid)};${sec==='nopass'?'':'P:'+ws(f.pass)+';'}${f.hid?'H:true;':''};`}
+  if(t==='text')return String(f.x||'').trim();
+  if(t==='tel'){const n=String(f.n||'').replace(/[^\d+]/g,'');return n?'tel:'+n:''}
+  if(t==='mail'){const a=String(f.a||'').trim();return a?'mailto:'+a+(f.s?'?subject='+encodeURIComponent(f.s):''):''}
+  return '';
+}
+function qrForm(){
+  const t=qrx.t,f=qrx.f,I=(k,l,ph,ty)=>fld(l,`<input data-qf="${k}" ${ty?'type="'+ty+'"':''} value="${esc(f[k]||'')}" placeholder="${ph||''}" autocomplete="off">`);
+  return t==='url'?I('u','Adresse du lien','https://… (réservation, avis Google, menu)','url')
+   :t==='wifi'?I('ssid','Nom du réseau','Wi-Fi invités')+`<div class="two">${fld('Mot de passe',`<input data-qf="pass" value="${esc(f.pass||'')}" autocomplete="off">`)}${fld('Sécurité',`<select data-qf="sec">${[['WPA','WPA / WPA2'],['WEP','WEP'],['nopass','Sans mot de passe']].map(o=>`<option value="${o[0]}" ${(f.sec||'WPA')===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>`)}</div>`
+   :t==='text'?fld('Texte',`<textarea data-qf="x" rows="3" maxlength="200">${esc(f.x||'')}</textarea>`)
+   :t==='tel'?I('n','Numéro de téléphone','06 12 34 56 78','tel')
+   :I('a','Adresse e-mail','contact@exemple.fr','email')+I('s','Objet (facultatif)','');
+}
+function qrPrev(){
+  const d=qrData(qrx.t,qrx.f),s=d?qrSvg(d,200):'';
+  return d?(s?`<div class="x3q">${s}</div><p class="muted" style="text-align:center;margin:6px 0 0;word-break:break-all">${esc(d.length>80?d.slice(0,80)+'…':d)}</p>`:`<p class="warn-t" style="text-align:center">Contenu trop long pour un QR code (environ 200 caractères maximum).</p>`):`<p class="muted" style="text-align:center">Remplissez le formulaire : le QR code apparaît ici.</p>`;
+}
+function vQr(m){
+  const cam=!!(window.BarcodeDetector&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia),L=[...qrs()].sort((a,b)=>b.ts-a.ts);
+  m.innerHTML=`<div class="card"><h3>Scanner un QR code</h3><div class="x3scan"><div style="display:flex;gap:8px"><input id="cin" class="x3big" autocomplete="off" autocapitalize="characters" placeholder="Code ou QR à scanner" aria-label="Code à scanner"><button class="btn primary" data-act="x3_ciok">Valider</button>${cam?`<button class="btn" data-act="x3_cam">${ic('qr')}Caméra</button>`:''}</div>
+   <p class="muted" style="margin:6px 0 0">Reconnaît les billets, carnets de séances, cartes cadeaux, événements, invités, cartes CSE et vos QR codes. Une douchette fonctionne directement.</p></div></div>
+   <div class="card"><h3>Créer un QR code</h3><div class="tgs" role="tablist">${QRT.map(([k,l])=>`<button type="button" class="tg ${qrx.t===k?'on':''}" data-act="qr_t" data-v="${k}">${l}</button>`).join('')}</div>
+   <div id="qr_form" style="margin-top:10px">${qrForm()}</div><div class="field"><label>Nom (pour le retrouver)</label><input id="qr_name" value="${esc(qrx.name)}" placeholder="Avis Google, Wi-Fi invités…" autocomplete="off"></div>
+   <div id="qr_prev" style="margin:10px 0">${qrPrev()}</div>
+   <div class="acts"><button class="btn primary" data-act="qr_save">${qrx.id?'Mettre à jour':'Enregistrer'}</button><button class="btn" data-act="qr_dl" data-k="png">PNG</button><button class="btn" data-act="qr_dl" data-k="svg">SVG</button><button class="btn" data-act="qr_pr">Imprimer</button>${qrx.id?'<button class="btn" data-act="qr_new">Nouveau</button>':''}</div></div>
+   <div class="card"><h3>Mes QR codes</h3>${L.length?L.map(q=>`<div class="row"><span class="grow"><b>${esc(q.name||'Sans nom')}</b><span class="muted">${(QRT.find(x=>x[0]===q.t)||[0,''])[1]}</span></span><button class="btn" data-act="qr_open" data-id="${q.id}">Ouvrir</button><button class="ix" data-act="qr_del" data-id="${q.id}" aria-label="Supprimer ${esc(q.name||'ce QR code')}">${ic('trash')}</button></div>`).join(''):'<div class="empty">Aucun QR code enregistré.</div>'}</div>`;
+}
+document.addEventListener('input',e=>{
+  const t=e.target;if(t.dataset&&t.dataset.qf){qrx.f[t.dataset.qf]=t.value;const p=$('#qr_prev');if(p)p.innerHTML=qrPrev()}
+  else if(t.id==='qr_name')qrx.name=t.value;
+});
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.qf&&t.tagName==='SELECT'){qrx.f[t.dataset.qf]=t.value;const p=$('#qr_prev');if(p)p.innerHTML=qrPrev()}});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act^="qr_"],[data-act="ev_back"]');if(!b)return;const a=b.dataset.act,d=b.dataset;
+  if(a==='ev_back'){showEvent(d.id);return}
+  if(a==='qr_t'){qrx.t=d.v;qrx.f={};vQr($('#sub'))}
+  else if(a==='qr_new'){qrx={t:'url',f:{},name:'',id:null};vQr($('#sub'))}
+  else if(a==='qr_save'){const dt=qrData(qrx.t,qrx.f);if(!dt){toast('Remplissez le formulaire');return}if(!qrSvg(dt,10)){toast('Contenu trop long');return}
+    const nm=(qrx.name||'').trim()||(QRT.find(x=>x[0]===qrx.t)||[0,'QR'])[1];
+    if(qrx.id){const q=qrs().find(x=>x.id===qrx.id);if(q){q.name=nm;q.t=qrx.t;q.f={...qrx.f}}}else{const q={id:uid(),name:nm,t:qrx.t,f:{...qrx.f},ts:Date.now()};qrs().push(q);qrx.id=q.id}
+    qrx.name=nm;save();vQr($('#sub'));toast('QR code enregistré')}
+  else if(a==='qr_dl'){const dt=qrData(qrx.t,qrx.f);if(!dt){toast('Remplissez le formulaire');return}qrDownload(dt,qrx.name||'qr-code',d.k)}
+  else if(a==='qr_pr'){const dt=qrData(qrx.t,qrx.f),s=dt&&qrX(dt,400);if(!s){toast('Rien à imprimer');return}printHtml(qrx.name||'QR code',`<div class="qc">${s}<h2>${esc(qrx.name||'')}</h2></div>`)}
+  else if(a==='qr_open'){const q=qrs().find(x=>x.id===d.id);if(q){qrx={t:q.t,f:{...q.f},name:q.name,id:q.id};vQr($('#sub'));window.scrollTo(0,0)}}
+  else if(a==='qr_del')askYes('Supprimer ce QR code de la liste ? Les QR déjà imprimés continueront de fonctionner.',()=>{S.qrs=qrs().filter(x=>x.id!==d.id);if(qrx.id===d.id)qrx={t:'url',f:{},name:'',id:null};save();vQr($('#sub'))},'Supprimer');
+  else if(a==='qr_copy'){try{navigator.clipboard.writeText(d.v).then(()=>toast('Copié'),()=>toast('Copie impossible'))}catch(e){toast('Copie impossible')}}
+  else if(a==='qr_pe'){const e0=S.events.find(x=>x.id===d.id);if(e0)printHtml(e0.title,`<div class="qc">${qrX(evCode(e0),400)}<h2>${esc(e0.title)}</h2><p>${dlong(e0.date)} · ${ft(e0.h)}</p></div>`)}
+  else if(a==='qr_pg'){const e0=S.events.find(x=>x.id===d.id);if(!e0)return;const x=evx(e0);printHtml(e0.title,`<h1>${esc(e0.title)}</h1><div class="qg">${x.list.map(g=>`<div class="qc">${qrX(evCode(e0,g),300)}<h2>${esc(g.n)}</h2></div>`).join('')}</div>`,'.qg{display:grid;grid-template-columns:repeat(3,1fr);gap:8mm}.qg .qc svg{width:48mm;height:48mm}.qg h2{font-size:14px}')}
+});
+/* --- Gestion › CSE : convention, code partenaire, carte QR, relevé --- */
+const cseL=()=>S.cse||(S.cse=[]);
+const cseFind=code=>{const n=pNorm(code);return n?cseL().find(c=>pNorm(c.code)===n):null};
+function cseCode(){let c;do{c='CSE-';for(let i=0;i<6;i++){c+=GA[Math.floor(Math.random()*GA.length)];if(i===2)c+='-'}}while(cseFind(c)||promoFind(c));return c}
+function cseSync(c){
+  const o={code:c.code,t:'pct',v:c.pct,min:0,cat:c.cat||'',from:c.from||'',to:c.to||'',max:0,cse:c.id,off:!!c.off};
+  const p=promos().find(x=>x.cse===c.id);if(p)Object.assign(p,o);else promos().push({id:uid(),ts:Date.now(),...o});
+}
+const cseSales=c=>S.sales.filter(s=>s.promo&&pNorm(s.promo.code)===pNorm(c.code)&&!s.cx&&s.ty!=='av'&&!s.demo);
+function cseState(c){if(c.off)return['Désactivé','bad'];if(c.from&&c.from>today())return['À venir',''];if(c.to&&c.to<today())return['Expirée','bad'];return['Active','ok']}
+const cseSum=L=>({n:L.length,ca:sumBy(L,s=>s.total||0),rem:sumBy(L,s=>s.promo?s.promo.amt:0),pers:sumBy(L,s=>s.jumpers||0)});
+function vCse(m){
+  const L=[...cseL()].sort((a,b)=>a.name.localeCompare(b.name,'fr')),all=cseSum(L.flatMap(cseSales));
+  m.innerHTML=`<div class="impo"><span>Un CSE signe une convention : ses salariés bénéficient d’une remise sur présentation de leur code ou de la carte à QR code, et vous suivez son activité ici.</span><button class="btn primary" data-act="cse_new">${ic('plus')}Nouveau CSE</button></div>
+   <div class="pst" style="margin-bottom:12px"><span><b class="num">${L.filter(c=>cseState(c)[1]==='ok').length}</b> CSE actif${L.filter(c=>cseState(c)[1]==='ok').length>1?'s':''}</span><span><b class="num">${eurP(all.ca)}</b> encaissés</span><span><b class="num">${eurP(all.rem)}</b> de remises accordées</span></div>
+   <div class="card">${L.length?L.map(c=>{const st=cseState(c),s=cseSum(cseSales(c));return `<button class="row rowbtn" data-act="cse_open" data-id="${c.id}"><span class="gc-chip">${ic('users')}</span><span class="grow"><b>${esc(c.name)}</b><span class="muted">${c.pct} % · ${esc(c.code)} · ${s.n} ticket${s.n>1?'s':''}</span></span><span style="text-align:right"><b class="num">${eurP(s.ca)}</b><span class="pill ${st[1]}" style="margin-top:2px">${st[0]}</span></span></button>`}).join(''):`<div class="empty">Aucun CSE pour l’instant. Créez le premier pour obtenir son code et sa carte.</div>`}</div>`;
+}
+function cseForm(id){
+  const c=id?cseL().find(x=>x.id===id):null;
+  showModal(`${mh(c?'Modifier le CSE':'Nouveau CSE')}<form id="cseform"><input type="hidden" id="cse_id" value="${c?c.id:''}">
+   ${fld('Nom du CSE ou de l’entreprise',`<input id="cse_n" required autocomplete="off" value="${c?esc(c.name):''}" placeholder="CSE Sogimex">`)}
+   <div class="two">${fld('Remise (%)',`<input id="cse_p" type="number" min="1" max="100" inputmode="numeric" required value="${c?c.pct:10}">`)}${fld('Produits concernés',`<select id="cse_k"><option value="">Tout le ticket</option>${CATS.map(x=>`<option value="${x.id}" ${c&&c.cat===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`)}</div>
+   <div class="two">${fld('Convention du',`<input id="cse_f" type="date" value="${c&&c.from||''}">`)}${fld('au',`<input id="cse_t" type="date" value="${c&&c.to||''}">`)}</div>
+   <div class="two">${fld('Contact',`<input id="cse_c" autocomplete="off" value="${c?esc(c.contact||''):''}" placeholder="Prénom Nom">`)}${fld('Téléphone',`<input id="cse_ph" type="tel" autocomplete="off" value="${c?esc(c.phone||''):''}">`)}</div>
+   ${fld('E-mail',`<input id="cse_e" type="email" autocomplete="off" value="${c?esc(c.email||''):''}">`)}
+   ${fld('Notes (conditions particulières)',`<textarea id="cse_no" rows="2">${c?esc(c.notes||''):''}</textarea>`)}
+   <button class="btn primary" type="submit" style="width:100%">${c?'Enregistrer':'Créer le CSE et son code'}</button></form>`);
+  setTimeout(()=>$('#cse_n')&&$('#cse_n').focus(),50);
+}
+function cseCardHtml(c){
+  const lg=S.settings.logoJ,nm=S.settings.name||'Lago';
+  return `<div class="cc"><div class="ch">${lg?`<img src="${lg}" alt="">`:''}<b>${esc(nm)}</b></div><div class="cb"><div><small>Carte partenaire CSE</small><h2>${esc(c.name)}</h2><p><b>${c.pct} %</b> de remise${c.cat?' sur '+esc((CATS.find(x=>x.id===c.cat)||{name:''}).name.toLowerCase()):' sur votre ticket'}</p><p class="cd">${esc(c.code)}</p>${c.to?`<small>Valable jusqu’au ${dfr(c.to)}</small>`:''}</div><div>${qrX(c.code,200)}</div></div><div class="cf">À présenter à l’accueil ou à la caisse</div></div>`;
+}
+const CSE_CSS='body{margin:10mm}.cc{width:85.6mm;height:54mm;border:1px solid #0A1F4D;border-radius:4mm;overflow:hidden;display:flex;flex-direction:column;margin:0 0 6mm;page-break-inside:avoid}.ch{background:#0A1F4D;color:#fff;padding:2mm 4mm;display:flex;align-items:center;gap:3mm;font-size:11px}.ch img{height:6mm}.cb{flex:1;display:flex;justify-content:space-between;align-items:center;padding:2mm 4mm;gap:3mm}.cb h2{font-size:15px;margin:1mm 0}.cb p{margin:0;font-size:11px}.cb small{font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:#566785}.cb svg{width:26mm;height:26mm}.cd{font:700 14px ui-monospace,monospace;margin-top:1.5mm!important;color:#B84A00}.cf{background:#FFEBDD;padding:1.5mm 4mm;font-size:9px;text-align:center}';
+function cseOpen(id){
+  const c=cseL().find(x=>x.id===id);if(!c)return;const st=cseState(c),L=cseSales(c).sort((a,b)=>b.ts-a.ts),s=cseSum(L);
+  showModal(`${mh(esc(c.name))}<div class="top" style="gap:8px;margin-bottom:8px"><span class="pill ${st[1]}">${st[0]}</span><span class="muted">${c.pct} %${c.cat?' sur '+esc((CATS.find(x=>x.id===c.cat)||{name:''}).name):''}${c.from||c.to?' · du '+(c.from?dfr(c.from):'…')+' au '+(c.to?dfr(c.to):'…'):''}</span></div>
+   <div class="x3q" style="margin:8px 0">${qrSvg(c.code,150)}<br><span class="num" style="font-size:18px"><b>${esc(c.code)}</b></span></div>
+   <p class="muted" style="text-align:center;margin:0 0 10px">En caisse : saisissez le code ou scannez le QR dans le champ « Code promo ».</p>
+   <div class="pst" style="margin-bottom:10px"><span><b class="num">${s.n}</b> ticket${s.n>1?'s':''}</span><span><b class="num">${eurP(s.ca)}</b> encaissés</span><span><b class="num">${eurP(s.rem)}</b> de remises</span></div>
+   ${c.contact||c.email||c.phone?`<p class="muted" style="margin:0 0 8px">${[c.contact,c.phone,c.email].filter(Boolean).map(esc).join(' · ')}</p>`:''}${c.notes?`<p class="muted" style="margin:0 0 8px">${esc(c.notes)}</p>`:''}
+   <div class="acts"><button class="btn primary" data-act="cse_card" data-id="${c.id}">Imprimer la carte</button><button class="btn" data-act="cse_conv" data-id="${c.id}">Convention PDF</button><button class="btn" data-act="cse_qr" data-id="${c.id}">QR en PNG</button></div>
+   <div class="field" style="margin-top:12px"><label for="cse_mo">Relevé mensuel</label><div style="display:flex;gap:8px"><input id="cse_mo" type="month" value="${today().slice(0,7)}"><button class="btn" data-act="cse_rel" data-id="${c.id}">PDF</button></div></div>
+   ${L.length?`<h4 style="margin:12px 0 4px">Derniers tickets</h4>${L.slice(0,6).map(x=>`<div class="row"><span class="grow"><b>${esc(x.no||'')}</b><span class="muted">${dfr(dkey(new Date(x.ts)))}</span></span><b class="num">${eurP(x.total||0)}</b></div>`).join('')}`:''}
+   <div class="acts" style="margin-top:12px"><button class="btn" data-act="cse_edit" data-id="${c.id}">Modifier</button><button class="btn" data-act="cse_off" data-id="${c.id}">${c.off?'Réactiver':'Désactiver'}</button><button class="btn danger" data-act="cse_del" data-id="${c.id}">Supprimer</button></div>`);
+}
+function csePdf(c,kind,mo){
+  const nm=S.settings.name||'Le parc',st=S.settings.legal||{};
+  if(kind==='conv')return pdfBuild('Convention partenaire CSE',c.name,'CONVENTION',w=>{
+    w.sec('Parties');w.kv('Établissement',nm+(st.adr?' · '+st.adr:''));w.kv('CSE partenaire',c.name);if(c.contact)w.kv('Contact',[c.contact,c.phone,c.email].filter(Boolean).join(' · '));
+    w.sec('Avantage accordé');w.p(`${nm} accorde aux bénéficiaires du CSE ${c.name} une remise de ${c.pct} % ${c.cat?'sur les produits de la catégorie « '+(CATS.find(x=>x.id===c.cat)||{name:''}).name+' »':'sur le montant de leur ticket'}.`);
+    w.kv('Période de validité',(c.from?'du '+dfr(c.from):'à compter de la signature')+(c.to?' au '+dfr(c.to):', sans date de fin'));
+    w.sec('Mode d’emploi');w.p('1. Le bénéficiaire présente la carte partenaire (QR code) ou donne le code '+c.code+' à l’accueil ou en caisse.');w.p('2. La remise s’applique automatiquement sur le ticket. Un seul code partenaire par ticket.');w.p('3. Le CSE reçoit sur demande un relevé mensuel des tickets concernés.');
+    if(c.notes){w.sec('Conditions particulières');w.p(c.notes)}
+    w.gap(10);w.sig('Pour '+nm+' (date et signature)','');w.sig('Pour le CSE '+c.name+' (date et signature)','')});
+  const L=cseSales(c).filter(s=>dkey(new Date(s.ts)).slice(0,7)===mo).sort((a,b)=>a.ts-b.ts),sm=cseSum(L);
+  return pdfBuild('Relevé CSE · '+mo,c.name,'RELEVE CSE',w=>{
+    w.sec('Synthèse');w.kv('CSE',c.name);w.kv('Mois',mo);w.kv('Tickets',String(sm.n));w.kv('Montant encaissé TTC',eurP(sm.ca));w.kv('Remises accordées',eurP(sm.rem));
+    w.sec('Détail');if(!L.length)w.p('Aucun ticket sur ce mois.');L.forEach(s=>w.row(`${dfr(dkey(new Date(s.ts)))} · ${s.no||''} · ${eurP(s.total||0)} (remise ${eurP(s.promo.amt)})`,' '))});
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act^="cse_"]');if(!b)return;const a=b.dataset.act,d=b.dataset,c=d.id?cseL().find(x=>x.id===d.id):null;
+  if(a==='cse_new')cseForm('');
+  else if(a==='cse_open')cseOpen(d.id);
+  else if(a==='cse_edit')cseForm(d.id);
+  else if(a==='cse_card'&&c)printHtml('Carte CSE '+c.name,cseCardHtml(c),CSE_CSS);
+  else if(a==='cse_qr'&&c)qrDownload(c.code,'QR-'+c.name,'png');
+  else if(a==='cse_conv'&&c)saveBytes('Convention-CSE-'+norm(c.name).replace(/[^a-z0-9]+/g,'-')+'.pdf',csePdf(c,'conv'));
+  else if(a==='cse_rel'&&c){const mo=($('#cse_mo')||{}).value||today().slice(0,7);saveBytes('Releve-CSE-'+norm(c.name).replace(/[^a-z0-9]+/g,'-')+'-'+mo+'.pdf',csePdf(c,'rel',mo))}
+  else if(a==='cse_off'&&c){c.off=!c.off;cseSync(c);save();cseOpen(c.id);if(view==='gestion'&&tab.gestion==='cse')vCse($('#sub'))}
+  else if(a==='cse_del'&&c)askYes('Supprimer ce CSE et son code ? Les tickets déjà encaissés ne changent pas.',()=>{S.cse=cseL().filter(x=>x.id!==c.id);S.promos=promos().filter(p=>p.cse!==c.id);save();closeModal();if(view==='gestion'&&tab.gestion==='cse')vCse($('#sub'))},'Supprimer');
+  else if(a==='cse_apply'){x3Apply(d.code)}
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='cseform')return;e.preventDefault();
+  const id=$('#cse_id').value,name=$('#cse_n').value.trim(),pct=Math.round(parseFloat($('#cse_p').value));if(!name||!(pct>=1&&pct<=100)){toast('Nom et remise (1 à 100 %) requis');return}
+  const o={name,pct,cat:$('#cse_k').value,from:$('#cse_f').value,to:$('#cse_t').value,contact:$('#cse_c').value.trim(),phone:$('#cse_ph').value.trim(),email:$('#cse_e').value.trim(),notes:$('#cse_no').value.trim()};
+  let c;if(id){c=cseL().find(x=>x.id===id);Object.assign(c,o)}else{c={id:uid(),code:cseCode(),ts:Date.now(),off:false,...o};cseL().push(c)}
+  cseSync(c);save();if(id){closeModal();toast('CSE enregistré');if(view==='gestion'&&tab.gestion==='cse')vCse($('#sub'))}else{cseOpen(c.id);if(view==='gestion'&&tab.gestion==='cse')vCse($('#sub'));toast('CSE créé : imprimez sa carte')}
+});
+/* raccourci CSE dans le ticket */
+{const dc0=drawCart;drawCart=function(){dc0.apply(this,arguments);try{
+  if(!cart||cart.promo||cart.pass)return;const A=cseL().filter(c=>cseState(c)[1]==='ok');if(!A.length)return;const box=document.querySelector('#cart .x3cx');if(!box||!box.querySelector('.x3in')||box.querySelector('.cse-ch'))return;
+  box.insertAdjacentHTML('beforeend',`<div class="cse-ch"><small class="muted">CSE :</small>${A.slice(0,4).map(c=>`<button type="button" class="chip" data-act="cse_apply" data-code="${esc(c.code)}">${esc(c.name)} −${c.pct} %</button>`).join('')}</div>`)}catch(e){}}}
+/* --- v88 : enregistrement des écrans --- */
+{const i=TABS.resa.findIndex(x=>x[0]==='events');TABS.resa.splice(i<0?TABS.resa.length:i+1,0,['deroule','Déroulé']);SUBS.deroule=vDeroule;
+ TABS.gestion.push(['qr','QR codes'],['cse','CSE']);SUBS.qr=vQr;SUBS.cse=vCse;
+ SIC['resa:deroule']='cake';SIC['gestion:qr']='qr';SIC['gestion:cse']='users';
+ const r=MTL.find(x=>x[2]==='resa');if(r){const j=r[4].findIndex(x=>x[2]==='events');r[4].splice(j<0?r[4].length:j+1,0,['Déroulé','resa','deroule'])}
+ const g=MTL.find(x=>x[2]==='gestion'&&x[3]==='produits');if(g)g[4].push(['QR codes','gestion','qr'],['CSE','gestion','cse']);
+ const pr=PMODS.find(x=>x[0]==='resa');if(pr&&pr[2])pr[2].push(['deroule','Déroulé anniversaire']);
+ const pg=PMODS.find(x=>x[0]==='gestion');if(pg&&pg[2])pg[2].push(['qr','QR codes'],['cse','CSE (comités d’entreprise)']);}
+init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();try{if(evDemoFill())save()}catch(e){}applySettings();cart=newCart();chrome();route();bootGate();
 })();
