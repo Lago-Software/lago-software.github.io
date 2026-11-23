@@ -3103,6 +3103,12 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
   #grid.dense .tile .n{font-size:12px;line-height:1.15}
   #grid.dense .tile .p{font-size:12px!important}
 }
+/* bascule images / couleurs dans la caisse */
+.pos .search input{padding-right:52px}
+.pos .search .tmtog{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:999px;display:grid;place-items:center;background:var(--surface-2);color:var(--brand-t);border:0;padding:0}
+.pos .search .tmtog svg{position:static;width:20px;height:20px;color:inherit}
+.pos .search .tmtog:hover{background:var(--brand-soft)}
+.seg button .i{width:18px;height:18px;vertical-align:-4px;margin-right:4px}
 /* choix de la dalle dans la fiche produit */
 .tcolpick{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
 .tcolpick .tcsw{width:34px;height:34px;border-radius:10px;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);cursor:pointer;padding:0}
@@ -3167,7 +3173,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v90" defer></script>
+<script src="app.js?v=v91" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

@@ -123,6 +123,8 @@ const IC={
   chart:'<path d="M4 20V4M4 20h16M8 16v-5M12 16V8M16 16v-3"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',minus:'<path d="M5 12h14"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',
   search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  img:'<rect x="4" y="5" width="16" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M4.5 17l4.5-4.5 3.5 3.5 2.5-2.5 4.5 4.5"/>',
+  pal:'<rect x="4" y="4" width="7" height="7" rx="1.8"/><rect x="13" y="4" width="7" height="7" rx="1.8"/><rect x="4" y="13" width="7" height="7" rx="1.8"/><rect x="13" y="13" width="7" height="7" rx="1.8"/>',
   trash:'<path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13"/>',
   check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   user:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3.2-6 7-6s7 2 7 6"/>',
@@ -308,7 +310,7 @@ function renderBase(){
 /* ---------- caisse ---------- */
 function vCaisse(m){
   m.innerHTML=head('Caisse',ctrlPill())+`<div class="pos"><section>
-    <div class="search">${ic('search')}<input id="q" type="search" placeholder="Rechercher un produit" autocomplete="off" value="${esc(q)}"></div>
+    <div class="search">${ic('search')}<input id="q" type="search" placeholder="Rechercher un produit" autocomplete="off" value="${esc(q)}">${tmtogHtml()}</div>
     <div class="chips" id="chips"></div><div class="chips sub" id="subchips" hidden></div><div class="grid" id="grid"></div><div class="cbar" id="cbar"></div></section>
     <aside class="cart" id="cart" aria-label="Ticket en cours"></aside></div>`;
   drawChips();drawGrid();drawCart();
@@ -320,15 +322,16 @@ function drawChipsOld(){
 /* Dalles de caisse : image (par défaut) ou couleur — choix par produit (p.tcol) ou réglage global (S.settings.tileMode : img | col | auto) */
 const TCOLS=[['#31ACF0','Bleu ciel'],['#206EA8','Bleu'],['#0F3B66','Marine'],['#1FA971','Vert'],['#F5C400','Jaune'],['#F76300','Orange'],['#E5484D','Rouge'],['#E5509B','Rose'],['#8B5CF6','Violet'],['#5A6B8C','Ardoise']];
 const isHex=v=>/^#[0-9a-f]{6}$/i.test(String(v||''));
-const tileMode=()=>{const m=S.settings&&S.settings.tileMode;return m==='img'||m==='col'?m:'auto'};
+const tileMode=()=>S.settings&&S.settings.tileMode==='col'?'col':'img';
+const tmtogHtml=()=>{const c=tileMode()==='col';return `<button type="button" class="tmtog" data-act="tilemode" data-m="toggle" aria-label="${c?'Afficher les dalles avec des images':'Afficher les dalles en couleurs'}" title="${c?'Dalles en couleurs : passer aux images':'Dalles avec images : passer aux couleurs'}">${ic(c?'img':'pal')}</button>`};
 function tileInk(hex){const n=parseInt(hex.slice(1),16),f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};const L=.2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255);return L>.18?'#1A1206':'#FFFFFF'}
 function catHex(c){try{const v=getComputedStyle(document.documentElement).getPropertyValue(c.v).trim();return isHex(v)?v:''}catch(e){return''}}
 function drawGrid(){
-  const nq=norm(q),cc={};
+  const nq=norm(q),cc={},colMode=tileMode()==='col';
   const list=S.products.filter(p=>p.active&&(nq||fcat==='all'||p.cat===fcat)&&(nq||!fsub||p.scat===fsub)&&(!nq||norm(p.name).includes(nq)));
   $('#grid').innerHTML=list.length?list.map(p=>{
-    const c=cat(p.cat),n=(cart.lines.find(l=>l.pid===p.id)||{}).qty||0,own=isHex(p.tcol);
-    const hx=own?p.tcol:(cc[c.id]!==undefined?cc[c.id]:(cc[c.id]=catHex(c)));
+    const c=cat(p.cat),n=(cart.lines.find(l=>l.pid===p.id)||{}).qty||0,own=colMode;
+    const hx=isHex(p.tcol)?p.tcol:(cc[c.id]!==undefined?cc[c.id]:(cc[c.id]=catHex(c)));
     const tc=hx||`var(${c.v})`,tt=hx?tileInk(hx):'#FFFFFF';
     return `<button class="tile${own?' ct':''}" data-act="add" data-id="${p.id}" style="--cat:var(${c.v});--tc:${tc};--tt:${tt}">${n?`<span class="badge">${n}</span>`:''}
       ${own?'':art(p)}<span class="n">${esc(p.name)}</span><span class="p num">${eur(p.price)}</span></button>`}).join(''):`<div class="empty" style="grid-column:1/-1">Aucun produit trouvé.</div>`;
@@ -506,12 +509,11 @@ function prodForm(id){
     <div class="field"><label for="pp">Prix TTC (€)</label><input id="pp" inputmode="decimal" required value="${inEur(p.price)}"></div></div>
     <div class="field"><label for="psub">Sous-catégorie</label><select id="psub">${subOpts(p.cat,p.scat)}</select></div>
     <div class="field"><label for="pt">TVA</label><select id="pt">${[5.5,10,20].map(t=>`<option value="${t}" ${p.tva===t?'selected':''}>${String(t).replace('.',',')} %</option>`).join('')}</select></div>
-    <div class="field"><label>Dalle en caisse</label>
-      <div class="seg" role="group" aria-label="Dalle en caisse"><button type="button" class="${isHex(p.tcol)?'':'on'}" data-act="tmode" data-m="img">Image</button><button type="button" class="${isHex(p.tcol)?'on':''}" data-act="tmode" data-m="col">Couleur</button></div>
+    <div class="field"><label>Image du produit</label><div class="imgpick"><div id="pimgprev">${p.img?`<img class="art" src="${p.img}" alt="">`:(id?art(p):'<span class="muted">Image par défaut</span>')}</div><div><label class="btn" for="pimgf">Choisir une image</label><input type="file" id="pimgf" accept="image/*" hidden><button type="button" class="btn" data-act="pimgrm">Retirer</button></div></div></div>
+    <div class="field"><label>Couleur de la dalle</label><p class="muted" style="font-size:13px;margin:2px 0 0">Utilisée quand la caisse affiche les dalles en couleurs (Paramètres › Caisse). Sans choix : la couleur de la catégorie.</p>
       <input type="hidden" id="ptc" value="${isHex(p.tcol)?p.tcol:''}">
-      <div id="pcolbox" style="${isHex(p.tcol)?'':'display:none'}"><div class="tcolpick">${TCOLS.map(([h,l])=>`<button type="button" class="tcsw" style="background:${h}" data-act="tcol" data-c="${h}" aria-label="${l}" title="${l}" aria-pressed="${p.tcol&&p.tcol.toUpperCase()===h}"></button>`).join('')}</div>
-      <div class="tcprev" id="tcprev"></div></div></div>
-    <div class="field" id="pimgbox" style="${isHex(p.tcol)?'display:none':''}"><label>Image du produit</label><div class="imgpick"><div id="pimgprev">${p.img?`<img class="art" src="${p.img}" alt="">`:(id?art(p):'<span class="muted">Image par défaut</span>')}</div><div><label class="btn" for="pimgf">Choisir une image</label><input type="file" id="pimgf" accept="image/*" hidden><button type="button" class="btn" data-act="pimgrm">Retirer</button></div></div></div>
+      <div class="tcolpick"><button type="button" class="tcsw none" data-act="tcol" data-c="" aria-label="Couleur de la catégorie" title="Couleur de la catégorie" aria-pressed="${!isHex(p.tcol)}"></button>${TCOLS.map(([h,l])=>`<button type="button" class="tcsw" style="background:${h}" data-act="tcol" data-c="${h}" aria-label="${l}" title="${l}" aria-pressed="${isHex(p.tcol)&&p.tcol.toUpperCase()===h}"></button>`).join('')}</div>
+      <div class="tcprev" id="tcprev"></div></div>
     <label class="check"><input type="checkbox" id="pj" ${p.jumper?'checked':''}>Compte comme un ${NOUN()} sur le créneau</label>
     <label class="check"><input type="checkbox" id="pa" ${p.active?'checked':''}>Visible en caisse</label>
     <div style="display:flex;gap:8px"><button class="btn primary" type="submit" style="flex:1">Enregistrer</button>
@@ -2180,8 +2182,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='askin
 /* ---------- personnalisation : images produit, logos, réglages admin ---------- */
 let pimg;
 function tcolPrev(){const ptc=$('#ptc'),pv=$('#tcprev');if(!pv||!ptc)return;const h=ptc.value;
-  document.querySelectorAll('.tcolpick .tcsw').forEach(x=>x.setAttribute('aria-pressed',String(!!h&&x.dataset.c.toLowerCase()===h.toLowerCase())));
-  if(isHex(h)){pv.style.background=h;pv.style.color=tileInk(h);pv.textContent=($('#pn').value||'Aperçu de la dalle')+' · '+($('#pp').value||'0')+' €'}else{pv.style.background='';pv.textContent=''}}
+  document.querySelectorAll('.tcolpick .tcsw').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.c.toLowerCase()===h.toLowerCase())));
+  const hx=isHex(h)?h:(catHex(cat(($('#pc')||{}).value))||'#31ACF0');
+  pv.style.background=hx;pv.style.color=tileInk(hx);pv.textContent=(($('#pn')||{}).value||'Aperçu de la dalle')+' · '+(($('#pp')||{}).value||'0')+' €'}
 function fileToData(file,max,cb){
   const fr=new FileReader();
   fr.onload=()=>{const im=new Image();im.onload=()=>{
@@ -2227,8 +2230,9 @@ function vSetCaisse(m){
   const st=S.settings;
   m.innerHTML=`<div class="cols"><div class="card"><h3>Noms des catégories</h3><p class="muted" style="font-size:13px;margin-bottom:6px">Les onglets de la caisse. Les produits restent classés.</p>
     ${CATS.map((c,i)=>fld('Catégorie '+(i+1),`<input data-catname="${i}" value="${esc(c.name)}" placeholder="${esc(CATDEF[i])}">`)).join('')}</div>
-   <div class="card"><h3>Affichage des dalles</h3><p class="muted" style="font-size:13px;margin-bottom:6px">Choisissez comment les produits s’affichent en caisse. Chaque produit peut aussi avoir sa propre couleur (<b>Gestion › Produits</b>, « Dalle en caisse »).</p>
-    ${fld('Style des dalles',`<select data-set="tileMode"><option value="auto" ${tileMode()==='auto'?'selected':''}>Automatique : images, puis couleurs si tout ne tient pas</option><option value="img" ${tileMode()==='img'?'selected':''}>Images</option><option value="col" ${tileMode()==='col'?'selected':''}>Couleurs</option></select>`,'Les dalles s’ajustent à l’écran pour que tous les produits restent visibles.')}</div>
+   <div class="card"><h3>Affichage des dalles</h3><p class="muted" style="font-size:13px;margin-bottom:10px">Les produits de la caisse s’affichent avec une image <b>ou</b> en couleur. Les dalles s’ajustent à l’écran pour que tout reste visible. Vous pouvez aussi basculer depuis la caisse, à droite de la recherche.</p>
+    <div class="seg" role="group" aria-label="Style des dalles"><button class="${tileMode()==='img'?'on':''}" data-act="tilemode" data-m="img">${ic('img')} Images</button><button class="${tileMode()==='col'?'on':''}" data-act="tilemode" data-m="col">${ic('pal')} Couleurs</button></div>
+    <p class="muted" style="font-size:13px;margin-top:10px">En couleurs, chaque dalle prend la couleur de sa catégorie, ou celle choisie dans <b>Gestion › Produits</b> (« Couleur de la dalle »).</p></div>
    <div class="card"><h3>Images des produits</h3><p class="muted">Ajoutez une photo à chaque produit depuis <b>Gestion › Produits</b> : ouvrez le produit puis « Choisir une image ». Sans photo, une illustration par défaut est utilisée.</p>
     <button class="btn" style="margin-top:10px" data-act="goto" data-v="gestion" data-t="produits">Aller aux produits</button></div></div>`;
 }
@@ -4748,7 +4752,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v90';
+const LAGO_V='v91';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -9459,12 +9463,12 @@ document.addEventListener('click',e=>{
     case 'slot':slotDetail(+d.m);break;
     case 'sellslot':cart.slotDate=slotDay;cart.slotM=+d.m;closeModal();location.hash==='#caisse'?render():location.hash='caisse';break;
     case 'newprod':prodForm('');break;
-    case 'tmode':{const col=d.m==='col',ptc=$('#ptc');if(!ptc)break;
-      document.querySelectorAll('[data-act="tmode"]').forEach(x=>x.classList.toggle('on',x===b));
-      $('#pcolbox').style.display=col?'':'none';$('#pimgbox').style.display=col?'none':'';
-      if(col&&!isHex(ptc.value)){const c0=catHex(cat($('#pc').value))||TCOLS[0][0];ptc.value=TCOLS.some(x=>x[0].toLowerCase()===c0.toLowerCase())?c0.toUpperCase():TCOLS[0][0]}
-      if(!col)ptc.value='';tcolPrev();break}
     case 'tcol':{const ptc=$('#ptc');if(ptc){ptc.value=d.c;tcolPrev()}break}
+    case 'tilemode':{const cur=tileMode(),nx=d.m==='toggle'?(cur==='col'?'img':'col'):(d.m==='col'?'col':'img');if(nx===cur)break;
+      S.settings.tileMode=nx;save();
+      if(view==='caisse'){drawGrid();const tg=$('.tmtog');if(tg)tg.outerHTML=tmtogHtml()}
+      else if(view==='params'&&SUBS[tab.params])SUBS[tab.params]($('#sub'));
+      toast(nx==='col'?'Dalles en couleurs':'Dalles avec images');break}
     case 'editprod':prodForm(d.id);break;
     case 'delprod':
       if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Confirmer';break}
@@ -10826,7 +10830,7 @@ function fitGrid(){
     const used=()=>tiles[tiles.length-1].getBoundingClientRect().bottom-g.getBoundingClientRect().top;
     g.classList.add('fit');
     const md=tileMode(),IMG={dense:false,pref:190,min:104,cmin:2},COL={dense:true,pref:150,min:80,cmin:3};
-    const levels=md==='img'?[IMG]:md==='col'?[COL]:[IMG,COL];
+    const levels=md==='col'?[COL]:[IMG];
     for(const lv of levels){
       g.classList.toggle('dense',lv.dense);
       const c0=Math.max(lv.cmin,Math.floor((W+gap)/(lv.pref+gap))),c1=Math.max(c0,Math.floor((W+gap)/(lv.min+gap)));
