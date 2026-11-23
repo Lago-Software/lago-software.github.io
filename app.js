@@ -2286,17 +2286,114 @@ async function ask(q){
 }
 
 /* ---- générateur PDF (sans bibliothèque) ---- */
-function pdfBuild(title,sub,foot,fn){
-  const W=595,H=842,M=42,pages=[],imgs=[],pim={};let cur,y;
+/* largeurs des caractères Helvetica (milliemes d'em, codes 32 à 255) : sert à centrer, aligner à droite et couper les lignes au bon endroit */
+const HW=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,761,556,278,222,556,333,1000,556,556,333,1000,667,333,1000,278,611,278,278,222,222,333,333,350,556,1000,333,1000,500,333,944,278,500,667,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500],HWB=[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,761,556,278,278,556,500,1000,556,556,333,1000,667,333,1000,278,611,278,278,278,278,500,500,350,556,1000,333,1000,556,333,944,278,500,667,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556];
+function pdfBuild(title,sub,foot,fn,o){
+  o=o||{};const V2=!!o.v2;
+  const W=595,H=842,M=V2?40:42,pages=[],imgs=[],pim={};let cur,y;
   const st=S.settings,LG=st.logoJ?{bin:atob(st.logoJ.split(',')[1]),w:st.logoW,h:st.logoH}:null;
   const MAP={'’':"'",'‘':"'",'“':'"','”':'"','–':'-','—':'-','…':'...','•':'-','→':'->','€':'\x80','œ':'\x9c','Œ':'\x8c'};
-  const enc=s=>String(s==null?'':s).replace(/\u202f/g,' ').replace(/[’‘“”–—…•→€œŒ]/g,c=>MAP[c]).replace(/[^\x09\x20-\xff]/g,'?').replace(/[\\()]/g,'\\$&').replace(/\t/g,' ');
-  const op=(x,yy,s,sz,b,col)=>{cur.push(`${col||'0.1 0.14 0.25'} rg BT /F${b?2:1} ${sz} Tf ${x.toFixed(1)} ${yy.toFixed(1)} Td (${enc(s)}) Tj ET`)};
+  const encRaw=s=>String(s==null?'':s).replace(/ /g,' ').replace(/[’‘“”–—…•→€œŒ]/g,c=>MAP[c]).replace(/[^\x09\x20-\xff]/g,'?').replace(/\t/g,' ');
+  const enc=s=>encRaw(s).replace(/[\\()]/g,'\\$&');
+  const op=(x,yy,s,sz,b,col)=>{cur.push(`${col||'0.1 0.14 0.25'} rg BT /F${b===2?3:b?2:1} ${sz} Tf ${x.toFixed(1)} ${yy.toFixed(1)} Td (${enc(s)}) Tj ET`)};
   const rect=(x,yy,w,h,col)=>cur.push(`${col} rg ${x} ${yy} ${w} ${h} re f`);
-  function np(){cur=[];pages.push(cur);rect(M,H-34,W-2*M,3,'1 0.48 0.1');if(LG){const hh=36,ww=Math.min(170,hh*LG.w/LG.h);cur.push(`q ${ww.toFixed(1)} 0 0 ${(ww*LG.h/LG.w).toFixed(1)} ${M} ${H-72} cm /Im1 Do Q`)}else op(M,H-62,(st.name||'WE FLY').toUpperCase(),22,1,'0.1 0.3 0.84');op(M,H-84,title,13,1);if(sub)op(W-M-sub.length*5.2,H-62,sub,10,0,'0.4 0.45 0.55');rect(M,H-92,W-2*M,1,'0.85 0.88 0.93');y=H-114}
-  const need=n=>{if(y-n<62)np()};
+  /* ---- v2 : dessin et mesure ---- */
+  const f2=n=>(+n).toFixed(2);
+  const tw=(s,sz,b)=>{const e=encRaw(s),T=b===1?HWB:HW;let t=0;for(let i=0;i<e.length;i++){const v=T[e.charCodeAt(i)-32];t+=v===undefined?556:v}return t*sz/1000};
+  const opR=(xr,yy,s,sz,b,col)=>op(xr-tw(s,sz,b),yy,s,sz,b,col);
+  const opC=(xc,yy,s,sz,b,col)=>op(xc-tw(s,sz,b)/2,yy,s,sz,b,col);
+  const rrp=(x,yy,w,h,r)=>{r=Math.max(0,Math.min(r,w/2,h/2));const k=r*.5523,a=f2;
+    return `${a(x+r)} ${a(yy)} m ${a(x+w-r)} ${a(yy)} l ${a(x+w-r+k)} ${a(yy)} ${a(x+w)} ${a(yy+r-k)} ${a(x+w)} ${a(yy+r)} c ${a(x+w)} ${a(yy+h-r)} l ${a(x+w)} ${a(yy+h-r+k)} ${a(x+w-r+k)} ${a(yy+h)} ${a(x+w-r)} ${a(yy+h)} c ${a(x+r)} ${a(yy+h)} l ${a(x+r-k)} ${a(yy+h)} ${a(x)} ${a(yy+h-r+k)} ${a(x)} ${a(yy+h-r)} c ${a(x)} ${a(yy+r)} l ${a(x)} ${a(yy+r-k)} ${a(x+r-k)} ${a(yy)} ${a(x+r)} ${a(yy)} c h`};
+  const rr=(x,yy,w,h,r,fill,stroke,lw)=>cur.push(`${fill?fill+' rg ':''}${stroke?stroke+' RG '+(lw||.8)+' w ':''}${rrp(x,yy,w,h,r)} ${fill&&stroke?'B':fill?'f':'S'}`);
+  const seg=(col,lw,pts)=>cur.push(`q ${col} RG ${lw} w 1 J 1 j ${pts.map((p,i)=>f2(p[0])+' '+f2(p[1])+(i?' l':' m')).join(' ')} S Q`);
+  const INK='0.09 0.13 0.24',MUT='0.42 0.47 0.57',HAIR='0.89 0.91 0.95',BLUE='0.11 0.30 0.85',ORG='1 0.48 0.1',NAVY='0.06 0.13 0.33',WHITE='1 1 1';
+  const TONE={ok:{fg:'0.07 0.50 0.27',bg:'0.91 0.97 0.94',bd:'0.74 0.90 0.81'},bad:{fg:'0.76 0.15 0.15',bg:'0.99 0.93 0.93',bd:'0.95 0.76 0.76'},warn:{fg:'0.73 0.38 0.02',bg:'1 0.95 0.89',bd:'0.97 0.80 0.56'},mute:{fg:'0.40 0.45 0.55',bg:'0.95 0.96 0.98',bd:'0.86 0.89 0.93'},blue:{fg:BLUE,bg:'0.92 0.95 1',bd:'0.80 0.87 0.99'}};
+  const wrapT=(t,mw,sz,b)=>{const out=[];String(t==null?'':t).split('\n').forEach(par=>{let l='';par.split(' ').forEach(wd=>{const nl=l?l+' '+wd:wd;if(l&&tw(nl,sz,b)>mw){out.push(l);l=wd}else l=nl;
+    while(l.length>1&&tw(l,sz,b)>mw){let k=l.length;while(k>1&&tw(l.slice(0,k),sz,b)>mw)k--;out.push(l.slice(0,k));l=l.slice(k)}});out.push(l)});return out};
+  const bottom=V2?60:62;
+  function np(){
+    if(!V2){cur=[];pages.push(cur);rect(M,H-34,W-2*M,3,'1 0.48 0.1');if(LG){const hh=36,ww=Math.min(170,hh*LG.w/LG.h);cur.push(`q ${ww.toFixed(1)} 0 0 ${(ww*LG.h/LG.w).toFixed(1)} ${M} ${H-72} cm /Im1 Do Q`)}else op(M,H-62,(st.name||'WE FLY').toUpperCase(),22,1,'0.1 0.3 0.84');op(M,H-84,title,13,1);if(sub)op(W-M-sub.length*5.2,H-62,sub,10,0,'0.4 0.45 0.55');rect(M,H-92,W-2*M,1,'0.85 0.88 0.93');y=H-114;return}
+    const first=!pages.length;cur=[];pages.push(cur);
+    rect(0,H-9,W,9,NAVY);rect(0,H-9,132,9,ORG);
+    if(first){
+      if(LG){const hh=34,ww=Math.min(150,hh*LG.w/LG.h),ih=ww*LG.h/LG.w;cur.push(`q ${ww.toFixed(1)} 0 0 ${ih.toFixed(1)} ${M} ${(H-30-ih).toFixed(1)} cm /Im1 Do Q`)}
+      else op(M,H-47,st.name||'We Fly',18,1,BLUE);
+      opR(W-M,H-46,foot,8,0,MUT);
+      let ty=H-94;const bw=o.badge?tw(o.badge[0],9.5,1)+30:0,aw=W-2*M-bw-(bw?16:0);let ts=20;while(ts>16&&tw(title,ts,1)>aw)ts-=.5;const tl=wrapT(title,aw,ts,1).slice(0,2);
+      tl.forEach((l,i)=>op(M,ty-i*24,l,ts,1,INK));
+      const by=ty-(tl.length-1)*24;
+      if(o.badge){const T=TONE[o.badge[1]]||TONE.mute;rr(W-M-bw,by-6,bw,24,12,T.bg,T.bd,.9);const cx=W-M-bw+13;cur.push(`${T.fg} rg ${rrp(cx-3.5,by+6-3.5+0,7,7,3.5)} f`);op(cx+8,by+2.6,o.badge[0],9.5,1,T.fg)}
+      if(sub)op(M,by-22,sub,11.5,0,MUT);
+      y=by-(sub?44:28);
+    }else{
+      op(M,H-36,st.name||'We Fly',11,1,BLUE);opR(W-M,H-36,title+(sub?'  ·  '+sub:''),8.5,0,MUT);rect(M,H-46,W-2*M,.7,HAIR);y=H-70;
+    }
+  }
+  const need=n=>{if(y-n<bottom)np()};
   const wrap=(t,w,sz)=>{const mx=Math.max(8,Math.floor(w/(sz*.5))),out=[];String(t==null?'':t).split('\n').forEach(par=>{let l='';par.split(' ').forEach(wd=>{if((l+' '+wd).trim().length>mx&&l){out.push(l);l=wd}else l=(l+' '+wd).trim()});out.push(l)});return out};
-  const w={
+  const w=V2?(()=>{
+    const CW=W-2*M,none=(v,col)=>(v==null||String(v).trim()===''?['-',MUT]:[String(v),col||INK]);
+    /* grille de champs : intitulé en petit, valeur en dessous */
+    const grid=(items,cols,card)=>{
+      cols=Math.max(1,Math.min(cols||items.length,4));const pad=card?12:0,gx=14,cw=(CW-2*pad-gx*(cols-1))/cols,rows=[];
+      for(let i=0;i<items.length;i+=cols){const cells=items.slice(i,i+cols).map(it=>{const v=none(it[1]);return{l:it[0],v:v[0],c:v[1],ls:wrapT(v[0],cw,10.5,1)}});rows.push({cells,h:12+Math.max(...cells.map(c=>c.ls.length))*13.5+8})}
+      const th=rows.reduce((a,r)=>a+r.h,0)+(card?2*pad-8:0);need(Math.min(th,160)+6);
+      if(card)rr(M,y-th,CW,th,10,'0.962 0.970 0.988',HAIR,.8);
+      let yy=y-(card?pad:0);
+      rows.forEach(r=>{r.cells.forEach((c,j)=>{const x=M+pad+j*(cw+gx);op(x,yy-8,c.l,8,0,MUT);c.ls.forEach((ln,k)=>op(x,yy-21-k*13.5,ln,10.5,c.c===MUT?0:1,c.c))});yy-=r.h});
+      y-=th+(card?12:6);
+    };
+    return{
+      gap:n=>{y-=n},
+      meta:(items,cols)=>grid(items,cols,true),
+      fields:(items,cols)=>grid(items,cols,false),
+      kv:(l,v)=>grid([[l,v]],1,false),
+      sec:(t,right)=>{need(54);y-=18;rect(M,y-3,3.5,15,ORG);op(M+11,y,t,12,1,INK);if(right)opR(W-M,y+.5,right,8.5,0,MUT);rect(M,y-11,CW,.7,HAIR);y-=18},
+      sum:tiles=>{const n=tiles.length,g=10,tl=(CW-g*(n-1))/n,h=46;need(h+14);
+        tiles.forEach((t,i)=>{const x=M+i*(tl+g),T=TONE[t[2]]||TONE.mute,ns=String(t[0]);rr(x,y-h,tl,h,10,T.bg,T.bd,.8);op(x+16,y-h/2-8,ns,24,1,T.fg);op(x+16+tw(ns,24,1)+9,y-h/2-3.5,t[1],9.5,1,T.fg)});y-=h+10},
+      chk:(l,s,note,val)=>{
+        const k=(s==='C'||s==='ok')?'ok':(s==='NC'||s==='ko')?'bad':s==='SO'?'mute':'none',T=TONE[k==='none'?'mute':k];
+        const lab=k==='ok'?'Conforme':k==='bad'?'Non conforme':k==='mute'?'Sans objet':'Non renseigné',pw=tw(lab,8,1)+18,px=W-M-pw-4;
+        const vw=val?tw(val,10.5,1)+14:0,lw=px-12-vw-(M+34),ls=wrapT(l,lw,10.5,0),ns=note?wrapT(note,px-12-(M+34),9,2):[];
+        const h=Math.max(28,7+ls.length*13+(ns.length?3+ns.length*11.5:0)+8);need(h);
+        if(k==='bad')rect(M,y-h,CW,h,'0.995 0.957 0.957');
+        const cy=y-13;rr(M+8,cy-7.5,15,15,7.5,k==='ok'?'0.13 0.62 0.36':k==='bad'?'0.84 0.2 0.2':k==='mute'?'0.62 0.67 0.76':'0.88 0.9 0.94');
+        if(k==='ok')seg(WHITE,1.6,[[M+11.6,cy-.3],[M+14.6,cy-3.3],[M+19.6,cy+3.6]]);
+        else if(k==='bad'){seg(WHITE,1.6,[[M+12.3,cy-3.4],[M+18.7,cy+3.4]]);seg(WHITE,1.6,[[M+12.3,cy+3.4],[M+18.7,cy-3.4]])}
+        else seg(k==='mute'?WHITE:'0.55 0.6 0.7',1.6,[[M+12,cy],[M+19,cy]]);
+        ls.forEach((x,i)=>op(M+34,y-16.5-i*13,x,10.5,0,INK));
+        ns.forEach((x,i)=>op(M+34,y-16.5-ls.length*13-1-i*11.5,x,9,2,TONE.bad.fg));
+        if(val)opR(px-10,y-16.5,val,10.5,1,INK);
+        rr(px,cy-7.5,pw,15,7.5,T.bg,T.bd,.7);opC(px+pw/2,cy-2.8,lab,8,1,T.fg);
+        rect(M,y-h,CW,.5,HAIR);y-=h},
+      box:(label,text,tone)=>{
+        const T=TONE[tone]||{bg:'0.975 0.980 0.991',bd:HAIR},ls=wrapT(none(text)[0],CW-28,10.5,0),empty=none(text)[1]===MUT;
+        need(14+Math.min(ls.length,4)*14+22);if(label){op(M,y-8,label,8,0,MUT);y-=16}
+        let i=0;while(i<ls.length){const av=Math.max(1,Math.floor((y-bottom-16)/14)),nn=Math.min(ls.length-i,av),h=nn*14+16;
+          rr(M,y-h,CW,h,8,T.bg,T.bd,.8);for(let j=0;j<nn;j++)op(M+14,y-19-j*14,ls[i+j],10.5,0,empty?MUT:INK);y-=h;i+=nn;if(i<ls.length)np()}
+        y-=6},
+      p:(t,sz=10)=>{wrapT(t,CW,sz,0).forEach(l=>{need(sz+5);op(M,y,l,sz,0,INK);y-=sz+4})},
+      chips:(label,list)=>{
+        const L=(list||[]).filter(x=>String(x||'').trim());need(44);op(M,y-8,label,8,0,MUT);y-=18;
+        if(!L.length){op(M,y-8,'-',10.5,0,MUT);y-=22;return}
+        let x=M;L.forEach(t=>{const cw=tw(t,9,1)+20;if(x+cw>W-M){x=M;y-=26;need(26)}rr(x,y-14,cw,20,10,TONE.blue.bg,TONE.blue.bd,.8);op(x+10,y-7.5,t,9,1,BLUE);x+=cw+6});y-=30},
+      scale:(label,v,max)=>{
+        max=max||10;need(52);op(M,y-8,label,8,0,MUT);y-=20;
+        if(v==null||v===''){op(M,y-8,'-',10.5,0,MUT);y-=22;return}
+        const n=+v,sw=(CW-96-max*4)/(max+1);
+        for(let i=0;i<=max;i++){const on=i<=n,t=i/max,col=on?(t<.34?'0.13 0.62 0.36':t<.67?'0.96 0.62 0.1':'0.84 0.2 0.2'):'0.92 0.93 0.96';rr(M+i*(sw+4),y-16,sw,16,4,col)}
+        op(W-M-82,y-12,n+' / '+max,12,1,INK);y-=34},
+      sigs:list=>{
+        const n=list.length,g=14,bw=(CW-g*(n-1))/n,h=80;need(h+8);y-=4;
+        list.forEach((s,i)=>{const x=M+i*(bw+g);rr(x,y-h,bw,h,10,null,'0.80 0.84 0.91',.9);op(x+14,y-18,s[0],8,0,MUT);
+          if(s[1])op(x+14,y-34,s[1],11,1,INK);if(s[2])op(x+14,y-47,s[2],8.5,0,MUT);
+          rect(x+14,y-h+22,bw-28,.7,'0.62 0.67 0.76');op(x+14,y-h+10,'Signature',7.5,0,MUT)});
+        y-=h+8},
+      sig:(l,v)=>w.sigs([[l,v||'']]),
+      row:(l,s)=>w.chk(l,s),
+      img:(u,iw,ih,lab)=>{np();const mw=W-2*M,mh=y-bottom-16;if(lab){op(M,y,lab,10,1,MUT);y-=14}const k=Math.min(mw/iw,(y-bottom)/ih),dw=iw*k,dh=ih*k;const ix=imgs.push({bin:atob(u.split(',')[1]),w:iw,h:ih})-1;pim[pages.length-1]=ix;cur.push(`q ${dw.toFixed(1)} 0 0 ${dh.toFixed(1)} ${(M+(mw-dw)/2).toFixed(1)} ${(y-dh).toFixed(1)} cm /Ix${ix} Do Q`);y=bottom}
+    };
+  })():{
     gap:n=>{y-=n},
     img:(u,iw,ih,lab)=>{np();const mw=W-2*M,mh=H-200,k=Math.min(mw/iw,mh/ih),dw=iw*k,dh=ih*k;if(lab)op(M,H-110,lab,10,1,'0.35 0.4 0.5');const ix=imgs.push({bin:atob(u.split(',')[1]),w:iw,h:ih})-1;pim[pages.length-1]=ix;cur.push(`q ${dw.toFixed(1)} 0 0 ${dh.toFixed(1)} ${(M+(mw-dw)/2).toFixed(1)} ${(H-122-dh).toFixed(1)} cm /Ix${ix} Do Q`);y=62},
     sec:t=>{need(34);rect(M,y-6,W-2*M,20,'0.93 0.95 0.99');rect(M,y-6,4,20,'1 0.48 0.1');op(M+12,y,t,11,1);y-=26},
@@ -2306,12 +2403,15 @@ function pdfBuild(title,sub,foot,fn){
     sig:(l,v)=>{need(60);y-=6;op(M,y,l,10,1,'0.35 0.4 0.5');op(M,y-14,v||'',10,0);rect(M,y-40,220,.8,'0.5 0.55 0.65');op(M,y-52,'Signature',8,0,'0.5 0.55 0.65');y-=64}
   };
   np();fn(w);
-  const N=pages.length;pages.forEach((p,i)=>{cur=p;rect(M,40,W-2*M,.8,'0.85 0.88 0.93');op(M,28,(st.name||'WE FLY').toUpperCase()+' / '+foot,8,0,'0.5 0.55 0.65');const t='Page '+(i+1)+'/'+N;op(W-M-t.length*4.4,28,t,8,0,'0.5 0.55 0.65')});
+  const N=pages.length;
+  if(V2){const gen='Document généré par Lago le '+new Date().toLocaleDateString('fr-FR')+' à '+hm(Date.now());
+    pages.forEach((p,i)=>{cur=p;rect(M,52,W-2*M,.7,HAIR);op(M,38,(st.name||'We Fly')+'  ·  '+foot,8,0,MUT);opR(W-M,38,'Page '+(i+1)+' / '+N,8,1,MUT);op(M,26,gen,7.5,0,'0.58 0.62 0.7')})}
+  else pages.forEach((p,i)=>{cur=p;rect(M,40,W-2*M,.8,'0.85 0.88 0.93');op(M,28,(st.name||'WE FLY').toUpperCase()+' / '+foot,8,0,'0.5 0.55 0.65');const t='Page '+(i+1)+'/'+N;op(W-M-t.length*4.4,28,t,8,0,'0.5 0.55 0.65')});
   let out='%PDF-1.4\n',off=[];const add=s=>{off.push(out.length);out+=(off.length)+' 0 obj\n'+s+'\nendobj\n'};
-  const kids=pages.map((_,i)=>(5+i*2)+' 0 R').join(' ');
+  const P0=6,kids=pages.map((_,i)=>(P0+i*2)+' 0 R').join(' ');
   add('<< /Type /Catalog /Pages 2 0 R >>');add(`<< /Type /Pages /Kids [${kids}] /Count ${N} >>`);
-  add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
-  pages.forEach((p,i)=>{const s=p.join('\n');add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>${(LG||pim[i]!==undefined)?' /XObject << '+(LG?'/Im1 '+(5+2*N)+' 0 R ':'')+(pim[i]!==undefined?'/Ix'+pim[i]+' '+(5+2*N+(LG?1:0)+pim[i])+' 0 R ':'')+'>>':''} >> /Contents ${6+i*2} 0 R >>`);add(`<< /Length ${s.length} >>\nstream\n${s}\nendstream`)});
+  add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>');
+  pages.forEach((p,i)=>{const s=p.join('\n');add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >>${(LG||pim[i]!==undefined)?' /XObject << '+(LG?'/Im1 '+(P0+2*N)+' 0 R ':'')+(pim[i]!==undefined?'/Ix'+pim[i]+' '+(P0+2*N+(LG?1:0)+pim[i])+' 0 R ':'')+'>>':''} >> /Contents ${P0+1+i*2} 0 R >>`);add(`<< /Length ${s.length} >>\nstream\n${s}\nendstream`)});
   if(LG)add(`<< /Type /XObject /Subtype /Image /Width ${LG.w} /Height ${LG.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${LG.bin.length} >>\nstream\n${LG.bin}\nendstream`);
   imgs.forEach(im=>add(`<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bin.length} >>
 stream
@@ -2320,25 +2420,42 @@ endstream`));
   const xr=out.length;out+=`xref\n0 ${off.length+1}\n0000000000 65535 f \n`+off.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')+`trailer\n<< /Size ${off.length+1} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF`;
   const u=new Uint8Array(out.length);for(let i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;return u;
 }
+const pdfLong=k=>{try{const s=new Date(k+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});if(s==='Invalid Date')return dfr(k);return s.charAt(0).toUpperCase()+s.slice(1)}catch(e){return dfr(k)}};
+const pdfN=(n,a,b)=>n+' '+(n>1?(b||a+'s'):a);
 function pdfFor(k,id){
-  if(k==='daily'){const c=ensureCheck();return['Contrôle visuel quotidien-'+(CHKDAY||today()),pdfBuild('CONTRÔLE VISUEL QUOTIDIEN',dfr(CHKDAY||today()),'REGISTRE DES CONTRÔLES QUOTIDIENS',w=>{
-    w.kv('Réalisé par',c.by?sname(c.by):'-');if(c.press2!==undefined){w.kv('Pression airbag 1',c.press?c.press+' hPa':'-');w.kv('Pression airbag 2',c.press2?c.press2+' hPa':'-')}else w.kv('Pression relevée',c.press?c.press+' hPa':'-');w.kv('Statut',c.done?'Validé à '+hm(c.ts):'En cours');w.gap(6);
-    CHECKS.forEach(g=>{w.sec(g.g);g.items.forEach(([kk,l])=>{const a=c.items[kk];w.row(l+(a&&a.s==='ko'&&a.note?' - '+a.note:''),a?(a.s==='ok'?'C':'NC'):'-')})});if(c.note&&String(c.note).trim()){w.gap(4);w.sec('Note');w.kv('Note',String(c.note).trim())}w.sig('Contrôleur',c.by?sname(c.by):'')})]}
-  if(k==='monthly'){const r=monRec(),y=monLabel(ctl.mon);return['Controle mensuel-'+ctl.mon,pdfBuild(y.toUpperCase()+' – CONTRÔLE MENSUEL DES ÉQUIPEMENTS',dfr(r.date),'REGISTRE DES CONTRÔLES MENSUELS',w=>{
-    w.kv('Date du contrôle',dfr(r.date));w.kv('Contrôle réalisé par',sname(r.by));w.gap(6);w.sec('Points de contrôle (C conforme / NC non conforme / SO sans objet)');
-    MPTS.forEach((l,i)=>w.row((i+1)+'. '+l,r.items[i]||'-'));w.gap(6);w.kv('Pression gonflable 1',r.p1?r.p1+' hPa':'-');w.kv('Pression gonflable 2',r.p2?r.p2+' hPa':'-');w.gap(4);
-    w.sec('Observations et suites');w.kv('Observations',r.obs);w.kv('Action corrective',r.fix);w.kv('Zone condamnée',r.zone);w.kv('Structure conforme',r.conf);w.kv('Rédigé par',sname(r.writer));
-    w.sig('Signature',r.signed?sname(r.writer||r.by)+' - '+new Date(r.signed).toLocaleDateString('fr-FR'):'')})]}
+  if(k==='daily'){const c=ensureCheck(),day=CHKDAY||today(),by=c.by?sname(c.by):'';
+    const its=CHECKS.flatMap(g=>g.items.map(i=>c.items[i[0]])),nOk=its.filter(a=>a&&a.s==='ok').length,nKo=its.filter(a=>a&&a.s==='ko').length,nNo=its.length-nOk-nKo;
+    const badge=!c.done?['EN COURS','mute']:nKo?[nKo>1?nKo+' ANOMALIES':'1 ANOMALIE','bad']:['CONFORME','ok'];
+    return['Contrôle visuel quotidien-'+day,pdfBuild('CONTRÔLE VISUEL QUOTIDIEN',pdfLong(day),'REGISTRE DES CONTRÔLES QUOTIDIENS',w=>{
+      w.meta([['Réalisé par',by||'-'],['Statut',c.done?'Validé à '+hm(c.ts):'En cours'],...(c.press2!==undefined?[['Pression airbag 1',c.press?c.press+' hPa':'-'],['Pression airbag 2',c.press2?c.press2+' hPa':'-']]:[['Pression relevée',c.press?c.press+' hPa':'-']])]);
+      w.sum([[nOk,nOk>1?'conformes':'conforme','ok'],[nKo,nKo>1?'non conformes':'non conforme',nKo?'bad':'mute'],[nNo,nNo>1?'non renseignés':'non renseigné','mute']]);
+      CHECKS.forEach(g=>{w.sec(g.g,pdfN(g.items.length,'point'));g.items.forEach(([kk,l])=>{const a=c.items[kk];w.chk(l,a?(a.s==='ok'?'C':'NC'):'-',a&&a.s==='ko'?a.note:'')})});
+      if(c.note&&String(c.note).trim()){w.sec('Note du contrôleur');w.box('',String(c.note).trim())}
+      w.sigs([['Contrôleur',by,c.done?'Validé le '+dfr(day)+' à '+hm(c.ts):''],['Visa du responsable','','']])},{v2:1,badge})]}
+  if(k==='monthly'){const r=monRec(),ml=monLabel(ctl.mon),v=i=>r.items[i];
+    const nC=MPTS.filter((_,i)=>v(i)==='C').length,nNC=MPTS.filter((_,i)=>v(i)==='NC').length,nSO=MPTS.filter((_,i)=>v(i)==='SO').length,nNo=MPTS.length-nC-nNC-nSO;
+    const badge=nNC?[nNC>1?nNC+' NON CONFORMES':'1 NON CONFORME','bad']:r.signed||nC?['CONFORME','ok']:['EN COURS','mute'];
+    return['Controle mensuel-'+ctl.mon,pdfBuild('CONTRÔLE MENSUEL DES ÉQUIPEMENTS',ml.charAt(0).toUpperCase()+ml.slice(1)+'  ·  contrôle du '+dfr(r.date),'REGISTRE DES CONTRÔLES MENSUELS',w=>{
+      w.meta([['Date du contrôle',dfr(r.date)],['Contrôle réalisé par',sname(r.by)],['Pression gonflable 1',r.p1?r.p1+' hPa':'-'],['Pression gonflable 2',r.p2?r.p2+' hPa':'-']]);
+      w.sum([[nC,nC>1?'conformes':'conforme','ok'],[nNC,nNC>1?'non conformes':'non conforme',nNC?'bad':'mute'],[nSO,'sans objet','mute'],...(nNo?[[nNo,nNo>1?'non renseignés':'non renseigné','mute']]:[])]);
+      w.sec('Points de contrôle',MPTS.length+' points');
+      MPTS.forEach((l,i)=>w.chk((i+1)+'. '+l,r.items[i]||'-'));
+      w.sec('Observations et suites');w.box('Observations',r.obs);w.box('Action corrective',r.fix);
+      w.fields([['Zone condamnée',r.zone],['Structure conforme',r.conf],['Rédigé par',sname(r.writer)]],3);
+      w.gap(4);w.sigs([['Signature',sname(r.writer||r.by),r.signed?'Signé le '+new Date(r.signed).toLocaleDateString('fr-FR'):''],['Visa du responsable','','']])},{v2:1,badge})]}
   const d=k==='inc'?S.incidents.find(x=>x.id===id):k==='incdraft'?ctl.inc:k==='mnt'?S.maint.find(x=>x.id===id):ctl.mnt;if(!d)return null;
-  if(k==='inc'||k==='incdraft')return['Rapport incident-'+d.date,pdfBuild('RAPPORT D’INCIDENT',dfr(d.date),'RAPPORT D’INCIDENT',w=>{
-    w.sec('Circonstances');w.kv('Lieu',S.settings.name);w.kv('Date et heure',dfr(d.date)+' à '+d.time);w.kv('Rédigé par',sname(d.writer));
-    w.sec('Personne concernée');w.kv('Type',d.who);w.kv('Nom',d.nom);w.kv('Prénom',d.prenom);w.kv('Date de naissance',dfr(d.naiss));w.kv('Téléphone',d.tel);
-    w.sec('Incident');w.kv('Type d’incident',d.types.join(', ')+(d.autre?' ('+d.autre+')':''));w.kv('Description',d.desc);w.kv('Douleur',d.pain==null?'-':d.pain+' / 10');
-    w.sec('Premiers secours');w.kv('Gestes réalisés',d.secours.join(', '));w.kv('Secouriste',sname(d.secouriste));
-    w.sig('Signature',d.signed?sname(d.writer)+' - '+new Date(d.signed).toLocaleString('fr-FR'):sname(d.writer));(d.scans||[]).forEach((sc,i)=>w.img(sc.u,sc.w,sc.h,'Rapport papier numerise - page '+(i+1)+' sur '+d.scans.length))})];
-  return['Rapport maintenance-'+d.date,pdfBuild('RAPPORT DE MAINTENANCE',dfr(d.date),'RAPPORTS DE MAINTENANCE',w=>{
-    w.kv('Date',dfr(d.date));w.kv('Équipement',mntEq(d));w.kv('Nature de l’intervention',d.type);w.kv('Statut',d.statut);w.sec('Intervention');w.kv('Problème constaté',d.pb);w.kv('Action réalisée',d.action);w.kv('Pièces remplacées',d.pieces);
-    w.kv('Temps passé',d.min?d.min+' min':'');w.kv('Technicien',d.tech);w.sig('Signature',d.tech)})];
+  if(k==='inc'||k==='incdraft')return['Rapport incident-'+d.date,pdfBuild('RAPPORT D’INCIDENT',pdfLong(d.date)+'  ·  '+(d.time||''),'RAPPORT D’INCIDENT',w=>{
+    w.meta([['Lieu',S.settings.name],['Date et heure',dfr(d.date)+' à '+d.time],['Rédigé par',sname(d.writer)]]);
+    w.sec('Personne concernée');w.fields([['Type',d.who],['Nom',d.nom],['Prénom',d.prenom],['Date de naissance',dfr(d.naiss)],['Téléphone',d.tel]],3);
+    w.sec('Incident');w.chips('Type d’incident',[...(d.types||[]),...(d.autre?[d.autre]:[])]);w.box('Description',d.desc);w.scale('Douleur ressentie',d.pain,10);
+    w.sec('Premiers secours');w.chips('Gestes réalisés',d.secours);w.fields([['Secouriste',sname(d.secouriste)]],3);
+    w.gap(4);w.sigs([['Rédacteur du rapport',sname(d.writer),d.signed?'Signé le '+new Date(d.signed).toLocaleString('fr-FR'):'Non signé'],['Visa du responsable','','']]);
+    (d.scans||[]).forEach((sc,i)=>w.img(sc.u,sc.w,sc.h,'Rapport papier numérisé - page '+(i+1)+' sur '+d.scans.length))},{v2:1,badge:d.signed?['SIGNÉ','ok']:['BROUILLON','mute']})];
+  return['Rapport maintenance-'+d.date,pdfBuild('RAPPORT DE MAINTENANCE',pdfLong(d.date),'RAPPORTS DE MAINTENANCE',w=>{
+    w.meta([['Date',dfr(d.date)],['Équipement',mntEq(d)],['Nature de l’intervention',d.type],['Technicien',d.tech]]);
+    w.sec('Intervention');w.box('Problème constaté',d.pb);w.box('Action réalisée',d.action);
+    w.fields([['Pièces remplacées',d.pieces],['Temps passé',d.min?d.min+' min':'']],2);
+    w.gap(4);w.sigs([['Technicien',d.tech||'',''],['Visa du responsable','','']])},{v2:1,badge:[String(d.statut||'À faire').toUpperCase(),d.statut==='Terminé'?'ok':d.statut==='En cours'?'warn':'mute']})];
 }
 async function doPdf(k,id){
   const r=pdfFor(k,id);if(!r){toast('Rien à exporter');return}
@@ -5009,7 +5126,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v98';
+const LAGO_V='v99';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
