@@ -3173,6 +3173,8 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
 }
 /* devis façon caisse */
 #main:has(.qpos) .tabs,#main:has(.qpos) .impo{display:none}
+/* téléphone : les fenêtres (envoi en cuisine, note, client) passent devant le ticket ouvert */
+body.cart-open #modal .scrim{z-index:70}
 .qpos .qbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .qpos .qbar b{font-family:var(--f-display);font-size:20px}
 .qpos .qbar .btn{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:6px 14px}
@@ -3293,7 +3295,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v101" defer></script>
+<script src="app.js?v=v102" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>
