@@ -646,7 +646,7 @@ function ctrlBanner(){
 /* ---------- accueil ---------- */
 function vHomeOld(m){
   const td=today(),ds=S.sales.filter(s=>dkey(new Date(s.ts))===td),ca=ds.reduce((a,s)=>a+s.total,0);
-  const capT=S.settings.cap,nw=new Date(),nowM=nw.getHours()*60+Math.floor(nw.getMinutes()/15)*15;
+  const capT=S.settings.cap,nw=new Date(),nowM=qFloor(nw.getHours()*60+nw.getMinutes());
   const peakQ=QS.map(q=>[q,occ(td,q)]).sort((a,b)=>b[1]-a[1])[0],places=nowM>=QSTART&&nowM<=1140?occ(td,nowM):peakQ[1];
   const duty=onDuty(td),c=checkToday(),pend=S.leaves.filter(l=>l.status==='pending');
   const done=c?CHECK_IDS.filter(k=>c.items[k]).length:0;
@@ -904,8 +904,8 @@ function drawCartBase(){
   const clientHtml=`<button class="pick ${cl?'set':''}" data-act="pickclient">${ic('user')}<span class="grow">${cl?`<b>${esc(cl.name)}</b> <span class="muted">${cl.pts} pts${lv?' · '+esc(lv.name):''}</span>`:'Ajouter un client (points fidélité)'}</span>${cl?`<span data-act="noclient" role="button" aria-label="Retirer le client" class="xx">${ic('x')}</span>`:''}</button>`;
   const rw=cl?(cl.rewards||[]).filter(r=>!r.used):[];
   const rwHtml=rw.length?`<div class="rwd">${rw.map(r=>`<button class="chip ${cart.rewardPal===r.pal?'on':''}" data-act="rwd" data-p="${r.pal}">${cart.rewardPal===r.pal?'Récompense appliquée':'Utiliser'} : ${eur(palOf(r.pal).amt)} offerts</button>`).join('')}</div>`:'';
-  const brc=cart.slotM!=null?bracelet(cart.slotM,T.dur):null,slotBad=T.jumpers>0&&!slotOk(T),lapsed=cart.slotM!=null&&cart.slotDate===today()&&cart.slotM+15<=nowMin();
-  const slotInfo=T.jumpers>0?`<div class="info ${slotBad?'or':''}"><div><b>${T.jumpers} ${NOUN()}${T.jumpers>1?'s':''}</b><small>${cart.slotM==null?'Créneau à choisir':(cart.slotDate===today()?'Aujourd’hui':dshort(cart.slotDate))+' · '+fm(cart.slotM)+' à '+fm(cart.slotM+T.dur)}</small>${brc?`<small>${swatch(brc.color)}Bracelet ${brc.name}, jusqu’à ${brc.until}h</small>`:''}</div><button class="btn" data-act="rebook">${slotBad?'Choisir':'Changer'}</button></div>`+(lapsed?`<p class="warn-t">Ce départ est passé. Choisissez un autre créneau.</p>`:left!=null?`<p class="warn-t">Créneau presque plein : il reste ${left} place${left>1?'s':''}. Changez de créneau.</p>`:''):'';
+  const brc=cart.slotM!=null?bracelet(cart.slotM,T.dur):null,slotBad=T.jumpers>0&&!slotOk(T),lapsed=cart.slotM!=null&&cart.slotDate===today()&&cart.slotM+STEP<=nowMin();
+  const slotInfo=T.jumpers>0?`<div class="info ${slotBad?'or':''}"><div><b>${T.jumpers} ${NOUN()}${T.jumpers>1?'s':''}</b><small>${cart.slotM==null?'Créneau à choisir':(cart.slotDate===today()?'Aujourd’hui':dshort(cart.slotDate))+' · '+fm(cart.slotM)+' à '+fm(cart.slotM+T.dur)}</small>${brc?`<small>${swatch(brc.color)}${esc(brc.label)}, ${brc.short}</small>`:''}</div><button class="btn" data-act="rebook">${slotBad?'Choisir':'Changer'}</button></div>`+(lapsed?`<p class="warn-t">Ce départ est passé. Choisissez un autre créneau.</p>`:left!=null?`<p class="warn-t">Créneau presque plein : il reste ${left} place${left>1?'s':''}. Changez de créneau.</p>`:''):'';
   const evInfo=cart.event&&cart.lines.some(l=>prod(l.pid).event)?`<div class="info or"><div><b>${esc(cart.event.title)}</b><small>${ROOMS[cart.event.room]} · ${dshort(cart.event.date)} · ${pad(cart.event.h)}:00 à ${pad(cart.event.h+2)}:00</small></div><button class="btn" data-act="rebookev">Changer</button></div>`:'';
   const groups=CATS.map(c=>({c,ls:T.L.filter(l=>l.p.cat===c.id)})).filter(g=>g.ls.length);
   const lines=groups.map(g=>`<div class="grp" style="--cat:var(${g.c.v})"><div class="gh"><span class="dot"></span>${g.c.name}</div>${g.ls.map(l=>`<div class="cl"><div><div class="cl-n">${esc(l.p.name)}</div><div class="cl-u num">${l.qty} × ${eur(l.p.price)}</div></div>
@@ -1150,15 +1150,27 @@ document.addEventListener('submit',e=>{
 
 /* ---------- départs toutes les 15 minutes ---------- */
 let QSTART=600,QEND=1125;
-const QS=[];for(let m=QSTART;m<=QEND;m+=15)QS.push(m);
+/* v92 : intervalle entre deux départs réglable (Paramètres › Park) : 15 min pour un trampoline park, 20 min pour un laser game,
+   1 h ou plus pour un escape game… Les départs partent de l'heure d'ouverture, puis toutes les STEP minutes. */
+const STEPS=[10,15,20,30,45,60,90,120];
+let STEP=15;
+const stepOf=v=>STEPS.includes(+v)?+v:15;
+const qFloor=m=>QSTART+Math.floor((m-QSTART)/STEP)*STEP;
+const qCeil=m=>QSTART+Math.ceil((m-QSTART)/STEP)*STEP;
+const qOff=h=>QS.filter(q=>Math.floor(q/60)===h).map(q=>q-h*60);
+const stepShort=(v=STEP)=>v<60?v+' min':v%60?Math.floor(v/60)+' h '+String(v%60).padStart(2,'0'):(v/60)+' h';
+const stepLong=(v=STEP)=>v<60?v+' minutes':v===60?'1 heure':v%60?stepShort(v):(v/60)+' heures';
+const stepEvery=(v=STEP)=>v===60?'toutes les heures':v<60?'toutes les '+v+' minutes':v%60?'toutes les '+stepShort(v):'toutes les '+(v/60)+' heures';
+const WU=()=>STEP===15?15:5;   /* unité des compteurs publics de la réservation en ligne (15 : format d'origine) */
+const QS=[];for(let m=QSTART;m<=QEND;m+=STEP)QS.push(m);
 const fm=m=>pad(Math.floor(m/60))+':'+pad(m%60);
-function nextQ(){const n=new Date(),m=n.getHours()*60+Math.ceil(n.getMinutes()/15)*15;return m<QSTART?QSTART:m>QEND?null:m}
+function nextQ(){const n=new Date(),m=qCeil(n.getHours()*60+n.getMinutes());return m<QSTART?QSTART:m>QEND?null:m}
 function occ(date,m){
   const h=Math.floor(m/60),base=h>=S.settings.open&&h<S.settings.close?baseBooked(date,h):0;let ex=0;
   S.sales.forEach(s=>{if(s.slot&&s.slot.startsWith(date)){const st=+s.slot.split('|')[1];if(st<=m&&m<st+(s.dur||60))ex+=s.jumpers}});
   return Math.min(S.settings.cap,base+ex);
 }
-function leftFor(date,start,dur){let mx=0;for(let t=start;t<start+dur;t+=15)mx=Math.max(mx,occ(date,t));return S.settings.cap-mx}
+function leftFor(date,start,dur){let mx=0;for(let t=start;t<start+dur;t+=STEP)mx=Math.max(mx,occ(date,t));return S.settings.cap-mx}
 const booked=(date,h)=>occ(date,h*60);
 const hdrCells=()=>Array.from({length:AX1-AX0},(_,i)=>`<span class="hh" style="grid-column:${i*4+1}/span 4">${AX0+i}h</span>`).join('');
 function nowLine(ds){const n=new Date(),t=n.getHours()+n.getMinutes()/60;return ds===today()&&t>=AX0&&t<=AX1?`<i class="now" style="left:${(t-AX0)/(AX1-AX0)*100}%"></i>`:''}
@@ -1174,19 +1186,19 @@ function vDayOld(m){
   const occs=QS.map(q=>[q,occ(ds,q)]),peak=occs.reduce((a,b)=>b[1]>a[1]?b:a);
   const sold=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)).sort((a,b)=>+a.slot.split('|')[1]-+b.slot.split('|')[1]);
   const fullQ=QS.filter(q=>occ(ds,q)>=cap),rng=[];
-  fullQ.forEach(q=>{const l=rng[rng.length-1];if(l&&l[1]===q-15)l[1]=q;else rng.push([q,q])});
+  fullQ.forEach(q=>{const l=rng[rng.length-1];if(l&&l[1]===q-STEP)l[1]=q;else rng.push([q,q])});
   const bars=QS.map(q=>{const o=occ(ds,q),pc=o/cap,cls=o>=cap?'full':pc>=.8?'warn':'ok';
     return `<button class="qb ${cls}" style="grid-column:${colAt(q/60)}/span 1" data-act="slot" data-m="${q}" aria-label="${fm(q)} : ${o} sur ${cap}"><i style="height:${Math.max(6,Math.round(pc*100))}%"></i></button>`}).join('');
-  const hourBlocks=HOURS.map(h=>{const mx=Math.max(...[0,15,30,45].map(q=>occ(ds,h*60+q))),r=cap-mx,pc=mx/cap,cls=r<=0?'full':pc>=.8?'warn':'ok';
+  const hourBlocks=HOURS.filter(h=>qOff(h).length).map(h=>{const mx=Math.max(...qOff(h).map(q=>occ(ds,h*60+q))),r=cap-mx,pc=mx/cap,cls=r<=0?'full':pc>=.8?'warn':'ok';
     return `<button class="blk park ${cls}" style="grid-column:${colAt(h)}/span 4" data-act="slot" data-m="${h*60}"><b class="num">${mx}/${cap}</b><span>${r<=0?'Complet':r+' places'}</span></button>`}).join('');
   const evRows=Object.entries(ROOMS).map(([r,l])=>{const es=evOn(ds).filter(e=>e.room===r);
     return tlRow(ds,l,es.length?es.length+' événement'+(es.length>1?'s':''):'',es.length?es.map(e=>`<button class="blk ev ${r}" style="grid-column:${colAt(e.h)}/${colAt(e.h+e.dur)}" data-act="evinfo" data-id="${e.id}"><b>${esc(e.title)}</b><span>${e.guests} pers. · ${ft(e.h)} à ${ft(e.h+e.dur)}</span></button>`).join(''):`<span class="free" style="grid-column:1/-1">Libre toute la journée</span>`)}).join('');
-  const banner=rng.length?`<div class="banner"><span>Complet : ${rng.map(r=>fm(r[0])+' à '+fm(r[1]+15)).join(' · ')}</span></div>`:`<div class="banner ok"><span>Des places sont disponibles sur tous les départs de la journée.</span></div>`;
+  const banner=rng.length?`<div class="banner"><span>Complet : ${rng.map(r=>fm(r[0])+' à '+fm(r[1]+STEP)).join(' · ')}</span></div>`:`<div class="banner ok"><span>Des places sont disponibles sur tous les départs de la journée.</span></div>`;
   m.innerHTML=dayChips(ds)+`<div class="kpis"><div class="kpi"><div class="l">Présents au pic</div><div class="v num">${peak[1]}</div></div><div class="kpi"><div class="l">Heure du pic</div><div class="v num">${fm(peak[0])}</div></div>
     <div class="kpi"><div class="l">Événements</div><div class="v num">${evOn(ds).length}</div></div><div class="kpi"><div class="l">Ventes en caisse</div><div class="v num">${sold.length}</div></div></div>${banner}
    <div class="tl"><div class="tl-in">${tlHead(ds)}
-     <div class="tl-sec"><span class="dot" style="--cat:var(--c-entree)"></span>Parc : présents toutes les 15 minutes</div>
-     ${tlRow(ds,'Départs','1 barre = 15 min',bars,'tall')}${tlRow(ds,'Par heure','maximum présent',hourBlocks)}
+     <div class="tl-sec"><span class="dot" style="--cat:var(--c-entree)"></span>Parc : présents ${stepEvery()}</div>
+     ${tlRow(ds,'Départs','1 barre = '+stepShort(),bars,'tall')}${tlRow(ds,'Par heure','maximum présent',hourBlocks)}
      <div class="tl-sec"><span class="dot" style="--cat:var(--c-snack)"></span>Salles d’événements</div>${evRows}
    </div></div>
    <div class="legend"><span><i class="lg" style="background:var(--brand)"></i>Places disponibles</span><span><i class="lg" style="background:var(--pay)"></i>Presque complet</span><span><i class="lg" style="background:var(--bad)"></i>Complet</span><span>Touchez une barre pour le détail et vendre</span></div>
@@ -1233,7 +1245,7 @@ function openBook(id,change){
   renderBook();
 }
 const nowMin=()=>{const n=new Date();return n.getHours()*60+n.getMinutes()};
-const bkPast=m=>book.date===today()&&m+15<=nowMin();
+const bkPast=m=>book.date===today()&&m+STEP<=nowMin();
 const bkNeed=()=>totals(cart).jumpers+(book.change?0:book.qty);
 function bookReady(){
   if(book.ev)return book.m!=null&&!!book.room&&!!book.title.trim();
@@ -1245,13 +1257,13 @@ function renderBook(){
   const dayHtml=`<div class="chips" style="margin:0">${Array.from({length:7},(_,i)=>addDays(today(),i)).map((d,i)=>`<button class="chip ${d===book.date?'on':''}" data-act="bk2day" data-d="${d}">${i===0?'Aujourd’hui':dshort(d)}</button>`).join('')}</div>`;
   let body;
   if(!book.ev){
-    const hrs=HOURS.map(h=>{const best=Math.max(...[0,15,30,45].map(q=>bkPast(h*60+q)?0:leftFor(book.date,h*60+q,book.dur)));
-      return `<button class="hr ${book.hh===h?'on':''}" data-act="bk2hh" data-h="${h}" ${best<=0?'disabled':''}><b>${h}h</b><span>${[0,15,30,45].every(q=>bkPast(h*60+q))?'passé':best<=0?'complet':best+' places'}</span></button>`}).join('');
-    const qs=book.hh==null?'':`<div class="lab">Heure de départ</div><div class="hrs">${[0,15,30,45].map(q=>{const m=book.hh*60+q,left=bkPast(m)?0:leftFor(book.date,m,book.dur);
+    const hrs=HOURS.filter(h=>qOff(h).length).map(h=>{const best=Math.max(...qOff(h).map(q=>bkPast(h*60+q)?0:leftFor(book.date,h*60+q,book.dur)));
+      return `<button class="hr ${book.hh===h?'on':''}" data-act="bk2hh" data-h="${h}" ${best<=0?'disabled':''}><b>${h}h</b><span>${qOff(h).every(q=>bkPast(h*60+q))?'passé':best<=0?'complet':best+' places'}</span></button>`}).join('');
+    const qs=book.hh==null?'':`<div class="lab">Heure de départ</div><div class="hrs">${qOff(book.hh).map(q=>{const m=book.hh*60+q,left=bkPast(m)?0:leftFor(book.date,m,book.dur);
       return `<button class="hr ${book.m===m?'on':''}" data-act="bk2m" data-m="${m}" ${left<=0?'disabled':''}><b>${fm(m)}</b><span>${bkPast(m)?'passé':left<=0?'complet':left+' places'}</span></button>`}).join('')}</div>`;
     const left=book.m!=null?leftFor(book.date,book.m,book.dur):S.settings.cap,need=bkNeed();
     body=`<div class="lab">Heure</div><div class="hrs">${hrs}</div>${qs}
-      ${book.m!=null?(b=>`<div class="brl">${swatch(b.color)}<b>Bracelet ${b.name}</b><span class="muted">${book.dur} min, sortie à ${b.exit}, valable jusqu’à ${b.until}h</span></div>`)(bracelet(book.m,book.dur)):''}
+      ${book.m!=null?(b=>`<div class="brl">${swatch(b.color)}<b>${esc(b.label)}</b><span class="muted">${book.dur} min, sortie à ${b.exit}${b.txt?'':', '+b.valid}</span></div>`)(bracelet(book.m,book.dur)):''}
       ${book.change?'':`<div class="lab">Nombre de personnes</div>
       <div class="qtyx"><button class="ix" data-act="bk2q" data-d="-1" aria-label="Moins">${ic('minus')}</button><b class="num">${book.qty}</b><button class="ix" data-act="bk2q" data-d="1" aria-label="Plus">${ic('plus')}</button><span class="muted">${eur(p.price*book.qty)}</span></div>`}
       ${book.m!=null&&need>left?`<p class="warn-t">Il ne reste que ${left} place${left>1?'s':''} sur ce départ.</p>`:''}`;
@@ -1295,21 +1307,25 @@ document.addEventListener('click',e=>{
 
 /* ---------- bracelets : une couleur par heure de fin ---------- */
 const BR=[['Bleu','#31ACF0'],['Orange','#F76300'],['Vert','#1FA463'],['Rose','#E8548F'],['Jaune','#F2C200'],['Violet','#7A4FD0']];
-function bracelet(start,dur){const endM=start+dur,until=Math.ceil(endM/60),c=BR[until%6];return{name:c[0],color:c[1],until,exit:fm(endM)}}
+function bracelet(start,dur){const endM=start+dur,until=Math.ceil(endM/60);
+  if(brTxt()){const nm=brCfg().word+' de '+fm(start);return{name:nm,color:BR_TXT,until,exit:fm(endM),txt:true,label:nm,valid:'fin à '+fm(endM),short:'fin à '+fm(endM)}}
+  const c=brOf(until);return{name:c[0],color:c[1],until,exit:fm(endM),label:'Bracelet '+c[0],valid:'valable jusqu’à '+until+'h',short:'jusqu’à '+until+'h'}}
 const swatch=c=>`<i class="bw" style="background:${c}"></i>`;
 function slotLine(s){
   if(!s.slot)return '';
   const [dt,st]=[s.slot.split('|')[0],+s.slot.split('|')[1]],dur=s.dur||60,b=bracelet(st,dur);
-  return `<div class="c">Créneau ${fm(st)} à ${fm(st+dur)} le ${new Date(dt+'T12:00').toLocaleDateString('fr-FR')}</div><div class="c"><b>Bracelet ${b.name}</b>, valable jusqu’à ${b.until}h</div>`;
+  return `<div class="c">Créneau ${fm(st)} à ${fm(st+dur)} le ${new Date(dt+'T12:00').toLocaleDateString('fr-FR')}</div><div class="c"><b>${esc(b.label)}</b>, ${b.valid}</div>`;
 }
 function slotOk(T){
   if(!T.jumpers)return true;
   if(cart.slotM==null)return false;
-  if(cart.slotDate===today()&&cart.slotM+15<=nowMin())return false;
+  if(cart.slotDate===today()&&cart.slotM+STEP<=nowMin())return false;
   return leftFor(cart.slotDate,cart.slotM,T.dur)>=T.jumpers;
 }
 function braceletCard(){
-  return `<div class="card" style="margin-bottom:14px"><h3>Couleur des bracelets</h3><div class="brs">${Array.from({length:11},(_,i)=>10+i).map(h=>{const c=BR[h%6];return `<span class="brc">${swatch(c[1])}<b>${c[0]}</b> jusqu’à ${h}h</span>`}).join('')}</div>
+  if(brTxt())return `<div class="card" style="margin-bottom:14px"><h3>Repérage des sessions</h3><p class="muted" style="font-size:13px;margin:0">Pas de bracelet : chaque départ est désigné par son heure (« ${esc(brCfg().word)} de 14:20 ») et se termine à son heure de fin réelle. Réglage dans Paramètres › Park.</p></div>`;
+  const o=S.settings.open||10,c=S.settings.close||19,hs=[];for(let h=o+1;h<=Math.min(c+1,24);h++)hs.push(h);
+  return `<div class="card" style="margin-bottom:14px"><h3>Couleur des bracelets</h3><div class="brs">${hs.map(h=>{const x=brOf(h);return `<span class="brc">${swatch(x[1])}<b>${esc(x[0])}</b> jusqu’à ${h}h</span>`}).join('')}</div>
     <p class="muted" style="font-size:13px">La couleur dépend de l’heure de fin de la session. À l’heure indiquée, retirez des pistes les bracelets de la couleur correspondante.</p></div>`;
 }
 
@@ -1349,7 +1365,7 @@ function applyTheme(){
 }
 function applySettings(){
   const st=S.settings;
-  QSTART=st.open*60;QEND=st.close*60-15;QS.length=0;for(let m=QSTART;m<=QEND;m+=15)QS.push(m);
+  STEP=stepOf(st.step);QSTART=st.open*60;QEND=st.close*60-STEP;QS.length=0;for(let m=QSTART;m<=QEND;m+=STEP)QS.push(m);
   HOURS.length=0;for(let h=st.open;h<st.close;h++)HOURS.push(h);
   MIN_STAFF=st.minStaff;CP_TOTAL=st.cp;
   PAL.length=0;st.pal.forEach(p=>PAL.push(p));
@@ -1379,9 +1395,10 @@ function vSetPark(m){
   const st=S.settings,js=S.products.filter(p=>p.jumper);
   m.innerHTML=`<div class="cols"><div class="card"><h3>Capacité et horaires</h3>${fld('Capacité maximale (personnes)',numIn('cap',st.cap,10,2000),'Nombre de personnes présentes en même temps.')}
     ${fld('Horaires d’ouverture',`<button class="btn" data-act="goto" data-v="resa" data-t="horaires">Ouvrir le planning d’ouverture</button>`,'Horaires par jour, vacances et fermetures.')}
-    <p class="muted" style="font-size:13px">Les départs ont lieu toutes les 15 minutes.</p></div>
+    </div>
+   ${stepCard()}
    <div class="card"><h3>Durée des sessions</h3>${js.map(p=>`<div class="row"><span class="grow"><b>${esc(p.name)}</b><span class="muted">${eur(p.price)}</span></span>
-    <select data-pdur="${p.id}" style="width:120px">${[45,60,75,90,105,120].map(v=>`<option value="${v}" ${(p.dur||60)===v?'selected':''}>${v} min</option>`).join('')}</select></div>`).join('')}</div></div>`;
+    <select data-pdur="${p.id}" style="width:120px">${durOpts(p.dur||60).map(v=>`<option value="${v}" ${(p.dur||60)===v?'selected':''}>${stepShort(v)}</option>`).join('')}</select></div>`).join('')}</div></div>`;
 }
 function vSetTeam(m){
   const st=S.settings;
@@ -1442,20 +1459,20 @@ document.addEventListener('submit',e=>{
 function vResa(m){tabbed(m,'Planning clients')}
 function vDay(m){
   if(slotDay<today())slotDay=today();
-  const ds=slotDay,cap=S.settings.cap,isT=ds===today(),nm=nowMin(),nowQ=isT?Math.floor(nm/15)*15:null;
+  const ds=slotDay,cap=S.settings.cap,isT=ds===today(),nm=nowMin(),nowQ=isT?qFloor(nm):null;
   const occs=QS.map(q=>[q,occ(ds,q)]),peak=occs.reduce((a,b)=>b[1]>a[1]?b:a);
   const cur=isT&&nowQ>=QSTART&&nowQ<=QEND?occ(ds,nowQ):null;
   const resaN=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)).length+evOn(ds).length;
-  const rng=[];QS.filter(q=>occ(ds,q)>=cap).forEach(q=>{const l=rng[rng.length-1];if(l&&l[1]===q-15)l[1]=q;else rng.push([q,q])});
+  const rng=[];QS.filter(q=>occ(ds,q)>=cap).forEach(q=>{const l=rng[rng.length-1];if(l&&l[1]===q-STEP)l[1]=q;else rng.push([q,q])});
   const bars=occs.map(([q,o])=>{const pc=Math.round(o/cap*100),cls=o>=cap?'full':pc>=80?'warn':'ok';
     return `<button class="ob ${cls} ${q===nowQ?'cur':''}" style="--h:${pc}%" data-act="slot" data-m="${q}" aria-label="${fm(q)} : ${o} sur ${cap}"><i></i></button>`}).join('');
   const hl=HOURS.map(h=>`<span style="grid-column:span 4">${h}h</span>`).join('');
-  const start=isT?Math.max(QSTART,Math.min(QEND,Math.ceil(nm/15)*15)):QSTART,deps=QS.filter(q=>q>=start).slice(0,8);
+  const start=isT?Math.max(QSTART,Math.min(QEND,qCeil(nm))):QSTART,deps=QS.filter(q=>q>=start).slice(0,8);
   m.innerHTML=dayChips(ds)+`<div class="kpis"><div class="kpi"><div class="l">${cur!=null?'Présents maintenant':'Capacité'}</div><div class="v num">${cur!=null?cur:cap}<small> / ${cap}</small></div></div>
     <div class="kpi"><div class="l">Pic de la journée</div><div class="v num">${peak[1]}<small> à ${fm(peak[0])}</small></div></div>
     <div class="kpi"><div class="l">Réservations</div><div class="v num">${resaN}</div></div><div class="kpi"><div class="l">Événements</div><div class="v num">${evOn(ds).length}</div></div></div>
-   ${rng.length?`<div class="banner"><span>Complet : ${rng.map(r=>fm(r[0])+' à '+fm(r[1]+15)).join(' · ')}</span></div>`:''}
-   <div class="card"><h3>Fréquentation de la journée <span class="muted" style="font-size:13px;font-weight:500">1 barre = 15 minutes</span></h3><div class="chartwrap"><div class="occ">
+   ${rng.length?`<div class="banner"><span>Complet : ${rng.map(r=>fm(r[0])+' à '+fm(r[1]+STEP)).join(' · ')}</span></div>`:''}
+   <div class="card"><h3>Fréquentation de la journée <span class="muted" style="font-size:13px;font-weight:500">1 barre = ${stepLong()}</span></h3><div class="chartwrap"><div class="occ">
      <div class="occ-y"><span>${cap}</span><span>${Math.round(cap/2)}</span><span>0</span></div>
      <div class="occ-bars" style="grid-template-columns:repeat(${QS.length},minmax(0,1fr))"><i class="l80"></i>${bars}</div>
      <div class="occ-x" style="grid-template-columns:repeat(${QS.length},minmax(0,1fr))">${hl}</div></div></div>
@@ -1498,11 +1515,19 @@ function vEvents(m){
 }
 function vBraceletsBase(m){
   const ds=slotDay<today()?today():slotDay;slotDay=ds;
-  const cnt={};BR.forEach(c=>cnt[c[0]]=0);
-  S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)).forEach(s=>{cnt[bracelet(+s.slot.split('|')[1],s.dur||60).name]+=s.jumpers});
-  const nm=nowMin(),nh=Math.ceil(nm/60),nb=BR[nh%6];
-  m.innerHTML=dayChips(ds)+(ds===today()?`<div class="banner ok"><span>${swatch(nb[1])}<b>${nb[0]}</b> : retirer ces bracelets à ${nh}h.</span></div>`:'')+
-   `<div class="kpis">${BR.map(c=>`<div class="kpi"><div class="l">${swatch(c[1])}${c[0]}</div><div class="v num">${cnt[c[0]]}</div></div>`).join('')}</div>${braceletCard()}
+  const sales=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds));
+  if(brTxt()){
+    const by={};sales.forEach(s=>{const st=+s.slot.split('|')[1];(by[st]=by[st]||{b:bracelet(st,s.dur||60),st,n:0}).n+=s.jumpers||0});
+    const L=Object.values(by).sort((a,b)=>a.st-b.st);
+    m.innerHTML=dayChips(ds)+(L.length?`<div class="kpis">${L.map(x=>`<div class="kpi"><div class="l">${esc(x.b.name)}</div><div class="v num">${x.n}</div></div>`).join('')}</div>`:'<p class="muted">Aucune session ce jour-là.</p>')+braceletCard()+
+     `<p class="muted" style="font-size:13px">Les compteurs reprennent les ventes en caisse du jour sélectionné.</p>`;
+    return;
+  }
+  const L=brList(),cnt={};L.forEach(c=>cnt[c[0]]=0);
+  sales.forEach(s=>{const n=bracelet(+s.slot.split('|')[1],s.dur||60).name;cnt[n]=(cnt[n]||0)+s.jumpers});
+  const nm=nowMin(),nh=Math.ceil(nm/60),nb=brOf(nh);
+  m.innerHTML=dayChips(ds)+(ds===today()?`<div class="banner ok"><span>${swatch(nb[1])}<b>${esc(nb[0])}</b> : retirer ces bracelets à ${nh}h.</span></div>`:'')+
+   `<div class="kpis">${L.filter((c,i)=>L.findIndex(x=>x[0]===c[0])===i).map(c=>`<div class="kpi"><div class="l">${swatch(c[1])}${esc(c[0])}</div><div class="v num">${cnt[c[0]]||0}</div></div>`).join('')}</div>${braceletCard()}
    <p class="muted" style="font-size:13px">Les compteurs reprennent les ventes en caisse du jour sélectionné.</p>`;
 }
 
@@ -1561,10 +1586,10 @@ document.addEventListener('click',e=>{
 /* ---------- accueil ---------- */
 function vHomeBase(m){
   const td=today(),ds=S.sales.filter(s=>dkey(new Date(s.ts))===td),ca=ds.reduce((a,s)=>a+s.total,0);
-  const nm=nowMin(),nowQ=Math.floor(nm/15)*15,cap=S.settings.cap,openNow=nowQ>=QSTART&&nowQ<=QEND,here=openNow?occ(td,nowQ):0;
+  const nm=nowMin(),nowQ=qFloor(nm),cap=S.settings.cap,openNow=nowQ>=QSTART&&nowQ<=QEND,here=openNow?occ(td,nowQ):0;
   const resaN=S.sales.filter(s=>s.slot&&s.slot.startsWith(td)).length+evOn(td).length;
   const duty=onDuty(td),c=checkToday(),pend=S.leaves.filter(l=>l.status==='pending'),done=c?CHECK_IDS.filter(k=>c.items[k]).length:0;
-  const start=Math.max(QSTART,Math.min(QEND,Math.ceil(nm/15)*15)),deps=QS.filter(q=>q>=start).slice(0,4);
+  const start=Math.max(QSTART,Math.min(QEND,qCeil(nm))),deps=QS.filter(q=>q>=start).slice(0,4);
   m.innerHTML=`<div class="top-actions" style="margin-bottom:10px;justify-content:flex-end">${rolePill()}</div><div class="hero"><div><p class="eyebrow">${dlong(td)}</p><h2>${greet()}</h2>${welcomeOn()?`<p class="wel">${esc(S.settings.welcome)}</p>`:''}<p>${esc(S.settings.name)} · ${openNow?here+' personnes présentes sur '+cap:'fermé pour le moment'} · <span data-po="hero">${poHero(poNow(true))}</span></p></div>
     <div class="hero-actions"><a class="btn ghost" href="#resa">Planning clients</a></div></div>${homeTiles()}${ctrlBanner()}
    <div class="kpis"><div class="kpi"><div class="l">Ventes du jour</div><div class="v num">${eur(ca)}</div></div><div class="kpi"><div class="l">Présents</div><div class="v num">${here}<small> / ${cap}</small></div></div>
@@ -1728,30 +1753,30 @@ function dayStrip(ds){
 function vDay(m){
   if(planMode==='timeline')return vTimeline(m);
   if(slotDay<today())slotDay=today();
-  const ds=slotDay,cap=S.settings.cap,isT=ds===today(),nm=nowMin(),nowQ=isT?Math.floor(nm/15)*15:-1;
+  const ds=slotDay,cap=S.settings.cap,isT=ds===today(),nm=nowMin(),nowQ=isT?qFloor(nm):-1;
   const occs=QS.map(q=>occ(ds,q)),peak=Math.max(...occs),pk=QS[occs.indexOf(peak)];
-  const cur=isT&&nm>=QSTART&&nm<QEND+15?occ(ds,nowQ):null;
+  const cur=isT&&nm>=QSTART&&nm<QEND+STEP?occ(ds,nowQ):null;
   const sales=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)),evs=evOn(ds);
-  const starts={};sales.forEach(s=>{const q=+s.slot.split('|')[1],x=starts[q]=starts[q]||{n:0,j:0};x.n++;x.j+=s.jumpers});
+  const starts={};sales.forEach(s=>{const q=qFloor(+s.slot.split('|')[1]),x=starts[q]=starts[q]||{n:0,j:0};x.n++;x.j+=s.jumpers});
   evs.forEach(ev=>{const x=starts[ev.h*60]=starts[ev.h*60]||{n:0,j:0};x.n++;x.j+=ev.guests});
   const hours=[...new Set(QS.map(q=>Math.floor(q/60)))];
-  const rows=hours.map(h=>`<div class="hrow"><div class="hbl">${h}h</div><div class="tiles">${[0,15,30,45].map(o=>{const q=h*60+o,i=QS.indexOf(q);if(i<0)return '<span></span>';
-    const n=occs[i],pc=n/cap,[bg,fg]=satStyle(pc),past=isT&&q+15<=nm,st=starts[q]||{n:0,j:0};
+  const rows=hours.map(h=>`<div class="hrow"><div class="hbl">${h}h</div><div class="tiles">${qOff(h).map(o=>{const q=h*60+o,i=QS.indexOf(q);if(i<0)return '<span></span>';
+    const n=occs[i],pc=n/cap,[bg,fg]=satStyle(pc),past=isT&&q+STEP<=nm,st=starts[q]||{n:0,j:0};
     return `<button class="dl ${q===nowQ?'cur':''} ${past?'past':''}" style="background:${bg};color:${fg}" data-act="slot" data-m="${q}" aria-label="${fm(q)} : ${n} présents sur ${cap}, ${st.n} réservation${st.n>1?'s':''} au départ"><span class="dt1 num">${fm(q)}</span><span class="pc2 num">${Math.round(pc*100)} %</span><b class="num">${n}<small> / ${cap}</small></b><span class="dt2">${st.n?st.n+' résa · '+st.j+' pers.':'Aucun départ'}</span></button>`}).join('')}</div></div>`).join('');
-  const ns=Math.max(QSTART,Math.min(QEND,Math.ceil(nm/15)*15));
+  const ns=Math.max(QSTART,Math.min(QEND,qCeil(nm)));
   m.innerHTML=dayStrip(ds)+`<div class="plbar"><div class="pst"><span><b class="num">${cur!=null?cur:cap}</b> ${cur!=null?'présents maintenant sur '+cap:'places au total'}</span><span>Pic <b class="num">${peak}</b> à ${fm(pk)}</span><span><b class="num">${sales.length}</b> réservation${sales.length>1?'s':''}</span><span><b class="num">${evs.length}</b> événement${evs.length>1?'s':''}</span></div>
     <div class="plact">${modeSeg()}<button class="btn primary" data-act="sellslot" data-m="${isT?ns:QSTART}">${ic('plus')}${tv('reserver')}</button></div></div>
-    <div class="slegend"><span>Libre</span><i class="sgrad"></i><span>Complet (${cap})</span><span class="muted">Chaque dalle = 15 minutes. Touchez une dalle pour voir toutes les réservations du créneau.</span></div>
-    <div class="dalles">${rows}</div>`;
+    <div class="slegend"><span>Libre</span><i class="sgrad"></i><span>Complet (${cap})</span><span class="muted">Chaque dalle = ${stepLong()}. Touchez une dalle pour voir toutes les réservations du créneau.</span></div>
+    <div class="dalles" style="--tpr:${Math.max(1,Math.ceil(60/STEP))}">${rows}</div>`;
 }
 function slotDetail(m){
   const ds=slotDay,cap=S.settings.cap,o=occ(ds,m),pc=o/cap,[bg]=satStyle(pc);
-  const act=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)).map(s=>({s,st:+s.slot.split('|')[1],dur:s.dur||60})).filter(x=>x.st<=m&&m<x.st+x.dur);
-  const go=act.filter(x=>x.st===m),inprog=act.filter(x=>x.st<m),pers=act.reduce((a,x)=>a+x.s.jumpers,0),other=Math.max(0,o-pers);
+  const act=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)).map(s=>({s,st:+s.slot.split('|')[1],dur:s.dur||60})).filter(x=>x.st<m+STEP&&m<x.st+x.dur);
+  const go=act.filter(x=>x.st>=m),inprog=act.filter(x=>x.st<m),pers=act.reduce((a,x)=>a+x.s.jumpers,0),other=Math.max(0,o-pers);
   const evs=evOn(ds).filter(e=>e.h*60<=m&&m<(e.h+e.dur)*60);
   const row=x=>`<button class="row rowbtn" data-act="ticket" data-id="${x.s.id}"><span class="grow"><b>${swatch(bracelet(x.st,x.dur).color)}${x.s.jumpers} ${NOUN()}${x.s.jumpers>1?'s':''} · ${x.s.clientId?esc(clientName(x.s.clientId)):'Au comptoir'}</b><span class="muted">${x.s.no} · ${fm(x.st)} à ${fm(x.st+x.dur)}</span></span><b class="num">${eur(x.s.total)}</b></button>`;
-  const can=m>=QS[0],prev=QS.includes(m-15)?m-15:null,next=QS.includes(m+15)?m+15:null;
-  showModal(`<div class="mh"><button class="ix" data-act="slot" data-m="${prev}" ${prev==null?'disabled':''} aria-label="Créneau précédent">${ic('left')}</button><h2 style="flex:1;text-align:center">${fm(m)} à ${fm(m+15)}</h2><button class="ix" data-act="slot" data-m="${next}" ${next==null?'disabled':''} aria-label="Créneau suivant">${ic('right')}</button><button class="ix" data-act="close" aria-label="Fermer">${ic('x')}</button></div>
+  const can=m>=QS[0],prev=QS.includes(m-STEP)?m-STEP:null,next=QS.includes(m+STEP)?m+STEP:null;
+  showModal(`<div class="mh"><button class="ix" data-act="slot" data-m="${prev}" ${prev==null?'disabled':''} aria-label="Créneau précédent">${ic('left')}</button><h2 style="flex:1;text-align:center">${fm(m)} à ${fm(m+STEP)}</h2><button class="ix" data-act="slot" data-m="${next}" ${next==null?'disabled':''} aria-label="Créneau suivant">${ic('right')}</button><button class="ix" data-act="close" aria-label="Fermer">${ic('x')}</button></div>
    <p class="muted" style="text-transform:capitalize;margin-top:-6px">${dlong(ds)}</p>
    <div class="occbox" style="background:${bg};color:${satStyle(pc)[1]}"><div><span class="lab">Présents sur ce créneau</span><b class="num">${o}<small> / ${cap}</small></b></div><div style="text-align:right"><span class="lab">Places libres</span><b class="num">${cap-o}</b></div></div>
    <div class="grp-h">Départs à ${fm(m)} <span class="muted">· ${go.length} réservation${go.length>1?'s':''}, ${go.reduce((a,x)=>a+x.s.jumpers,0)} personne${go.reduce((a,x)=>a+x.s.jumpers,0)>1?'s':''}</span></div>
@@ -1763,42 +1788,42 @@ function slotDetail(m){
 }
 
 /* ---------- style Roller : timeline par activité, panneau de créneau, menu en tuiles, recherche ---------- */
-function leftFor(date,start,dur){let mx=0;for(let t=start;t<start+dur;t+=15){if(S.closed&&S.closed[date+'|'+t])return 0;mx=Math.max(mx,occ(date,t))}return S.settings.cap-mx}
+function leftFor(date,start,dur){let mx=0;for(let t=start;t<start+dur;t+=STEP){if(S.closed&&S.closed[date+'|'+t])return 0;mx=Math.max(mx,occ(date,t))}return S.settings.cap-mx}
 function vTimeline(m){
   if(slotDay<today())slotDay=today();
-  const ds=slotDay,cap=S.settings.cap,isT=ds===today(),nm=nowMin(),nowQ=isT?Math.floor(nm/15)*15:-1,N=QS.length;
+  const ds=slotDay,cap=S.settings.cap,isT=ds===today(),nm=nowMin(),nowQ=isT?qFloor(nm):-1,N=QS.length;
   const occs=QS.map(q=>occ(ds,q)),peak=Math.max(...occs),pk=QS[occs.indexOf(peak)];
-  const cur=isT&&nm>=QSTART&&nm<QEND+15?occ(ds,nowQ):null;
+  const cur=isT&&nm>=QSTART&&nm<QEND+STEP?occ(ds,nowQ):null;
   const sales=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)),evs=evOn(ds);
-  const starts={};sales.forEach(s=>{const q=+s.slot.split('|')[1],x=starts[q]=starts[q]||{n:0,j:0};x.n++;x.j+=s.jumpers});
-  const hdr=HOURS.map(h=>`<span style="grid-column:span 4">${h}:00</span>`).join('');
-  const cells=QS.map((q,i)=>{const o=occs[i],shut=(S.closed&&S.closed[ds+'|'+q])||!openAt(ds,q),[bg,fg]=satStyle(o/cap),past=isT&&q+15<=nm,st=starts[q];
+  const starts={};sales.forEach(s=>{const q=qFloor(+s.slot.split('|')[1]),x=starts[q]=starts[q]||{n:0,j:0};x.n++;x.j+=s.jumpers});
+  const hdr=HOURS.map(h=>{const o=qOff(h);return o.length?`<span style="grid-column:span ${o.length}">${fm(h*60+o[0])}</span>`:''}).join('');
+  const cells=QS.map((q,i)=>{const o=occs[i],shut=(S.closed&&S.closed[ds+'|'+q])||!openAt(ds,q),[bg,fg]=satStyle(o/cap),past=isT&&q+STEP<=nm,st=starts[q];
     return `<button class="tc ${shut?'shut':''} ${past?'past':''} ${q===nowQ?'cur':''}" style="${shut?'':`background:${bg};color:${fg}`}" data-act="slot" data-m="${q}" aria-label="${fm(q)} : ${shut?'fermé':o+' présents sur '+cap}"><b class="num">${shut?'×':o}</b>${st&&!shut?`<small class="num">(${st.j})</small>`:''}</button>`}).join('');
   const rooms=Object.entries(ROOMS).map(([r,l])=>{const es=evs.filter(e=>e.room===r);
-    return `<div class="tlrow"><div class="tll"><b>Évènement</b><span>${esc(l)}</span></div><div class="tlg ev" style="--n:${N}">${es.map(e=>{const a=Math.max(1,(e.h*60-QSTART)/15+1),b=Math.min(N+1,a+e.dur*4);return `<button class="tev ${r}" style="grid-column:${a}/${b}" data-act="evinfo" data-id="${e.id}"><b>${esc(e.title)}</b><span class="num">${e.guests} pers. · ${ft(e.h)} à ${ft(e.h+e.dur)}</span></button>`}).join('')||`<span class="tfree">Libre</span>`}</div></div>`}).join('');
-  const f=(nm-QSTART)/(N*15),nowl=isT&&f>=0&&f<=1?`<i class="nowv" style="--f:${f}"></i>`:'';
-  const ns=Math.max(QSTART,Math.min(QEND,Math.ceil(nm/15)*15));
+    return `<div class="tlrow"><div class="tll"><b>Évènement</b><span>${esc(l)}</span></div><div class="tlg ev" style="--n:${N}">${es.map(e=>{const a=Math.max(1,Math.round((e.h*60-QSTART)/STEP)+1),b=Math.min(N+1,Math.max(a+1,Math.round(((e.h+e.dur)*60-QSTART)/STEP)+1));return `<button class="tev ${r}" style="grid-column:${a}/${b}" data-act="evinfo" data-id="${e.id}"><b>${esc(e.title)}</b><span class="num">${e.guests} pers. · ${ft(e.h)} à ${ft(e.h+e.dur)}</span></button>`}).join('')||`<span class="tfree">Libre</span>`}</div></div>`}).join('');
+  const f=(nm-QSTART)/(N*STEP),nowl=isT&&f>=0&&f<=1?`<i class="nowv" style="--f:${f}"></i>`:'';
+  const ns=Math.max(QSTART,Math.min(QEND,qCeil(nm)));
   m.innerHTML=dayStrip(ds)+`<div class="plbar"><div class="pst"><span><b class="num">${cur!=null?cur:cap}</b> ${cur!=null?'présents maintenant sur '+cap:'places au total'}</span><span>Pic <b class="num">${peak}</b> à ${fm(pk)}</span><span><b class="num">${sales.length}</b> réservation${sales.length>1?'s':''}</span><span><b class="num">${evs.length}</b> événement${evs.length>1?'s':''}</span></div>
     <div class="plact">${modeSeg()}<button class="btn primary" data-act="sellslot" data-m="${isT?ns:QSTART}">${ic('plus')}${tv('reserver')}</button></div></div>
    <div class="tlw"><div class="tlr" style="--n:${N}"><div class="tlbody">
      <div class="tlrow tlhead"><div class="tll"></div><div class="tlg hh" style="--n:${N}">${hdr}</div></div>
      <div class="tlrow"><div class="tll"><b>${tv('session')}</b><span>${tv('lieu')} (${cap})</span></div><div class="tlg" style="--n:${N}">${cells}</div></div>
      ${rooms}${nowl}</div></div></div>
-   <div class="slegend"><span>Libre</span><i class="sgrad"></i><span>Complet (${cap})</span><span class="muted">Un carré = 15 minutes : nombre de présents, et entre parenthèses les arrivées. Touchez un carré pour ouvrir le créneau.</span></div>`;
+   <div class="slegend"><span>Libre</span><i class="sgrad"></i><span>Complet (${cap})</span><span class="muted">Un carré = ${stepLong()} : nombre de présents, et entre parenthèses les arrivées. Touchez un carré pour ouvrir le créneau.</span></div>`;
 }
 /* panneau d'un créneau */
 let slotSel={},slotAt=null;
 function slotDetail(m){
   if(m!==slotAt){slotSel={};slotAt=m}
-  const ds=slotDay,cap=S.settings.cap,o=occ(ds,m),shut=!!(S.closed&&S.closed[ds+'|'+m])||!openAt(ds,m),isT=ds===today(),past=isT&&m+15<=nowMin(),[bg,fg]=satStyle(o/cap);
-  const act=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)).map(s=>({s,st:+s.slot.split('|')[1],dur:s.dur||60})).filter(x=>x.st<=m&&m<x.st+x.dur);
-  const go=act.filter(x=>x.st===m),inprog=act.filter(x=>x.st<m),pers=act.reduce((a,x)=>a+x.s.jumpers,0),other=Math.max(0,o-pers);
+  const ds=slotDay,cap=S.settings.cap,o=occ(ds,m),shut=!!(S.closed&&S.closed[ds+'|'+m])||!openAt(ds,m),isT=ds===today(),past=isT&&m+STEP<=nowMin(),[bg,fg]=satStyle(o/cap);
+  const act=S.sales.filter(s=>s.slot&&s.slot.startsWith(ds)).map(s=>({s,st:+s.slot.split('|')[1],dur:s.dur||60})).filter(x=>x.st<m+STEP&&m<x.st+x.dur);
+  const go=act.filter(x=>x.st>=m),inprog=act.filter(x=>x.st<m),pers=act.reduce((a,x)=>a+x.s.jumpers,0),other=Math.max(0,o-pers);
   const evs=evOn(ds).filter(e=>e.h*60<=m&&m<(e.h+e.dur)*60);
   const row=x=>`<button class="row rowbtn" data-act="ticket" data-id="${x.s.id}"><span class="grow"><b>${swatch(bracelet(x.st,x.dur).color)}${x.s.jumpers} ${NOUN()}${x.s.jumpers>1?'s':''} · ${x.s.clientId?esc(clientName(x.s.clientId)):'Au comptoir'}</b><span class="muted">${x.s.no} · ${fm(x.st)} à ${fm(x.st+x.dur)}</span></span><b class="num">${eur(x.s.total)}</b></button>`;
-  const prods=S.products.filter(p=>p.active&&p.jumper),need=prods.reduce((a,p)=>a+(slotSel[p.id]||0),0),dur=Math.max(60,...prods.filter(p=>slotSel[p.id]).map(p=>p.dur||60)),left=leftFor(ds,m,dur);
-  const prev=QS.includes(m-15)?m-15:null,next=QS.includes(m+15)?m+15:null,ng=go.reduce((a,x)=>a+x.s.jumpers,0);
+  const prods=S.products.filter(p=>p.active&&p.jumper),need=prods.reduce((a,p)=>a+(slotSel[p.id]||0),0),dur=Math.max(STEP,...prods.filter(p=>slotSel[p.id]).map(p=>p.dur||60)),left=leftFor(ds,m,dur);
+  const prev=QS.includes(m-STEP)?m-STEP:null,next=QS.includes(m+STEP)?m+STEP:null,ng=go.reduce((a,x)=>a+x.s.jumpers,0);
   showModal(`<div class="mh"><button class="ix" data-act="slot" data-m="${prev}" ${prev==null?'disabled':''} aria-label="Créneau précédent">${ic('left')}</button><h2 style="flex:1;text-align:center">${tv('session')}</h2><button class="ix" data-act="slot" data-m="${next}" ${next==null?'disabled':''} aria-label="Créneau suivant">${ic('right')}</button><button class="ix" data-act="close" aria-label="Fermer">${ic('x')}</button></div>
-   <div class="sinfo"><div><span class="lab">Début</span><b class="num">${fm(m)}</b></div><div><span class="lab">Fin</span><b class="num">${fm(m+15)}</b></div><div><span class="lab">Lieu</span><b>${tv('lieu')} (${cap})</b></div><div><span class="lab">Jour</span><b style="text-transform:capitalize">${dshort(ds)}</b></div></div>
+   <div class="sinfo"><div><span class="lab">Début</span><b class="num">${fm(m)}</b></div><div><span class="lab">Fin</span><b class="num">${fm(m+STEP)}</b></div><div><span class="lab">Lieu</span><b>${tv('lieu')} (${cap})</b></div><div><span class="lab">Jour</span><b style="text-transform:capitalize">${dshort(ds)}</b></div></div>
    <div class="occbox" style="background:${shut?'#E8ECF4':bg};color:${shut?'var(--ink)':fg}"><div><span class="lab">${shut?'Créneau fermé':'Présents sur ce créneau'}</span><b class="num">${o}<small> / ${cap}</small></b></div><div style="text-align:right"><span class="lab">Places libres</span><b class="num">${shut?0:cap-o}</b></div></div>
    ${isAdmin()?`<button class="btn" data-act="slotshut" data-m="${m}" style="width:100%">${shut?'Rouvrir ce créneau':'Fermer ce créneau aux ventes'}</button>`:''}
    <div class="grp-h">Choix d’activités</div>
@@ -2558,7 +2583,7 @@ function hoursFor(ds){
   hoursInit();const dow=new Date(ds+'T12:00:00').getDay();let r={...S.hours.week[dow],label:''};
   S.hours.exc.forEach(x=>{if(ds>=x.from&&ds<=x.to)r={closed:!!x.closed,o:x.o,c:x.c,label:x.label||''}});return r;
 }
-const openAt=(ds,t)=>{const h=hoursFor(ds);return !h.closed&&t>=h.o&&t+15<=h.c};
+const openAt=(ds,t)=>{const h=hoursFor(ds);return !h.closed&&t>=h.o&&t+STEP<=h.c};
 function syncEnvelope(){
   hoursInit();const all=[...Object.values(S.hours.week),...S.hours.exc].filter(x=>!x.closed);if(!all.length)return;
   S.settings.open=Math.floor(Math.min(...all.map(x=>x.o))/60);S.settings.close=Math.ceil(Math.max(...all.map(x=>x.c))/60);applySettings();
@@ -2650,7 +2675,10 @@ document.addEventListener('change',e=>{const t=e.target;
     if(k==='o'&&v>=x.c||k==='c'&&v<=x.o){toast('Horaires incohérents');vHours($('#sub'));return}x[k]=v;syncEnvelope();save();vHours($('#sub'));toast('Horaires enregistrés')}
 });
 TABS.resa.push(['horaires','Ouverture']);SUBS.horaires=vHours;
-function leftFor(date,start,dur){let mx=0;for(let t=start;t<start+dur;t+=15){if(!openAt(date,t)||(S.closed&&S.closed[date+'|'+t]))return 0;mx=Math.max(mx,occ(date,t))}return S.settings.cap-mx}
+function leftFor(date,start,dur){let mx=0;for(let t=start;t<start+dur;t+=STEP){if(!openAt(date,t)||(S.closed&&S.closed[date+'|'+t]))return 0;mx=Math.max(mx,occ(date,t))}
+  /* v92 : une réservation prise avant un changement d'intervalle peut partir entre deux départs : on mesure aussi l'affluence à son arrivée */
+  S.sales.forEach(s=>{if(!s.slot||!s.slot.startsWith(date+'|'))return;const st=+s.slot.split('|')[1];if(st>start&&st<start+dur&&(st-QSTART)%STEP)mx=Math.max(mx,occ(date,st))});
+  return S.settings.cap-mx}
 
 /* ====== Q : stats, inventaire, devis, mur d'équipe, IA vocale, photos, import Qweekle, ludique ====== */
 const eurN=c=>(c/100).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
@@ -3098,7 +3126,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act="qwgo"
   if(b.dataset.act==='qwclear'){S.sales=S.sales.filter(s=>!s.qw||s.wb);save();vQweekle($('#sub'));toast('Réservations importées supprimées');return}
   const ix=id=>$('#'+id).value===''?-1:+$('#'+id).value,D=ix('qwd'),H=ix('qwh'),N=ix('qwn'),U=ix('qwu'),C=ix('qwc');if(D<0||H<0||N<0){toast('Associez au moins la date, l’heure et le nombre de personnes');return}
   S.sales=S.sales.filter(s=>!s.qw||s.wb);let k=0;
-  qwRows.forEach(r=>{const d=pDate(r[D]),t=pTime(r[H]),j=parseInt(r[N]);if(!d||t==null||!j)return;const st=Math.floor(t/15)*15;
+  qwRows.forEach(r=>{const d=pDate(r[D]),t=pTime(r[H]),j=parseInt(r[N]);if(!d||t==null||!j)return;const st=qFloor(t);
     S.sales.push({id:uid(),no:'QW-'+(++k),ts:new Date(d+'T'+hmm(st)+':00').getTime(),lines:[],sub:0,disc:0,total:0,vat:{},pay:[],clientId:null,slot:d+'|'+st,dur:U>=0?(parseInt(r[U])||60):60,jumpers:j,qw:true,qwName:C>=0?r[C]:''})});
   save();qwRows=null;vQweekle($('#sub'));toast(k+' réservation(s) importée(s)')});
 TABS.params.push(['pqw','Qweekle']);SUBS.pqw=vQweekle;
@@ -3587,7 +3615,7 @@ function qwImport(head,rows,map,fname){
     if(!d||t==null||!(j>0)){skip++;return}
     if(map.stat!==undefined&&QCANCEL.test(g(r,'stat'))){canc++;return}
     const dur=map.dur!==undefined?(parseInt(g(r,'dur'))||null):null,rg=qRange(g(r,'time'));
-    out.push({id:uid(),ref:g(r,'ref'),date:d,start:Math.floor(t/15)*15,dur:dur||rg||60,n:j,name:g(r,'name'),act:g(r,'act'),phone:g(r,'phone'),mail:g(r,'mail'),stat:g(r,'stat')});
+    out.push({id:uid(),ref:g(r,'ref'),date:d,start:qFloor(t),dur:dur||rg||60,n:j,name:g(r,'name'),act:g(r,'act'),phone:g(r,'phone'),mail:g(r,'mail'),stat:g(r,'stat')});
   });
   if(!out.length)return{ok:false,skip,canc};
   const dates=out.map(x=>x.date).sort(),a=dates[0],b=dates[dates.length-1];
@@ -4752,7 +4780,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v91';
+const LAGO_V='v92';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -7579,15 +7607,15 @@ function brData(now){
   const ds=today(),sec=now.getHours()*3600+now.getMinutes()*60+now.getSeconds(),nm=sec/60;
   const items=brItems(ds);
   const present=items.filter(x=>x.start<=nm&&nm<x.start+x.dur).reduce((a,x)=>a+x.n,0);
-  const q=Math.floor(nm/15)*15;
+  const q=qFloor(nm);
   const give=brDurs().map(d=>({d,b:bracelet(q,d)}));
   const byH={};items.forEach(x=>{const b=bracelet(x.start,x.dur);(byH[b.until]=byH[b.until]||{b,n:0});byH[b.until].n+=x.n});
   const nh=Math.floor(nm/60)+1;                              // prochaine heure pleine
   const rows=[];const last=Math.max(nh,...Object.keys(byH).map(Number),S.settings.close||19);
   for(let h=Math.max(S.settings.open||10,Math.floor(nm/60));h<=Math.min(last,24);h++){
-    const c=BR[h%6];rows.push({h,name:c[0],color:c[1],n:(byH[h]||{n:0}).n,past:h*60<=nm});
+    const c=brOf(h);rows.push({h,name:c[0],color:c[1],n:(byH[h]||{n:0}).n,past:h*60<=nm});
   }
-  const next=BR[nh%6],left=Math.max(0,nh*3600-sec);
+  const next=brOf(nh),left=Math.max(0,nh*3600-sec);
   const soon=items.filter(x=>x.start>nm&&x.start<=nm+60).map(x=>({...x,b:bracelet(x.start,x.dur)}));
   return {ds,present,q,give,rows,nh,next:{name:next[0],color:next[1],n:(byH[nh]||{n:0}).n,left},soon,total:items.reduce((a,x)=>a+x.n,0)};
 }
@@ -7596,16 +7624,16 @@ function brCount(s){const m=Math.floor(s/60),x=s%60;return (m>=60?Math.floor(m/6
 function brHtml(){
   const now=new Date(),D=brData(now),pl=n=>n+' personne'+(n>1?'s':'');
   const sw=(c,big)=>`<i class="brl-sw${big?' big':''}" style="background:${c}"></i>`;
-  const give=D.give.map(g=>`<div class="brl-g">${sw(g.b.color,1)}<div><b>${g.b.name}</b><span>${brDurLbl(g.d)} · sortie à ${g.b.exit}</span></div></div>`).join('');
-  const rows=D.rows.map(r=>`<div class="brl-r${r.past?' past':''}${r.h===D.nh?' nxt':''}"><b class="num">${r.h}h</b>${sw(r.color)}<span>${r.name}</span><em>${r.n?pl(r.n):'—'}</em></div>`).join('');
+  const give=D.give.map(g=>`<div class="brl-g">${sw(g.b.color,1)}<div><b>${esc(g.b.name)}</b><span>${brDurLbl(g.d)} · sortie à ${g.b.exit}</span></div></div>`).join('');
+  const rows=D.rows.map(r=>`<div class="brl-r${r.past?' past':''}${(D.txt?r.nx:r.h===D.nh)?' nxt':''}"><b class="num">${r.lbl||r.h+'h'}</b>${sw(r.color)}<span>${esc(r.name)}</span><em>${r.n?pl(r.n):'—'}</em></div>`).join('');
   const soon=D.soon.length?D.soon.map(x=>`<div class="brl-a"><b class="num">${fm(x.start)}</b>${sw(x.b.color)}<span>${esc(x.name||(x.src==='qweekle'?'Réservation Qweekle':x.src==='web'?'Réservation en ligne':'Vente caisse'))}</span><em>${pl(x.n)}</em></div>`).join(''):'<p class="brl-none">Personne n’est attendu dans l’heure.</p>';
   return `<div class="brl-top"><div class="brl-clock"><b class="num">${brClock(now)}</b><span class="num">:${String(now.getSeconds()).padStart(2,'0')}</span></div>
       <div class="brl-info"><div class="brl-date">${esc(now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))}</div><div class="brl-pres"><b class="num">${D.present}</b> présent${D.present>1?'s':''} dans le parc</div></div></div>
     <div class="brl-grid">
       <section class="brl-p brl-now"><h2>À remettre maintenant</h2><p class="brl-sub">Départ de ${fm(D.q)}</p>${give}</section>
-      <section class="brl-p brl-next" style="--bc:${D.next.color}"><h2>Prochain retrait</h2><div class="brl-big">${sw(D.next.color,1)}<div><b>${D.next.name}</b><span>à ${D.nh}h00</span></div></div>
-        <div class="brl-cd num" aria-live="off">dans ${brCount(D.next.left)}</div><p class="brl-sub">${D.next.n?pl(D.next.n)+' à retirer':'Personne à retirer'}</p></section>
-      <section class="brl-p brl-tl"><h2>Retraits heure par heure</h2>${rows}</section>
+      <section class="brl-p brl-next" style="--bc:${D.next.color}"><h2>${D.txt?'Prochaine fin':'Prochain retrait'}</h2><div class="brl-big">${sw(D.next.color,1)}<div><b>${esc(D.next.name)}</b><span>à ${D.next.at||D.nh+'h00'}</span></div></div>
+        <div class="brl-cd num" aria-live="off">dans ${brCount(D.next.left)}</div><p class="brl-sub">${D.next.n?pl(D.next.n)+(D.txt?' en piste':' à retirer'):(D.txt?'Personne en piste':'Personne à retirer')}</p></section>
+      <section class="brl-p brl-tl"><h2>${D.txt?'Fins de session':'Retraits heure par heure'}</h2>${rows}</section>
       <section class="brl-p brl-arr"><h2>Arrivées dans l’heure</h2>${soon}</section>
     </div>`;
 }
@@ -7695,7 +7723,7 @@ const webSlotCap=()=>S.settings.cap;
 function webLoad(ds,t){
   const cap=S.settings.cap;if(S.closed&&S.closed[ds+'|'+t])return cap;
   const h=Math.floor(t/60);let l=(!S.noDemo&&h>=S.settings.open&&h<S.settings.close)?baseBooked(ds,h):0;
-  S.sales.forEach(s=>{if(s.wb||!s.slot||!s.slot.startsWith(ds))return;const st=+s.slot.split('|')[1];if(st<=t&&t<st+(s.dur||60))l+=s.jumpers||0});
+  S.sales.forEach(s=>{if(s.wb||!s.slot||!s.slot.startsWith(ds))return;const st=+s.slot.split('|')[1];if(st<t+STEP&&t<st+(s.dur||60))l+=s.jumpers||0});
   return Math.min(cap,l);
 }
 function webBase(w){
@@ -7703,8 +7731,8 @@ function webBase(w){
   for(let i=0;i<=w.days;i++){
     const ds=addDays(t0,i),h=hoursFor(ds);
     if(h.closed||!(h.c>h.o)){out[ds]={x:1};continue}
-    const o=Math.ceil(h.o/15)*15,c=Math.floor(h.c/15)*15,l=[];
-    for(let m=o;m+15<=c;m+=15)l.push(webLoad(ds,m));
+    const o=qCeil(h.o),c=h.c,l=[];
+    for(let m=o;m+STEP<=c;m+=STEP)l.push(webLoad(ds,m));
     out[ds]={o,c,l};
   }
   return out;
@@ -7713,7 +7741,7 @@ function webCfgOut(w){
   const P=(ids,adds)=>ids.map(webProd).filter(p=>p&&p.active!==false&&(adds||(p.jumper&&p.dur))).map(p=>{const o={id:p.id,n:p.name,d:(w.desc&&w.desc[p.id])||'',p:p.price};if(!adds)o.dur=p.dur;return o});
   return{v:1,on:true,name:S.settings.name||'',tel:S.settings.phone||'',mail:mlMailStr(),addr:S.settings.addr||'',brand:S.settings.brand||'#31ACF0',accent:S.settings.accent||'#F76300',
     cap:S.settings.cap,wcap:Math.min(S.settings.cap,w.cap),lead:w.lead,days:w.days,max:w.max,tz:(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Paris'}catch(e){return 'Europe/Paris'}})(),
-    info:w.info||'',cgv:w.cgv||'',...(()=>{const lg=S.settings.legal||{},c=cnf();return{lg:{r:lg.raison||'',f:lg.forme||'',a:lg.adr||'',s:lg.siret||'',t:lg.franchise?'':(lg.tva||''),fr:!!lg.franchise,m:lg.mail||mlMailStr()},med:{n:c.med.n||'',u:c.med.u||''},ret:c.ret.y,cv:'T1-'+cfSha(JSON.stringify([w.cgv||'',lg.raison,lg.siret,lg.adr,c.med.n,c.med.u])).slice(0,8)}})(),pre:(w.pre||'RES').slice(0,4),br:BR.map(b=>[b[0],b[1]]),prods:P(w.prods||[],false),adds:P(w.adds||[],true),upd:Date.now()};
+    info:w.info||'',cgv:w.cgv||'',...(()=>{const lg=S.settings.legal||{},c=cnf();return{lg:{r:lg.raison||'',f:lg.forme||'',a:lg.adr||'',s:lg.siret||'',t:lg.franchise?'':(lg.tva||''),fr:!!lg.franchise,m:lg.mail||mlMailStr()},med:{n:c.med.n||'',u:c.med.u||''},ret:c.ret.y,cv:'T1-'+cfSha(JSON.stringify([w.cgv||'',lg.raison,lg.siret,lg.adr,c.med.n,c.med.u])).slice(0,8)}})(),pre:(w.pre||'RES').slice(0,4),st:STEP,u:WU(),...brPub(),prods:P(w.prods||[],false),adds:P(w.adds||[],true),upd:Date.now()};
 }
 async function webPublish(force){
   const w=webCfg();if(!webReady())return false;
@@ -7732,7 +7760,7 @@ function webSched(){if(!webCfg().on)return;clearTimeout(webTimer);webTimer=setTi
 function webLines(b){return (b.items||[]).filter(it=>it.dur)}
 function webSlots(b){
   const o={};
-  webLines(b).forEach(it=>{for(let m=b.start;m<b.start+it.dur;m+=15)o[m/15]=(o[m/15]||0)+it.q});
+  webLines(b).forEach(it=>{for(let m=qFloor(b.start);m<b.start+it.dur;m+=STEP)o[m/WU()]=(o[m/WU()]||0)+it.q});
   return Object.entries(o).map(([i,n])=>[+i,n]);
 }
 async function webCounters(b,sign){
@@ -7765,7 +7793,7 @@ async function webIngest(id,r){
   if(webArr().some(b=>b.id===id))return null;
   let p;try{p=await webOpen(r)}catch(e){return null}
   const w=webCfg(),t0=today();
-  if(!p||p.v!==1||!/^\d{4}-\d{2}-\d{2}$/.test(p.date||'')||!Number.isInteger(p.start)||p.start%15||p.start<0||p.start>1440||p.date<addDays(t0,-1)||p.date>addDays(t0,w.days+1))return null;
+  if(!p||p.v!==1||!/^\d{4}-\d{2}-\d{2}$/.test(p.date||'')||!Number.isInteger(p.start)||p.start%5||p.start<0||p.start>1440||p.date<addDays(t0,-1)||p.date>addDays(t0,w.days+1))return null;
   const items=[];let people=0;
   for(const it of (Array.isArray(p.items)?p.items.slice(0,12):[])){
     const pr=webProd(it.id),q=Math.floor(+it.q);if(!pr||!(q>=1&&q<=w.max))continue;
@@ -7779,7 +7807,7 @@ async function webIngest(id,r){
     name:clean(p.name,80),mail:clean(p.mail,120),phone:clean(p.phone,20),note:clean(p.note,300),optin:!!p.optin,cv:clean(p.cv,16),st:'ok'};
   /* places encore libres ? (la page a déjà réservé les places, ce contrôle est un filet de sécurité) */
   const longest=Math.max(...items.filter(x=>x.dur).map(x=>x.dur));
-  for(let m=b.start;m<b.start+longest;m+=15){
+  for(let m=b.start;m<b.start+longest;m+=STEP){
     const nd=items.reduce((a,x)=>a+(x.dur&&m<b.start+x.dur?x.q:0),0);
     if(!openAt(b.date,m)||S.settings.cap-occ(b.date,m)<nd){b.st='full';break}
   }
@@ -9178,7 +9206,7 @@ function lagoLogo(k){return '<img class="lgw" alt="lago" data-lk="'+k+'" src="'+
    - Un lien d'activation créé par la console (#cloud=… avec b:1) prépare un espace client NEUF : état vierge + modèle choisi,
      puis le premier visiteur crée le compte administrateur.
    - Suspension : si le propriétaire suspend l'espace depuis la console, la base refuse tout accès ; Lago affiche un écran clair. */
-const TPL_DATA=[{"id":"parc-trampoline","version":1,"label":"Parc de trampolines","resume":"Sessions de saut, bar, anniversaires, privatisations, cartes cadeaux.","settings":{"catNames":["Park","Bar","Événement","Gestion"],"subs":{"bar":["Boissons fraîches","Boissons chaudes","Snack","Crêpes & paninis","Pizza","Pop corn","Glaces"]},"capacite":200,"equipe_minimum":3,"horaires":{"ouverture":"10:00","fermeture":"19:00","jours_fermes":[]},"fond_de_caisse":100,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Découverte","points":100,"remise":5},{"nom":"Habitué","points":250,"remise":15},{"nom":"VIP","points":500,"remise":35}]},"reservation_en_ligne":{"places_par_creneau":120,"delai_minimum_minutes":120,"jours_a_l_avance":60,"personnes_max":12,"message":"Chaussettes antidérapantes obligatoires (en vente sur place)."},"message_accueil":"Bonne journée à toute l’équipe !","pied_de_ticket":"Merci et à bientôt chez {nom} !","echeances_desactivees":[]},"products":[{"name":"Session 1 h","cat":"park","price":14,"tva":10,"jumper":true,"dur":60,"art":"p1"},{"name":"Session 1 h 30","cat":"park","price":18,"tva":10,"jumper":true,"dur":90,"art":"p2"},{"name":"Session 2 h","cat":"park","price":22,"tva":10,"jumper":true,"dur":120,"art":"p2"},{"name":"Mini sauteur, moins de 6 ans","cat":"park","price":10,"tva":10,"jumper":true,"dur":45,"art":"p3"},{"name":"Accompagnateur","cat":"park","price":2,"tva":10,"art":"p4"},{"name":"Pass 10 sessions","cat":"park","price":120,"tva":10,"art":"p5"},{"name":"Chaussettes antidérapantes","cat":"park","price":2.5,"tva":20,"art":"b1"},{"name":"Gourde","cat":"park","price":8,"tva":20,"art":"b2"},{"name":"T-shirt du parc","cat":"park","price":15,"tva":20,"art":"b3"},{"name":"Eau 50 cl","cat":"bar","scat":"Boissons fraîches","price":1.5,"tva":10,"art":"s1"},{"name":"Soda","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Jus de fruits","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Café","cat":"bar","scat":"Boissons chaudes","price":1.8,"tva":10,"art":"s3"},{"name":"Chocolat chaud","cat":"bar","scat":"Boissons chaudes","price":2.5,"tva":10,"art":"s3"},{"name":"Hot-dog","cat":"bar","scat":"Snack","price":4.5,"tva":10,"art":"s5"},{"name":"Chips","cat":"bar","scat":"Snack","price":2,"tva":10},{"name":"Gaufre sucre","cat":"bar","scat":"Crêpes & paninis","price":3.5,"tva":10,"art":"s4"},{"name":"Crêpe sucre","cat":"bar","scat":"Crêpes & paninis","price":3,"tva":10,"art":"s4"},{"name":"Panini jambon fromage","cat":"bar","scat":"Crêpes & paninis","price":5.5,"tva":10,"art":"s5"},{"name":"Pizza margherita","cat":"bar","scat":"Pizza","price":7,"tva":10},{"name":"Pizza reine","cat":"bar","scat":"Pizza","price":8,"tva":10},{"name":"Pop corn","cat":"bar","scat":"Pop corn","price":3,"tva":10},{"name":"Glace","cat":"bar","scat":"Glaces","price":2.5,"tva":10,"art":"s6"},{"name":"Cône vanille","cat":"bar","scat":"Glaces","price":2.5,"tva":10,"art":"s6"},{"name":"Anniversaire Essentiel","cat":"event","price":249,"tva":10,"event":true,"guests":10,"art":"a1"},{"name":"Anniversaire Premium","cat":"event","price":329,"tva":10,"event":true,"guests":10,"art":"a2"},{"name":"Privatisation 2 h","cat":"event","price":590,"tva":10,"event":true,"guests":30},{"name":"Team building","cat":"event","price":450,"tva":10,"event":true,"guests":20},{"name":"Enfant supplémentaire","cat":"event","price":19,"tva":10,"art":"a3"},{"name":"Acompte événement","cat":"gestion","price":60,"tva":10},{"name":"Carte cadeau 20 €","cat":"gestion","price":20,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","price":50,"tva":20},{"name":"Caution matériel","cat":"gestion","price":20,"tva":20}]},{"id":"laser-game","version":1,"label":"Laser game","resume":"Parties de laser, bar, anniversaires, soirées entreprise, cartes cadeaux.","settings":{"catNames":["Parties","Bar","Événements","Boutique et gestion"],"subs":{"bar":["Boissons fraîches","Bières","Snack","Sucré"],"gestion":["Cartes cadeaux","Divers"]},"capacite":30,"equipe_minimum":2,"horaires":{"ouverture":"10:00","fermeture":"22:00","jours_fermes":[]},"fond_de_caisse":100,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Recrue","points":100,"remise":5},{"nom":"Agent","points":250,"remise":15},{"nom":"Légende","points":500,"remise":35}]},"reservation_en_ligne":{"places_par_creneau":24,"delai_minimum_minutes":120,"jours_a_l_avance":60,"personnes_max":15,"message":"Arrivez 15 minutes avant votre partie pour le briefing. Chaussures fermées conseillées."},"message_accueil":"Bonne partie à toute l’équipe !","pied_de_ticket":"Merci et à bientôt chez {nom} !","echeances_desactivees":["mousse","jeux"],"listes_controle_mensuel":["Gilets et capteurs (état, fixations)","Pistolets laser (lentilles, déclencheurs, batteries)","Bornes de recharge et chargeurs","Base de jeu et serveur de scores","Décors, cloisons et obstacles (solidité, arêtes)","Fumigène : machine, liquide, aération","Éclairage de jeu et éclairage de secours","Sols et zones de circulation","Issues de secours et signalétique","Extincteurs et trousse de secours","Vestiaires, casiers et sanitaires","Règlement et consignes de sécurité affichés"],"onglets_masques":["controle:visuel","resa:qweekle"],"types_equipement":["Arène de jeu","Labyrinthe","Salle de briefing","Autre"],"illustrations":{"park":"laser","bar":"biere","event":"groupe","gestion":"cadeau"},"vocabulaire":{"session":"Parties de laser","lieu":"Arène","reserver":"Réserver une partie","departs":"Prochaines parties","plus_de_depart":"Plus de partie aujourd’hui.","personne":"joueur","clients_de":"Joueurs","nom_etab":"Nom du laser game"}},"products":[{"name":"Partie laser 20 min","cat":"park","price":9,"tva":10,"jumper":true,"dur":20,"art":"cible"},{"name":"2 parties","cat":"park","price":16,"tva":10,"jumper":true,"dur":40,"art":"cible"},{"name":"3 parties","cat":"park","price":22,"tva":10,"jumper":true,"dur":60,"art":"cible"},{"name":"Partie enfant, moins de 10 ans","cat":"park","price":7,"tva":10,"jumper":true,"dur":20,"art":"gilet"},{"name":"Pass 5 parties","cat":"park","price":35,"tva":10,"art":"p5"},{"name":"Eau 50 cl","cat":"bar","scat":"Boissons fraîches","price":1.5,"tva":10,"art":"s1"},{"name":"Soda","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Jus de fruits","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Bière 25 cl","cat":"bar","scat":"Bières","price":3.5,"tva":20},{"name":"Bière 50 cl","cat":"bar","scat":"Bières","price":6,"tva":20},{"name":"Hot-dog","cat":"bar","scat":"Snack","price":4.5,"tva":10,"art":"s5"},{"name":"Nachos","cat":"bar","scat":"Snack","price":4,"tva":10},{"name":"Pop corn","cat":"bar","scat":"Snack","price":3,"tva":10},{"name":"Bonbons","cat":"bar","scat":"Sucré","price":2,"tva":10},{"name":"Glace","cat":"bar","scat":"Sucré","price":2.5,"tva":10,"art":"s6"},{"name":"Anniversaire laser, 10 enfants","cat":"event","price":189,"tva":10,"event":true,"guests":10,"art":"a1"},{"name":"Anniversaire laser Premium, 10 enfants","cat":"event","price":249,"tva":10,"event":true,"guests":10,"art":"a2"},{"name":"Soirée entreprise, 20 personnes","cat":"event","price":480,"tva":10,"event":true,"guests":20},{"name":"Enterrement de vie de célibataire","cat":"event","price":320,"tva":10,"event":true,"guests":12},{"name":"Enfant supplémentaire","cat":"event","price":16,"tva":10,"art":"a3"},{"name":"Acompte événement","cat":"gestion","scat":"Divers","price":50,"tva":10},{"name":"Carte cadeau 20 €","cat":"gestion","scat":"Cartes cadeaux","price":20,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","scat":"Cartes cadeaux","price":50,"tva":20}]},{"id":"coiffeur","version":1,"label":"Salon de coiffure","resume":"Prestations, rendez-vous en ligne, produits de soin, cartes cadeaux.","settings":{"catNames":["Coiffure","Soins et produits","Forfaits et mariages","Divers"],"subs":{"park":["Femme","Homme","Enfant","Couleur"],"bar":["Soins","Produits"],"gestion":["Cartes cadeaux","Acomptes"]},"capacite":4,"equipe_minimum":1,"horaires":{"ouverture":"09:00","fermeture":"19:00","jours_fermes":[0,1],"jours":{"6":["09:00","18:00"]}},"fond_de_caisse":80,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Fidèle","points":150,"remise":5},{"nom":"Habituée","points":400,"remise":15},{"nom":"VIP","points":800,"remise":40}]},"reservation_en_ligne":{"places_par_creneau":4,"delai_minimum_minutes":240,"jours_a_l_avance":45,"personnes_max":3,"message":"Indiquez en commentaire la longueur de vos cheveux et le service souhaité."},"message_accueil":"Belle journée à toute l’équipe !","pied_de_ticket":"Merci de votre visite chez {nom}, à très bientôt !","modules_masques":["controle"],"onglets_masques":["resa:bracelets","resa:entrees","clients:decharges","clients:carnets","resa:qweekle"],"echeances_desactivees":["ssi","deseno","jeux","mousse","portes"],"textes":{"Animateur":"Coiffeur·se","Park":"Activité","Anniversaires":"Événements"},"illustrations":{"park":"ciseaux","bar":"flacon","event":"agenda","gestion":"cadeau"},"vocabulaire":{"session":"Rendez-vous","lieu":"Salon","reserver":"Nouveau rendez-vous","departs":"Prochains rendez-vous","plus_de_depart":"Plus de rendez-vous aujourd’hui.","personne":"client","clients_de":"Clients du salon","nom_etab":"Nom du salon"}},"products":[{"name":"Coupe femme","cat":"park","scat":"Femme","price":45,"tva":20,"jumper":true,"dur":45},{"name":"Coupe femme cheveux longs","cat":"park","scat":"Femme","price":55,"tva":20,"jumper":true,"dur":60},{"name":"Brushing court","cat":"park","scat":"Femme","price":25,"tva":20,"jumper":true,"dur":30,"art":"seche"},{"name":"Brushing long","cat":"park","scat":"Femme","price":35,"tva":20,"jumper":true,"dur":45,"art":"seche"},{"name":"Coupe homme","cat":"park","scat":"Homme","price":25,"tva":20,"jumper":true,"dur":30,"art":"peigne"},{"name":"Coupe et barbe","cat":"park","scat":"Homme","price":35,"tva":20,"jumper":true,"dur":45,"art":"peigne"},{"name":"Barbe","cat":"park","scat":"Homme","price":15,"tva":20,"jumper":true,"dur":20,"art":"peigne"},{"name":"Coupe enfant, moins de 12 ans","cat":"park","scat":"Enfant","price":18,"tva":20,"jumper":true,"dur":30},{"name":"Couleur racines","cat":"park","scat":"Couleur","price":55,"tva":20,"jumper":true,"dur":75,"art":"pinceau"},{"name":"Couleur complète","cat":"park","scat":"Couleur","price":75,"tva":20,"jumper":true,"dur":90,"art":"pinceau"},{"name":"Mèches ou balayage","cat":"park","scat":"Couleur","price":95,"tva":20,"jumper":true,"dur":120,"art":"pinceau"},{"name":"Patine ou ton sur ton","cat":"park","scat":"Couleur","price":35,"tva":20,"jumper":true,"dur":45,"art":"pinceau"},{"name":"Soin profond","cat":"bar","scat":"Soins","price":15,"tva":20},{"name":"Soin réparateur","cat":"bar","scat":"Soins","price":20,"tva":20},{"name":"Shampoing et coiffage","cat":"bar","scat":"Soins","price":20,"tva":20,"art":"seche"},{"name":"Shampoing 250 ml","cat":"bar","scat":"Produits","price":14.9,"tva":20},{"name":"Après-shampoing 250 ml","cat":"bar","scat":"Produits","price":15.9,"tva":20},{"name":"Masque nourrissant","cat":"bar","scat":"Produits","price":19.9,"tva":20},{"name":"Cire coiffante","cat":"bar","scat":"Produits","price":16.5,"tva":20},{"name":"Laque","cat":"bar","scat":"Produits","price":12.9,"tva":20},{"name":"Coiffure de mariée (essai compris)","cat":"event","price":160,"tva":20,"event":true,"guests":1},{"name":"Coiffure d’invitée","cat":"event","price":50,"tva":20},{"name":"Forfait coupe + couleur + brushing","cat":"event","price":110,"tva":20},{"name":"Carte cadeau 30 €","cat":"gestion","scat":"Cartes cadeaux","price":30,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","scat":"Cartes cadeaux","price":50,"tva":20},{"name":"Carte cadeau 100 €","cat":"gestion","scat":"Cartes cadeaux","price":100,"tva":20},{"name":"Acompte rendez-vous","cat":"gestion","scat":"Acomptes","price":15,"tva":20}]},{"id":"restaurant","version":1,"label":"Restaurant","resume":"Carte, boissons, menus et groupes, réservations de table, cartes cadeaux.","settings":{"catNames":["Plats","Boissons","Menus et groupes","Divers"],"subs":{"park":["Entrées","Plats","Desserts"],"bar":["Softs","Bières","Vins","Café"],"gestion":["Cartes cadeaux","Acomptes"]},"capacite":40,"equipe_minimum":3,"horaires":{"ouverture":"11:30","fermeture":"23:00","jours_fermes":[1],"jours":{"0":["11:30","16:00"]}},"fond_de_caisse":150,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Gourmand","points":150,"remise":5},{"nom":"Habitué","points":400,"remise":20},{"nom":"Grand client","points":800,"remise":50}]},"reservation_en_ligne":{"places_par_creneau":30,"delai_minimum_minutes":120,"jours_a_l_avance":45,"personnes_max":10,"message":"Merci de nous prévenir en cas d’allergie. La table est gardée 15 minutes."},"message_accueil":"Bon service à toute l’équipe !","pied_de_ticket":"Merci de votre visite chez {nom}, à bientôt !","modules_masques":["controle"],"onglets_masques":["resa:bracelets","resa:entrees","clients:decharges","clients:carnets","resa:qweekle"],"echeances_desactivees":["deseno","jeux","mousse","portes"],"textes":{"Animateur":"Serveur·se","Park":"Activité","Anniversaires":"Événements"},"illustrations":{"park":"assiette","bar":"verre","event":"menu","gestion":"cadeau"},"vocabulaire":{"session":"Service","lieu":"Salle","reserver":"Réserver une table","departs":"Prochains services","plus_de_depart":"Plus de service aujourd’hui.","personne":"couvert","clients_de":"Couverts","nom_etab":"Nom du restaurant"}},"products":[{"name":"Soupe du jour","cat":"park","scat":"Entrées","price":7,"tva":10,"art":"soupe"},{"name":"Salade de chèvre chaud","cat":"park","scat":"Entrées","price":10.5,"tva":10},{"name":"Terrine maison","cat":"park","scat":"Entrées","price":9,"tva":10},{"name":"Plat du jour","cat":"park","scat":"Plats","price":14.5,"tva":10},{"name":"Burger maison","cat":"park","scat":"Plats","price":16,"tva":10,"art":"burger"},{"name":"Pavé de saumon","cat":"park","scat":"Plats","price":18.5,"tva":10},{"name":"Entrecôte, frites","cat":"park","scat":"Plats","price":21,"tva":10},{"name":"Assiette végétarienne","cat":"park","scat":"Plats","price":14,"tva":10},{"name":"Tarte du moment","cat":"park","scat":"Desserts","price":7,"tva":10,"art":"dessert"},{"name":"Mousse au chocolat","cat":"park","scat":"Desserts","price":6.5,"tva":10,"art":"dessert"},{"name":"Café gourmand","cat":"park","scat":"Desserts","price":8,"tva":10,"art":"dessert"},{"name":"Eau plate 50 cl","cat":"bar","scat":"Softs","price":3,"tva":10,"art":"s1"},{"name":"Eau gazeuse 50 cl","cat":"bar","scat":"Softs","price":3.5,"tva":10,"art":"s1"},{"name":"Soda 33 cl","cat":"bar","scat":"Softs","price":3.5,"tva":10,"art":"s2"},{"name":"Jus de fruits","cat":"bar","scat":"Softs","price":3.5,"tva":10,"art":"s2"},{"name":"Bière pression 25 cl","cat":"bar","scat":"Bières","price":3.5,"tva":20,"art":"biere"},{"name":"Bière pression 50 cl","cat":"bar","scat":"Bières","price":6.5,"tva":20,"art":"biere"},{"name":"Verre de vin rouge","cat":"bar","scat":"Vins","price":4.5,"tva":20},{"name":"Verre de vin blanc","cat":"bar","scat":"Vins","price":4.5,"tva":20},{"name":"Bouteille de vin, 75 cl","cat":"bar","scat":"Vins","price":22,"tva":20},{"name":"Café","cat":"bar","scat":"Café","price":2,"tva":10,"art":"s3"},{"name":"Thé ou infusion","cat":"bar","scat":"Café","price":3,"tva":10,"art":"s3"},{"name":"Menu du jour (entrée + plat ou plat + dessert)","cat":"event","price":18.5,"tva":10,"jumper":true,"dur":90},{"name":"Menu enfant","cat":"event","price":9.5,"tva":10,"jumper":true,"dur":60},{"name":"Menu groupe, par personne","cat":"event","price":32,"tva":10,"event":true,"guests":20},{"name":"Privatisation de la salle, 30 personnes","cat":"event","price":600,"tva":10,"event":true,"guests":30},{"name":"Carte cadeau 30 €","cat":"gestion","scat":"Cartes cadeaux","price":30,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","scat":"Cartes cadeaux","price":50,"tva":20},{"name":"Acompte groupe","cat":"gestion","scat":"Acomptes","price":100,"tva":10}]}];
+const TPL_DATA=[{"id":"parc-trampoline","version":2,"label":"Parc de trampolines","resume":"Sessions de saut, bar, anniversaires, privatisations, cartes cadeaux.","settings":{"catNames":["Park","Bar","Événement","Gestion"],"subs":{"bar":["Boissons fraîches","Boissons chaudes","Snack","Crêpes & paninis","Pizza","Pop corn","Glaces"]},"capacite":200,"equipe_minimum":3,"horaires":{"ouverture":"10:00","fermeture":"19:00","jours_fermes":[]},"fond_de_caisse":100,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Découverte","points":100,"remise":5},{"nom":"Habitué","points":250,"remise":15},{"nom":"VIP","points":500,"remise":35}]},"reservation_en_ligne":{"places_par_creneau":120,"delai_minimum_minutes":120,"jours_a_l_avance":60,"personnes_max":12,"message":"Chaussettes antidérapantes obligatoires (en vente sur place)."},"message_accueil":"Bonne journée à toute l’équipe !","pied_de_ticket":"Merci et à bientôt chez {nom} !","echeances_desactivees":[],"intervalle_depart_minutes":15,"reperage":{"mode":"couleurs"}},"products":[{"name":"Session 1 h","cat":"park","price":14,"tva":10,"jumper":true,"dur":60,"art":"p1"},{"name":"Session 1 h 30","cat":"park","price":18,"tva":10,"jumper":true,"dur":90,"art":"p2"},{"name":"Session 2 h","cat":"park","price":22,"tva":10,"jumper":true,"dur":120,"art":"p2"},{"name":"Mini sauteur, moins de 6 ans","cat":"park","price":10,"tva":10,"jumper":true,"dur":45,"art":"p3"},{"name":"Accompagnateur","cat":"park","price":2,"tva":10,"art":"p4"},{"name":"Pass 10 sessions","cat":"park","price":120,"tva":10,"art":"p5"},{"name":"Chaussettes antidérapantes","cat":"park","price":2.5,"tva":20,"art":"b1"},{"name":"Gourde","cat":"park","price":8,"tva":20,"art":"b2"},{"name":"T-shirt du parc","cat":"park","price":15,"tva":20,"art":"b3"},{"name":"Eau 50 cl","cat":"bar","scat":"Boissons fraîches","price":1.5,"tva":10,"art":"s1"},{"name":"Soda","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Jus de fruits","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Café","cat":"bar","scat":"Boissons chaudes","price":1.8,"tva":10,"art":"s3"},{"name":"Chocolat chaud","cat":"bar","scat":"Boissons chaudes","price":2.5,"tva":10,"art":"s3"},{"name":"Hot-dog","cat":"bar","scat":"Snack","price":4.5,"tva":10,"art":"s5"},{"name":"Chips","cat":"bar","scat":"Snack","price":2,"tva":10},{"name":"Gaufre sucre","cat":"bar","scat":"Crêpes & paninis","price":3.5,"tva":10,"art":"s4"},{"name":"Crêpe sucre","cat":"bar","scat":"Crêpes & paninis","price":3,"tva":10,"art":"s4"},{"name":"Panini jambon fromage","cat":"bar","scat":"Crêpes & paninis","price":5.5,"tva":10,"art":"s5"},{"name":"Pizza margherita","cat":"bar","scat":"Pizza","price":7,"tva":10},{"name":"Pizza reine","cat":"bar","scat":"Pizza","price":8,"tva":10},{"name":"Pop corn","cat":"bar","scat":"Pop corn","price":3,"tva":10},{"name":"Glace","cat":"bar","scat":"Glaces","price":2.5,"tva":10,"art":"s6"},{"name":"Cône vanille","cat":"bar","scat":"Glaces","price":2.5,"tva":10,"art":"s6"},{"name":"Anniversaire Essentiel","cat":"event","price":249,"tva":10,"event":true,"guests":10,"art":"a1"},{"name":"Anniversaire Premium","cat":"event","price":329,"tva":10,"event":true,"guests":10,"art":"a2"},{"name":"Privatisation 2 h","cat":"event","price":590,"tva":10,"event":true,"guests":30},{"name":"Team building","cat":"event","price":450,"tva":10,"event":true,"guests":20},{"name":"Enfant supplémentaire","cat":"event","price":19,"tva":10,"art":"a3"},{"name":"Acompte événement","cat":"gestion","price":60,"tva":10},{"name":"Carte cadeau 20 €","cat":"gestion","price":20,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","price":50,"tva":20},{"name":"Caution matériel","cat":"gestion","price":20,"tva":20}]},{"id":"laser-game","version":2,"label":"Laser game","resume":"Parties de laser, bar, anniversaires, soirées entreprise, cartes cadeaux.","settings":{"catNames":["Parties","Bar","Événements","Boutique et gestion"],"subs":{"bar":["Boissons fraîches","Bières","Snack","Sucré"],"gestion":["Cartes cadeaux","Divers"]},"capacite":30,"equipe_minimum":2,"horaires":{"ouverture":"10:00","fermeture":"22:00","jours_fermes":[]},"fond_de_caisse":100,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Recrue","points":100,"remise":5},{"nom":"Agent","points":250,"remise":15},{"nom":"Légende","points":500,"remise":35}]},"reservation_en_ligne":{"places_par_creneau":24,"delai_minimum_minutes":120,"jours_a_l_avance":60,"personnes_max":15,"message":"Arrivez 15 minutes avant votre partie pour le briefing. Chaussures fermées conseillées."},"message_accueil":"Bonne partie à toute l’équipe !","pied_de_ticket":"Merci et à bientôt chez {nom} !","echeances_desactivees":["mousse","jeux"],"listes_controle_mensuel":["Gilets et capteurs (état, fixations)","Pistolets laser (lentilles, déclencheurs, batteries)","Bornes de recharge et chargeurs","Base de jeu et serveur de scores","Décors, cloisons et obstacles (solidité, arêtes)","Fumigène : machine, liquide, aération","Éclairage de jeu et éclairage de secours","Sols et zones de circulation","Issues de secours et signalétique","Extincteurs et trousse de secours","Vestiaires, casiers et sanitaires","Règlement et consignes de sécurité affichés"],"onglets_masques":["controle:visuel","resa:qweekle"],"types_equipement":["Arène de jeu","Labyrinthe","Salle de briefing","Autre"],"illustrations":{"park":"laser","bar":"biere","event":"groupe","gestion":"cadeau"},"vocabulaire":{"session":"Parties de laser","lieu":"Arène","reserver":"Réserver une partie","departs":"Prochaines parties","plus_de_depart":"Plus de partie aujourd’hui.","personne":"joueur","clients_de":"Joueurs","nom_etab":"Nom du laser game"},"intervalle_depart_minutes":20,"reperage":{"mode":"texte","mot":"Partie"}},"products":[{"name":"Partie laser 20 min","cat":"park","price":9,"tva":10,"jumper":true,"dur":20,"art":"cible"},{"name":"2 parties","cat":"park","price":16,"tva":10,"jumper":true,"dur":40,"art":"cible"},{"name":"3 parties","cat":"park","price":22,"tva":10,"jumper":true,"dur":60,"art":"cible"},{"name":"Partie enfant, moins de 10 ans","cat":"park","price":7,"tva":10,"jumper":true,"dur":20,"art":"gilet"},{"name":"Pass 5 parties","cat":"park","price":35,"tva":10,"art":"p5"},{"name":"Eau 50 cl","cat":"bar","scat":"Boissons fraîches","price":1.5,"tva":10,"art":"s1"},{"name":"Soda","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Jus de fruits","cat":"bar","scat":"Boissons fraîches","price":2.5,"tva":10,"art":"s2"},{"name":"Bière 25 cl","cat":"bar","scat":"Bières","price":3.5,"tva":20},{"name":"Bière 50 cl","cat":"bar","scat":"Bières","price":6,"tva":20},{"name":"Hot-dog","cat":"bar","scat":"Snack","price":4.5,"tva":10,"art":"s5"},{"name":"Nachos","cat":"bar","scat":"Snack","price":4,"tva":10},{"name":"Pop corn","cat":"bar","scat":"Snack","price":3,"tva":10},{"name":"Bonbons","cat":"bar","scat":"Sucré","price":2,"tva":10},{"name":"Glace","cat":"bar","scat":"Sucré","price":2.5,"tva":10,"art":"s6"},{"name":"Anniversaire laser, 10 enfants","cat":"event","price":189,"tva":10,"event":true,"guests":10,"art":"a1"},{"name":"Anniversaire laser Premium, 10 enfants","cat":"event","price":249,"tva":10,"event":true,"guests":10,"art":"a2"},{"name":"Soirée entreprise, 20 personnes","cat":"event","price":480,"tva":10,"event":true,"guests":20},{"name":"Enterrement de vie de célibataire","cat":"event","price":320,"tva":10,"event":true,"guests":12},{"name":"Enfant supplémentaire","cat":"event","price":16,"tva":10,"art":"a3"},{"name":"Acompte événement","cat":"gestion","scat":"Divers","price":50,"tva":10},{"name":"Carte cadeau 20 €","cat":"gestion","scat":"Cartes cadeaux","price":20,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","scat":"Cartes cadeaux","price":50,"tva":20}]},{"id":"coiffeur","version":2,"label":"Salon de coiffure","resume":"Prestations, rendez-vous en ligne, produits de soin, cartes cadeaux.","settings":{"catNames":["Coiffure","Soins et produits","Forfaits et mariages","Divers"],"subs":{"park":["Femme","Homme","Enfant","Couleur"],"bar":["Soins","Produits"],"gestion":["Cartes cadeaux","Acomptes"]},"capacite":4,"equipe_minimum":1,"horaires":{"ouverture":"09:00","fermeture":"19:00","jours_fermes":[0,1],"jours":{"6":["09:00","18:00"]}},"fond_de_caisse":80,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Fidèle","points":150,"remise":5},{"nom":"Habituée","points":400,"remise":15},{"nom":"VIP","points":800,"remise":40}]},"reservation_en_ligne":{"places_par_creneau":4,"delai_minimum_minutes":240,"jours_a_l_avance":45,"personnes_max":3,"message":"Indiquez en commentaire la longueur de vos cheveux et le service souhaité."},"message_accueil":"Belle journée à toute l’équipe !","pied_de_ticket":"Merci de votre visite chez {nom}, à très bientôt !","modules_masques":["controle"],"onglets_masques":["resa:bracelets","resa:entrees","clients:decharges","clients:carnets","resa:qweekle"],"echeances_desactivees":["ssi","deseno","jeux","mousse","portes"],"textes":{"Animateur":"Coiffeur·se","Park":"Activité","Anniversaires":"Événements"},"illustrations":{"park":"ciseaux","bar":"flacon","event":"agenda","gestion":"cadeau"},"vocabulaire":{"session":"Rendez-vous","lieu":"Salon","reserver":"Nouveau rendez-vous","departs":"Prochains rendez-vous","plus_de_depart":"Plus de rendez-vous aujourd’hui.","personne":"client","clients_de":"Clients du salon","nom_etab":"Nom du salon"},"intervalle_depart_minutes":15,"reperage":{"mode":"texte","mot":"Rendez-vous"}},"products":[{"name":"Coupe femme","cat":"park","scat":"Femme","price":45,"tva":20,"jumper":true,"dur":45},{"name":"Coupe femme cheveux longs","cat":"park","scat":"Femme","price":55,"tva":20,"jumper":true,"dur":60},{"name":"Brushing court","cat":"park","scat":"Femme","price":25,"tva":20,"jumper":true,"dur":30,"art":"seche"},{"name":"Brushing long","cat":"park","scat":"Femme","price":35,"tva":20,"jumper":true,"dur":45,"art":"seche"},{"name":"Coupe homme","cat":"park","scat":"Homme","price":25,"tva":20,"jumper":true,"dur":30,"art":"peigne"},{"name":"Coupe et barbe","cat":"park","scat":"Homme","price":35,"tva":20,"jumper":true,"dur":45,"art":"peigne"},{"name":"Barbe","cat":"park","scat":"Homme","price":15,"tva":20,"jumper":true,"dur":20,"art":"peigne"},{"name":"Coupe enfant, moins de 12 ans","cat":"park","scat":"Enfant","price":18,"tva":20,"jumper":true,"dur":30},{"name":"Couleur racines","cat":"park","scat":"Couleur","price":55,"tva":20,"jumper":true,"dur":75,"art":"pinceau"},{"name":"Couleur complète","cat":"park","scat":"Couleur","price":75,"tva":20,"jumper":true,"dur":90,"art":"pinceau"},{"name":"Mèches ou balayage","cat":"park","scat":"Couleur","price":95,"tva":20,"jumper":true,"dur":120,"art":"pinceau"},{"name":"Patine ou ton sur ton","cat":"park","scat":"Couleur","price":35,"tva":20,"jumper":true,"dur":45,"art":"pinceau"},{"name":"Soin profond","cat":"bar","scat":"Soins","price":15,"tva":20},{"name":"Soin réparateur","cat":"bar","scat":"Soins","price":20,"tva":20},{"name":"Shampoing et coiffage","cat":"bar","scat":"Soins","price":20,"tva":20,"art":"seche"},{"name":"Shampoing 250 ml","cat":"bar","scat":"Produits","price":14.9,"tva":20},{"name":"Après-shampoing 250 ml","cat":"bar","scat":"Produits","price":15.9,"tva":20},{"name":"Masque nourrissant","cat":"bar","scat":"Produits","price":19.9,"tva":20},{"name":"Cire coiffante","cat":"bar","scat":"Produits","price":16.5,"tva":20},{"name":"Laque","cat":"bar","scat":"Produits","price":12.9,"tva":20},{"name":"Coiffure de mariée (essai compris)","cat":"event","price":160,"tva":20,"event":true,"guests":1},{"name":"Coiffure d’invitée","cat":"event","price":50,"tva":20},{"name":"Forfait coupe + couleur + brushing","cat":"event","price":110,"tva":20},{"name":"Carte cadeau 30 €","cat":"gestion","scat":"Cartes cadeaux","price":30,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","scat":"Cartes cadeaux","price":50,"tva":20},{"name":"Carte cadeau 100 €","cat":"gestion","scat":"Cartes cadeaux","price":100,"tva":20},{"name":"Acompte rendez-vous","cat":"gestion","scat":"Acomptes","price":15,"tva":20}]},{"id":"restaurant","version":2,"label":"Restaurant","resume":"Carte, boissons, menus et groupes, réservations de table, cartes cadeaux.","settings":{"catNames":["Plats","Boissons","Menus et groupes","Divers"],"subs":{"park":["Entrées","Plats","Desserts"],"bar":["Softs","Bières","Vins","Café"],"gestion":["Cartes cadeaux","Acomptes"]},"capacite":40,"equipe_minimum":3,"horaires":{"ouverture":"11:30","fermeture":"23:00","jours_fermes":[1],"jours":{"0":["11:30","16:00"]}},"fond_de_caisse":150,"fidelite":{"points_par_euro":1,"paliers":[{"nom":"Gourmand","points":150,"remise":5},{"nom":"Habitué","points":400,"remise":20},{"nom":"Grand client","points":800,"remise":50}]},"reservation_en_ligne":{"places_par_creneau":30,"delai_minimum_minutes":120,"jours_a_l_avance":45,"personnes_max":10,"message":"Merci de nous prévenir en cas d’allergie. La table est gardée 15 minutes."},"message_accueil":"Bon service à toute l’équipe !","pied_de_ticket":"Merci de votre visite chez {nom}, à bientôt !","modules_masques":["controle"],"onglets_masques":["resa:bracelets","resa:entrees","clients:decharges","clients:carnets","resa:qweekle"],"echeances_desactivees":["deseno","jeux","mousse","portes"],"textes":{"Animateur":"Serveur·se","Park":"Activité","Anniversaires":"Événements"},"illustrations":{"park":"assiette","bar":"verre","event":"menu","gestion":"cadeau"},"vocabulaire":{"session":"Service","lieu":"Salle","reserver":"Réserver une table","departs":"Prochains services","plus_de_depart":"Plus de service aujourd’hui.","personne":"couvert","clients_de":"Couverts","nom_etab":"Nom du restaurant"},"intervalle_depart_minutes":15,"reperage":{"mode":"texte","mot":"Table"}},"products":[{"name":"Soupe du jour","cat":"park","scat":"Entrées","price":7,"tva":10,"art":"soupe"},{"name":"Salade de chèvre chaud","cat":"park","scat":"Entrées","price":10.5,"tva":10},{"name":"Terrine maison","cat":"park","scat":"Entrées","price":9,"tva":10},{"name":"Plat du jour","cat":"park","scat":"Plats","price":14.5,"tva":10},{"name":"Burger maison","cat":"park","scat":"Plats","price":16,"tva":10,"art":"burger"},{"name":"Pavé de saumon","cat":"park","scat":"Plats","price":18.5,"tva":10},{"name":"Entrecôte, frites","cat":"park","scat":"Plats","price":21,"tva":10},{"name":"Assiette végétarienne","cat":"park","scat":"Plats","price":14,"tva":10},{"name":"Tarte du moment","cat":"park","scat":"Desserts","price":7,"tva":10,"art":"dessert"},{"name":"Mousse au chocolat","cat":"park","scat":"Desserts","price":6.5,"tva":10,"art":"dessert"},{"name":"Café gourmand","cat":"park","scat":"Desserts","price":8,"tva":10,"art":"dessert"},{"name":"Eau plate 50 cl","cat":"bar","scat":"Softs","price":3,"tva":10,"art":"s1"},{"name":"Eau gazeuse 50 cl","cat":"bar","scat":"Softs","price":3.5,"tva":10,"art":"s1"},{"name":"Soda 33 cl","cat":"bar","scat":"Softs","price":3.5,"tva":10,"art":"s2"},{"name":"Jus de fruits","cat":"bar","scat":"Softs","price":3.5,"tva":10,"art":"s2"},{"name":"Bière pression 25 cl","cat":"bar","scat":"Bières","price":3.5,"tva":20,"art":"biere"},{"name":"Bière pression 50 cl","cat":"bar","scat":"Bières","price":6.5,"tva":20,"art":"biere"},{"name":"Verre de vin rouge","cat":"bar","scat":"Vins","price":4.5,"tva":20},{"name":"Verre de vin blanc","cat":"bar","scat":"Vins","price":4.5,"tva":20},{"name":"Bouteille de vin, 75 cl","cat":"bar","scat":"Vins","price":22,"tva":20},{"name":"Café","cat":"bar","scat":"Café","price":2,"tva":10,"art":"s3"},{"name":"Thé ou infusion","cat":"bar","scat":"Café","price":3,"tva":10,"art":"s3"},{"name":"Menu du jour (entrée + plat ou plat + dessert)","cat":"event","price":18.5,"tva":10,"jumper":true,"dur":90},{"name":"Menu enfant","cat":"event","price":9.5,"tva":10,"jumper":true,"dur":60},{"name":"Menu groupe, par personne","cat":"event","price":32,"tva":10,"event":true,"guests":20},{"name":"Privatisation de la salle, 30 personnes","cat":"event","price":600,"tva":10,"event":true,"guests":30},{"name":"Carte cadeau 30 €","cat":"gestion","scat":"Cartes cadeaux","price":30,"tva":20},{"name":"Carte cadeau 50 €","cat":"gestion","scat":"Cartes cadeaux","price":50,"tva":20},{"name":"Acompte groupe","cat":"gestion","scat":"Acomptes","price":100,"tva":10}]}];
 
 /* Illustrations des dalles de produits pour les modèles métier (viewBox 120×76, mêmes classes que les illustrations d'origine :
    a1 = couleur de la catégorie, a2 = teinte claire, a3 = fond, s = trait, d = trait clair). À réutiliser dans templates/*.json : "art": "<nom>" ou "illustrations": { "park": "<nom>" } */
@@ -9293,6 +9321,8 @@ function tplApply(id,o){
     if(f){st.ppe=f.points_par_euro||1;st.pal=(f.paliers||[]).map(p=>({id:'p'+p.points,pts:p.points,amt:tplEuros(p.remise),name:p.nom}))}else{st.ppe=d.ppe;st.pal=d.pal}
     st.welcome=tplFill(c.message_accueil,nm||st.name);st.ticketMsg=tplFill(c.pied_de_ticket,nm||st.name);
     const H=tplHoursOf(t);
+    if(c.intervalle_depart_minutes)st.step=stepOf(c.intervalle_depart_minutes);
+    if(c.reperage)st.brc={mode:c.reperage.mode==='texte'?'text':'color',word:String(c.reperage.mot||'').slice(0,20)||'Partie'};
     if(H){S.hours={week:H.week,exc:(S.hours&&S.hours.exc)||[]};syncEnvelope()}
     const r=c.reservation_en_ligne;
     if(r){const w=webCfg();if(r.places_par_creneau)w.cap=r.places_par_creneau;if(r.delai_minimum_minutes!==undefined)w.lead=r.delai_minimum_minutes;if(r.jours_a_l_avance)w.days=r.jours_a_l_avance;if(r.personnes_max)w.max=r.personnes_max;w.info=r.message||'';if(r.conditions!==undefined)w.cgv=r.conditions;w.prods=null;w.adds=null}
@@ -9876,7 +9906,7 @@ function mlTicketDoc(s){
   P.push({t:'p',x:mlHello(cl&&!cl.anon?cl.name:'')});
   P.push({t:'p',x:av?'Voici l’avoir établi le '+mlFmtD(s.ts)+' sur le ticket '+s.rf+'.':'Merci de votre visite ! Voici le ticket de votre achat du '+mlFmtD(s.ts)+' à '+hm(s.ts)+'.'});
   if(av&&s.mt)P.push({t:'box',x:'Motif : '+s.mt});
-  if(s.slot){const sp=String(s.slot).split('|'),st=+sp[1],dur=s.dur||60,b=bracelet(st,dur);P.push({t:'box',x:'Créneau : '+fm(st)+' à '+fm(st+dur)+' le '+new Date(sp[0]+'T12:00').toLocaleDateString('fr-FR')+'\nBracelet '+b.name+', valable jusqu’à '+b.until+'h'})}
+  if(s.slot){const sp=String(s.slot).split('|'),st=+sp[1],dur=s.dur||60,b=bracelet(st,dur);P.push({t:'box',x:'Créneau : '+fm(st)+' à '+fm(st+dur)+' le '+new Date(sp[0]+'T12:00').toLocaleDateString('fr-FR')+'\n'+b.label+', '+b.valid})}
   P.push({t:'rows',r:(s.lines||[]).map(l=>[Math.abs(l.qty)+' × '+l.name,eur(Math.abs(l.price*l.qty))])});
   const R=[];
   if(s.disc)R.push(['Remise'+(s.discLabel?' '+s.discLabel:''),'− '+eur(Math.abs(s.disc))]);
@@ -10586,7 +10616,7 @@ function tvUi(t){
 function tvOut(t){
   const ds=today(),h=hoursFor(ds),closed=!!h.closed||!(h.c>h.o);
   let tz='Europe/Paris';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||tz}catch(e){}
-  return{v:1,d:ds,tz,n:S.settings.name||'',it:tvItems(ds),br:BR.map(b=>[b[0],b[1]]),x:closed,o:closed?null:h.o,c:closed?null:h.c,ui:tvUi(t),lg:TVS.lgh||''};
+  return{v:1,d:ds,tz,n:S.settings.name||'',st:STEP,cap:Math.max(0,+S.settings.cap||0),it:tvItems(ds),...brPub(),x:closed,o:closed?null:h.o,c:closed?null:h.c,ui:tvUi(t),lg:TVS.lgh||''};
 }
 const tvLogoSrc=()=>{const l=S.settings.logo||(typeof payCfg==='function'?payCfg().logo:'')||'';return /^data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]/.test(l)?l:''};
 async function tvShrink(src){
@@ -10765,7 +10795,7 @@ document.addEventListener('click',async e=>{
   const a=b.dataset.act;
   if(a==='tv_studio'){tab.params='pstudio';render();return}
   if(a==='tv_prev'){
-    const ui=tvUi(t),o={n:S.settings.name||'',ui,br:BR.map(x=>[x[0],x[1]])},lg=tvLogoSrc();
+    const ui=tvUi(t),o={n:S.settings.name||'',ui,st:STEP,...brPub()},lg=tvLogoSrc();
     try{localStorage.setItem('lago-ecran-demo',JSON.stringify(lg&&lg.length<1500000?{...o,logo:lg}:o))}catch(err){try{localStorage.setItem('lago-ecran-demo',JSON.stringify(o))}catch(e2){}}
     const w=window.open(new URL('ecran.html#demo',location.href).href,'_blank');if(!w)toast('Autorisez l’ouverture des fenêtres pour voir l’aperçu');
     return;
@@ -10842,5 +10872,109 @@ drawGrid=(o=>function(){const r=o.apply(this,arguments);fitGrid();requestAnimati
 window.addEventListener('resize',()=>{clearTimeout(fitGrid.t);fitGrid.t=setTimeout(fitGrid,120)});
 window.addEventListener('orientationchange',()=>setTimeout(fitGrid,300));
 try{document.fonts&&document.fonts.ready.then(()=>fitGrid())}catch(e){}
+/* ===== v92 : intervalle entre deux départs ============================================================== */
+const STEP_PRESETS=[['Trampoline park',15],['Laser game',20],['Escape game',60]];
+function durOpts(cur){
+  const set=new Set([10,15,20,25,30,40,45,50,60,75,80,90,100,105,120,150,180,210,240]);
+  for(let v=STEP;v<=240;v+=STEP)set.add(v);if(cur)set.add(+cur);
+  return [...set].filter(v=>v>=5&&v<=720).sort((a,b)=>a-b);
+}
+function stepCard(){
+  const st=S.settings,cur=stepOf(st.step);
+  return `<div class="card"><h3>Départs</h3>
+    <div class="field"><label for="st_step">Intervalle entre deux départs</label><select id="st_step" data-step="1">${STEPS.map(v=>`<option value="${v}" ${cur===v?'selected':''}>${stepEvery(v).replace(/^t/,'T')}</option>`).join('')}</select></div>
+    <div class="payseg" role="group" aria-label="Valeurs courantes">${STEP_PRESETS.map(([l,v])=>`<button type="button" class="chip ${cur===v?'on':''}" data-stepset="${v}" aria-pressed="${cur===v}">${l} · ${stepShort(v)}</button>`).join('')}</div>
+    <p class="muted" style="font-size:13px;margin:10px 0 0">Premier départ à l’ouverture (${fm(QSTART)}), puis ${stepEvery(cur)}. S’applique au planning, à la caisse, à la réservation en ligne et à l’écran TV. Les réservations déjà prises gardent leur horaire.</p></div>`;
+}
+async function stepSet(v){
+  v=stepOf(v);const st=S.settings;if(stepOf(st.step)===v&&st.step!=null)return;
+  st.step=v;applySettings();save();render();
+  toast('Départs '+stepEvery(v));
+  try{if(typeof webReady==='function'&&webReady()){await webPublish(true);await webReconcile()}}catch(e){}
+  try{if(typeof tvReady==='function'&&tvReady())await tvPublish(true)}catch(e){}
+}
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.step&&isAdmin())stepSet(t.value)});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-stepset]');if(b&&isAdmin())stepSet(b.dataset.stepset)});
+/* ===== v92 : repérage des sessions ========================================================================
+   - « Bracelets de couleur » : la couleur dépend de l'heure pleine où la session se termine (comme avant). L'admin choisit
+     les couleurs, leurs noms, leur nombre (2 à 12) et leur ordre dans la journée. Sans réglage, l'ordre historique est gardé.
+   - « Texte » : pas de bracelet ; chaque départ est désigné par son heure (« Partie de 14:20 ») et se termine à son heure
+     de fin réelle (laser game, escape game, coiffeur…). Utilisé partout : caisse, planning, tickets, écran bracelets,
+     réservation en ligne et écran TV. */
+const BR_TXT='#5A6785';
+IC.mvup='<path d="M12 19V5M6 11l6-6 6 6"/>';IC.mvdn='<path d="M12 5v14M6 13l6 6 6-6"/>';
+const brOk=b=>Array.isArray(b)&&b.length>=2&&b.length<=12&&b.every(x=>Array.isArray(x)&&typeof x[0]==='string'&&x[0].trim()&&/^#[0-9a-f]{6}$/i.test(x[1]||''));
+function brCfg(){
+  const b=S.settings.brc&&typeof S.settings.brc==='object'?S.settings.brc:{},mode=b.mode==='text'?'text':'color',word=String(b.word||'').trim().slice(0,20)||'Partie';
+  if(brOk(b.list)&&Number.isInteger(b.h0))return{mode,word,h0:b.h0,list:b.list};
+  const h0=(S.settings.open||10)+1;   /* ordre historique (couleur = heure de fin modulo 6), présenté à partir de la 1re sortie de la journée */
+  return{mode,word,h0,list:BR.map((_,i)=>BR[(h0+i)%6]),def:true};
+}
+const brTxt=()=>brCfg().mode==='text';
+function brOf(h){const c=brCfg(),n=c.list.length;return c.list[(((h-c.h0)%n)+n)%n]}
+function brList(){const c=brCfg(),n=c.list.length;return c.list.map((_,i)=>c.list[i%n])}
+function brPub(){const c=brCfg();return{br:Array.from({length:6},(_,k)=>{const x=brOf(k);return[x[0],x[1]]}),brh:Array.from({length:27},(_,h)=>{const x=brOf(h);return[x[0],x[1]]}),bm:c.mode,bw:c.word}}
+/* écran bracelets (personnel) en mode texte : une ligne par départ, fin réelle */
+{const f0=brData;brData=function(now){
+  if(!brTxt())return f0(now);
+  now=now||new Date();
+  const ds=today(),sec=now.getHours()*3600+now.getMinutes()*60+now.getSeconds(),nm=sec/60,items=brItems(ds);
+  const present=items.filter(x=>x.start<=nm&&nm<x.start+x.dur).reduce((a,x)=>a+x.n,0),q=qFloor(nm);
+  const give=brDurs().map(d=>({d,b:bracelet(q,d)}));
+  const G={};items.forEach(x=>{const k=x.start+'|'+x.dur;(G[k]=G[k]||{st:x.start,end:x.start+x.dur,n:0,b:bracelet(x.start,x.dur)}).n+=x.n});
+  const L=Object.values(G).filter(g=>g.end>nm-60).sort((a,b)=>a.end-b.end||a.st-b.st);
+  const nx=L.find(g=>g.st<=nm&&g.end>nm);
+  const rows=L.slice(0,14).map(g=>({lbl:fm(g.end),name:g.b.name,color:BR_TXT,n:g.n,past:g.end<=nm,nx:g===nx}));
+  const soon=items.filter(x=>x.start>nm&&x.start<=nm+60).map(x=>({...x,b:bracelet(x.start,x.dur)}));
+  return{ds,present,q,give,rows,nh:null,txt:true,next:nx?{name:nx.b.name,color:BR_TXT,n:nx.n,left:Math.max(0,Math.round(nx.end*60-sec)),at:fm(nx.end)}:{name:'Aucune session en cours',color:BR_TXT,n:0,left:0,at:'—'},soon,total:items.reduce((a,x)=>a+x.n,0)};
+}}
+/* ---------- Paramètres › Park : carte « Repérage des sessions » ---------- */
+function brSave(c){S.settings.brc={mode:c.mode,word:c.word,h0:c.h0,list:c.list.map(x=>[String(x[0]).slice(0,20),x[1]])}}
+const brEdit=()=>{const c=brCfg();return{mode:c.mode,word:c.word,h0:c.h0,list:c.list.map(x=>[x[0],x[1]])}};
+function brPrev(){
+  const c=brCfg(),o=S.settings.open||10,cl=S.settings.close||19,hs=[];for(let h=o+1;h<=Math.min(cl+1,24);h++)hs.push(h);
+  if(c.mode==='text')return `<span class="brc"><b>${esc(c.word)} de ${fm(QSTART+STEP)}</b> · fin à ${fm(QSTART+STEP+60)}</span>`;
+  return hs.map(h=>{const x=brOf(h);return `<span class="brc">${swatch(x[1])}<b>${esc(x[0])}</b> ${h}h</span>`}).join('');
+}
+function brCard(){
+  const c=brCfg(),hs=[];for(let h=6;h<=24;h++)hs.push(h);
+  const seg=`<div class="payseg" role="group" aria-label="Repérage"><button type="button" class="chip ${c.mode==='color'?'on':''}" data-brmode="color" aria-pressed="${c.mode==='color'}">Bracelets de couleur</button><button type="button" class="chip ${c.mode==='text'?'on':''}" data-brmode="text" aria-pressed="${c.mode==='text'}">Texte (sans bracelet)</button></div>`;
+  const body=c.mode==='text'
+   ?`<div class="field" style="margin-top:12px"><label for="br_word">Mot affiché</label><input id="br_word" data-brw="1" maxlength="20" value="${esc(c.word)}" placeholder="Partie"></div>
+     <p class="muted" style="font-size:13px;margin:0">Chaque départ est désigné par son heure (« ${esc(c.word)} de 14:20 ») et se termine à son heure de fin réelle : caisse, tickets, planning, réservation en ligne et écran TV. Idéal pour un laser game, un escape game, un salon…</p>`
+   :`<p class="muted" style="font-size:13px;margin:10px 0 8px">La couleur dépend de l’heure pleine où la session se termine. Rangez vos bracelets dans l’ordre de la journée : la 1<sup>re</sup> couleur sert à l’heure choisie ci-dessous, puis on passe à la suivante chaque heure.</p>
+     <div class="brx-l">${c.list.map((x,i)=>`<div class="brx"><span class="brx-n num">${i+1}</span><input type="color" value="${x[1]}" data-brc="hex" data-i="${i}" aria-label="Couleur ${i+1}"><input value="${esc(x[0])}" maxlength="20" data-brc="name" data-i="${i}" aria-label="Nom de la couleur ${i+1}"><button type="button" class="ix" data-brmv="-1" data-i="${i}" ${i?'':'disabled'} aria-label="Monter">${ic('mvup')}</button><button type="button" class="ix" data-brmv="1" data-i="${i}" ${i<c.list.length-1?'':'disabled'} aria-label="Descendre">${ic('mvdn')}</button><button type="button" class="ix" data-brdel="${i}" ${c.list.length>2?'':'disabled'} aria-label="Retirer">${ic('x')}</button></div>`).join('')}</div>
+     <div class="acts" style="margin:8px 0 10px">${c.list.length<12?'<button type="button" class="btn" data-bradd="1">Ajouter une couleur</button>':''}<button type="button" class="btn" data-brreset="1">Couleurs d’origine</button></div>
+     <div class="field"><label for="br_h0">La 1<sup>re</sup> couleur sert aux sessions qui finissent à</label><select id="br_h0" data-brh0="1">${hs.map(h=>`<option value="${h}" ${(((c.h0%24)+24)%24||24)===h?'selected':''}>${h}h</option>`).join('')}</select></div>`;
+  return `<div class="card" id="brcard"><h3>Repérage des sessions</h3>${seg}${body}<div class="lab" style="margin-top:12px">Aperçu</div><div class="brs" id="br_prev">${brPrev()}</div></div>`;
+}
+{const f0=vSetPark;vSetPark=function(m){f0(m);const cols=m.querySelector('.cols');(cols||m).insertAdjacentHTML('beforeend',brCard())};SUBS.ppark=vSetPark}
+let brTm=0;
+function brDirty(redraw){
+  if(redraw){const el=document.getElementById('brcard');if(el)el.outerHTML=brCard()}
+  else{const p=document.getElementById('br_prev');if(p)p.innerHTML=brPrev()}
+  clearTimeout(brTm);brTm=setTimeout(()=>{save();try{if(typeof webReady==='function'&&webReady())webPublish(true)}catch(e){}try{if(typeof tvReady==='function'&&tvReady())tvPublish(true)}catch(e){}},600);
+}
+const brHere=()=>view==='params'&&tab.params==='ppark'&&isAdmin();
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-brmode],[data-brmv],[data-brdel],[data-bradd],[data-brreset]');if(!b||!brHere())return;
+  const c=brEdit();
+  if(b.dataset.brmode){c.mode=b.dataset.brmode}
+  else if(b.dataset.brmv){const i=+b.dataset.i,j=i+(+b.dataset.brmv);if(j<0||j>=c.list.length)return;[c.list[i],c.list[j]]=[c.list[j],c.list[i]]}
+  else if(b.dataset.brdel){if(c.list.length<=2)return;c.list.splice(+b.dataset.brdel,1)}
+  else if(b.dataset.bradd){if(c.list.length>=12)return;const pool=[['Rouge','#D6342C'],['Noir','#1F2433'],['Blanc','#F4F6FA'],['Gris','#8A94A8'],['Marron','#8B5A2B'],['Turquoise','#14B8A6'],['Bleu marine','#1E3A8A'],['Vert clair','#84CC16']];c.list.push(pool.find(p=>!c.list.some(x=>x[0]===p[0]))||['Couleur '+(c.list.length+1),'#8A94A8'])}
+  else if(b.dataset.brreset){const h0=(S.settings.open||10)+1;c.list=BR.map((_,i)=>BR[(h0+i)%6]);c.h0=h0}
+  brSave(c);brDirty(true);
+});
+document.addEventListener('change',e=>{
+  const t=e.target;if(!t||!t.dataset||!brHere())return;
+  if(t.dataset.brh0){const c=brEdit();c.h0=+t.value;brSave(c);brDirty(false);return}
+  if(t.dataset.brc==='hex'){const c=brEdit(),i=+t.dataset.i;if(c.list[i]&&/^#[0-9a-f]{6}$/i.test(t.value)){c.list[i][1]=t.value;brSave(c);brDirty(false)}}
+});
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t||!t.dataset||!brHere())return;
+  if(t.dataset.brw){const c=brEdit();c.word=t.value.replace(/[\u0000-\u001f]/g,' ').trim().slice(0,20)||'Partie';brSave(c);brDirty(false);return}
+  if(t.dataset.brc==='name'){const c=brEdit(),i=+t.dataset.i,v=t.value.replace(/[\u0000-\u001f]/g,' ').trim().slice(0,20);if(c.list[i]&&v){c.list[i][0]=v;brSave(c);brDirty(false)}}
+});
 init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();try{if(evDemoFill())save()}catch(e){}applySettings();cart=newCart();chrome();route();bootGate();
 })();

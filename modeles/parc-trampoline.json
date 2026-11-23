@@ -1,6 +1,6 @@
 {
   "id": "parc-trampoline",
-  "version": 1,
+  "version": 2,
   "label": "Parc de trampolines",
   "resume": "Sessions de saut, bar, anniversaires, privatisations, cartes cadeaux.",
   "settings": {
@@ -22,6 +22,8 @@
       ]
     },
     "capacite": 200,
+    "intervalle_depart_minutes": 15,
+    "reperage": {"mode": "couleurs"},
     "equipe_minimum": 3,
     "horaires": {
       "ouverture": "10:00",

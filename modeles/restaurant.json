@@ -1,6 +1,6 @@
 {
   "id": "restaurant",
-  "version": 1,
+  "version": 2,
   "label": "Restaurant",
   "resume": "Carte, boissons, menus et groupes, réservations de table, cartes cadeaux.",
   "settings": {
@@ -28,6 +28,8 @@
       ]
     },
     "capacite": 40,
+    "intervalle_depart_minutes": 15,
+    "reperage": {"mode": "texte", "mot": "Table"},
     "equipe_minimum": 3,
     "horaires": {
       "ouverture": "11:30",

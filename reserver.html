@@ -266,6 +266,8 @@ const st={step:1,lines:{},date:'',start:null,f:{name:'',mail:'',phone:'',note:''
 const url=p=>DB+'/pub/'+K+'/'+p+'.json';
 const get=async p=>{const r=await fetch(url(p),{cache:'no-store'});if(!r.ok)throw new Error('http '+r.status);return r.json()};
 const arr=x=>Array.isArray(x)?x:(x&&typeof x==='object'?Object.keys(x).reduce((a,k)=>(a[+k]=x[k],a),[]):[]);
+/* v90 : intervalle entre deux départs (CFG.st, 15 par défaut) et unité des compteurs (CFG.u : 15 = format d'origine) */
+const STP=()=>+CFG.st>0?+CFG.st:15,UN=()=>+CFG.u>0?+CFG.u:15;
 const cnt=(o,i)=>{if(!o)return 0;const v=Array.isArray(o)?o[i]:o[i];return +v||0};
 /* ---- heure du parc ---- */
 function now(){
@@ -285,14 +287,14 @@ const total=()=>[...prods(),...adds()].reduce((a,p)=>a+q(p.id)*p.p,0);
 const need=(start,m)=>sessLines().reduce((a,p)=>a+(m<start+p.dur?q(p.id):0),0);
 const longest=()=>sessLines().reduce((a,p)=>Math.max(a,p.dur),0);
 function lastSlot(start){return start+longest()}
-function slotsFor(ds,start){const o=[];for(let m=start;m<lastSlot(start);m+=15){const n=need(start,m);if(n)o.push([m/15,n,m])}return o}
-function freeAt(ds,m){const b=BASE[ds];if(!b||b.x)return -1;const i=(m-b.o)/15,base=+arr(b.l)[i]||0,w=cnt(WEB[ds],m/15);return Math.min(CFG.cap-base-w,CFG.wcap-w)}
+function slotsFor(ds,start){const o=[];for(let m=start;m<lastSlot(start);m+=STP()){const n=need(start,m);if(n)o.push([m/UN(),n,m])}return o}
+function freeAt(ds,m){const b=BASE[ds];if(!b||b.x)return -1;const i=(m-b.o)/STP(),base=+arr(b.l)[i]||0,w=cnt(WEB[ds],m/UN());return Math.min(CFG.cap-base-w,CFG.wcap-w)}
 function startOk(ds,start){
   const b=BASE[ds];if(!b||b.x||!sessLines().length)return{ok:false,left:0};
   if(start<b.o||lastSlot(start)>b.c)return{ok:false,left:0};
   const n0=now();if(ds===n0.d&&start<n0.m+(+CFG.lead||0))return{ok:false,left:0};
   let left=1e9,ok=true;
-  for(let m=start;m<lastSlot(start);m+=15){const f=freeAt(ds,m),nd=need(start,m);if(f<nd)ok=false;left=Math.min(left,f-nd+people())}
+  for(let m=start;m<lastSlot(start);m+=STP()){const f=freeAt(ds,m),nd=need(start,m);if(f<nd)ok=false;left=Math.min(left,f-nd+people())}
   return{ok,left:Math.max(0,left)};
 }
 function dayList(){
@@ -324,7 +326,7 @@ function v2(){
   const b=BASE[st.date];let grid='';
   if(!b||b.x)grid='<p class="sub">Le parc est fermé ce jour-là. Choisissez une autre date.</p>';
   else{
-    const hrs={};for(let m=b.o;m+15<=b.c;m+=15){(hrs[Math.floor(m/60)]=hrs[Math.floor(m/60)]||[]).push(m)}
+    const hrs={};for(let m=b.o;m+STP()<=b.c;m+=STP()){(hrs[Math.floor(m/60)]=hrs[Math.floor(m/60)]||[]).push(m)}
     grid=Object.keys(hrs).map(h=>{
       const cells=hrs[h].map(m=>{const r=startOk(st.date,m),cap=CFG.wcap,pc=Math.max(0,Math.min(100,Math.round(100*r.left/Math.max(1,cap))));
         return `<button type="button" class="sl ${m===st.start?'on':''} ${r.ok&&r.left<=Math.max(8,people())+4?'lo':''}" data-a="slot" data-m="${m}" ${r.ok?'':'disabled'} aria-label="${fm(m)}${r.ok?'':' complet'}"><b>${fm(m)}</b><small>${r.ok?(r.left<=Math.max(8,people())+4?'Dernières places':''):'Complet'}</small><i style="width:${r.ok?pc:0}%"></i></button>`}).join('');
@@ -335,7 +337,7 @@ function v2(){
    <div class="more"><label for="dp">Autre date</label><input id="dp" type="date" min="${n0.d}" max="${maxD}" value="${st.date}"></div>
    <div id="grid">${grid}</div>`,barHtml('Continuer',st.start==null,'next'));
 }
-function dayHas(ds){const m0=BASE[ds]?BASE[ds].o:0;for(let m=m0;BASE[ds]&&m+15<=BASE[ds].c;m+=15)if(startOk(ds,m).ok)return true;return false}
+function dayHas(ds){const m0=BASE[ds]?BASE[ds].o:0;for(let m=m0;BASE[ds]&&m+STP()<=BASE[ds].c;m+=STP())if(startOk(ds,m).ok)return true;return false}
 const lgf=()=>CFG.lg||{};
 function legalHtml(){
   const l=lgf(),n=[];
@@ -399,11 +401,11 @@ async function loadPay(){
   if(PAY&&(st.step===4||st.done))view();
 }
 function vDone(){
-  const d=st.done,br=d.br.map(b=>`<div class="bk"><i style="background:${b.c}"></i><div><b>Bracelet ${esc(b.n)}</b><div class="mt">${esc(b.t)}</div></div></div>`).join('');
+  const d=st.done,br=d.br.map(b=>`<div class="bk"><i style="background:${b.c}"></i><div><b>${b.x?'':'Bracelet '}${esc(b.n)}</b><div class="mt">${esc(b.t)}</div></div></div>`).join('');
   shell(`<div class="done"><div class="ok" aria-hidden="true">✓</div><h2>C’est confirmé, ${esc(d.first)} !</h2><p class="sub">Présentez ce code à l’accueil.</p><div class="ref">${esc(d.ref)}</div></div>
    <div class="card"><b style="text-transform:capitalize">${esc(dlong(d.date))}</b><div class="mt">Arrivée à ${fm(d.start)} · ${d.people} participant${d.people>1?'s':''} · ${eur(d.total)}${PAY?' au total':' à régler sur place'}</div></div>
    ${payBox(d)}
-   ${br?`<div class="card"><b>Vos bracelets</b><div style="margin-top:8px">${br}</div></div>`:''}
+   ${br?`<div class="card"><b>${d.br[0]&&d.br[0].x?'Votre session':'Vos bracelets'}</b><div style="margin-top:8px">${br}</div></div>`:''}
    <p class="note">Une question ou un changement ? Contactez-nous${CFG.tel?' au <b>'+esc(CFG.tel)+'</b>':''}${CFG.mail?' ou à <b>'+esc(CFG.mail)+'</b>':''} en indiquant votre code.</p>
    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-a="ics" type="button">Ajouter à mon agenda</button><button class="btn ghost" data-a="again" type="button">Nouvelle réservation</button></div>`);
 }
@@ -447,7 +449,7 @@ async function confirm(){
       if(!startOk(ds,start).ok)return taken('Ce créneau vient d’être pris. Choisissez un autre horaire : votre sélection est conservée.');
       await patchCounters(ds,sl.map(([i,n])=>[i,n]));bumped=true;
       WEB=Object.assign({},WEB,{[ds]:await get('web/'+ds)});
-      const over=sl.some(([i,n,m])=>{const b=BASE[ds],base=+arr(b.l)[(m-b.o)/15]||0,w=cnt(WEB[ds],i);return CFG.cap-base-w<0||CFG.wcap-w<0});
+      const over=sl.some(([i,n,m])=>{const b=BASE[ds],base=+arr(b.l)[(m-b.o)/STP()]||0,w=cnt(WEB[ds],i);return CFG.cap-base-w<0||CFG.wcap-w<0});
       if(!over){got=true;break}
       await patchCounters(ds,sl.map(([i,n])=>[i,-n])).catch(()=>{});bumped=false;
       await new Promise(r=>setTimeout(r,90+Math.random()*420));
@@ -459,8 +461,9 @@ async function confirm(){
     const r=await fetch(url('req/'+id),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({ts:Date.now(),...box})});
     if(!r.ok)throw new Error('http '+r.status);
     bumped=false;
-    const BRs=CFG.br&&CFG.br.length===6?CFG.br:BR0;
-    const br=sessLines().map(p=>{const until=Math.ceil((start+p.dur)/60),c=BRs[until%6];return{n:c[0],c:c[1],t:q(p.id)+' × '+p.n+' · sortie à '+fm(start+p.dur)}});
+    /* v92 : couleurs réglées dans Lago (carte heure -> couleur), ou texte (« Partie de 14:20 ») */
+    const BRs=CFG.br&&CFG.br.length===6?CFG.br:BR0,BRH=Array.isArray(CFG.brh)&&CFG.brh.length>=25?CFG.brh:null,TXT=CFG.bm==='text',W=String(CFG.bw||'Partie').slice(0,20);
+    const br=sessLines().map(p=>{const until=Math.ceil((start+p.dur)/60),h=BRH&&Array.isArray(BRH[until])&&/^#[0-9a-f]{6}$/i.test(BRH[until][1]||'')?BRH[until]:BRs[until%6],c=TXT?[W+' de '+fm(start),'#5A6785']:h;return{n:String(c[0]),c:c[1],x:TXT,t:q(p.id)+' × '+p.n+' · '+(TXT?'fin à ':'sortie à ')+fm(start+p.dur)}});
     st.done={ref,first,date:ds,start,people:people(),total:total(),br,title:payload.items,end:lastSlot(start)};
     st.busy=false;view();window.scrollTo(0,0);
   }catch(e){

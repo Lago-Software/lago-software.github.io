@@ -1,6 +1,6 @@
 {
   "id": "laser-game",
-  "version": 1,
+  "version": 2,
   "label": "Laser game",
   "resume": "Parties de laser, bar, anniversaires, soirées entreprise, cartes cadeaux.",
   "settings": {
@@ -23,6 +23,8 @@
       ]
     },
     "capacite": 30,
+    "intervalle_depart_minutes": 20,
+    "reperage": {"mode": "texte", "mot": "Partie"},
     "equipe_minimum": 2,
     "horaires": {
       "ouverture": "10:00",

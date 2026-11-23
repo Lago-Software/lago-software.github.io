@@ -1,6 +1,6 @@
 {
   "id": "coiffeur",
-  "version": 1,
+  "version": 2,
   "label": "Salon de coiffure",
   "resume": "Prestations, rendez-vous en ligne, produits de soin, cartes cadeaux.",
   "settings": {
@@ -27,6 +27,8 @@
       ]
     },
     "capacite": 4,
+    "intervalle_depart_minutes": 15,
+    "reperage": {"mode": "texte", "mot": "Rendez-vous"},
     "equipe_minimum": 1,
     "horaires": {
       "ouverture": "09:00",
