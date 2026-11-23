@@ -3055,6 +3055,60 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
 .dv-add{display:flex;gap:8px;margin-top:8px}.dv-add textarea{flex:1}
 .cse-ch{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;width:100%}
 @media (max-width:640px){.dv-card{flex-direction:column}.dv-adv{max-width:none;width:100%}.dv-time{min-width:52px}}
+
+/* Paramètres rangés par rubriques */
+.tabs.pg{display:flex;width:100%;margin-bottom:8px}.tabs.pg button{flex:none}
+.tabs.sub2{display:flex;background:transparent;padding:0;gap:6px;margin-bottom:16px}
+.tabs.sub2 button{min-height:36px;padding:6px 14px;border-radius:999px;font-size:14px;background:var(--surface-2)}
+.tabs.sub2 button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14),inset 0 0 0 1.5px var(--brand)}
+@media (max-width:900px){.tabs.pg{flex-wrap:wrap;overflow:visible}.tabs.pg button{flex:1 1 30%;white-space:normal;text-align:center;padding:8px 6px;font-size:14px;line-height:1.15;min-height:44px}}
+.subnav .sgrp{font-size:11.5px;font-weight:700;letter-spacing:.02em;color:color-mix(in srgb,var(--side-ink) 50%,transparent);padding:12px 10px 3px}
+.subnav .sgrp:first-child{padding-top:4px}
+
+/* dalles de caisse compactes : tout le catalogue sans défiler */
+#main .grid#grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+#grid .tile{border-radius:14px!important}
+#grid .tile .art{aspect-ratio:16/10}
+#grid .tile .n{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:0;padding:7px 9px 9px;font-size:13px;line-height:1.2}
+#grid .tile .p,.grid#grid .tile .p{top:6px!important;left:6px!important;padding:3px 8px!important;font-size:12.5px!important;border-radius:999px!important}
+#grid .tile .badge{top:6px;right:6px;min-width:24px;height:24px;font-size:12px;border-radius:12px}
+@media (max-width:760px){
+  #main .grid#grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  #grid .tile .n{padding:6px 7px 8px;font-size:12.5px}
+  #grid .tile .p,.grid#grid .tile .p{font-size:12px!important;padding:2px 7px!important}
+  #main:has(.pos) .top{margin-bottom:8px;gap:8px}
+  #main:has(.pos) .top .logo-m,#main:has(.pos) .top .sub{display:none}
+  #main:has(.pos) .top h1{font-size:24px!important}
+  #main:has(.pos) .tabs{margin-bottom:8px}
+  #main:has(.pos) .tabs button{min-height:36px;padding:6px 14px}
+  .pos .search{margin-bottom:8px}.pos .search input{height:40px}
+  .pos .chips{margin-bottom:8px}.pos .chips .chip{min-height:36px;padding-block:0}
+  #grid .tile .art{aspect-ratio:16/9}
+  #grid .tile .n{padding:5px 7px 7px}
+}
+/* dalles : ajustées à l'écran (colonnes calculées) + dalles « couleur » (choix par produit ou réglage global) */
+#main .grid#grid.fit{grid-template-columns:repeat(var(--cols,3),minmax(0,1fr))}
+#grid .tile.ct,#grid.dense .tile{background:var(--tc)!important;color:var(--tt)!important;border:0!important;justify-content:center!important;align-items:flex-start;text-align:left;gap:3px!important;padding:8px 10px!important;min-height:66px!important;box-shadow:0 1px 2px rgba(10,31,77,.18)!important}
+#grid .tile.ct:hover,#grid.dense .tile:hover{background:var(--tc)!important;filter:brightness(1.06)}
+#grid .tile.ct .art,#grid.dense .tile .art{display:none!important}
+#grid .tile.ct .n,#grid.dense .tile .n{background:none!important;color:var(--tt)!important;-webkit-text-fill-color:var(--tt)!important;padding:0!important;min-height:0!important;font-size:14px;font-weight:700;line-height:1.18;-webkit-line-clamp:3}
+#grid .tile.ct .p,#grid.dense .tile .p{position:static!important;order:4;background:none!important;color:var(--tt)!important;-webkit-text-fill-color:var(--tt)!important;padding:0!important;font-size:13px!important;font-weight:600;border-radius:0!important;opacity:.92;width:auto}
+#grid .tile.ct .badge,#grid.dense .tile .badge{top:5px;right:5px;left:auto;background:var(--tt)!important;color:var(--tc)!important;min-width:22px;height:22px;font-size:12px}
+#grid.dense .tile{min-height:56px!important;padding:6px 8px!important}
+#grid.dense .tile .n{font-size:12.5px;-webkit-line-clamp:2}
+#grid .tile.ct .n,#grid.dense .tile .n{overflow-wrap:anywhere;word-break:break-word}
+@media (max-width:760px){
+  #main .grid#grid.fit.dense{gap:6px}
+  #grid.dense .tile{padding:5px 7px!important;min-height:52px!important;gap:1px!important}
+  #grid.dense .tile .n{font-size:12px;line-height:1.15}
+  #grid.dense .tile .p{font-size:12px!important}
+}
+/* choix de la dalle dans la fiche produit */
+.tcolpick{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.tcolpick .tcsw{width:34px;height:34px;border-radius:10px;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);cursor:pointer;padding:0}
+.tcolpick .tcsw[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 2px #fff}
+.tcolpick .tcsw.none{background:repeating-linear-gradient(45deg,var(--surface-2),var(--surface-2) 6px,var(--surface) 6px,var(--surface) 12px)}
+.tcprev{display:flex;align-items:center;justify-content:center;min-height:64px;border-radius:12px;font-weight:700;padding:8px 12px;margin-top:8px}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -3113,7 +3167,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v89" defer></script>
+<script src="app.js?v=v90" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

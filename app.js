@@ -279,7 +279,8 @@ const SUBS={apercu:vDay,resas:vResas,events:vEvents,bracelets:vBracelets,sjour:v
 const bar=a=>a?`<div class="top-actions" style="margin-bottom:12px">${a}</div>`:'';
 function tabbedBase(m,title){
   {const L=tabsFor(view);if(L.length&&!L.some(x=>x[0]===tab[view]))tab[view]=L[0][0]}
-  m.innerHTML=head(title)+`<div class="tabs" role="tablist">${tabsFor(view).map(([id,l])=>`<button role="tab" class="${tab[view]===id?'on':''}" data-act="tab" data-id="${id}">${l}</button>`).join('')}</div><div id="sub"></div>`;
+  m.innerHTML=head(title)+tabsBar(view)+`<div id="sub"></div>`;
+  try{m.querySelectorAll('.tabs button.on').forEach(b=>{const bar=b.parentNode;if(bar.scrollWidth>bar.clientWidth+2)bar.scrollLeft+=b.getBoundingClientRect().left-bar.getBoundingClientRect().left-(bar.clientWidth-b.offsetWidth)/2})}catch(e){}
   SUBS[tab[view]]($('#sub'));
 }
 function vPlanning(m){tabbed(m,'Planning')}
@@ -316,13 +317,21 @@ function drawChipsOld(){
   const all=[...CATS];
   $('#chips').innerHTML=all.map(c=>`<button class="chip ${fcat===c.id?'on':''}" data-act="fcat" data-id="${c.id}">${c.name}</button>`).join('');
 }
+/* Dalles de caisse : image (par défaut) ou couleur — choix par produit (p.tcol) ou réglage global (S.settings.tileMode : img | col | auto) */
+const TCOLS=[['#31ACF0','Bleu ciel'],['#206EA8','Bleu'],['#0F3B66','Marine'],['#1FA971','Vert'],['#F5C400','Jaune'],['#F76300','Orange'],['#E5484D','Rouge'],['#E5509B','Rose'],['#8B5CF6','Violet'],['#5A6B8C','Ardoise']];
+const isHex=v=>/^#[0-9a-f]{6}$/i.test(String(v||''));
+const tileMode=()=>{const m=S.settings&&S.settings.tileMode;return m==='img'||m==='col'?m:'auto'};
+function tileInk(hex){const n=parseInt(hex.slice(1),16),f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};const L=.2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255);return L>.18?'#1A1206':'#FFFFFF'}
+function catHex(c){try{const v=getComputedStyle(document.documentElement).getPropertyValue(c.v).trim();return isHex(v)?v:''}catch(e){return''}}
 function drawGrid(){
-  const nq=norm(q);
+  const nq=norm(q),cc={};
   const list=S.products.filter(p=>p.active&&(nq||fcat==='all'||p.cat===fcat)&&(nq||!fsub||p.scat===fsub)&&(!nq||norm(p.name).includes(nq)));
   $('#grid').innerHTML=list.length?list.map(p=>{
-    const c=cat(p.cat),n=(cart.lines.find(l=>l.pid===p.id)||{}).qty||0;
-    return `<button class="tile" data-act="add" data-id="${p.id}" style="--cat:var(${c.v})">${n?`<span class="badge">${n}</span>`:''}
-      ${art(p)}<span class="n">${esc(p.name)}</span><span class="p num">${eur(p.price)}</span></button>`}).join(''):`<div class="empty" style="grid-column:1/-1">Aucun produit trouvé.</div>`;
+    const c=cat(p.cat),n=(cart.lines.find(l=>l.pid===p.id)||{}).qty||0,own=isHex(p.tcol);
+    const hx=own?p.tcol:(cc[c.id]!==undefined?cc[c.id]:(cc[c.id]=catHex(c)));
+    const tc=hx||`var(${c.v})`,tt=hx?tileInk(hx):'#FFFFFF';
+    return `<button class="tile${own?' ct':''}" data-act="add" data-id="${p.id}" style="--cat:var(${c.v});--tc:${tc};--tt:${tt}">${n?`<span class="badge">${n}</span>`:''}
+      ${own?'':art(p)}<span class="n">${esc(p.name)}</span><span class="p num">${eur(p.price)}</span></button>`}).join(''):`<div class="empty" style="grid-column:1/-1">Aucun produit trouvé.</div>`;
 }
 function slotCheck(T){
   if(T.jumpers>0&&cart.slotM!=null){const left=leftFor(cart.slotDate,cart.slotM,T.dur);if(T.jumpers>left)return left}
@@ -497,11 +506,17 @@ function prodForm(id){
     <div class="field"><label for="pp">Prix TTC (€)</label><input id="pp" inputmode="decimal" required value="${inEur(p.price)}"></div></div>
     <div class="field"><label for="psub">Sous-catégorie</label><select id="psub">${subOpts(p.cat,p.scat)}</select></div>
     <div class="field"><label for="pt">TVA</label><select id="pt">${[5.5,10,20].map(t=>`<option value="${t}" ${p.tva===t?'selected':''}>${String(t).replace('.',',')} %</option>`).join('')}</select></div>
-    <div class="field"><label>Image du produit</label><div class="imgpick"><div id="pimgprev">${p.img?`<img class="art" src="${p.img}" alt="">`:(id?art(p):'<span class="muted">Image par défaut</span>')}</div><div><label class="btn" for="pimgf">Choisir une image</label><input type="file" id="pimgf" accept="image/*" hidden><button type="button" class="btn" data-act="pimgrm">Retirer</button></div></div></div>
+    <div class="field"><label>Dalle en caisse</label>
+      <div class="seg" role="group" aria-label="Dalle en caisse"><button type="button" class="${isHex(p.tcol)?'':'on'}" data-act="tmode" data-m="img">Image</button><button type="button" class="${isHex(p.tcol)?'on':''}" data-act="tmode" data-m="col">Couleur</button></div>
+      <input type="hidden" id="ptc" value="${isHex(p.tcol)?p.tcol:''}">
+      <div id="pcolbox" style="${isHex(p.tcol)?'':'display:none'}"><div class="tcolpick">${TCOLS.map(([h,l])=>`<button type="button" class="tcsw" style="background:${h}" data-act="tcol" data-c="${h}" aria-label="${l}" title="${l}" aria-pressed="${p.tcol&&p.tcol.toUpperCase()===h}"></button>`).join('')}</div>
+      <div class="tcprev" id="tcprev"></div></div></div>
+    <div class="field" id="pimgbox" style="${isHex(p.tcol)?'display:none':''}"><label>Image du produit</label><div class="imgpick"><div id="pimgprev">${p.img?`<img class="art" src="${p.img}" alt="">`:(id?art(p):'<span class="muted">Image par défaut</span>')}</div><div><label class="btn" for="pimgf">Choisir une image</label><input type="file" id="pimgf" accept="image/*" hidden><button type="button" class="btn" data-act="pimgrm">Retirer</button></div></div></div>
     <label class="check"><input type="checkbox" id="pj" ${p.jumper?'checked':''}>Compte comme un ${NOUN()} sur le créneau</label>
     <label class="check"><input type="checkbox" id="pa" ${p.active?'checked':''}>Visible en caisse</label>
     <div style="display:flex;gap:8px"><button class="btn primary" type="submit" style="flex:1">Enregistrer</button>
     ${id?`<button class="btn danger" type="button" data-act="delprod" data-id="${id}">Supprimer</button>`:''}</div></form>`);
+  tcolPrev();
 }
 
 /* ---------- rapports ---------- */
@@ -728,6 +743,7 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const a=b.dataset.act,d=b.dataset;
   switch(a){
     case 'tab':tab[view]=d.id;VIEWS[view]($('#main'));renderNav();window.scrollTo(0,0);break;
+    case 'pgrp':{const g=pgroups().find(x=>x.id===d.id);if(g&&g.tabs.length&&!g.tabs.some(x=>x[0]===tab.params)){tab.params=g.tabs[0][0];VIEWS[view]($('#main'));renderNav();window.scrollTo(0,0)}break}
     case 'goto':tab[d.v]=d.t||tab[d.v];if(location.hash==='#'+d.v)route();else location.hash=d.v;break;
     case 'shift':{const k=d.d+'|'+d.s,cur=shiftOf(d.d,d.s),nx={R:'M',M:'S',S:'J',J:'R'}[cur];S.shifts[k]=nx;save();vTeam($('#sub'));break}
     case 'week':weekOff=d.d==='0'?0:weekOff+ +d.d;vTeam($('#sub'));break;
@@ -2163,6 +2179,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='askin
 
 /* ---------- personnalisation : images produit, logos, réglages admin ---------- */
 let pimg;
+function tcolPrev(){const ptc=$('#ptc'),pv=$('#tcprev');if(!pv||!ptc)return;const h=ptc.value;
+  document.querySelectorAll('.tcolpick .tcsw').forEach(x=>x.setAttribute('aria-pressed',String(!!h&&x.dataset.c.toLowerCase()===h.toLowerCase())));
+  if(isHex(h)){pv.style.background=h;pv.style.color=tileInk(h);pv.textContent=($('#pn').value||'Aperçu de la dalle')+' · '+($('#pp').value||'0')+' €'}else{pv.style.background='';pv.textContent=''}}
 function fileToData(file,max,cb){
   const fr=new FileReader();
   fr.onload=()=>{const im=new Image();im.onload=()=>{
@@ -2208,6 +2227,8 @@ function vSetCaisse(m){
   const st=S.settings;
   m.innerHTML=`<div class="cols"><div class="card"><h3>Noms des catégories</h3><p class="muted" style="font-size:13px;margin-bottom:6px">Les onglets de la caisse. Les produits restent classés.</p>
     ${CATS.map((c,i)=>fld('Catégorie '+(i+1),`<input data-catname="${i}" value="${esc(c.name)}" placeholder="${esc(CATDEF[i])}">`)).join('')}</div>
+   <div class="card"><h3>Affichage des dalles</h3><p class="muted" style="font-size:13px;margin-bottom:6px">Choisissez comment les produits s’affichent en caisse. Chaque produit peut aussi avoir sa propre couleur (<b>Gestion › Produits</b>, « Dalle en caisse »).</p>
+    ${fld('Style des dalles',`<select data-set="tileMode"><option value="auto" ${tileMode()==='auto'?'selected':''}>Automatique : images, puis couleurs si tout ne tient pas</option><option value="img" ${tileMode()==='img'?'selected':''}>Images</option><option value="col" ${tileMode()==='col'?'selected':''}>Couleurs</option></select>`,'Les dalles s’ajustent à l’écran pour que tous les produits restent visibles.')}</div>
    <div class="card"><h3>Images des produits</h3><p class="muted">Ajoutez une photo à chaque produit depuis <b>Gestion › Produits</b> : ouvrez le produit puis « Choisir une image ». Sans photo, une illustration par défaut est utilisée.</p>
     <button class="btn" style="margin-top:10px" data-act="goto" data-v="gestion" data-t="produits">Aller aux produits</button></div></div>`;
 }
@@ -4727,7 +4748,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v89';
+const LAGO_V='v90';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -9243,7 +9264,7 @@ function tplApply(id,o){
   const prods=t.products.map(p=>{
     const old=keep(p,S.products||[]),q={id:old?old.id:uid(),name:p.name,cat:p.cat,price:tplEuros(p.price),tva:p.tva,active:true};
     if(old&&old.img)q.img=old.img;
-    if(old&&old.tile)q.tile=old.tile;if(old&&old.tileOff)q.tileOff=1;
+    if(old&&old.tile)q.tile=old.tile;if(old&&old.tileOff)q.tileOff=1;if(old&&isHex(old.tcol))q.tcol=old.tcol;
     if(p.scat)q.scat=p.scat;
     if(p.art)q.art=p.art;
     if(p.jumper){q.jumper=true;q.dur=p.dur}else if(p.dur)q.dur=p.dur;
@@ -9438,6 +9459,12 @@ document.addEventListener('click',e=>{
     case 'slot':slotDetail(+d.m);break;
     case 'sellslot':cart.slotDate=slotDay;cart.slotM=+d.m;closeModal();location.hash==='#caisse'?render():location.hash='caisse';break;
     case 'newprod':prodForm('');break;
+    case 'tmode':{const col=d.m==='col',ptc=$('#ptc');if(!ptc)break;
+      document.querySelectorAll('[data-act="tmode"]').forEach(x=>x.classList.toggle('on',x===b));
+      $('#pcolbox').style.display=col?'':'none';$('#pimgbox').style.display=col?'none':'';
+      if(col&&!isHex(ptc.value)){const c0=catHex(cat($('#pc').value))||TCOLS[0][0];ptc.value=TCOLS.some(x=>x[0].toLowerCase()===c0.toLowerCase())?c0.toUpperCase():TCOLS[0][0]}
+      if(!col)ptc.value='';tcolPrev();break}
+    case 'tcol':{const ptc=$('#ptc');if(ptc){ptc.value=d.c;tcolPrev()}break}
     case 'editprod':prodForm(d.id);break;
     case 'delprod':
       if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Confirmer';break}
@@ -9477,6 +9504,7 @@ document.addEventListener('submit',e=>{
     if(!o.name)return;
     if(pimg!==undefined)o.img=pimg||undefined;
     if(pimg===null){o.tile=undefined;o.tileOff=1}
+    const tcv=($('#ptc')||{}).value;o.tcol=isHex(tcv)?tcv.toUpperCase():undefined;
     o.scat=$('#psub').value||undefined;
     if(id)Object.assign(prod(id),o);else S.products.push({id:uid(),...o});
     save();closeModal();vProducts($('#sub'));toast('Produit enregistré');
@@ -10766,5 +10794,49 @@ document.addEventListener('click',async e=>{
   const card=`<div class="card brlcard tvcard"><div><h3>Écran TV pour vos clients</h3><p class="muted">${t.on?'Activé : la télé de l’accueil affiche les bracelets en piste, les comptes à rebours et les fins de session.':'Affichez sur une télé de l’accueil les bracelets en piste avec leur compte à rebours, les prochains départs et les fins de session, avec carillon et annonce vocale.'}</p></div><button type="button" class="btn ${t.on?'':'primary'}" data-act="tv_goset">${t.on?'Réglages de l’écran TV':'Configurer l’écran TV'}</button></div>`;
   if(c)c.insertAdjacentHTML('afterend',card);else m.insertAdjacentHTML('afterbegin',card)};SUBS.bracelets=vBracelets}
 
+/* ---------- Paramètres rangés par rubriques (v89) : mêmes écrans, mieux classés ---------- */
+const PGRP=[
+ ['etab','Établissement',['pgen','pmetier','ppark']],
+ ['equipe','Équipe et accès',['pteam','pacc','pprof','pvis','phome']],
+ ['caisse','Caisse et clients',['pcat','ploy','pmail']],
+ ['resa','Réservations',['pweb','ppay','pqw','ptv']],
+ ['conf','Légal et sécurité',['pcf','pobl','prgpd','pctl','psante']],
+ ['perso','Personnaliser',['papp','pstudio']]
+];
+function pgrpOf(t){const g=PGRP.find(x=>x[2].includes(t));return g?g[0]:'autre'}
+tabsFor=(o=>function(id){const L=o.apply(this,arguments);if(id!=='params')return L;const ord=t=>{const gi=PGRP.findIndex(x=>x[2].includes(t));return gi<0?[PGRP.length,0]:[gi,PGRP[gi][2].indexOf(t)]};return L.map((x,i)=>[x,i]).sort((a,b)=>{const p=ord(a[0][0]),q=ord(b[0][0]);return p[0]-q[0]||p[1]-q[1]||a[1]-b[1]}).map(x=>x[0])})(tabsFor);
+function pgroups(){const L=tabsFor('params'),out=PGRP.map(([id,l])=>({id,l,tabs:L.filter(x=>pgrpOf(x[0])===id)}));const rest=L.filter(x=>pgrpOf(x[0])==='autre');if(rest.length)out.push({id:'autre',l:'Autres',tabs:rest});return out.filter(g=>g.tabs.length)}
+function tabsBar(id){
+  const tb=(L,cls)=>`<div class="tabs${cls||''}" role="tablist">${L.map(([t,l])=>`<button role="tab" class="${tab[id]===t?'on':''}" data-act="tab" data-id="${t}">${l}</button>`).join('')}</div>`;
+  if(id!=='params')return tb(tabsFor(id));
+  const G=pgroups(),cur=pgrpOf(tab.params),g=G.find(x=>x.id===cur);
+  return `<div class="tabs pg" role="tablist" aria-label="Rubriques">${G.map(x=>`<button role="tab" class="${x.id===cur?'on':''}" data-act="pgrp" data-id="${x.id}">${x.l}</button>`).join('')}</div>${g&&g.tabs.length>1?tb(g.tabs,' sub2'):''}`;
+}
+renderNav=(o=>function(){o.apply(this,arguments);try{document.querySelectorAll('#nav .subnav').forEach(sn=>{const bs=[...sn.querySelectorAll('button[data-v="params"]')];if(!bs.length)return;const G=pgroups();let last='';bs.forEach(b=>{const gid=pgrpOf(b.dataset.t);if(gid!==last){last=gid;const g=G.find(x=>x.id===gid);if(g)b.insertAdjacentHTML('beforebegin',`<div class="sgrp">${g.l}</div>`)}})})}catch(e){}})(renderNav);
+/* ---------- Caisse : dalles ajustées à l'écran, tout le catalogue visible sans défiler ---------- */
+function fitGrid(){
+  try{
+    const g=document.getElementById('grid');if(!g)return;
+    const tiles=g.querySelectorAll('.tile');if(!tiles.length){g.classList.remove('fit','dense');g.style.removeProperty('--cols');return}
+    const W=g.clientWidth;if(!W)return;
+    const gap=parseFloat(getComputedStyle(g).columnGap)||10;
+    let bottom=window.innerHeight;
+    ['cartbar','cbar'].forEach(id=>{const el=document.getElementById(id);if(el&&el.offsetHeight&&getComputedStyle(el).position!=='static'){const t=el.getBoundingClientRect().top;if(t>0)bottom=Math.min(bottom,t)}});
+    const availH=bottom-(g.getBoundingClientRect().top+window.scrollY)-8;
+    const used=()=>tiles[tiles.length-1].getBoundingClientRect().bottom-g.getBoundingClientRect().top;
+    g.classList.add('fit');
+    const md=tileMode(),IMG={dense:false,pref:190,min:104,cmin:2},COL={dense:true,pref:150,min:80,cmin:3};
+    const levels=md==='img'?[IMG]:md==='col'?[COL]:[IMG,COL];
+    for(const lv of levels){
+      g.classList.toggle('dense',lv.dense);
+      const c0=Math.max(lv.cmin,Math.floor((W+gap)/(lv.pref+gap))),c1=Math.max(c0,Math.floor((W+gap)/(lv.min+gap)));
+      for(let c=c0;c<=c1;c++){g.style.setProperty('--cols',c);if(used()<=availH)return}
+    }
+  }catch(e){}
+}
+drawGrid=(o=>function(){const r=o.apply(this,arguments);fitGrid();requestAnimationFrame(fitGrid);return r})(drawGrid);
+window.addEventListener('resize',()=>{clearTimeout(fitGrid.t);fitGrid.t=setTimeout(fitGrid,120)});
+window.addEventListener('orientationchange',()=>setTimeout(fitGrid,300));
+try{document.fonts&&document.fonts.ready.then(()=>fitGrid())}catch(e){}
 init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();try{if(evDemoFill())save()}catch(e){}applySettings();cart=newCart();chrome();route();bootGate();
 })();
