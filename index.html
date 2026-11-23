@@ -2710,6 +2710,65 @@ body.navmini .side .logo .lgm{display:block}
 .cxic svg{width:19px;height:19px}
 .cxic.on{background:color-mix(in srgb,var(--brand) 14%,var(--surface));color:var(--brand-t)}
 .cxic.bad{background:color-mix(in srgb,var(--bad) 12%,var(--surface));color:var(--bad)}
+
+/* v100 : plan de salle et cuisine */
+.slbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.slst{display:flex;gap:10px;flex-wrap:wrap}
+.slst>div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 14px;min-width:104px}
+.slst b{display:block;font-size:20px;font-family:var(--f-display);line-height:1.15}
+.slst small{color:var(--muted);font-size:12px}
+.slacts{display:flex;gap:8px;flex-wrap:wrap}
+.slleg{display:flex;gap:16px;font-size:12.5px;color:var(--muted);margin:0 0 8px}
+.slleg span{display:inline-flex;align-items:center;gap:6px}
+.slg{width:12px;height:12px;border-radius:4px;border:2px solid var(--line);display:inline-block}
+.slg.zbusy{background:var(--pay-soft);border-color:var(--pay)}.slg.zrdy{background:color-mix(in srgb,var(--brand) 25%,var(--surface));border-color:var(--brand)}
+.slplan{position:relative;width:100%;aspect-ratio:16/9;container-type:inline-size;background:var(--surface-2);border:1.5px solid var(--line);border-radius:18px;overflow:hidden;background-image:radial-gradient(color-mix(in srgb,var(--muted) 22%,transparent) 1px,transparent 1.5px);background-size:22px 22px}
+.slplan.edit{outline:2px dashed var(--brand);outline-offset:-6px}
+.stbl{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:2px;text-align:center;font:inherit;color:var(--ink);background:var(--surface);border:2.5px solid color-mix(in srgb,var(--ok) 55%,var(--line));box-shadow:0 2px 8px rgba(10,31,77,.1);cursor:pointer;min-width:0;line-height:1.1}
+.stbl.shc{border-radius:50%}.stbl.shs{border-radius:14px}.stbl.shr{border-radius:14px}
+.stbl .sn{font-family:var(--f-display);font-weight:800;font-size:clamp(14px,3.4cqw,30px)}
+.stbl small{font-size:clamp(9.5px,1.5cqw,13px);color:var(--muted);font-weight:600}
+.stbl .stot{font-size:clamp(11px,2cqw,17px)}
+.stbl.zbusy{background:var(--pay-soft);border-color:var(--pay)}
+.stbl.zrdy{background:color-mix(in srgb,var(--brand) 22%,var(--surface));border-color:var(--brand);animation:slp 1.6s ease-in-out infinite}
+@keyframes slp{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--brand) 28%,transparent)}}
+.sltag{font-size:clamp(8.5px,1.35cqw,11.5px);font-weight:800;padding:1px 6px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.sltag.rd{background:var(--brand);color:#fff}.sltag.un{background:var(--warn);color:#fff}.sltag.ck{background:var(--surface);color:var(--pay-t)}
+.slplan.edit .stbl{touch-action:none;cursor:grab;border-style:dashed}
+.slplan.edit .stbl.zsel{border-style:solid;border-color:var(--brand);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 25%,transparent)}
+@media(max-width:700px){
+.slplan:not(.edit){container-type:normal;display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;aspect-ratio:auto;padding:12px;overflow:visible;background-image:none}
+.slplan:not(.edit) .stbl{position:static;width:auto!important;aspect-ratio:1/1!important;border-radius:18px;padding:6px}
+.slplan:not(.edit) .stbl .sn{font-size:26px}.slplan:not(.edit) .stbl small{font-size:12px}.slplan:not(.edit) .stbl .stot{font-size:15px}.slplan:not(.edit) .sltag{font-size:11px}
+}
+.sledit{margin-top:12px}
+.slpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.slpick .btn{flex-direction:column;min-height:56px}.slpick small{color:var(--muted);font-weight:600}
+.tblbn{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:8px;border-radius:14px;background:color-mix(in srgb,var(--brand) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--brand) 35%,var(--line))}
+.tblbn small{display:block;color:var(--muted);font-size:12px}
+.tblbn .btn{min-height:40px;padding:6px 12px}
+.lnote{display:inline-block;margin-top:4px;padding:2px 9px;border-radius:99px;border:1px dashed var(--line);background:none;font:inherit;font-size:12px;color:var(--muted);cursor:pointer}
+.lnote.has{border-style:solid;border-color:var(--warn);color:var(--warn);font-weight:700}
+#cbar button.kit{color:var(--pay-t)}
+.sndh{font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:12px 0 4px}
+.check.snd{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.check.snd small{display:block;color:var(--warn);font-weight:700}
+.kdbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.kdgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+@media(max-width:860px){.kdgrid{grid-template-columns:1fr}}
+.kdcol{background:var(--surface-2);border-radius:16px;padding:10px;min-height:160px}
+.kdcol h3{margin:2px 4px 10px;font-size:15px}
+.kdempty{text-align:center;padding:24px 0}
+.kd{background:var(--surface);border:1.5px solid var(--line);border-left:6px solid var(--ok);border-radius:14px;padding:10px 12px;margin-bottom:10px}
+.kd.warn{border-left-color:var(--warn)}.kd.bad{border-left-color:var(--bad)}
+.kdh{display:flex;justify-content:space-between;align-items:baseline}
+.kdt{font-family:var(--f-display);font-size:20px}
+.kdm{font-weight:800;color:var(--ok)}.kd.warn .kdm{color:var(--warn)}.kd.bad .kdm{color:var(--bad)}
+.kds{display:flex;gap:8px;align-items:center;margin:2px 0 6px;font-size:12.5px}
+.kdc{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:8px 0 2px}
+.kdl{font-size:16px;padding:2px 0}.kdl small{display:block;color:var(--warn);font-weight:700;font-size:13px}
+.kda{display:flex;gap:8px;margin-top:10px}.kda .btn{flex:1;min-height:46px}
+body.kfull .side,body.kfull header.top,body.kfull .gbar,body.kfull .glogo{display:none!important}
 .cxacts{display:flex;gap:8px;align-items:center;flex:none;flex-wrap:wrap}
 .cxacts .btn{white-space:nowrap}
 .cxcur{margin-bottom:14px;border-color:color-mix(in srgb,var(--brand) 40%,var(--line))}
@@ -3232,7 +3291,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v99" defer></script>
+<script src="app.js?v=v100" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

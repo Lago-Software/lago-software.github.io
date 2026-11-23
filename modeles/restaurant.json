@@ -1,6 +1,6 @@
 {
   "id": "restaurant",
-  "version": 2,
+  "version": 3,
   "label": "Restaurant",
   "resume": "Carte, boissons, menus et groupes, réservations de table, cartes cadeaux.",
   "settings": {
@@ -29,7 +29,10 @@
     },
     "capacite": 40,
     "intervalle_depart_minutes": 15,
-    "reperage": {"mode": "texte", "mot": "Table"},
+    "reperage": {
+      "mode": "texte",
+      "mot": "Table"
+    },
     "equipe_minimum": 3,
     "horaires": {
       "ouverture": "11:30",
@@ -110,6 +113,90 @@
       "personne": "couvert",
       "clients_de": "Couverts",
       "nom_etab": "Nom du restaurant"
+    },
+    "salle_et_cuisine": {
+      "tables": [
+        {
+          "id": "t1",
+          "name": "1",
+          "seats": 2,
+          "x": 6,
+          "y": 6,
+          "sh": "c"
+        },
+        {
+          "id": "t2",
+          "name": "2",
+          "seats": 2,
+          "x": 22,
+          "y": 6,
+          "sh": "c"
+        },
+        {
+          "id": "t3",
+          "name": "3",
+          "seats": 2,
+          "x": 38,
+          "y": 6,
+          "sh": "c"
+        },
+        {
+          "id": "t4",
+          "name": "4",
+          "seats": 2,
+          "x": 54,
+          "y": 6,
+          "sh": "c"
+        },
+        {
+          "id": "t5",
+          "name": "5",
+          "seats": 4,
+          "x": 6,
+          "y": 38,
+          "sh": "s"
+        },
+        {
+          "id": "t6",
+          "name": "6",
+          "seats": 4,
+          "x": 24,
+          "y": 38,
+          "sh": "s"
+        },
+        {
+          "id": "t7",
+          "name": "7",
+          "seats": 4,
+          "x": 42,
+          "y": 38,
+          "sh": "s"
+        },
+        {
+          "id": "t8",
+          "name": "8",
+          "seats": 4,
+          "x": 60,
+          "y": 38,
+          "sh": "s"
+        },
+        {
+          "id": "t9",
+          "name": "9",
+          "seats": 6,
+          "x": 6,
+          "y": 70,
+          "sh": "r"
+        },
+        {
+          "id": "t10",
+          "name": "10",
+          "seats": 6,
+          "x": 32,
+          "y": 70,
+          "sh": "r"
+        }
+      ]
     }
   },
   "products": [
@@ -310,7 +397,8 @@
       "price": 600,
       "tva": 10,
       "event": true,
-      "guests": 30
+      "guests": 30,
+      "poste": "none"
     },
     {
       "name": "Carte cadeau 30 €",
@@ -331,7 +419,8 @@
       "cat": "gestion",
       "scat": "Acomptes",
       "price": 100,
-      "tva": 10
+      "tva": 10,
+      "poste": "none"
     }
   ]
 }
