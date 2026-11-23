@@ -1090,52 +1090,225 @@ const MT={
   promo:['Offre du moment : {titre}','Bonjour {prénom},\n\n{titre}, valable jusqu’au {date}. Présentez simplement votre nom en caisse.\n\nMerci pour votre fidélité,\nL’équipe']
 };
 const MT_N={soiree:'Soirée ou événement spécial',vacances:'Vacances scolaires',promo:'Offre du moment'};
-let mm={model:'soiree',title:'Soirée du vendredi',date:addDays(today(),6),aud:'all',subj:'',msg:'',gen:true};
+const MC_MAXI=6;let MC_GAP=1150;
+let mm={model:'soiree',title:'Soirée du vendredi',date:addDays(today(),6),aud:'all',subj:'',msg:'',gen:true,imgs:[]};
 function mmGen(){
   const f=s=>s.replace(/\{titre\}/g,mm.title).replace(/\{date\}/g,mm.date?dlong(mm.date):'prochainement');
   mm.subj=f(MT[mm.model][0]);mm.msg=f(MT[mm.model][1]);
 }
 const mmFill=(s,c)=>s.replace(/\{prénom\}/g,firstName(c.name));
+/* ---- v95 : campagnes réelles ---- */
+const mcImgOk=u=>/^https:\/\/[^\s"'<>\\]{4,480}$/i.test(String(u||'').trim());
+const mcHost=u=>{try{return new URL(String(u).trim()).hostname.replace(/^www\./,'')}catch(e){return ''}};
+const mcBusy=()=>!!(S.camp&&(S.camp.st==='run'||S.camp.st==='pause'));
+const mcDur=n=>{const s=Math.max(1,Math.ceil(n*MC_GAP/1000));return s<90?s+' s':Math.ceil(s/60)+' min'};
+const mcFill=(s,c)=>String(s||'').replace(/\{prénom\}/g,firstName((c&&c.name)||'Camille'));
+const mcPl=(n,a,b)=>n>1?(b||a+'s'):a;
+/* un client = une adresse : deux fiches avec la même adresse ne reçoivent qu'un e-mail */
+function mcUniq(k){const seen=new Set(),out=[];audList(k).forEach(c=>{const e=String(c.email).trim().toLowerCase();if(!MAILRE.test(e)||seen.has(e))return;seen.add(e);out.push(c)});return out}
+const mcCan=()=>!!(mcUniq(mm.aud).length&&mm.subj.trim()&&mm.msg.trim()&&!mcBusy()&&mm.imgs.every(x=>!String(x.u||'').trim()||mcImgOk(x.u)));
+function mcBtn(){const s=$('#mmsend');if(s)s.disabled=!mcCan()}
+function mcImgMsg(im){
+  const u=String(im.u||'').trim(),l=String(im.l||'').trim();
+  if(u&&!mcImgOk(u))return 'Adresse non valide : elle doit commencer par https://';
+  if(l&&!mcImgOk(l))return 'Lien non valide : il doit commencer par https:// (sinon il est ignoré)';
+  return '';
+}
+function mcImgRow(im,i){
+  const at='autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" inputmode="url"';
+  return `<div class="mmimg" data-i="${i}"><input data-mi="${i}:u" value="${esc(im.u||'')}" placeholder="Adresse de l’image : https://…" ${at} aria-label="Adresse de l’image ${i+1}">
+   <div class="mmimg2"><input data-mi="${i}:l" value="${esc(im.l||'')}" placeholder="Lien au clic (facultatif)" ${at} aria-label="Lien de l’image ${i+1}"><select data-mi="${i}:pos" aria-label="Place de l’image ${i+1}"><option value="top" ${im.pos!=='end'?'selected':''}>Avant le texte</option><option value="end" ${im.pos==='end'?'selected':''}>Après le texte</option></select><button type="button" class="btn" data-act="mmidel" data-i="${i}" aria-label="Retirer l’image ${i+1}">Retirer</button></div>
+   <span class="muted mmiw warn-t" id="mmiw${i}" style="font-size:12.5px">${esc(mcImgMsg(im))}</span></div>`;
+}
+function mcImgWarn(i){const im=mm.imgs[i],w=$('#mmiw'+i);if(im&&w)w.textContent=mcImgMsg(im)}
+/* document (même moteur de mise en page que les tickets) */
+function mcDoc(src,c,prev){
+  const nm=S.settings.name||'Lago',P=[],subj=mcFill(src.subj,c).replace(/[\r\n\t]+/g,' ').trim();
+  const imgs=(src.imgs||[]).filter(x=>mcImgOk(x.u));let n=0;
+  const mk=x=>({t:'img',u:String(x.u).trim(),l:mcImgOk(x.l)?String(x.l).trim():'',a:subj.slice(0,120),n:++n,pv:!!prev});
+  imgs.filter(x=>x.pos!=='end').forEach(x=>P.push(mk(x)));
+  mcFill(src.msg,c).split(/\n{2,}/).map(s=>s.trim()).filter(Boolean).forEach(s=>P.push({t:'p',x:s}));
+  imgs.filter(x=>x.pos==='end').forEach(x=>P.push(mk(x)));
+  return{kind:'camp',ref:'',to:'',toName:(c&&c.name)||'',title:subj,pre:subj,subject:subj,parts:P,
+    foot:['Vous recevez cet e-mail car vous avez accepté de recevoir les actualités de '+nm+'. Pour ne plus en recevoir, répondez simplement « STOP » à ce message.']};
+}
+function mcPrev(){
+  const host=$('#mmprev');if(!host)return;
+  const first=mcUniq(mm.aud)[0]||{name:'Camille Martin'},d=mcDoc(mm,first,true),r=mlRender(d);
+  try{const sr=host.shadowRoot||(host.attachShadow?host.attachShadow({mode:'open'}):null);if(sr)sr.innerHTML=r.html;else host.textContent=r.text}catch(e){host.textContent=r.text}
+  const s=$('#mmpsub');if(s)s.innerHTML='Objet : <b>'+esc(r.subject)+'</b> · pour '+esc(first.name)+'. Les images apparaissent dans le test et dans l’e-mail reçu.';
+}
+function mcInfo(list){
+  const n=list.length;
+  if(!mailCfg())return 'L’envoi réel n’est pas activé : la campagne est seulement enregistrée (simulation). '+(isAdmin()?'Activez-le dans <b>Paramètres › E-mails</b>.':'Demandez à l’administrateur de l’activer.');
+  const q=mlQuota();
+  return 'Chaque client reçoit son propre e-mail, envoyé depuis votre adresse (environ '+mcDur(n)+' pour '+n+' '+mcPl(n,'client')+'). Quota EmailJS du mois : '+q.u+' sur '+q.q+'.'+(n>q.left?' <b class="warn-t">Il ne reste que '+Math.max(0,q.left)+' e-mail'+mcPl(Math.max(0,q.left),'')+' : l’envoi s’arrêtera à la limite.</b>':'');
+}
 function vMailing(m){
   if(mm.gen){mmGen();mm.gen=false}
-  const list=audList(mm.aud),first=list[0]||{name:'Camille Martin'},hist=S.mails.slice(0,8);
-  m.innerHTML=`<div class="cols"><div class="card"><h3>Nouvelle campagne</h3>
+  const list=mcUniq(mm.aud),hist=S.mails.slice(0,8),on=!!mailCfg();
+  m.innerHTML=`<div id="mcrun">${mcPanel()}</div><div class="cols"><div class="card"><h3>Nouvelle campagne</h3>
     <div class="field"><label for="mmmodel">Modèle</label><select id="mmmodel">${Object.entries(MT_N).map(([k,v])=>`<option value="${k}" ${mm.model===k?'selected':''}>${v}</option>`).join('')}</select></div>
     <div class="two"><div class="field"><label for="mmtitle">Titre de l’événement</label><input id="mmtitle" value="${esc(mm.title)}"></div><div class="field"><label for="mmdate">Date</label><input id="mmdate" type="date" value="${mm.date}"></div></div>
-    <div class="field"><label for="mmaud">Destinataires</label><select id="mmaud">${Object.entries(AUD).map(([k,v])=>`<option value="${k}" ${mm.aud===k?'selected':''}>${v[0]} (${audList(k).length})</option>`).join('')}</select></div>
+    <div class="field"><label for="mmaud">Destinataires</label><select id="mmaud">${Object.entries(AUD).map(([k,v])=>`<option value="${k}" ${mm.aud===k?'selected':''}>${v[0]} (${mcUniq(k).length})</option>`).join('')}</select></div>
     <div class="field"><label for="mmsubj">Objet</label><input id="mmsubj" value="${esc(mm.subj)}"></div>
     <div class="field"><label for="mmmsg">Message ({prénom} est remplacé pour chaque client)</label><textarea id="mmmsg">${esc(mm.msg)}</textarea></div>
-    <button class="btn-pay" id="mmsend" data-act="mmsend" ${list.length&&mm.subj.trim()&&mm.msg.trim()?'':'disabled'}>Envoyer à ${list.length} client${list.length>1?'s':''}</button>
-    <p class="muted" style="margin-top:8px;font-size:13px">Seuls les clients qui ont accepté les e-mails sont ciblés. Dans ce prototype, l’envoi est simulé : aucun e-mail ne part réellement.</p></div>
-   <div class="card"><h3>Aperçu pour ${esc(first.name)}</h3><div class="mailprev" id="mmprev"><b>${esc(mm.subj)}</b>\n\n${esc(mmFill(mm.msg,first))}</div></div></div>
+    <div class="field"><label>Images (facultatif)</label><div id="mmimgs">${mm.imgs.map(mcImgRow).join('')}</div>${mm.imgs.length<MC_MAXI?`<button type="button" class="btn" data-act="mmiadd">${mm.imgs.length?'Ajouter une autre image':'Ajouter une image'}</button>`:''}
+     <span class="muted" style="font-size:13px;display:block;margin-top:6px">Collez l’adresse d’une image déjà en ligne (votre site, votre hébergeur d’images). Elle doit commencer par https:// et mener directement à l’image (.jpg, .png, .gif ou .webp). Jusqu’à ${MC_MAXI} images.</span></div>
+    <button class="btn-pay" id="mmsend" data-act="mmsend" ${mcCan()?'':'disabled'}>Envoyer à ${list.length} client${list.length>1?'s':''}</button>
+    <p class="muted" id="mminfo" style="margin:8px 0 0;font-size:13px">${mcInfo(list)}</p>
+    <div class="mmtest"><input id="mmtest" type="email" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" value="${esc(mailOf(ME))}" placeholder="Adresse pour le test" aria-label="Adresse pour le test"><button type="button" class="btn" data-act="mmtest" ${on?'':'disabled'}>Envoyer un test</button></div>
+    <p class="muted" id="mmtmsg" role="status" style="min-height:18px;margin:6px 0 0;font-size:13px">${on?'Le test part tout de suite, avec les vraies images : c’est le meilleur moyen de vérifier le rendu.':''}</p></div>
+   <div class="card"><h3>Aperçu</h3><p class="muted" id="mmpsub" style="margin:0 0 8px;font-size:13px"></p><div class="mlprev" id="mmprev" aria-label="Aperçu du message"></div></div></div>
   <div class="card"><h3>Historique</h3>${hist.map(x=>`<button class="row rowbtn" data-act="mail" data-id="${x.id}"><span class="grow"><b>${esc(x.subject)}</b><span class="muted">${esc(x.to)} · ${new Date(x.ts).toLocaleDateString('fr-FR')} ${hm(x.ts)}</span></span><span class="pill ${x.kind==='auto'?'':'warn'}">${x.kind==='auto'?'Automatique':'Campagne'}</span></button>`).join('')||'<p class="muted">Aucun e-mail envoyé pour le moment.</p>'}</div>`;
+  mcPrev();
+}
+function mcMailRows(x){
+  let h='';
+  if(x.sent!=null)h+=`<div class="r"><span>Envoyés</span><b>${x.sent} sur ${x.count}${x.fail?' · '+x.fail+' '+mcPl(x.fail,'échec'):''}</b></div>`;
+  (x.imgs||[]).forEach((im,i)=>{h+=`<div class="r"><span>Image ${i+1}</span><b>${esc(mcHost(im.u))}${im.l?' · lien':''}</b></div>`});
+  return h;
 }
 function showMail(id){
   const x=S.mails.find(y=>y.id===id);if(!x)return;
-  showModal(`${mh('E-mail')}<div class="sum"><div class="r"><span>De</span><b>${esc(mlMailStr())}</b></div><div class="r"><span>À</span><b>${esc(x.to)}${x.email?' · '+esc(x.email):''}</b></div><div class="r"><span>Date</span><b>${new Date(x.ts).toLocaleDateString('fr-FR')} ${hm(x.ts)}</b></div></div>
+  showModal(`${mh('E-mail')}<div class="sum"><div class="r"><span>De</span><b>${esc(mlMailStr())}</b></div><div class="r"><span>À</span><b>${esc(x.to)}${x.email?' · '+esc(x.email):''}</b></div><div class="r"><span>Date</span><b>${new Date(x.ts).toLocaleDateString('fr-FR')} ${hm(x.ts)}</b></div>${mcMailRows(x)}</div>
     <div class="mailprev"><b>${esc(x.subject)}</b>\n\n${esc(x.body)}</div><button class="btn" data-act="close">Fermer</button>`);
 }
-document.addEventListener('click',e=>{
-  const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
-  if(b.dataset.act==='mail')showMail(b.dataset.id);
-  else if(b.dataset.act==='mmsend'){
-    const list=audList(mm.aud);if(!list.length||!mm.subj.trim()||!mm.msg.trim())return;
-    S.mails.unshift({id:uid(),ts:Date.now(),kind:'campaign',to:list.length+' client'+(list.length>1?'s':'')+' ('+AUD[mm.aud][0].toLowerCase()+')',subject:mm.subj,body:mm.msg,count:list.length});
-    save();vMailing($('#sub'));toast('Campagne envoyée à '+list.length+' client'+(list.length>1?'s':'')+' (simulation)');
+/* ---- moteur : un e-mail à la fois, cadence réglée pour EmailJS, pause / reprise ---- */
+const MCR={on:false};
+const mcWait=ms=>new Promise(r=>setTimeout(r,ms));
+function mcPanel(){
+  const C=S.camp;if(!C)return '';
+  const n=C.ids.length,pc=n?Math.min(100,Math.round(C.i*100/n)):0,live=MCR.on&&C.st==='run',other=C.st==='run'&&!MCR.on&&Date.now()-(C.hb||0)<45000;
+  const fl=C.fail.length,stop=C.st==='stop';
+  let lab,cls='',acts='',note='';
+  if(C.st==='done'||stop){
+    lab=stop?'Arrêtée':'Terminée';cls=stop||fl?'warn':'ok';
+    acts=(C.st==='done'&&fl?`<button class="btn primary" data-act="mcretry">Réessayer les ${fl} échec${fl>1?'s':''}</button>`:'')+'<button class="btn" data-act="mcclose">Fermer</button>';
+    if(fl)note='Échecs : '+C.fail.slice(0,3).map(f=>{const c=clientById(f[0]);return (c?c.name:'client')+' ('+f[1]+')'}).join(' ; ')+(fl>3?' …':'');
+  }else if(live){lab='En cours';cls='ok';acts='<button class="btn" data-act="mcpause">Mettre en pause</button>';note='Gardez cette page ouverte : les e-mails partent depuis cet appareil, un par un.'}
+  else if(other){lab='En cours ailleurs';cls='ok';note='Cette campagne est en train de partir depuis un autre appareil.'}
+  else{lab='En pause';cls='warn';acts='<button class="btn primary" data-act="mcgo">Reprendre</button><button class="btn" data-act="mcstop">Arrêter</button>';note=C.why||'La campagne est interrompue : vous pouvez la reprendre.'}
+  const left=live?' · reste environ '+mcDur(n-C.i):'';
+  return `<div class="card mcrun"><h3>Campagne ${stop||C.st==='done'?'':'en cours'} <span class="pill ${cls}">${lab}</span></h3>
+   <p class="muted" style="margin:0 0 6px;font-size:13.5px"><b>${esc(C.subj)}</b> · ${esc(C.aud||'')}${C.retry?' · relance':''}</p>
+   <div class="mlbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pc}"><i style="width:${pc}%"></i></div>
+   <p style="margin:6px 0;font-size:14px"><b>${C.ok}</b> envoyé${C.ok>1?'s':''} sur ${n}${fl?' · <b class="warn-t">'+fl+' échec'+(fl>1?'s':'')+'</b>':''}${C.skip?' · '+C.skip+' ignoré'+(C.skip>1?'s':''):''}${left}</p>
+   ${note?`<p class="muted" style="margin:0 0 8px;font-size:13px">${esc(note)}</p>`:''}
+   ${acts?`<div class="acts">${acts}</div>`:''}</div>`;
+}
+function mcPaint(){
+  if(view==='clients'&&tab.clients==='mailing'){const h=$('#mcrun');if(h)h.innerHTML=mcPanel();mcBtn()}
+}
+function mcFinish(C){
+  if(C.rec)return;C.rec=1;
+  S.mails.unshift({id:uid(),ts:Date.now(),kind:'campaign',to:C.ok+' client'+(C.ok>1?'s':'')+' ('+String(C.aud||'').toLowerCase()+')'+(C.retry?' · relance':''),subject:C.subj,body:C.msg,count:C.ids.length,sent:C.ok,fail:C.fail.length,imgs:C.imgs,real:true});
+  if(C.ok){if(!Array.isArray(S.mlog))S.mlog=[];S.mlog.push({id:uid(),ts:Date.now(),k:'camp',ref:String(C.subj).slice(0,40),to:C.ok+' destinataire'+(C.ok>1?'s':''),ok:true,n:C.ok,by:C.by||''})}
+  save();
+}
+async function mcRun(){
+  const C=S.camp;if(!C||MCR.on||C.st==='done'||C.st==='stop')return;
+  MCR.on=true;C.st='run';C.why='';C.hb=Date.now();save();mcPaint();
+  let streak=0;
+  try{
+    while(S.camp===C&&C.st==='run'&&C.i<C.ids.length){
+      const cid=C.ids[C.i],cl=clientById(cid),to=cl?String(cl.email||'').trim().toLowerCase():'';
+      if(!cl||!cl.optin||!MAILRE.test(to)){C.i++;C.skip=(C.skip||0)+1;continue}
+      const d=mcDoc(C,cl),r=mlRender(d);let tries=0,res='';
+      for(;;){
+        try{await mlSend({to,toName:cl.name,subject:r.subject,html:r.html,kind:'camp',ref:'',quiet:true});res='ok';break}
+        catch(e){
+          if(e&&(e.mlc==='quota'||e.mlc==='config')){C.st='pause';C.why='Pause : '+mlErrTxt(e)+'. Reprenez quand c’est réglé (le quota se renouvelle chaque mois).';res='hold';break}
+          if(e&&e.status===429&&tries<3){tries++;C.hb=Date.now();await mcWait(MC_GAP*4*tries);continue}
+          C.fail.push([cid,String(mlErrTxt(e)).slice(0,70)]);streak++;res='ko';
+          if(streak>=3){C.st='pause';C.why='Pause après 3 échecs de suite : '+String(mlErrTxt(e))+'.'}
+          break;
+        }
+      }
+      if(res==='hold')break;
+      if(res==='ok'){C.ok++;streak=0}
+      C.i++;C.hb=Date.now();mcPaint();
+      if(C.i%10===0)save();
+      if(C.i<C.ids.length&&C.st==='run')await mcWait(MC_GAP);
+    }
+    if(S.camp===C&&C.st==='run'){C.st='done';C.end=Date.now();mcFinish(C);toast('Campagne terminée : '+C.ok+' e-mail'+(C.ok>1?'s':'')+' envoyé'+(C.ok>1?'s':''))}
+    else if(S.camp===C&&C.st==='stop')mcFinish(C);
+  }finally{MCR.on=false;save();mcPaint()}
+}
+function mcStart(){
+  if(mcBusy())return;
+  const ids=mcUniq(mm.aud).map(c=>c.id);if(!ids.length)return;
+  S.camp={id:uid(),ts:Date.now(),subj:mm.subj.trim(),msg:mm.msg,aud:AUD[mm.aud][0],
+    imgs:mm.imgs.filter(x=>mcImgOk(x.u)).map(x=>({u:String(x.u).trim(),l:mcImgOk(x.l)?String(x.l).trim():'',pos:x.pos==='end'?'end':'top'})),
+    ids,i:0,ok:0,fail:[],skip:0,st:'run',hb:Date.now(),by:(typeof ME!=='undefined'&&ME)?String(ME.name||'').slice(0,60):''};
+  save();vMailing($('#sub'));mcRun();
+}
+function mcSend(){
+  if(!mcCan())return;
+  const n=mcUniq(mm.aud).length;
+  if(!mailCfg()){
+    S.mails.unshift({id:uid(),ts:Date.now(),kind:'campaign',to:n+' client'+(n>1?'s':'')+' ('+AUD[mm.aud][0].toLowerCase()+')',subject:mm.subj,body:mm.msg,count:n,imgs:mm.imgs.filter(x=>mcImgOk(x.u)).map(x=>({u:x.u.trim(),l:mcImgOk(x.l)?x.l.trim():'',pos:x.pos}))});
+    save();vMailing($('#sub'));toast('Campagne envoyée à '+n+' client'+(n>1?'s':'')+' (simulation)');return;
   }
+  if(!isAdmin()){toast('L’envoi d’une campagne est réservé à l’administrateur');return}
+  const first=mcUniq(mm.aud)[0];
+  if(mlRender(mcDoc(mm,first)).html.length>38000){toast('Message trop long pour le service d’e-mails : raccourcissez le texte');return}
+  const q=mlQuota();
+  askYes('Envoyer « '+mm.subj.trim()+' » à '+n+' client'+(n>1?'s':'')+' ? Les e-mails partent un par un depuis votre adresse (environ '+mcDur(n)+'). Gardez cette page ouverte jusqu’à la fin.'+(n>q.left?' Attention : il ne reste que '+Math.max(0,q.left)+' e-mail'+mcPl(Math.max(0,q.left),'')+' dans votre quota du mois, l’envoi s’arrêtera à la limite.':''),mcStart,'Envoyer');
+}
+async function mcTest(b){
+  const to=String((($('#mmtest')||{}).value)||'').trim().toLowerCase(),msg=t=>{const x=$('#mmtmsg');if(x)x.textContent=t};
+  if(!MAILRE.test(to)){msg('Indiquez une adresse e-mail valide pour le test.');return}
+  if(!mailCfg()){msg('L’envoi d’e-mails n’est pas activé (Paramètres › E-mails).');return}
+  if(!mm.subj.trim()||!mm.msg.trim()){msg('Écrivez d’abord l’objet et le message.');return}
+  const bad=mm.imgs.find(x=>String(x.u||'').trim()&&!mcImgOk(x.u));if(bad){msg('Corrigez l’adresse de l’image avant le test.');return}
+  const first=mcUniq(mm.aud)[0]||{name:(typeof ME!=='undefined'&&ME&&ME.name)||'Camille'};
+  b.disabled=true;msg('Envoi du test…');
+  try{
+    const d=mcDoc(mm,first);d.subject='[Test] '+d.subject;const r=mlRender(d);
+    await mlSend({to,toName:first.name,subject:r.subject,html:r.html,kind:'test',ref:'CAMPAGNE'});
+    msg('✓ Test envoyé à '+to+'. Ouvrez-le : les images doivent s’afficher en haut ou en bas du message.');
+  }catch(e){console.warn('mail',e);msg('Échec : '+mlErrTxt(e)+'.')}
+  if(b.isConnected)b.disabled=false;
+}
+window.addEventListener('beforeunload',e=>{if(MCR.on){e.preventDefault();e.returnValue=''}});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const a=b.dataset.act;
+  if(a==='mail')showMail(b.dataset.id);
+  else if(a==='mmsend')mcSend();
+  else if(a==='mmtest')mcTest(b);
+  else if(a==='mmiadd'){
+    if(mm.imgs.length>=MC_MAXI)return;mm.imgs.push({u:'',l:'',pos:'top'});vMailing($('#sub'));
+    const x=document.querySelector('#mmimgs [data-mi="'+(mm.imgs.length-1)+':u"]');if(x)x.focus();
+  }
+  else if(a==='mmidel'){mm.imgs.splice(+b.dataset.i,1);vMailing($('#sub'))}
+  else if(a==='mcpause'){if(S.camp&&S.camp.st==='run'){S.camp.st='pause';S.camp.why='Pause demandée : la campagne s’arrête après l’e-mail en cours.';mcPaint()}}
+  else if(a==='mcgo'){if(S.camp&&S.camp.st==='pause'){if(MCR.on){S.camp.st='run';S.camp.why='';mcPaint()}else mcRun()}}
+  else if(a==='mcstop'){
+    if(!S.camp||!(S.camp.st==='pause'||S.camp.st==='run'))return;
+    askYes('Arrêter la campagne ? Les e-mails déjà partis ne peuvent pas être rappelés.',()=>{const C=S.camp;if(!C)return;C.st='stop';if(!MCR.on)mcFinish(C);save();closeModal();if(view==='clients'&&tab.clients==='mailing')vMailing($('#sub'));mcPaint()},'Arrêter');
+  }
+  else if(a==='mcretry'){
+    const C=S.camp;if(!C||C.st!=='done'||!C.fail.length||mcBusy())return;
+    S.camp=Object.assign({},C,{id:uid(),ids:C.fail.map(f=>f[0]),i:0,ok:0,fail:[],skip:0,st:'run',hb:Date.now(),rec:0,retry:1,why:'',end:0});
+    save();vMailing($('#sub'));mcRun();
+  }
+  else if(a==='mcclose'){if(S.camp&&(S.camp.st==='done'||S.camp.st==='stop')){S.camp=null;save();vMailing($('#sub'))}}
 });
 document.addEventListener('input',e=>{
   const t=e.target;if(view!=='clients')return;
   if(t.id==='mmsubj'||t.id==='mmmsg'){
     if(t.id==='mmsubj')mm.subj=t.value;else mm.msg=t.value;
-    const list=audList(mm.aud),first=list[0]||{name:'Camille Martin'},p=$('#mmprev');
-    if(p)p.innerHTML='<b>'+esc(mm.subj)+'</b>\n\n'+esc(mmFill(mm.msg,first));
-    const s=$('#mmsend');if(s)s.disabled=!(list.length&&mm.subj.trim()&&mm.msg.trim());
+    mcPrev();mcBtn();
+  }else if(t.dataset&&t.dataset.mi){
+    const p=t.dataset.mi.split(':'),i=+p[0],im=mm.imgs[i];
+    if(im&&(p[1]==='u'||p[1]==='l')){im[p[1]]=t.value;mcImgWarn(i);mcPrev();mcBtn()}
   }
 });
 document.addEventListener('change',e=>{
   const t=e.target;
   if(t.id==='automail'){S.settings.autoMail=t.checked;save();toast(t.checked?'E-mails automatiques activés':'E-mails automatiques désactivés');return}
+  if(view==='clients'&&t.dataset&&t.dataset.mi){const p=t.dataset.mi.split(':'),im=mm.imgs[+p[0]];if(im&&p[1]==='pos'){im.pos=t.value==='end'?'end':'top';mcPrev()}return}
   if(view!=='clients'||!['mmmodel','mmtitle','mmdate','mmaud'].includes(t.id))return;
   if(t.id==='mmmodel'){mm.model=t.value;mm.gen=true}
   else if(t.id==='mmtitle'){mm.title=t.value;mm.gen=true}
@@ -4835,7 +5008,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v95';
+const LAGO_V='v96';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -9912,7 +10085,10 @@ function migrateM(){
 const mlE=c=>{const e=new Error(c);e.mlc=c;return e};
 const mlFrom=()=>String(mjCfg().name||'').trim()||S.settings.name||'Lago';
 const mlReply=()=>{const a=String(mjCfg().addr||'').trim();return MAILRE.test(a)?a:(MAILRE.test(mlContact())?mlContact():'')};
-function mlMonthUse(){const d=new Date(),y=d.getFullYear(),mo=d.getMonth();return (S.mlog||[]).filter(x=>{if(!x.ok)return false;const a=new Date(x.ts);return a.getFullYear()===y&&a.getMonth()===mo}).length}
+const mlYM=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)};
+/* compteur des e-mails de campagne (ils ne sont pas inscrits un par un dans le journal) */
+function mlcInc(){const y=mlYM();if(!S.mlc||S.mlc.ym!==y)S.mlc={ym:y,n:0};S.mlc.n++}
+function mlMonthUse(){const d=new Date(),y=d.getFullYear(),mo=d.getMonth(),cn=S.mlc&&S.mlc.ym===mlYM()?(+S.mlc.n||0):0;return cn+(S.mlog||[]).filter(x=>{if(!x.ok||x.k==='camp')return false;const a=new Date(x.ts);return a.getFullYear()===y&&a.getMonth()===mo}).length}
 function mlQuota(){const q=Math.max(1,parseInt(mjCfg().quota)||MJ_QUOTA),u=mlMonthUse();return{q,u,left:q-u}}
 function mlErrTxt(e){
   const c=e&&e.mlc;
@@ -9922,7 +10098,7 @@ function mlErrTxt(e){
   if(c==='quota'){const q=mlQuota();return 'quota du mois atteint ('+q.u+' sur '+q.q+' e-mails)'}
   return mailErr(e);
 }
-const ML_KIND={ticket:'Ticket',avoir:'Avoir',gift:'Carte cadeau',resa:'Réservation',mdp:'Mot de passe',test:'Test'};
+const ML_KIND={ticket:'Ticket',avoir:'Avoir',gift:'Carte cadeau',resa:'Réservation',mdp:'Mot de passe',test:'Test',camp:'Campagne'};
 /* envoi + journal (le journal est partagé avec l’équipe : on voit qui a envoyé quoi, et on évite les doublons) */
 async function mlSend(o){
   if(!mailCfg())throw mlE('config');
@@ -9941,8 +10117,9 @@ async function mlSend(o){
   };
   try{
     await mailSend(to,Object.assign({to_name:String(o.toName||'').slice(0,80),subject,message_html:html},o.extra||{}));
-    en.ok=true;log();return en;
-  }catch(x){en.err=String(mlErrTxt(x)).slice(0,120);log();throw x}
+    en.ok=true;if(o.quiet){mlcInc();return en}
+    log();return en;
+  }catch(x){if(o.quiet)throw x;en.err=String(mlErrTxt(x)).slice(0,120);log();throw x}
 }
 /* ---------- documents ---------- */
 const mlCap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
@@ -9958,6 +10135,12 @@ function mlRender(d){
     if(p.t==='p'){h+=`<p style="${F}margin:0 0 12px;font-size:15px;line-height:1.55;color:#1f2430">${nl(p.x)}</p>`;t.push(String(p.x))}
     else if(p.t==='h'){h+=`<h2 style="${F}margin:16px 0 6px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#6b7280">${esc(p.x)}</h2>`;t.push('— '+p.x+' —')}
     else if(p.t==='box'){h+=`<div style="${F}margin:0 0 14px;padding:10px 12px;background:#f3f5f9;border-left:4px solid ${brand};border-radius:6px;font-size:14px;line-height:1.5;color:#1f2430">${nl(p.x)}</div>`;t.push(String(p.x))}
+    else if(p.t==='img'){
+      if(p.pv)h+=`<div style="${F}margin:0 0 14px;padding:26px 12px;border:2px dashed #b8bfcc;border-radius:8px;text-align:center;font-size:13px;color:#6b7280;background:#f8f9fb">Image ${p.n||''}<br><span style="font-size:12px">${esc(mcHost(p.u))}${p.l?' · lien au clic':''}</span></div>`;
+      else{const im=`<img src="${esc(p.u)}" alt="${esc(p.a||'')}" width="516" style="display:block;width:100%;max-width:516px;height:auto;border:0;border-radius:8px">`;
+        h+=`<div style="margin:0 0 14px">${p.l?`<a href="${esc(p.l)}" target="_blank" rel="noopener">${im}</a>`:im}</div>`}
+      t.push((p.a?'['+p.a+'] ':'')+p.u);
+    }
     else if(p.t==='small'){h+=`<p style="${F}margin:0 0 12px;font-size:12.5px;line-height:1.5;color:#6b7280">${nl(p.x)}</p>`;t.push(String(p.x))}
     else if(p.t==='big'){h+=`<div style="margin:6px 0 16px;padding:16px;border:2px dashed ${brand};border-radius:10px;text-align:center"><div style="font-family:Menlo,Consolas,monospace;font-size:26px;letter-spacing:2px;font-weight:700;color:#111;word-break:break-all">${esc(p.x)}</div>${p.s?`<div style="${F}font-size:13px;color:#6b7280;margin-top:4px">${esc(p.s)}</div>`:''}</div>`;t.push(String(p.x)+(p.s?' ('+p.s+')':''))}
     else if(p.t==='rows'){
@@ -9970,6 +10153,7 @@ function mlRender(d){
   if(S.settings.addr&&!foot.includes(S.settings.addr))foot.push(S.settings.addr);
   const ct=[mlContact(),S.settings.phone].filter(Boolean).join(' · ');if(ct)foot.push(ct);
   const fx=String(mjCfg().foot||'').trim().slice(0,400);if(fx)foot.push(fx);
+  (d.foot||[]).forEach(x=>foot.push(String(x).slice(0,300)));
   h=`<div style="background:#eef0f4;padding:20px 10px"><div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(d.pre||d.title||'')}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden">`+
     `<tr><td style="background:${brand};padding:18px 22px"><div style="${F}font-size:20px;font-weight:700;color:#ffffff">${esc(nm)}</div></td></tr>`+
     `<tr><td style="padding:22px 22px 8px">${d.title?`<h1 style="${F}margin:0 0 14px;font-size:20px;line-height:1.25;color:#111">${esc(d.title)}</h1>`:''}${h}</td></tr>`+
@@ -10157,7 +10341,7 @@ function vSetMail(m){
    ${fld('Adresse de réponse',inp('mm_addr',c.addr,mlContact()||'contact@votre-parc.fr','email'),'Quand le client répond, sa réponse arrive ici. Laissez vide pour utiliser l’e-mail de contact du parc.')}
    ${fld('Message en bas de chaque e-mail (facultatif)','<textarea id="mm_foot" maxlength="400" rows="3" placeholder="Ex. : Horaires, réseaux sociaux, mention de retour…">'+esc(c.foot||'')+'</textarea>')}
    <label class="check" style="margin:6px 0 10px"><input type="checkbox" id="mm_auto" ${c.autoTicket?'checked':''}><span>Envoyer automatiquement le ticket après chaque vente quand la fiche client a une adresse e-mail</span></label>
-   ${fld('Quota mensuel de votre offre EmailJS',inp('mm_quota',String(c.quota||MJ_QUOTA),'200','number'),'À modifier seulement si vous passez à une offre payante.')}
+   ${fld('Quota mensuel de votre offre EmailJS',inp('mm_quota',String(c.quota||MJ_QUOTA),'200','number'),'L’offre gratuite d’EmailJS permet 200 e-mails par mois. Pour envoyer davantage (campagnes), passez à une offre payante sur emailjs.com, puis indiquez ici le nouveau quota.')}
    <div class="mlq"><div class="mlbar"><i style="width:${pc}%"></i></div><span class="muted" style="font-size:13px">${q.u} e-mail${q.u>1?'s':''} envoyé${q.u>1?'s':''} ce mois-ci sur ${q.q}</span></div>
    <p id="mm_msg" class="muted" style="min-height:20px;font-size:13.5px;margin:10px 0 0" role="status"></p>
    <div class="acts"><button class="btn primary" data-act="mm_save">Enregistrer</button></div>
@@ -10204,7 +10388,7 @@ document.addEventListener('click',async e=>{
     const T={to:'{{to_email}}',subject:'{{subject}}',from:'{{from_name}}',reply:'{{reply_to}}',body:'{{{message_html}}}'};
     try{await zCopy(T[b.dataset.v]||'','Copié')}catch(x){toast('Copie impossible')}
   }else if(a==='mm_purge'){
-    askYes('Vider le journal des envois d’e-mails ? Le compteur du mois repart de zéro.',()=>{S.mlog=[];save();closeModal();vSetMail($('#sub'));toast('Journal vidé')},'Vider');
+    askYes('Vider le journal des envois d’e-mails ? Le compteur du mois repart de zéro.',()=>{S.mlog=[];S.mlc=null;save();closeModal();vSetMail($('#sub'));toast('Journal vidé')},'Vider');
   }
 });
 /* RGPD : effacer les adresses d’un client dans le journal */
