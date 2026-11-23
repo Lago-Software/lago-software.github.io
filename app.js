@@ -3129,7 +3129,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act="qwgo"
   qwRows.forEach(r=>{const d=pDate(r[D]),t=pTime(r[H]),j=parseInt(r[N]);if(!d||t==null||!j)return;const st=qFloor(t);
     S.sales.push({id:uid(),no:'QW-'+(++k),ts:new Date(d+'T'+hmm(st)+':00').getTime(),lines:[],sub:0,disc:0,total:0,vat:{},pay:[],clientId:null,slot:d+'|'+st,dur:U>=0?(parseInt(r[U])||60):60,jumpers:j,qw:true,qwName:C>=0?r[C]:''})});
   save();qwRows=null;vQweekle($('#sub'));toast(k+' réservation(s) importée(s)')});
-TABS.params.push(['pqw','Qweekle']);SUBS.pqw=vQweekle;
+
 
 /* ---- contrôle ludique ---- */
 const SV=(b,i)=>`<svg viewBox="0 0 120 80" class="cillu" aria-hidden="true"><rect width="120" height="80" rx="14" fill="${b}"/>${i}</svg>`;
@@ -4780,7 +4780,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v92';
+const LAGO_V='v93';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -10833,7 +10833,7 @@ const PGRP=[
  ['etab','Établissement',['pgen','pmetier','ppark']],
  ['equipe','Équipe et accès',['pteam','pacc','pprof','pvis','phome']],
  ['caisse','Caisse et clients',['pcat','ploy','pmail']],
- ['resa','Réservations',['pweb','ppay','pqw','ptv']],
+ ['resa','Réservations',['pweb','ppay','ptv']],
  ['conf','Légal et sécurité',['pcf','pobl','prgpd','pctl','psante']],
  ['perso','Personnaliser',['papp','pstudio']]
 ];
