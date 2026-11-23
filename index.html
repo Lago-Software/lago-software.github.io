@@ -3163,6 +3163,17 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
 #mmprev{max-height:70vh}
 .mcrun{margin-bottom:14px}.mcrun h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 @media(max-width:600px){.mmimg2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.mmimg2 .btn{grid-column:1/-1}.mmtest{grid-template-columns:1fr}}
+.tvlg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tvlg-t{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px;padding:16px;border-radius:14px;background:#EEF3F9;border:1px solid var(--line,#DDE5F0)}
+.tvlg-t.dk{background:#0F2148;border-color:#0F2148}
+.tvlg-t.dk small{color:#A5B6D8}
+.tvlg-t>span{display:inline-flex;line-height:0}
+.tvlg-t img{max-height:56px;max-width:180px;object-fit:contain;display:block}
+.tvlg-t .pl{padding:8px 12px;border-radius:10px}
+.tvlg-t .pw{background:#fff}.tvlg-t .pn{background:#0A1F4D}
+.tvlg-t .bx img{border-radius:8px}
+.tvmg{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px}
+.tpl-o input{width:auto;height:auto;min-height:0;padding:0}
 </style>
 
 <div class="gbar" id="gbar"></div>
@@ -3221,7 +3232,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v97" defer></script>
+<script src="app.js?v=v98" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>
