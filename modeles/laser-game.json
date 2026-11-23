@@ -23,8 +23,6 @@
       ]
     },
     "capacite": 30,
-    "intervalle_depart_minutes": 20,
-    "reperage": {"mode": "texte", "mot": "Partie"},
     "equipe_minimum": 2,
     "horaires": {
       "ouverture": "10:00",
@@ -104,6 +102,11 @@
       "personne": "joueur",
       "clients_de": "Joueurs",
       "nom_etab": "Nom du laser game"
+    },
+    "intervalle_depart_minutes": 20,
+    "reperage": {
+      "mode": "texte",
+      "mot": "Partie"
     }
   },
   "products": [
@@ -144,11 +147,50 @@
       "art": "gilet"
     },
     {
+      "name": "Session 30 min",
+      "cat": "park",
+      "price": 12,
+      "tva": 10,
+      "jumper": true,
+      "dur": 30,
+      "art": "cible"
+    },
+    {
+      "name": "Pack 4 joueurs",
+      "cat": "park",
+      "price": 32,
+      "tva": 10,
+      "jumper": true,
+      "dur": 20,
+      "art": "p5"
+    },
+    {
+      "name": "Partie privée",
+      "cat": "event",
+      "price": 120,
+      "tva": 10,
+      "art": "cible"
+    },
+    {
       "name": "Pass 5 parties",
       "cat": "park",
       "price": 35,
       "tva": 10,
       "art": "p5"
+    },
+    {
+      "name": "Blaster supplémentaire",
+      "cat": "park",
+      "price": 3,
+      "tva": 10,
+      "art": "gilet"
+    },
+    {
+      "name": "Gilet supplémentaire",
+      "cat": "park",
+      "price": 2,
+      "tva": 10,
+      "art": "gilet"
     },
     {
       "name": "Eau 50 cl",
