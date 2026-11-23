@@ -329,13 +329,13 @@ function catHex(c){try{const v=getComputedStyle(document.documentElement).getPro
 function drawGrid(){
   const nq=norm(q),cc={},colMode=tileMode()==='col';
   const list=S.products.filter(p=>p.active&&(nq||fcat==='all'||p.cat===fcat)&&(nq||!fsub||p.scat===fsub)&&(!nq||norm(p.name).includes(nq)));
-  $('#grid').innerHTML=list.length?list.map(p=>{
-    const c=cat(p.cat),n=(cart.lines.find(l=>l.pid===p.id)||{}).qty||0,own=colMode;
-    const hx=isHex(p.tcol)?p.tcol:(cc[c.id]!==undefined?cc[c.id]:(cc[c.id]=catHex(c)));
-    const tc=hx||`var(${c.v})`,tt=hx?tileInk(hx):'#FFFFFF';
-    return `<button class="tile${own?' ct':''}" data-act="add" data-id="${p.id}" style="--cat:var(${c.v});--tc:${tc};--tt:${tt}">${n?`<span class="badge">${n}</span>`:''}
-      ${own?'':art(p)}<span class="n">${esc(p.name)}</span><span class="p num">${eur(p.price)}</span></button>`}).join(''):`<div class="empty" style="grid-column:1/-1">Aucun produit trouvé.</div>`;
+  $('#grid').innerHTML=list.length?list.map(p=>tileHtml(p,cc,colMode,'add',(cart.lines.find(l=>l.pid===p.id)||{}).qty||0)).join(''):`<div class="empty" style="grid-column:1/-1">Aucun produit trouvé.</div>`;
 }
+function tileHtml(p,cc,colMode,act,n){
+  const c=cat(p.cat),hx=isHex(p.tcol)?p.tcol:(cc[c.id]!==undefined?cc[c.id]:(cc[c.id]=catHex(c)));
+  const tc=hx||`var(${c.v})`,tt=hx?tileInk(hx):'#FFFFFF';
+  return `<button type="button" class="tile${colMode?' ct':''}" data-act="${act}" data-id="${p.id}" style="--cat:var(${c.v});--tc:${tc};--tt:${tt}">${n?`<span class="badge">${n}</span>`:''}
+      ${colMode?'':art(p)}<span class="n">${esc(p.name)}</span><span class="p num">${eur(p.price)}</span></button>`}
 function slotCheck(T){
   if(T.jumpers>0&&cart.slotM!=null){const left=leftFor(cart.slotDate,cart.slotM,T.dur);if(T.jumpers>left)return left}
   return null;
@@ -3017,25 +3017,71 @@ const qTotHtml=q=>{const b=qBr(q);return `<span class="muted">HT ${eurN(b.ht)} �
 const qLate=q=>q.status==='sent'&&Date.now()-(q.sentTs||q.ts)>5*864e5;
 function quoteNo(){const y=new Date().getFullYear(),n=quotes().filter(q=>String(q.no).includes('-'+y+'-')).length+1;return 'D-'+y+'-'+String(n).padStart(3,'0')}
 function vDevis(m){
+  if(qd){qEdit(m);return}
+  qLeave();
   const A=[...quotes()].sort((a,b)=>b.ts-a.ts),open=A.filter(q=>q.status==='sent').reduce((a,q)=>a+qTot(q),0),late=A.filter(qLate).length,L=qFlt==='all'?A:A.filter(q=>q.status===qFlt);
   m.innerHTML=`<div class="impo"><span><b class="num">${eurN(open)}</b> de devis en attente de réponse${late?` · <b class="warn-t">${late} à relancer</b>`:''}</span><button class="btn primary" data-act="qnew">${ic('plus')}Nouveau devis</button></div>
    <div class="chips" style="margin-bottom:10px">${[['all','Tous',A.length],...QST.map(s=>[s[0],s[1],A.filter(q=>q.status===s[0]).length])].map(([k,l,n])=>`<button class="chip ${qFlt===k?'on':''}" data-act="qflt" data-v="${k}">${l} · ${n}</button>`).join('')}</div>
    <div class="card">${L.length?L.map(q=>{const st=QST.find(x=>x[0]===q.status);return `<div class="row"><span class="grow"><b>${esc(q.no)} · ${esc(q.title||'Devis')}</b><span class="muted">${esc(q.name||'Client')} · ${q.date?dshort(q.date):'date à définir'} · ${q.guests||0} invités${qLate(q)?' · <b class="warn-t">sans réponse depuis '+Math.floor((Date.now()-(q.sentTs||q.ts))/864e5)+' j</b>':''}</span></span><b class="num">${eurN(qTot(q))}</b><span class="pill ${st[2]}">${st[1]}</span><button class="btn" data-act="qopen" data-id="${q.id}">Ouvrir</button><button class="btn" data-act="qpdf" data-id="${q.id}">PDF</button><button class="btn" data-act="qdup" data-id="${q.id}" aria-label="Dupliquer ce devis">Dupliquer</button></div>`}).join(''):'<p class="muted">Aucun devis'+(qFlt==='all'?'. Créez-en un pour un anniversaire, une privatisation ou un team building.':' dans ce statut.')+'</p>'}</div>`;
 }
+/* devis façon caisse : produits en dalles à gauche, devis en cours à droite (ticket) */
+let qcat='all',qq='',qSnapId=null,qSnap='';
 function qForm(){
-  const q=qd,pr=S.products.filter(p=>p.active&&(p.event||p.cat==='event'||p.cat==='gestion'));
-  showModal(`${mh(q.fresh?'Nouveau devis':'Devis '+q.no)}<form id="qform">
-   <div class="two">${fld('Client',`<input data-q="name" list="qcl" value="${esc(q.name)}" placeholder="Nom du client"><datalist id="qcl">${S.clients.map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist>`)}${fld('E-mail',`<input data-q="email" type="email" value="${esc(q.email||'')}">`)}</div>
-   <div class="two">${fld('Intitulé',`<input data-q="title" value="${esc(q.title)}" placeholder="Anniversaire, team building…">`)}${fld('Date prévue',`<input data-q="date" type="date" value="${q.date||''}">`)}</div>
-   <div class="two">${fld('Invités',`<input data-q="guests" type="number" min="0" value="${q.guests||''}">`)}${fld('Valable jusqu’au',`<input data-q="valid" type="date" value="${q.valid||''}">`)}</div>
-   <div class="field"><label>Lignes</label>${q.lines.map((l,i)=>`<div class="qline"><input data-ql="${i}:label" value="${esc(l.label)}" placeholder="Désignation"><input data-ql="${i}:qty" type="number" min="1" value="${l.qty}" style="width:64px"><input data-ql="${i}:price" inputmode="decimal" value="${l.price}" style="width:92px" aria-label="Prix TTC"><button type="button" class="btn" data-act="qdl" data-i="${i}" aria-label="Retirer">${ic('x')}</button></div>`).join('')}
-    <div class="acts"><select id="qadd"><option value="">Ajouter un produit…</option>${pr.map(p=>`<option value="${p.id}">${esc(p.name)} · ${eurN(p.price)}</option>`).join('')}</select><button type="button" class="btn" data-act="qaddfree">${ic('plus')}Ligne libre</button></div></div>
-   <div class="two">${fld('Heure de début',`<select data-q="h" data-n="1">${hOpts(q.h||14,9,22)}</select>`)}${fld('Salle',`<select data-q="room">${Object.keys(ROOMS).map(k=>`<option value="${k}" ${(q.room||Object.keys(ROOMS)[0])===k?'selected':''}>${esc(ROOMS[k])}</option>`).join('')}</select>`)}</div>
-   <div class="two">${fld('Acompte (%)',`<input data-q="dep" data-n="1" type="number" min="0" max="100" value="${q.dep==null?30:q.dep}">`)}${fld('TVA',`<select data-q="tva" data-n="1">${[20,10,5.5].map(r=>`<option value="${r}" ${(q.tva==null?20:+q.tva)===r?'selected':''}>${String(r).replace('.',',')} %</option>`).join('')}</select>`)}</div>
-   ${fld('Notes et conditions',`<textarea data-q="notes" rows="2">${esc(q.notes||'')}</textarea>`)}
-   <p class="qtot">${qTotHtml(q)}</p>
-   ${fld('Statut',`<div class="tgs">${QST.map(s=>`<button type="button" class="tg ${q.status===s[0]?'on':''}" data-act="qst" data-v="${s[0]}">${s[1]}</button>`).join('')}</div>`)}
-   <div class="acts"><button class="btn primary" type="submit">Enregistrer</button><button class="btn" type="button" data-act="qpdfd">PDF</button><button class="btn" type="button" data-act="qmail">Envoyer par e-mail</button>${q.status==='ok'&&!q.evDone?`<button class="btn" type="button" data-act="qev">Créer l’événement</button>`:''}${q.evDone?'<span class="pill ok">Événement créé</span>':''}${q.fresh?'':`<button class="btn danger" type="button" data-act="qdel">Supprimer</button>`}</div></form>`);
+  if(qSnapId!==qd.id){qSnapId=qd.id;qSnap=JSON.stringify(qd)}
+  if(!(view==='resa'&&tab.resa==='devis'&&$('#sub'))){try{closeModal()}catch(e){}view='resa';tab.resa='devis';location.hash='resa';route();return}
+  qEdit($('#sub'));
+}
+function qLeave(){const cb=$('#cartbar');if(cb&&view!=='caisse'){cb.hidden=true;cb.innerHTML=''}document.body.classList.remove('cart-open')}
+function qEdit(m){
+  const q=qd;
+  m.innerHTML=`<form id="qform" class="pos qpos" autocomplete="off"><section>
+    <div class="qbar"><button type="button" class="btn" data-act="qback">${ic('left')}Devis</button><b>${esc(q.no)}</b><span class="muted">${q.fresh?'Nouveau devis':'Modifier le devis'} · touchez les produits à ajouter</span></div>
+    <div class="search">${ic('search')}<input id="qq" type="search" placeholder="Rechercher un produit" autocomplete="off" value="${esc(qq)}">${tmtogHtml()}</div>
+    <div class="chips" id="qchips"></div><div class="grid" id="grid"></div></section>
+    <aside class="cart qcart" id="qcart" aria-label="Devis en cours"></aside></form>`;
+  const cb=$('#cartbar');if(cb)cb.hidden=false;
+  qChips();qGrid();qCart();
+}
+function qChips(){const el=$('#qchips');if(!el)return;el.innerHTML=[['all','Tous'],...CATS.map(c=>[c.id,c.name])].map(([k,l])=>`<button type="button" class="chip ${qcat===k?'on':''}" data-act="qcat" data-c="${k}">${esc(l)}</button>`).join('')}
+function qGrid(){
+  const g=$('#grid');if(!g||!qd)return;
+  const nq=norm(qq),cc={},colMode=tileMode()==='col';
+  const list=S.products.filter(p=>p.active&&(nq||qcat==='all'||p.cat===qcat)&&(!nq||norm(p.name).includes(nq)));
+  const cnt=p=>qd.lines.filter(l=>l.pid===p.id).reduce((a,l)=>a+l.qty,0);
+  g.innerHTML=list.map(p=>tileHtml(p,cc,colMode,'qpadd',cnt(p))).join('')+`<button type="button" class="tile qfree" data-act="qaddfree" style="--tc:transparent;--tt:var(--ink)"><span class="n">${ic('plus')} Ligne libre</span><span class="p">Désignation et prix libres</span></button>`;
+  try{fitGrid()}catch(e){}
+}
+const qLT=l=>Math.round((+l.price||0)*100)*l.qty;
+function qLineHtml(l,i){
+  return `<div class="cl qcl"><input class="qin ql-l" data-ql="${i}:label" value="${esc(l.label)}" placeholder="Désignation" aria-label="Désignation">
+    <button type="button" class="ix ql-x" data-act="qdl" data-i="${i}" aria-label="Retirer la ligne">${ic('x')}</button>
+    <div class="ql-u"><input class="qin qp" data-ql="${i}:price" inputmode="decimal" value="${l.price}" aria-label="Prix TTC l’unité"><span>€ l’unité</span></div>
+    <div class="step"><button type="button" data-act="qqty" data-i="${i}" data-d="-1" aria-label="Retirer un">${ic('minus')}</button><b class="num">${l.qty}</b><button type="button" data-act="qqty" data-i="${i}" data-d="1" aria-label="Ajouter un">${ic('plus')}</button></div>
+    <div class="cl-t num" data-qlt="${i}">${eurN(qLT(l))}</div></div>`}
+function qTotRows(q){const b=qBr(q);return `<div class="r"><span>Total HT</span><span class="num">${eurN(b.ht)}</span></div><div class="r"><span>TVA ${String(b.r).replace('.',',')} %</span><span class="num">${eurN(b.tva)}</span></div><div class="r big"><span>Total TTC</span><span class="num">${eurN(b.t)}</span></div>${b.dp?`<div class="r"><span>Acompte ${b.dp} % à la réservation</span><span class="num">${eurN(b.ac)}</span></div>`:''}`}
+function qBar(){const cb=$('#cartbar');if(!cb||!qd||!$('#qcart'))return;const n=qd.lines.reduce((a,l)=>a+l.qty,0);cb.innerHTML=n?`<span>${n} article${n>1?'s':''} · Voir le devis</span><strong class="num">${eurN(qTot(qd))}</strong>`:`<span>Devis vide · Voir le devis</span><strong>${eurN(0)}</strong>`}
+function qTotals(){const q=qd;if(!q)return;const t=$('#qtot');if(t)t.innerHTML=qTotRows(q);q.lines.forEach((l,i)=>{const e=document.querySelector('[data-qlt="'+i+'"]');if(e)e.textContent=eurN(qLT(l))});qBar()}
+function qCart(){
+  const el=$('#qcart');if(!el||!qd)return;const q=qd,st=QST.find(x=>x[0]===q.status)||QST[0],pr=q.status;
+  el.innerHTML=`<div class="cart-h"><h2>${q.fresh?'Nouveau devis':'Devis'}</h2><div style="display:flex;gap:8px;align-items:center"><span class="pill ${st[2]}">${st[1]}</span><button type="button" class="ix only-m" data-act="closecart" aria-label="Fermer le devis">${ic('x')}</button></div></div>
+   <div class="qbody">
+    <div class="sec qsec">
+     ${fld('Client',`<input data-q="name" list="qcl" value="${esc(q.name)}" placeholder="Nom du client" autocomplete="off"><datalist id="qcl">${S.clients.map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist>`)}
+     <div class="two">${fld('Intitulé',`<input data-q="title" value="${esc(q.title)}" placeholder="Anniversaire, team building…">`)}${fld('Date prévue',`<input data-q="date" type="date" value="${q.date||''}">`)}</div>
+    </div>
+    <div class="lines">${q.lines.length?q.lines.map(qLineHtml).join(''):`<div class="cart-empty">Touchez un produit pour l’ajouter au devis.</div>`}</div>
+    <details class="qdet"><summary>Détails du devis</summary>
+     <div class="two">${fld('E-mail',`<input data-q="email" type="email" value="${esc(q.email||'')}">`)}${fld('Invités',`<input data-q="guests" type="number" min="0" value="${q.guests||''}">`)}</div>
+     <div class="two">${fld('Valable jusqu’au',`<input data-q="valid" type="date" value="${q.valid||''}">`)}${fld('Heure de début',`<select data-q="h" data-n="1">${hOpts(q.h||14,9,22)}</select>`)}</div>
+     <div class="two">${fld('Salle',`<select data-q="room">${Object.keys(ROOMS).map(k=>`<option value="${k}" ${(q.room||Object.keys(ROOMS)[0])===k?'selected':''}>${esc(ROOMS[k])}</option>`).join('')}</select>`)}${fld('Acompte (%)',`<input data-q="dep" data-n="1" type="number" min="0" max="100" value="${q.dep==null?30:q.dep}">`)}</div>
+     <div class="two">${fld('TVA',`<select data-q="tva" data-n="1">${[20,10,5.5].map(r=>`<option value="${r}" ${(q.tva==null?20:+q.tva)===r?'selected':''}>${String(r).replace('.',',')} %</option>`).join('')}</select>`)}<span></span></div>
+     ${fld('Notes et conditions',`<textarea data-q="notes" rows="2">${esc(q.notes||'')}</textarea>`)}
+    </details>
+    <div class="qst2"><div class="tgs" role="group" aria-label="Statut du devis">${QST.map(s=>`<button type="button" class="tg ${q.status===s[0]?'on':''}" data-act="qst" data-v="${s[0]}">${s[1]}</button>`).join('')}</div>
+     <div class="acts qacts"><button class="btn" type="button" data-act="qpdfd">PDF</button><button class="btn" type="button" data-act="qmail">Envoyer par e-mail</button>${q.status==='ok'&&!q.evDone?`<button class="btn" type="button" data-act="qev">Créer l’événement</button>`:''}${q.evDone?'<span class="pill ok">Événement créé</span>':''}${q.fresh?'':`<button class="btn danger" type="button" data-act="qdel">Supprimer</button>`}</div></div>
+   </div>
+   <div class="tot qfoot"><div id="qtot">${qTotRows(q)}</div><button class="btn-pay" type="submit">Enregistrer le devis</button></div>`;
+  qBar();
 }
 function qPdf(q){return['Devis '+q.no,pdfBuild('DEVIS '+q.no,dfr(dkey(new Date(q.ts))),'DEVIS',w=>{
   w.sec('Client');w.kv('Nom',q.name);w.kv('E-mail',q.email);w.sec('Prestation');w.kv('Intitulé',q.title);w.kv('Date prévue',q.date?dfr(q.date)+(q.h?' à '+ft(q.h):''):'à définir');w.kv('Invités',q.guests);
@@ -3043,7 +3089,7 @@ function qPdf(q){return['Devis '+q.no,pdfBuild('DEVIS '+q.no,dfr(dkey(new Date(q
   if(q.valid)w.kv('Valable jusqu’au',dfr(q.valid));if(q.notes)w.kv('Conditions',q.notes);w.gap(8);w.p('Pour accord, merci de retourner ce devis daté et signé, précédé de la mention « Bon pour accord ».',9);w.sig('Bon pour accord (date et signature du client)','')})]}
 function qSyncForm(){document.querySelectorAll('[data-q]').forEach(i=>{qd[i.dataset.q]=(i.type==='number'||i.dataset.n)?+i.value:i.value});
   document.querySelectorAll('[data-ql]').forEach(i=>{const [n,f]=i.dataset.ql.split(':'),l=qd.lines[+n];if(!l)return;l[f]=f==='label'?i.value:f==='qty'?Math.max(1,+i.value||1):parseFloat(String(i.value).replace(',','.'))||0})}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act^="q"]');if(!b)return;const a=b.dataset.act;if(!/^q(new|open|pdf|pdfd|dl|addfree|st|ev|del|dup|mail|flt)$/.test(a))return;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act^="q"]');if(!b)return;const a=b.dataset.act;if(!/^q(new|open|pdf|pdfd|dl|addfree|st|ev|del|dup|mail|flt|back|qty|padd|cat)$/.test(a))return;
   if(a==='qnew'){qd={id:uid(),no:quoteNo(),name:'',email:'',title:'',date:'',guests:10,valid:addDays(today(),15),notes:'Acompte de 30 % à la réservation.',lines:[],status:'draft',ts:Date.now(),fresh:true};qForm();return}
   if(a==='qopen'){qd=JSON.parse(JSON.stringify(quotes().find(x=>x.id===b.dataset.id)));qForm();return}
   if(a==='qpdf'){const r=qPdf(quotes().find(x=>x.id===b.dataset.id));saveBytes(r[0]+'.pdf',r[1]);return}
@@ -3051,10 +3097,14 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act^="q"]'
   if(a==='qdup'){const o=quotes().find(x=>x.id===b.dataset.id);if(!o)return;const c=JSON.parse(JSON.stringify(o));Object.assign(c,{id:uid(),no:quoteNo(),status:'draft',ts:Date.now(),sentTs:0,evDone:false,evId:null,fresh:true});delete c.sale;qd=c;qForm();toast('Copie créée : ajustez-la puis enregistrez');return}
   if(!qd)return;qSyncForm();
   if(a==='qpdfd'){const r=qPdf(qd);saveBytes(r[0]+'.pdf',r[1])}
-  else if(a==='qdl'){qd.lines.splice(+b.dataset.i,1);qForm()}
-  else if(a==='qaddfree'){qd.lines.push({label:'',qty:1,price:0});qForm()}
-  else if(a==='qst'){qd.status=b.dataset.v;qForm()}
-  else if(a==='qdel'){const qid=qd.id;askYes('Supprimer ce devis ?',()=>{S.quotes=quotes().filter(x=>x.id!==qid);save();vDevis($('#sub'))},'Supprimer')}
+  else if(a==='qdl'){qd.lines.splice(+b.dataset.i,1);qCart();qGrid()}
+  else if(a==='qaddfree'){qd.lines.push({label:'',qty:1,price:0});qCart();qGrid();if(window.innerWidth<=900)document.body.classList.add('cart-open');const li=document.querySelector('[data-ql="'+(qd.lines.length-1)+':label"]');if(li)li.focus()}
+  else if(a==='qst'){qd.status=b.dataset.v;qCart()}
+  else if(a==='qqty'){const l=qd.lines[+b.dataset.i];if(l){l.qty+=+b.dataset.d;if(l.qty<1)qd.lines.splice(+b.dataset.i,1)}qCart();qGrid()}
+  else if(a==='qpadd'){const p=S.products.find(x=>x.id===b.dataset.id);if(p){const pr=p.price/100,l=qd.lines.find(x=>x.pid===p.id&&Math.abs((+x.price||0)-pr)<.005);if(l)l.qty++;else qd.lines.push({pid:p.id,label:p.name,qty:1,price:pr,vat:p.vat});qCart();qGrid();const ls=document.querySelector('#qcart .lines');if(ls)ls.scrollTop=ls.scrollHeight}}
+  else if(a==='qcat'){qcat=b.dataset.c;qChips();qGrid()}
+  else if(a==='qback'){const back=()=>{qd=null;qSnapId=null;qLeave();vDevis($('#sub'))};if(qd.lines.length&&JSON.stringify(qd)!==qSnap)askYes('Quitter sans enregistrer ce devis ?',back,'Quitter');else back()}
+  else if(a==='qdel'){const qid=qd.id;askYes('Supprimer ce devis ?',()=>{S.quotes=quotes().filter(x=>x.id!==qid);save();qd=null;qSnapId=null;qLeave();vDevis($('#sub'))},'Supprimer')}
   else if(a==='qmail'){const b=qBr(qd),sub=encodeURIComponent('Devis '+qd.no+' · '+(qd.title||S.settings.name||'')),body=encodeURIComponent(`Bonjour ${qd.name||''},\n\nVoici notre devis ${qd.no}${qd.title?' pour « '+qd.title+' »':''}${qd.date?' le '+dfr(qd.date):''} : ${eurN(b.t)} TTC${b.dp?', acompte de '+b.dp+' % ('+eurN(b.ac)+') à la réservation':''}.\n${qd.valid?'Il est valable jusqu’au '+dfr(qd.valid)+'.\n':''}\nLe PDF est joint à ce message (à ajouter avant l’envoi).\n\nCordialement,\n${S.settings.name||''}`);
     const r=qPdf(qd);saveBytes(r[0]+'.pdf',r[1]);if(qd.status==='draft')qd.status='sent';qd.sentTs=Date.now();location.href='mailto:'+encodeURIComponent(qd.email||'').replace('%40','@')+'?subject='+sub+'&body='+body;toast('PDF enregistré : joignez-le à l’e-mail')}
   else if(a==='qev'){const r=qd.room||Object.keys(ROOMS)[0],h=qd.h||14,ds=qd.date||today();
@@ -3062,9 +3112,11 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act^="q"]'
     const cl=S.clients.find(c=>c.name===qd.name),eid=uid();S.events.push({id:eid,date:ds,h,dur:2,room:r,title:qd.title||'Événement',guests:qd.guests||10,pack:'',clientId:cl?cl.id:null,sale:qd.no,quoteId:qd.id});qd.evDone=true;qd.evId=eid;{const q0=quotes().findIndex(x=>x.id===qd.id);if(q0>=0){quotes()[q0].evDone=true;quotes()[q0].evId=eid}}save();toast('Événement créé dans le planning');qForm()}
 });
 document.addEventListener('change',e=>{if(e.target.id==='qadd'&&qd&&e.target.value){qSyncForm();const p=S.products.find(x=>x.id===e.target.value);qd.lines.push({label:p.name,qty:1,price:p.price/100});qForm()}
-  else if(qd&&(e.target.dataset.ql||e.target.dataset.q)){qSyncForm();const t=document.querySelector('.qtot');if(t)t.innerHTML=qTotHtml(qd)}});
-document.addEventListener('submit',e=>{if(e.target.id!=='qform'||!qd)return;e.preventDefault();qSyncForm();if(!qd.name.trim()){toast('Indiquez le client');return}
-  const q={...qd};delete q.fresh;const i=quotes().findIndex(x=>x.id===q.id);i<0?quotes().push(q):quotes()[i]=q;save();qd=null;closeModal();vDevis($('#sub'));toast('Devis enregistré')});
+  else if(qd&&(e.target.dataset.ql||e.target.dataset.q)){qSyncForm();qTotals()}});
+document.addEventListener('input',e=>{const t=e.target;if(!t||!t.dataset)return;if(t.id==='qq'){qq=t.value;qGrid()}else if(qd&&t.dataset.ql){qSyncForm();qTotals()}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.tagName==='INPUT'&&e.target.closest&&e.target.closest('#qform'))e.preventDefault()});
+document.addEventListener('submit',e=>{if(e.target.id!=='qform'||!qd)return;e.preventDefault();qSyncForm();if(!qd.name.trim()){toast('Indiquez le client');const ni=document.querySelector('[data-q="name"]');if(ni){if(window.innerWidth<=900)document.body.classList.add('cart-open');ni.focus()}return}
+  const q={...qd};delete q.fresh;const i=quotes().findIndex(x=>x.id===q.id);i<0?quotes().push(q):quotes()[i]=q;save();qd=null;qSnapId=null;qLeave();vDevis($('#sub'));toast('Devis enregistré')});
 TABS.resa.push(['devis','Devis']);SUBS.devis=vDevis;
 
 /* ---- recherche IA texte et voix ---- */
@@ -4783,7 +4835,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v94';
+const LAGO_V='v95';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -9521,6 +9573,7 @@ document.addEventListener('click',e=>{
     case 'tilemode':{const cur=tileMode(),nx=d.m==='toggle'?(cur==='col'?'img':'col'):(d.m==='col'?'col':'img');if(nx===cur)break;
       S.settings.tileMode=nx;save();
       if(view==='caisse'){drawGrid();const tg=$('.tmtog');if(tg)tg.outerHTML=tmtogHtml()}
+      else if(view==='resa'&&qd&&$('#qcart')){qGrid();const tg=$('.tmtog');if(tg)tg.outerHTML=tmtogHtml()}
       else if(view==='params'&&SUBS[tab.params])SUBS[tab.params]($('#sub'));
       toast(nx==='col'?'Dalles en couleurs':'Dalles avec images');break}
     case 'editprod':prodForm(d.id);break;

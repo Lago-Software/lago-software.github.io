@@ -3110,6 +3110,37 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
   #grid.dense .tile .n{font-size:12px;line-height:1.15}
   #grid.dense .tile .p{font-size:12px!important}
 }
+/* devis façon caisse */
+#main:has(.qpos) .tabs,#main:has(.qpos) .impo{display:none}
+.qpos .qbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.qpos .qbar b{font-family:var(--f-display);font-size:20px}
+.qpos .qbar .btn{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:6px 14px}
+.qcart .qbody{display:flex;flex-direction:column;overflow-y:auto;flex:1;min-height:0}
+.qcart .lines{flex:none;overflow:visible;min-height:70px}
+.qcart .qsec{gap:6px;padding-bottom:10px}
+.qcart .qsec .field{margin:0}
+.qcart .qsec .two{gap:8px}
+.qcl{display:grid!important;grid-template-columns:minmax(0,1fr) auto 78px!important;grid-template-areas:"l l x" "u s t";gap:8px 10px!important;padding:10px 14px!important;align-items:center}
+.qcl .ql-l{grid-area:l;text-align:left}.qcl .ql-x{grid-area:x}.qcl .ql-u{grid-area:u}.qcl .step{grid-area:s}.qcl .cl-t{grid-area:t}
+.qcl .qin{width:100%;min-height:38px;padding:4px 10px;border-radius:10px;font-size:15px}
+.qcl .ql-u{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;min-width:0}
+.qcl .qp{width:80px;text-align:right;flex:none}
+.qcl .cl-t{font-size:16px}
+.qcl .ix{width:34px;height:34px;justify-self:end}
+.qcl .step button{width:34px;height:34px}
+.qst2{padding:0 16px 14px;display:flex;flex-direction:column;gap:10px}
+.qst2 .tgs{margin:0}
+.qfoot{flex:none}
+.qdet{margin:10px 16px;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.qdet summary{cursor:pointer;font-weight:650;min-height:32px;display:flex;align-items:center}
+.qdet[open] summary{margin-bottom:8px}
+.qdet .two{gap:8px}
+.qcart .tot{gap:6px}
+.qcart .qacts{display:flex;flex-wrap:wrap;gap:8px}
+.qcart .qacts .btn{min-height:42px;flex:1 1 auto}
+#grid .tile.qfree{border:2px dashed var(--line)!important;background:transparent!important;color:var(--ink)!important;box-shadow:none!important;justify-content:center!important;align-items:center;text-align:center}
+#grid .tile.qfree .n{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important;display:flex;align-items:center;justify-content:center;gap:6px;background:none!important}
+#grid .tile.qfree .p{position:static!important;background:none!important;color:var(--muted)!important;-webkit-text-fill-color:var(--muted)!important;font-weight:500;padding:0!important;font-size:12px!important}
 /* bascule images / couleurs dans la caisse */
 .pos .search input{padding-right:52px}
 .pos .search .tmtog{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:999px;display:grid;place-items:center;background:var(--surface-2);color:var(--brand-t);border:0;padding:0}
@@ -3180,7 +3211,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v94" defer></script>
+<script src="app.js?v=v95" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>
