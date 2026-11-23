@@ -1,0 +1,202 @@
+{
+  "id": "boutique",
+  "version": 1,
+  "label": "Boutique",
+  "resume": "Vêtements, accessoires, cadeaux et cartes cadeaux.",
+  "settings": {
+    "catNames": [
+      "Vêtements",
+      "Accessoires",
+      "Cadeaux",
+      "Gestion"
+    ],
+    "subs": {
+      "park": [
+        "Femme",
+        "Homme"
+      ],
+      "bar": [
+        "Sacs",
+        "Bijoux"
+      ],
+      "gestion": [
+        "Cartes cadeaux"
+      ]
+    },
+    "capacite": 30,
+    "equipe_minimum": 1,
+    "horaires": {
+      "ouverture": "10:00",
+      "fermeture": "19:00",
+      "jours_fermes": [
+        0
+      ]
+    },
+    "fond_de_caisse": 100,
+    "fidelite": {
+      "points_par_euro": 1,
+      "paliers": [
+        {
+          "nom": "Découverte",
+          "points": 100,
+          "remise": 5
+        },
+        {
+          "nom": "Habitué",
+          "points": 250,
+          "remise": 15
+        },
+        {
+          "nom": "VIP",
+          "points": 500,
+          "remise": 35
+        }
+      ]
+    },
+    "reservation_en_ligne": {
+      "places_par_creneau": 15,
+      "delai_minimum_minutes": 240,
+      "jours_a_l_avance": 45,
+      "personnes_max": 3,
+      "message": ""
+    },
+    "message_accueil": "Bonne journée à toute l’équipe !",
+    "pied_de_ticket": "Merci et à bientôt chez {nom} !",
+    "illustrations": {
+      "park": "vetement",
+      "bar": "sac",
+      "event": "cadeau",
+      "gestion": "cadeau"
+    },
+    "vocabulaire": {
+      "session": "Vente",
+      "lieu": "Boutique",
+      "reserver": "Nouvelle vente",
+      "departs": "Prochaines ventes",
+      "plus_de_depart": "Plus de vente aujourd’hui.",
+      "personne": "client",
+      "clients_de": "Clients de la boutique",
+      "nom_etab": "Nom de la boutique"
+    },
+    "intervalle_depart_minutes": 15,
+    "modules_masques": [
+      "controle"
+    ],
+    "onglets_masques": [
+      "resa:bracelets",
+      "resa:entrees",
+      "clients:decharges",
+      "clients:carnets",
+      "resa:qweekle"
+    ],
+    "echeances_desactivees": [
+      "ssi",
+      "deseno",
+      "jeux",
+      "mousse",
+      "portes"
+    ]
+  },
+  "products": [
+    {
+      "name": "T-shirt coton bio",
+      "cat": "park",
+      "price": 29,
+      "tva": 20,
+      "scat": "Femme",
+      "art": "vetement"
+    },
+    {
+      "name": "Pull maille",
+      "cat": "park",
+      "price": 59,
+      "tva": 20,
+      "scat": "Femme",
+      "art": "vetement"
+    },
+    {
+      "name": "Robe d’été",
+      "cat": "park",
+      "price": 79,
+      "tva": 20,
+      "scat": "Femme",
+      "art": "robe"
+    },
+    {
+      "name": "Jean droit",
+      "cat": "park",
+      "price": 69,
+      "tva": 20,
+      "scat": "Homme",
+      "art": "vetement"
+    },
+    {
+      "name": "Chemise lin",
+      "cat": "park",
+      "price": 55,
+      "tva": 20,
+      "scat": "Homme",
+      "art": "vetement"
+    },
+    {
+      "name": "Sac cabas",
+      "cat": "bar",
+      "price": 45,
+      "tva": 20,
+      "scat": "Sacs",
+      "art": "sac"
+    },
+    {
+      "name": "Écharpe laine",
+      "cat": "bar",
+      "price": 25,
+      "tva": 20,
+      "scat": "Sacs",
+      "art": "b1"
+    },
+    {
+      "name": "Bracelet",
+      "cat": "bar",
+      "price": 19,
+      "tva": 20,
+      "scat": "Bijoux",
+      "art": "b1"
+    },
+    {
+      "name": "Boucles d’oreilles",
+      "cat": "bar",
+      "price": 22,
+      "tva": 20,
+      "scat": "Bijoux",
+      "art": "b1"
+    },
+    {
+      "name": "Bougie parfumée",
+      "cat": "event",
+      "price": 18,
+      "tva": 20,
+      "art": "bougie"
+    },
+    {
+      "name": "Coffret cadeau",
+      "cat": "event",
+      "price": 35,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 30 €",
+      "cat": "gestion",
+      "price": 30,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 50 €",
+      "cat": "gestion",
+      "price": 50,
+      "tva": 20,
+      "art": "cadeau"
+    }
+  ]
+}

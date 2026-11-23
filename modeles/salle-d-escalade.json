@@ -1,0 +1,274 @@
+{
+  "id": "salle-d-escalade",
+  "version": 1,
+  "label": "Salle d’escalade",
+  "resume": "Entrées, location, abonnements, cours et anniversaires.",
+  "settings": {
+    "catNames": [
+      "Entrées",
+      "Bar",
+      "Cours et événements",
+      "Gestion"
+    ],
+    "subs": {
+      "park": [
+        "Accès",
+        "Location",
+        "Abonnements"
+      ],
+      "bar": [
+        "Boissons",
+        "Snack"
+      ],
+      "gestion": [
+        "Cartes cadeaux"
+      ]
+    },
+    "capacite": 90,
+    "equipe_minimum": 2,
+    "horaires": {
+      "ouverture": "10:00",
+      "fermeture": "22:30",
+      "jours_fermes": []
+    },
+    "fond_de_caisse": 100,
+    "fidelite": {
+      "points_par_euro": 1,
+      "paliers": [
+        {
+          "nom": "Découverte",
+          "points": 100,
+          "remise": 5
+        },
+        {
+          "nom": "Habitué",
+          "points": 250,
+          "remise": 15
+        },
+        {
+          "nom": "VIP",
+          "points": 500,
+          "remise": 35
+        }
+      ]
+    },
+    "reservation_en_ligne": {
+      "places_par_creneau": 45,
+      "delai_minimum_minutes": 120,
+      "jours_a_l_avance": 60,
+      "personnes_max": 10,
+      "message": "Chaussons et baudrier en location sur place."
+    },
+    "message_accueil": "Bonne journée à toute l’équipe !",
+    "pied_de_ticket": "Merci et à bientôt chez {nom} !",
+    "illustrations": {
+      "park": "prise",
+      "bar": "s2",
+      "event": "groupe",
+      "gestion": "cadeau"
+    },
+    "vocabulaire": {
+      "session": "Séance",
+      "lieu": "Salle",
+      "reserver": "Nouvelle réservation",
+      "departs": "Prochaines séances",
+      "plus_de_depart": "Plus de séance aujourd’hui.",
+      "personne": "grimpeur",
+      "clients_de": "Adhérents de la salle",
+      "nom_etab": "Nom de la salle"
+    },
+    "intervalle_depart_minutes": 15,
+    "onglets_masques": [
+      "resa:qweekle"
+    ],
+    "echeances_desactivees": [],
+    "controle_quotidien": [
+      {
+        "g": "Zones de grimpe",
+        "items": [
+          [
+            "murs",
+            "Murs et prises fixées"
+          ],
+          [
+            "tapis",
+            "Tapis de réception"
+          ],
+          [
+            "cordes",
+            "Cordes et dégaines des voies"
+          ],
+          [
+            "assurage",
+            "Points d’assurage et relais"
+          ]
+        ]
+      },
+      {
+        "g": "Équipement",
+        "items": [
+          [
+            "baudriers",
+            "Baudriers et chaussons de location"
+          ],
+          [
+            "mousquetons",
+            "Mousquetons et systèmes d’assurage"
+          ],
+          [
+            "magnesie",
+            "Magnésie et nettoyage des prises"
+          ]
+        ]
+      },
+      {
+        "g": "Accueil du public",
+        "items": [
+          [
+            "conformite",
+            "Conformité à l’accueil du public"
+          ]
+        ]
+      }
+    ]
+  },
+  "products": [
+    {
+      "name": "Entrée adulte",
+      "cat": "park",
+      "price": 14,
+      "tva": 10,
+      "scat": "Accès",
+      "jumper": true,
+      "dur": 120,
+      "art": "prise"
+    },
+    {
+      "name": "Entrée étudiant",
+      "cat": "park",
+      "price": 11,
+      "tva": 10,
+      "scat": "Accès",
+      "jumper": true,
+      "dur": 120,
+      "art": "prise"
+    },
+    {
+      "name": "Entrée enfant (–12 ans)",
+      "cat": "park",
+      "price": 9,
+      "tva": 10,
+      "scat": "Accès",
+      "jumper": true,
+      "dur": 120,
+      "art": "prise"
+    },
+    {
+      "name": "Location chaussons",
+      "cat": "park",
+      "price": 4,
+      "tva": 20,
+      "scat": "Location",
+      "art": "chaussure"
+    },
+    {
+      "name": "Location baudrier",
+      "cat": "park",
+      "price": 4,
+      "tva": 20,
+      "scat": "Location",
+      "art": "baudrier"
+    },
+    {
+      "name": "Magnésie",
+      "cat": "park",
+      "price": 3,
+      "tva": 20,
+      "scat": "Location",
+      "art": "s1"
+    },
+    {
+      "name": "Carnet 10 entrées",
+      "cat": "park",
+      "price": 120,
+      "tva": 10,
+      "scat": "Accès",
+      "art": "p5"
+    },
+    {
+      "name": "Abonnement mensuel",
+      "cat": "park",
+      "price": 45,
+      "tva": 10,
+      "scat": "Abonnements",
+      "art": "p5"
+    },
+    {
+      "name": "Eau 50 cl",
+      "cat": "bar",
+      "price": 1.5,
+      "tva": 10,
+      "art": "s1"
+    },
+    {
+      "name": "Boisson fraîche",
+      "cat": "bar",
+      "price": 3,
+      "tva": 10,
+      "art": "s2"
+    },
+    {
+      "name": "Café",
+      "cat": "bar",
+      "price": 1.8,
+      "tva": 10,
+      "art": "s3"
+    },
+    {
+      "name": "Barre de céréales",
+      "cat": "bar",
+      "price": 2,
+      "tva": 10,
+      "art": "s5"
+    },
+    {
+      "name": "Cours d’initiation",
+      "cat": "event",
+      "price": 25,
+      "tva": 10,
+      "jumper": true,
+      "dur": 60,
+      "art": "agenda"
+    },
+    {
+      "name": "Anniversaire grimpeur (8 enf.)",
+      "cat": "event",
+      "price": 200,
+      "tva": 10,
+      "art": "a1",
+      "event": true,
+      "guests": 8
+    },
+    {
+      "name": "Carte cadeau 20 €",
+      "cat": "gestion",
+      "price": 20,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 50 €",
+      "cat": "gestion",
+      "price": 50,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Acompte réservation",
+      "cat": "gestion",
+      "price": 30,
+      "tva": 20,
+      "art": "agenda"
+    }
+  ]
+}

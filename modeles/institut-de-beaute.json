@@ -1,0 +1,272 @@
+{
+  "id": "institut-de-beaute",
+  "version": 1,
+  "label": "Institut de beauté",
+  "resume": "Soins, produits, forfaits, rendez-vous en ligne et cartes cadeaux.",
+  "settings": {
+    "catNames": [
+      "Soins",
+      "Produits",
+      "Forfaits",
+      "Gestion"
+    ],
+    "subs": {
+      "park": [
+        "Visage",
+        "Corps",
+        "Épilation",
+        "Mains et pieds"
+      ],
+      "bar": [
+        "Soins",
+        "Maquillage"
+      ],
+      "gestion": [
+        "Cartes cadeaux"
+      ]
+    },
+    "capacite": 5,
+    "equipe_minimum": 1,
+    "horaires": {
+      "ouverture": "09:30",
+      "fermeture": "19:00",
+      "jours_fermes": [
+        0,
+        1
+      ]
+    },
+    "fond_de_caisse": 100,
+    "fidelite": {
+      "points_par_euro": 1,
+      "paliers": [
+        {
+          "nom": "Découverte",
+          "points": 100,
+          "remise": 5
+        },
+        {
+          "nom": "Habitué",
+          "points": 250,
+          "remise": 15
+        },
+        {
+          "nom": "VIP",
+          "points": 500,
+          "remise": 35
+        }
+      ]
+    },
+    "reservation_en_ligne": {
+      "places_par_creneau": 5,
+      "delai_minimum_minutes": 240,
+      "jours_a_l_avance": 45,
+      "personnes_max": 3,
+      "message": "Indiquez en commentaire le soin souhaité."
+    },
+    "message_accueil": "Bonne journée à toute l’équipe !",
+    "pied_de_ticket": "Merci et à bientôt chez {nom} !",
+    "illustrations": {
+      "park": "pinceau",
+      "bar": "flacon",
+      "event": "agenda",
+      "gestion": "cadeau"
+    },
+    "vocabulaire": {
+      "session": "Rendez-vous",
+      "lieu": "Institut",
+      "reserver": "Nouveau rendez-vous",
+      "departs": "Prochains rendez-vous",
+      "plus_de_depart": "Plus de rendez-vous aujourd’hui.",
+      "personne": "cliente",
+      "clients_de": "Clientes de l’institut",
+      "nom_etab": "Nom de l’institut"
+    },
+    "intervalle_depart_minutes": 15,
+    "modules_masques": [
+      "controle"
+    ],
+    "onglets_masques": [
+      "resa:bracelets",
+      "resa:entrees",
+      "clients:decharges",
+      "clients:carnets",
+      "resa:qweekle"
+    ],
+    "echeances_desactivees": [
+      "ssi",
+      "deseno",
+      "jeux",
+      "mousse",
+      "portes"
+    ]
+  },
+  "products": [
+    {
+      "name": "Soin visage éclat (60 min)",
+      "cat": "park",
+      "price": 65,
+      "tva": 20,
+      "scat": "Visage",
+      "jumper": true,
+      "dur": 60,
+      "art": "pinceau"
+    },
+    {
+      "name": "Soin visage express (30 min)",
+      "cat": "park",
+      "price": 40,
+      "tva": 20,
+      "scat": "Visage",
+      "jumper": true,
+      "dur": 30,
+      "art": "pinceau"
+    },
+    {
+      "name": "Massage relaxant (60 min)",
+      "cat": "park",
+      "price": 60,
+      "tva": 20,
+      "scat": "Corps",
+      "jumper": true,
+      "dur": 60,
+      "art": "pierre"
+    },
+    {
+      "name": "Gommage corps (45 min)",
+      "cat": "park",
+      "price": 45,
+      "tva": 20,
+      "scat": "Corps",
+      "jumper": true,
+      "dur": 45,
+      "art": "pierre"
+    },
+    {
+      "name": "Épilation sourcils",
+      "cat": "park",
+      "price": 10,
+      "tva": 20,
+      "scat": "Épilation",
+      "jumper": true,
+      "dur": 15,
+      "art": "ciseaux"
+    },
+    {
+      "name": "Épilation jambes complètes",
+      "cat": "park",
+      "price": 32,
+      "tva": 20,
+      "scat": "Épilation",
+      "jumper": true,
+      "dur": 40,
+      "art": "ciseaux"
+    },
+    {
+      "name": "Beauté des mains",
+      "cat": "park",
+      "price": 35,
+      "tva": 20,
+      "scat": "Mains et pieds",
+      "jumper": true,
+      "dur": 45,
+      "art": "pinceau"
+    },
+    {
+      "name": "Beauté des pieds",
+      "cat": "park",
+      "price": 45,
+      "tva": 20,
+      "scat": "Mains et pieds",
+      "jumper": true,
+      "dur": 60,
+      "art": "pinceau"
+    },
+    {
+      "name": "Teinture cils",
+      "cat": "park",
+      "price": 20,
+      "tva": 20,
+      "scat": "Visage",
+      "jumper": true,
+      "dur": 25,
+      "art": "pinceau"
+    },
+    {
+      "name": "Crème hydratante 50 ml",
+      "cat": "bar",
+      "price": 29,
+      "tva": 20,
+      "scat": "Soins",
+      "art": "flacon"
+    },
+    {
+      "name": "Sérum visage",
+      "cat": "bar",
+      "price": 39,
+      "tva": 20,
+      "scat": "Soins",
+      "art": "flacon"
+    },
+    {
+      "name": "Huile corps",
+      "cat": "bar",
+      "price": 24,
+      "tva": 20,
+      "scat": "Soins",
+      "art": "flacon"
+    },
+    {
+      "name": "Vernis",
+      "cat": "bar",
+      "price": 12,
+      "tva": 20,
+      "scat": "Maquillage",
+      "art": "rouge"
+    },
+    {
+      "name": "Mascara",
+      "cat": "bar",
+      "price": 16,
+      "tva": 20,
+      "scat": "Maquillage",
+      "art": "rouge"
+    },
+    {
+      "name": "Forfait mariée",
+      "cat": "event",
+      "price": 150,
+      "tva": 20,
+      "art": "agenda"
+    },
+    {
+      "name": "Soirée entre amies (6 pers.)",
+      "cat": "event",
+      "price": 240,
+      "tva": 20,
+      "art": "groupe",
+      "event": true,
+      "guests": 6
+    },
+    {
+      "name": "Carte cadeau 50 €",
+      "cat": "gestion",
+      "price": 50,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 80 €",
+      "cat": "gestion",
+      "price": 80,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Acompte réservation",
+      "cat": "gestion",
+      "price": 20,
+      "tva": 20,
+      "art": "agenda"
+    }
+  ]
+}

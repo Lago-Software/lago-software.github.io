@@ -1,0 +1,281 @@
+{
+  "id": "accrobranche",
+  "version": 1,
+  "label": "Parc accrobranche",
+  "resume": "Parcours, groupes scolaires, buvette et anniversaires nature.",
+  "settings": {
+    "catNames": [
+      "Parcours",
+      "Buvette",
+      "Groupes",
+      "Gestion"
+    ],
+    "subs": {
+      "park": [
+        "Aventure",
+        "Équipement"
+      ],
+      "bar": [
+        "Boissons",
+        "Snack"
+      ],
+      "gestion": [
+        "Cartes cadeaux"
+      ]
+    },
+    "capacite": 150,
+    "equipe_minimum": 3,
+    "horaires": {
+      "ouverture": "10:00",
+      "fermeture": "18:30",
+      "jours_fermes": []
+    },
+    "fond_de_caisse": 100,
+    "fidelite": {
+      "points_par_euro": 1,
+      "paliers": [
+        {
+          "nom": "Découverte",
+          "points": 100,
+          "remise": 5
+        },
+        {
+          "nom": "Habitué",
+          "points": 250,
+          "remise": 15
+        },
+        {
+          "nom": "VIP",
+          "points": 500,
+          "remise": 35
+        }
+      ]
+    },
+    "reservation_en_ligne": {
+      "places_par_creneau": 75,
+      "delai_minimum_minutes": 120,
+      "jours_a_l_avance": 60,
+      "personnes_max": 10,
+      "message": "Chaussures fermées obligatoires. Taille minimale selon le parcours."
+    },
+    "message_accueil": "Bonne journée à toute l’équipe !",
+    "pied_de_ticket": "Merci et à bientôt chez {nom} !",
+    "illustrations": {
+      "park": "arbre",
+      "bar": "s2",
+      "event": "groupe",
+      "gestion": "cadeau"
+    },
+    "vocabulaire": {
+      "session": "Parcours",
+      "lieu": "Parc",
+      "reserver": "Réserver un départ",
+      "departs": "Prochains départs",
+      "plus_de_depart": "Plus de départ aujourd’hui.",
+      "personne": "grimpeur",
+      "clients_de": "Clients du parc",
+      "nom_etab": "Nom du parc"
+    },
+    "intervalle_depart_minutes": 15,
+    "onglets_masques": [
+      "resa:qweekle"
+    ],
+    "echeances_desactivees": [],
+    "controle_quotidien": [
+      {
+        "g": "Zones de parcours",
+        "items": [
+          [
+            "ateliers",
+            "Ateliers et plateformes"
+          ],
+          [
+            "arbres",
+            "Arbres et protections d’écorce"
+          ],
+          [
+            "cables",
+            "Câbles, lignes de vie et poulies"
+          ],
+          [
+            "filets",
+            "Filets et passerelles"
+          ]
+        ]
+      },
+      {
+        "g": "Équipement",
+        "items": [
+          [
+            "baudriers",
+            "Baudriers et longes"
+          ],
+          [
+            "casques",
+            "Casques"
+          ],
+          [
+            "mousquetons",
+            "Mousquetons et connecteurs"
+          ],
+          [
+            "tyroliennes",
+            "Tyroliennes et freinage"
+          ]
+        ]
+      },
+      {
+        "g": "Accueil du public",
+        "items": [
+          [
+            "conformite",
+            "Conformité à l’accueil du public"
+          ],
+          [
+            "meteo",
+            "Conditions météo et vent"
+          ]
+        ]
+      }
+    ]
+  },
+  "products": [
+    {
+      "name": "Parcours adulte",
+      "cat": "park",
+      "price": 25,
+      "tva": 10,
+      "scat": "Aventure",
+      "jumper": true,
+      "dur": 180,
+      "art": "arbre"
+    },
+    {
+      "name": "Parcours ado (12–15 ans)",
+      "cat": "park",
+      "price": 20,
+      "tva": 10,
+      "scat": "Aventure",
+      "jumper": true,
+      "dur": 150,
+      "art": "arbre"
+    },
+    {
+      "name": "Parcours enfant (6–11 ans)",
+      "cat": "park",
+      "price": 15,
+      "tva": 10,
+      "scat": "Aventure",
+      "jumper": true,
+      "dur": 120,
+      "art": "arbre"
+    },
+    {
+      "name": "Parcours tyrolienne",
+      "cat": "park",
+      "price": 32,
+      "tva": 10,
+      "scat": "Aventure",
+      "jumper": true,
+      "dur": 180,
+      "art": "baudrier"
+    },
+    {
+      "name": "Pass famille (4 pers.)",
+      "cat": "park",
+      "price": 75,
+      "tva": 10,
+      "scat": "Aventure",
+      "art": "p5"
+    },
+    {
+      "name": "Location de gants",
+      "cat": "park",
+      "price": 2,
+      "tva": 20,
+      "scat": "Équipement",
+      "art": "b1"
+    },
+    {
+      "name": "Eau 50 cl",
+      "cat": "bar",
+      "price": 1.5,
+      "tva": 10,
+      "art": "s1"
+    },
+    {
+      "name": "Boisson fraîche",
+      "cat": "bar",
+      "price": 2.5,
+      "tva": 10,
+      "art": "s2"
+    },
+    {
+      "name": "Café",
+      "cat": "bar",
+      "price": 1.8,
+      "tva": 10,
+      "art": "s3"
+    },
+    {
+      "name": "Crêpe",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "art": "s4"
+    },
+    {
+      "name": "Glace",
+      "cat": "bar",
+      "price": 2.5,
+      "tva": 10,
+      "art": "s6"
+    },
+    {
+      "name": "Sandwich",
+      "cat": "bar",
+      "price": 5,
+      "tva": 10,
+      "art": "s5"
+    },
+    {
+      "name": "Sortie scolaire (30 élèves)",
+      "cat": "event",
+      "price": 450,
+      "tva": 10,
+      "art": "groupe",
+      "event": true,
+      "guests": 30
+    },
+    {
+      "name": "Anniversaire nature (10 enf.)",
+      "cat": "event",
+      "price": 230,
+      "tva": 10,
+      "art": "a1",
+      "event": true,
+      "guests": 10
+    },
+    {
+      "name": "Carte cadeau 20 €",
+      "cat": "gestion",
+      "price": 20,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 50 €",
+      "cat": "gestion",
+      "price": 50,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Acompte réservation",
+      "cat": "gestion",
+      "price": 30,
+      "tva": 20,
+      "art": "agenda"
+    }
+  ]
+}

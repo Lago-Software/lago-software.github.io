@@ -1,0 +1,264 @@
+{
+  "id": "escape-game",
+  "version": 1,
+  "label": "Escape game",
+  "resume": "Salles, parties, team building, anniversaires et cartes cadeaux.",
+  "settings": {
+    "catNames": [
+      "Salles",
+      "Boutique et snack",
+      "Groupes",
+      "Gestion"
+    ],
+    "subs": {
+      "park": [
+        "Parties"
+      ],
+      "bar": [
+        "Boissons",
+        "Snack"
+      ],
+      "gestion": [
+        "Cartes cadeaux"
+      ]
+    },
+    "capacite": 36,
+    "equipe_minimum": 2,
+    "horaires": {
+      "ouverture": "10:00",
+      "fermeture": "23:00",
+      "jours_fermes": []
+    },
+    "fond_de_caisse": 100,
+    "fidelite": {
+      "points_par_euro": 1,
+      "paliers": [
+        {
+          "nom": "Découverte",
+          "points": 100,
+          "remise": 5
+        },
+        {
+          "nom": "Habitué",
+          "points": 250,
+          "remise": 15
+        },
+        {
+          "nom": "VIP",
+          "points": 500,
+          "remise": 35
+        }
+      ]
+    },
+    "reservation_en_ligne": {
+      "places_par_creneau": 18,
+      "delai_minimum_minutes": 120,
+      "jours_a_l_avance": 60,
+      "personnes_max": 10,
+      "message": "Arrivez 15 minutes avant le début de la partie."
+    },
+    "message_accueil": "Bonne journée à toute l’équipe !",
+    "pied_de_ticket": "Merci et à bientôt chez {nom} !",
+    "illustrations": {
+      "park": "cle",
+      "bar": "s2",
+      "event": "groupe",
+      "gestion": "cadeau"
+    },
+    "vocabulaire": {
+      "session": "Partie",
+      "lieu": "Escape game",
+      "reserver": "Réserver une salle",
+      "departs": "Prochaines parties",
+      "plus_de_depart": "Plus de partie aujourd’hui.",
+      "personne": "joueur",
+      "clients_de": "Joueurs de l’escape game",
+      "nom_etab": "Nom de l’escape game"
+    },
+    "intervalle_depart_minutes": 15,
+    "onglets_masques": [
+      "resa:qweekle"
+    ],
+    "echeances_desactivees": [
+      "jeux",
+      "mousse"
+    ],
+    "controle_quotidien": [
+      {
+        "g": "Salles de jeu",
+        "items": [
+          [
+            "salles",
+            "Salles prêtes et réinitialisées"
+          ],
+          [
+            "enigmes",
+            "Mécanismes et énigmes testés"
+          ],
+          [
+            "audio",
+            "Caméras, micros et alarmes"
+          ]
+        ]
+      },
+      {
+        "g": "Sécurité",
+        "items": [
+          [
+            "sorties",
+            "Issues de secours et déverrouillage d’urgence"
+          ],
+          [
+            "eclairage",
+            "Éclairage de secours"
+          ],
+          [
+            "extincteurs",
+            "Extincteurs et détection incendie"
+          ]
+        ]
+      },
+      {
+        "g": "Accueil du public",
+        "items": [
+          [
+            "conformite",
+            "Conformité à l’accueil du public"
+          ]
+        ]
+      }
+    ]
+  },
+  "products": [
+    {
+      "name": "Salle « Le Manoir » – 1 h (2 à 6)",
+      "cat": "park",
+      "price": 22,
+      "tva": 20,
+      "scat": "Parties",
+      "jumper": true,
+      "dur": 60,
+      "art": "cle"
+    },
+    {
+      "name": "Salle « La Bibliothèque » – 1 h",
+      "cat": "park",
+      "price": 22,
+      "tva": 20,
+      "scat": "Parties",
+      "jumper": true,
+      "dur": 60,
+      "art": "cadenas"
+    },
+    {
+      "name": "Salle « Le Laboratoire » – 1 h",
+      "cat": "park",
+      "price": 24,
+      "tva": 20,
+      "scat": "Parties",
+      "jumper": true,
+      "dur": 60,
+      "art": "puzzle"
+    },
+    {
+      "name": "Salle enfants – 45 min",
+      "cat": "park",
+      "price": 16,
+      "tva": 20,
+      "scat": "Parties",
+      "jumper": true,
+      "dur": 45,
+      "art": "puzzle"
+    },
+    {
+      "name": "Pack équipe (2 salles)",
+      "cat": "park",
+      "price": 40,
+      "tva": 20,
+      "scat": "Parties",
+      "art": "p5"
+    },
+    {
+      "name": "Bon cadeau 1 salle",
+      "cat": "park",
+      "price": 22,
+      "tva": 20,
+      "scat": "Parties",
+      "art": "cadeau"
+    },
+    {
+      "name": "Eau 50 cl",
+      "cat": "bar",
+      "price": 1.5,
+      "tva": 10,
+      "art": "s1"
+    },
+    {
+      "name": "Soda",
+      "cat": "bar",
+      "price": 2.5,
+      "tva": 10,
+      "art": "s2"
+    },
+    {
+      "name": "Café",
+      "cat": "bar",
+      "price": 1.8,
+      "tva": 10,
+      "art": "s3"
+    },
+    {
+      "name": "Bonbons",
+      "cat": "bar",
+      "price": 2,
+      "tva": 10,
+      "art": "s6"
+    },
+    {
+      "name": "Pop-corn",
+      "cat": "bar",
+      "price": 3,
+      "tva": 10,
+      "art": "s4"
+    },
+    {
+      "name": "Team building (12 pers.)",
+      "cat": "event",
+      "price": 320,
+      "tva": 20,
+      "art": "groupe",
+      "event": true,
+      "guests": 12
+    },
+    {
+      "name": "Anniversaire escape (8 enf.)",
+      "cat": "event",
+      "price": 210,
+      "tva": 20,
+      "art": "a1",
+      "event": true,
+      "guests": 8
+    },
+    {
+      "name": "Carte cadeau 20 €",
+      "cat": "gestion",
+      "price": 20,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 50 €",
+      "cat": "gestion",
+      "price": 50,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Acompte réservation",
+      "cat": "gestion",
+      "price": 30,
+      "tva": 20,
+      "art": "agenda"
+    }
+  ]
+}

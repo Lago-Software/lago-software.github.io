@@ -1,6 +1,6 @@
 # Modèles métier de Lago
 
-Un fichier par métier : `parc-trampoline.json`, `laser-game.json`, `coiffeur.json`, `restaurant.json`.
+Un fichier par métier : parc-trampoline, laser-game, coiffeur, restaurant, bowling, karting, accrobranche, salle-d-escalade, escape-game, parc-indoor, institut-de-beaute, boutique (extension `.json`).
 Chaque fichier est lisible et modifiable à la main. Les prix sont en euros ; Lago les convertit en centimes.
 
 ## Ce que contient un modèle

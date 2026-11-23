@@ -1,0 +1,279 @@
+{
+  "id": "bowling",
+  "version": 1,
+  "label": "Bowling",
+  "resume": "Parties, location de chaussures, bar, anniversaires et soirées d’entreprise.",
+  "settings": {
+    "catNames": [
+      "Parties",
+      "Bar et snack",
+      "Anniversaires",
+      "Gestion"
+    ],
+    "subs": {
+      "park": [
+        "Jeu",
+        "Location"
+      ],
+      "bar": [
+        "Boissons",
+        "Snack"
+      ],
+      "gestion": [
+        "Cartes cadeaux"
+      ]
+    },
+    "capacite": 120,
+    "equipe_minimum": 3,
+    "horaires": {
+      "ouverture": "10:00",
+      "fermeture": "23:30",
+      "jours_fermes": []
+    },
+    "fond_de_caisse": 100,
+    "fidelite": {
+      "points_par_euro": 1,
+      "paliers": [
+        {
+          "nom": "Découverte",
+          "points": 100,
+          "remise": 5
+        },
+        {
+          "nom": "Habitué",
+          "points": 250,
+          "remise": 15
+        },
+        {
+          "nom": "VIP",
+          "points": 500,
+          "remise": 35
+        }
+      ]
+    },
+    "reservation_en_ligne": {
+      "places_par_creneau": 60,
+      "delai_minimum_minutes": 120,
+      "jours_a_l_avance": 60,
+      "personnes_max": 10,
+      "message": "Chaussures de bowling fournies sur place."
+    },
+    "message_accueil": "Bonne journée à toute l’équipe !",
+    "pied_de_ticket": "Merci et à bientôt chez {nom} !",
+    "illustrations": {
+      "park": "quille",
+      "bar": "biere",
+      "event": "groupe",
+      "gestion": "cadeau"
+    },
+    "vocabulaire": {
+      "session": "Partie",
+      "lieu": "Bowling",
+      "reserver": "Réserver une piste",
+      "departs": "Prochaines parties",
+      "plus_de_depart": "Plus de partie aujourd’hui.",
+      "personne": "joueur",
+      "clients_de": "Clients du bowling",
+      "nom_etab": "Nom du bowling"
+    },
+    "intervalle_depart_minutes": 15,
+    "onglets_masques": [
+      "resa:qweekle"
+    ],
+    "echeances_desactivees": [
+      "jeux",
+      "mousse"
+    ],
+    "controle_quotidien": [
+      {
+        "g": "Zones de jeu",
+        "items": [
+          [
+            "pistes",
+            "Pistes et huilage"
+          ],
+          [
+            "quilles",
+            "Quilles et rappel des boules"
+          ],
+          [
+            "retours",
+            "Retours de boules et écrans"
+          ],
+          [
+            "sol",
+            "Sols et sorties de piste"
+          ]
+        ]
+      },
+      {
+        "g": "Matériel",
+        "items": [
+          [
+            "boules",
+            "Boules et rampes enfants"
+          ],
+          [
+            "chaussures",
+            "Chaussures désinfectées"
+          ]
+        ]
+      },
+      {
+        "g": "Accueil du public",
+        "items": [
+          [
+            "conformite",
+            "Conformité à l’accueil du public"
+          ],
+          [
+            "sorties",
+            "Issues de secours dégagées"
+          ]
+        ]
+      }
+    ]
+  },
+  "products": [
+    {
+      "name": "Partie 1 h par joueur",
+      "cat": "park",
+      "price": 9,
+      "tva": 10,
+      "scat": "Jeu",
+      "jumper": true,
+      "dur": 60,
+      "art": "quille"
+    },
+    {
+      "name": "Partie 2 h par joueur",
+      "cat": "park",
+      "price": 15,
+      "tva": 10,
+      "scat": "Jeu",
+      "jumper": true,
+      "dur": 120,
+      "art": "boule"
+    },
+    {
+      "name": "Partie enfant (– 12 ans)",
+      "cat": "park",
+      "price": 6.5,
+      "tva": 10,
+      "scat": "Jeu",
+      "jumper": true,
+      "dur": 60,
+      "art": "quille"
+    },
+    {
+      "name": "Location de chaussures",
+      "cat": "park",
+      "price": 3,
+      "tva": 20,
+      "scat": "Location",
+      "art": "chaussure"
+    },
+    {
+      "name": "Pass 5 parties",
+      "cat": "park",
+      "price": 35,
+      "tva": 10,
+      "scat": "Jeu",
+      "art": "p5"
+    },
+    {
+      "name": "Pinte de bière",
+      "cat": "bar",
+      "price": 5.5,
+      "tva": 20,
+      "scat": "Boissons",
+      "art": "biere"
+    },
+    {
+      "name": "Soda",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Boissons",
+      "art": "s2"
+    },
+    {
+      "name": "Café",
+      "cat": "bar",
+      "price": 2,
+      "tva": 10,
+      "scat": "Boissons",
+      "art": "s3"
+    },
+    {
+      "name": "Nachos",
+      "cat": "bar",
+      "price": 6,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "s5"
+    },
+    {
+      "name": "Pizza individuelle",
+      "cat": "bar",
+      "price": 9,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "s4"
+    },
+    {
+      "name": "Glace",
+      "cat": "bar",
+      "price": 3,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "s6"
+    },
+    {
+      "name": "Anniversaire enfant (10 pers.)",
+      "cat": "event",
+      "price": 189,
+      "tva": 10,
+      "art": "a1",
+      "event": true,
+      "guests": 10
+    },
+    {
+      "name": "Soirée entreprise (20 pers.)",
+      "cat": "event",
+      "price": 450,
+      "tva": 10,
+      "art": "groupe",
+      "event": true,
+      "guests": 20
+    },
+    {
+      "name": "Enfant supplémentaire",
+      "cat": "event",
+      "price": 16,
+      "tva": 10,
+      "art": "a3"
+    },
+    {
+      "name": "Carte cadeau 20 €",
+      "cat": "gestion",
+      "price": 20,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 50 €",
+      "cat": "gestion",
+      "price": 50,
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Acompte réservation",
+      "cat": "gestion",
+      "price": 30,
+      "tva": 20,
+      "art": "agenda"
+    }
+  ]
+}
