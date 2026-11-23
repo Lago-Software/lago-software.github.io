@@ -52,7 +52,16 @@ button{font:inherit;color:inherit}
 /* bandeau du haut : logo, affluence, horloge */
 .ctop{display:flex;align-items:center;gap:1.8rem;padding:.9rem 1.6rem;border-radius:1.6rem;min-height:6.4rem}
 .brand{display:flex;align-items:center;gap:1rem;min-width:0;flex:1 1 auto}
-.brand img{display:block;max-height:4.6rem;max-width:22rem;object-fit:contain}
+.lgo{display:inline-flex;align-items:center;justify-content:center;flex:none;line-height:0}
+.lgo img{display:block;height:4.6rem;width:auto;max-width:24rem;object-fit:contain;object-position:left center}
+.lgo.pw,.lgo.pn{padding:.5rem .85rem;border-radius:1rem}
+.lgo.pw{background:#fff;box-shadow:0 .5rem 1.2rem -.8rem rgba(0,0,0,.6)}
+.lgo.pn{background:#0A1F4D}
+.lgo.bx img{border-radius:.8rem}
+.lgo.big img{height:11rem;max-width:36rem;object-position:center}
+.lgo.big.pw,.lgo.big.pn{padding:1.3rem 2rem;border-radius:1.8rem}
+.lgo.big.bx img{border-radius:1.4rem}
+.brand .lgo+.nm{font-size:2rem}
 .brand .nm{font-family:var(--fd);font-weight:800;font-size:2.3rem;line-height:1.05;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .occ{flex:none;display:flex;flex-direction:column;gap:.5rem;min-width:18rem}
 .occ .l{display:flex;align-items:baseline;gap:.45rem;font-size:1.2rem;color:var(--mut);font-weight:600;white-space:nowrap}
@@ -215,14 +224,94 @@ h2.t .tot{margin-left:auto;flex:none;font-family:var(--fb);font-weight:700;font-
 .spin{width:3.4rem;height:3.4rem;margin:1.8rem auto 0;border-radius:50%;border:.38rem solid var(--line);border-top-color:var(--b);animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ---------- v93 : restaurant (carte, places) et salon (rendez-vous, tarifs) ---------- */
+#tv.kr{grid-template-columns:minmax(0,2.1fr) minmax(0,1fr);grid-template-areas:"top top" "mn sd" "tk tk"}
+#tv.kr.notk{grid-template-areas:"top top" "mn sd"}
+#tv.ka{grid-template-columns:minmax(0,1.05fr) minmax(0,1.3fr) minmax(0,1fr);grid-template-areas:"top top top" "rv mn sd" "tk tk tk"}
+#tv.ka.notk{grid-template-areas:"top top top" "rv mn sd"}
+.cmn{grid-area:mn}.csd{grid-area:sd}.crv{grid-area:rv}
+.ost{flex:none;display:flex;align-items:center;gap:1rem;padding:.75rem 1.4rem;border-radius:1.3rem;background:var(--soft)}
+.ost i{flex:none;width:1.05rem;height:1.05rem;border-radius:50%;background:var(--ok);box-shadow:0 0 0 .38rem rgba(18,153,90,.16)}
+.ost.off i{background:var(--bad);box-shadow:0 0 0 .38rem rgba(214,52,44,.16)}
+.ost.soon i{background:#E9A100;box-shadow:0 0 0 .38rem rgba(233,161,0,.18)}
+.ost b{display:block;font-family:var(--fd);font-weight:800;font-size:1.8rem;line-height:1.05;white-space:nowrap}
+.ost small{display:block;font-size:1.2rem;color:var(--mut);font-weight:600;white-space:nowrap;margin-top:.15rem}
+/* carte / tarifs : colonnes qui défilent par pages */
+.mncard{display:flex;flex-direction:column}
+.mnv{position:relative;flex:1 1 0;min-height:0;overflow:hidden}
+.mnc{position:absolute;top:0;left:0;right:0;bottom:0;column-count:var(--mc,2);column-gap:2.8rem;column-fill:auto;transform:translateX(calc(var(--pg,0) * (-100% - 2.8rem)));transition:transform 1s cubic-bezier(.65,0,.35,1)}
+.mg{margin:0 0 1.5rem}
+.mg h3{margin:0 0 .5rem;font-family:var(--fd);font-weight:800;font-size:1.2rem;letter-spacing:.09em;text-transform:uppercase;color:#D95500;break-after:avoid;display:flex;align-items:center;gap:.8rem}
+.mg h3::after{content:'';flex:1;height:.14rem;border-radius:1rem;background:linear-gradient(90deg,rgba(247,99,0,.35),rgba(247,99,0,0))}
+.th-dark .mg h3{color:#FF9A3D}
+.mi{display:flex;align-items:baseline;gap:.6rem;padding:.42rem 0;break-inside:avoid}
+.mi .n{font-size:1.6rem;font-weight:600;line-height:1.25;min-width:0}
+.mi .n small{font-size:1.1rem;color:var(--mut);font-weight:700;white-space:nowrap;margin-left:.2rem}
+.mi i{flex:1 1 1.5rem;min-width:1.5rem;border-bottom:.17rem dotted var(--line);transform:translateY(-.3rem)}
+.th-light .mi i{border-color:#C9D3E3}
+.mi b{flex:none;font-family:var(--fd);font-weight:800;font-size:1.7rem;white-space:nowrap}
+.pgd{margin-left:auto;display:flex;gap:.45rem;align-items:center;flex:none}
+.pgd i{width:.7rem;height:.7rem;border-radius:999px;background:var(--line);transition:width .4s,background .4s}
+.pgd i.on{background:var(--a);width:1.9rem}
+/* disponibilités */
+.av{display:flex;align-items:center;gap:1.1rem;padding:1.1rem 1.3rem;border-radius:1.3rem;background:rgba(18,153,90,.11);margin:0 0 1.2rem}
+.av b{font-family:var(--fd);font-weight:800;font-size:4.4rem;line-height:.9;color:var(--ok);letter-spacing:-.02em}
+.av>span{font-size:1.5rem;font-weight:800;line-height:1.25}
+.av>span small{font-size:1.15rem;font-weight:600;color:var(--mut)}
+.av .ok{flex:none;width:3.6rem;height:3.6rem;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#fff}
+.av .ok svg{width:2rem;height:2rem}
+.av.full{background:rgba(214,52,44,.10)}.av.full b{color:var(--bad);font-size:2.8rem}
+.av.cl{background:var(--soft)}
+.th-dark .av{background:rgba(61,214,140,.13)}.th-dark .av.full{background:rgba(255,120,110,.14)}.th-dark .av.cl{background:var(--soft)}
+.sub{margin:0 0 .65rem;font-size:1.1rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}
+.slots{display:flex;flex-wrap:wrap;gap:.6rem}
+.slot{display:inline-flex;align-items:baseline;gap:.45rem;padding:.55rem .95rem;border-radius:.95rem;background:var(--soft);box-shadow:inset 0 0 0 .13rem var(--line);font-family:var(--fd);font-weight:800;font-size:1.55rem}
+.slot small{font-family:var(--fb);font-weight:700;font-size:1.05rem;color:var(--mut)}
+.hrs{display:flex;align-items:center;gap:.6rem;margin:1.2rem 0 0;font-size:1.3rem;font-weight:600;color:var(--mut)}
+.hrs svg{width:1.4rem;height:1.4rem;flex:none}
+/* QR code */
+.qrc{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.9rem;flex:none}
+.qrb{background:#fff;border-radius:1.3rem;padding:.9rem;line-height:0;box-shadow:0 .9rem 2rem -1.3rem rgba(10,31,77,.55)}
+.qrb svg{width:var(--qs,13rem);height:var(--qs,13rem);display:block}
+.qrt{min-width:0;flex:1 1 auto}
+.qrt b{display:block;font-family:var(--fd);font-weight:800;font-size:1.75rem;line-height:1.1}
+.qrt small{display:block;color:var(--mut);font-size:1.1rem;margin-top:.35rem}
+.qrt .url{display:block;font-weight:800;color:var(--bt);font-size:1.15rem;margin-top:.3rem;overflow-wrap:anywhere}
+.qrc.qh{flex-direction:row;text-align:left;gap:1.2rem;padding:1.1rem 1.3rem}
+.qrc.qh .qrb{padding:.6rem;border-radius:1rem}
+.qrc.qh .qrb svg{width:var(--qs,9rem);height:var(--qs,9rem)}
+.qrc.qh .qrt b{font-size:1.5rem}
+/* rendez-vous du jour */
+.rvs{display:flex;flex-direction:column;gap:.65rem}
+.rv{display:flex;align-items:center;gap:1.1rem;padding:.75rem 1.1rem;border-radius:1.2rem;background:var(--soft);min-width:0}
+.rv .tm{flex:none;width:6.1rem;font-family:var(--fd);font-weight:800;font-size:2.05rem;letter-spacing:-.01em}
+.rv .lb b{font-size:1.5rem}
+.rv .lb small{font-size:1.15rem;margin-top:.12rem}
+.rv .in{flex:none;font-weight:800;font-size:1.15rem;color:var(--bt);background:var(--card);padding:.35rem .8rem;border-radius:999px;white-space:nowrap}
+.rv.nx .in{background:linear-gradient(140deg,#5CC3F7,#1E8FD6);color:#fff}
+.rv.on{background:var(--tint2);box-shadow:inset 0 0 0 .18rem var(--c);padding:.65rem 1.1rem .65rem .75rem}
+.rv.on .ring{font-size:.68rem}
+.rv.on .lb b{font-size:1.65rem}
+.rv.on .cd{font-size:2.3rem;color:var(--cdk)}
+.rv.on .cd em{font-size:.36em}
+.rv.dn{opacity:.55}
+.idle .hlg{margin-bottom:.4rem}
 /* écran vertical (tablette, télé en portrait) */
 @media (orientation:portrait){
   :root{font-size:clamp(9px,min(1.75vw,1.05vh),40px)}
   #tv{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1.6fr) minmax(0,1fr) auto;grid-template-areas:"top top" "lv lv" "up dn" "tk tk"}
   #tv.notk{grid-template-rows:auto minmax(0,1.6fr) minmax(0,1fr);grid-template-areas:"top top" "lv lv" "up dn"}
   .occ{min-width:12rem}.hm{font-size:3.9rem}.dt .by{display:none}
+  #tv.kr{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1.7fr) minmax(0,1fr) auto;grid-template-areas:"top" "mn" "sd" "tk"}
+  #tv.kr.notk{grid-template-rows:auto minmax(0,1.7fr) minmax(0,1fr);grid-template-areas:"top" "mn" "sd"}
+  #tv.ka{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1.5fr) minmax(0,1fr) auto;grid-template-areas:"top top" "rv mn" "sd sd" "tk tk"}
+  #tv.ka.notk{grid-template-rows:auto minmax(0,1.5fr) minmax(0,1fr);grid-template-areas:"top top" "rv mn" "sd sd"}
+  .csd{flex-direction:row}.csd>.card{flex:1 1 0}
+  .qrb svg{width:11rem;height:11rem}
+  .ost b{font-size:1.45rem}.ost small{font-size:1rem}.ost{padding:.6rem 1rem}
+  .lgo img{max-width:16rem;height:3.6rem}
 }
-@media (prefers-reduced-motion:reduce){#bg i,.tk,.row.hot,.row.hot .cd span,.row.hot .dot svg,.nw,.wv svg,#ov .big::before,#ov .big::after,#ov .big svg{animation:none!important}}
+@media (prefers-reduced-motion:reduce){#bg i,.tk,.row.hot,.row.hot .cd span,.row.hot .dot svg,.nw,.wv svg,#ov .big::before,#ov .big::after,#ov .big svg{animation:none!important}.mnc,.pgd i{transition:none!important}}
 </style>
 </head>
 <body class="th-light">
@@ -235,8 +324,9 @@ h2.t .tot{margin-left:auto;flex:none;font-family:var(--fb);font-weight:700;font-
 (()=>{
 'use strict';
 /* ===== Lago · Écran TV ====================================================================================
-   Page à ouvrir sur une télé ou une tablette de l'accueil. Elle affiche en direct les bracelets en piste avec leur
-   compte à rebours, les prochains départs, les sessions terminées, l'horloge, le logo et un texte défilant.
+   Page à ouvrir sur une télé ou une tablette de l'accueil. Elle s'adapte au métier : loisirs (bracelets en piste avec
+   compte à rebours, prochains départs, sessions terminées), restaurant (carte, places disponibles, QR de réservation)
+   ou salon (rendez-vous du jour sans nom, tarifs, créneaux libres), avec le logo, l'horloge et un texte défilant.
    - Association : code à taper (nom de la base + 8 caractères) ou lien envoyé depuis Lago (Paramètres › Réservations › Écran TV).
    - Données : nœud tv/<clé>/d de la base Firebase de l'établissement, lu en direct (flux EventSource) avec relève de secours.
      Elles ne contiennent AUCUNE donnée client : seulement des horaires, des durées et des nombres de personnes.
@@ -260,10 +350,11 @@ const I={
   stop:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>',
   bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.6 2H4.4zM10 21h4"/></svg>',
   wave:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5c1.5-1.6 3-1.6 4.5 0s3 1.6 4.5 0 3-1.6 4.5 0 3 1.6 4.5 0M3 15c1.5-1.6 3-1.6 4.5 0s3 1.6 4.5 0 3-1.6 4.5 0 3 1.6 4.5 0"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>',
   flag:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4m0 0h11l-2 4 2 4H5"/></svg>'
 };
 const app=$('#app'),ov=$('#ov'),bar=$('#bar'),sndBtn=$('#snd');
-let CFG=null,DATA=null,NODE=null,LOGO='',LOGO_H='',DEMO=null,ES=null,SEQ=0,PREV=null,KEY='',OVT=0,BART=0;
+let CFG=null,DATA=null,NODE=null,LOGO='',LOGO2='',LGI=null,MPG=0,LOGO_H='',DEMO=null,ES=null,SEQ=0,PREV=null,KEY='',OVT=0,BART=0;
 const LIVE={state:'wait',conn:false,ok:0,got:0,err:''};
 
 /* ---------- couleurs ---------- */
@@ -305,7 +396,11 @@ function clean(o){
     qty:u.qty!==false,warn:N(u.warn,1,30,DEF.warn),win:N(u.win,5,180,DEF.win),done:N(u.done,1,60,DEF.done),snd:SNDS.includes(u.snd)?u.snd:DEF.snd,ann:u.ann!==false,voice:u.voice===true};
   const x=o.x===true;
   const brh=Array.isArray(o.brh)&&o.brh.length>=25&&o.brh.length<=30&&o.brh.every(x=>Array.isArray(x)&&HEX.test(x[1]||''))?o.brh.map(x=>[S(x[0],20)||'—',x[1]]):null;
-  return{v:1,cap:N(o.cap,0,100000,0),brh,bm:o.bm==='text'?'text':'color',bw:S(o.bw,20)||'Partie',st:[10,15,20,30,45,60,90,120].includes(+o.st)?+o.st:15,t:+o.t||0,d:/^\d{4}-\d{2}-\d{2}$/.test(o.d||'')?o.d:'',tz,n:S(o.n,80),it,br,x,o:x?null:N(o.o,0,1440,null),c:x?null:N(o.c,0,1440,null),ui,lg:/^[a-f0-9]{8,64}$/.test(o.lg||'')?o.lg:''};
+  const k=['s','r','a'].includes(o.k)?o.k:'s',mn=[];let mc=0;
+  if(Array.isArray(o.mn))for(const g of o.mn.slice(0,14)){if(!Array.isArray(g)||!Array.isArray(g[1]))continue;const L=[];for(const x of g[1].slice(0,40)){if(mc>=160||!Array.isArray(x))continue;const nm=S(x[0],60);if(!nm)continue;L.push([nm,N(x[1],0,10000000,0),N(x[2],0,720,0)]);mc++}if(L.length)mn.push([S(g[0],40),L])}
+  let qr=null;if(o.qr&&typeof o.qr==='object'){const n=N(o.qr.n,21,97,0),d=typeof o.qr.d==='string'&&o.qr.d.length<80000&&/^(M\d{1,2} \d{1,2}h\d{1,2}v1h-\d{1,2}z)+$/.test(o.qr.d)?o.qr.d:'';if(n&&d)qr={n,d,l:S(o.qr.l,60),t:S(o.qr.t,60)}}
+  const vp=S(o.vc&&o.vc.p,20)||'personne',vc={p:vp,pp:S(o.vc&&o.vc.pp,24)||vp+'s'};
+  return{v:1,k,mi:['fork','tag','bag'].includes(o.mi)?o.mi:(k==='a'?'tag':'fork'),av:o.av===undefined?ui.qty:o.av===true,ln:o.ln===true,mn,qr,fl:N(o.fl,5,240,30),vc,cap:N(o.cap,0,100000,0),brh,bm:o.bm==='text'?'text':'color',bw:S(o.bw,20)||'Partie',st:[10,15,20,30,45,60,90,120].includes(+o.st)?+o.st:15,t:+o.t||0,d:/^\d{4}-\d{2}-\d{2}$/.test(o.d||'')?o.d:'',tz,n:S(o.n,80),it,br,x,o:x?null:N(o.o,0,1440,null),c:x?null:N(o.c,0,1440,null),ui,lg:/^[a-f0-9]{8,64}$/.test(o.lg||'')?o.lg:''};
 }
 
 /* ---------- signature ---------- */
@@ -348,13 +443,28 @@ async function apply(node){
   if(o.lg!==LOGO_H)loadLogo(o.lg);
   theme(o.ui.th);draw(true);
 }
+const IMGOK=/^data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]/;
+function setLogo(a,b){LOGO=a||'';LOGO2=LOGO&&b?b:'';lgAnalyze(LOGO)}
+/* luminosité du logo : pastille blanche sur fond sombre (logo foncé), pastille foncée sur fond clair (logo blanc) */
+function lgAnalyze(src){
+  LGI=null;if(!src)return;
+  const im=new Image();
+  im.onload=()=>{if(LOGO!==src)return;try{const w=48,h=Math.max(1,Math.round(48*(im.naturalHeight||1)/Math.max(1,im.naturalWidth||1))),c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);const d=x.getImageData(0,0,w,h).data;let s=0,a=0,n=0;for(let i=0;i<d.length;i+=4){const al=d[i+3]/255;if(al<.2)continue;s+=(.2126*d[i]+.7152*d[i+1]+.0722*d[i+2])/255*al;a+=al;n++}LGI={l:a?s/a:1,o:n/(w*h)}}catch(e){LGI={l:.5,o:1}}draw(true)};
+  im.src=src;
+}
+function logoTag(cls){
+  if(!LOGO)return'';
+  const dk=document.body.classList.contains('th-dark'),alt=!!(dk&&LOGO2),i=LGI;let pl='';
+  if(!alt){if(i&&i.o>=.95)pl=' bx';else if(dk&&(!i||i.l<.55))pl=' pw';else if(!dk&&i&&i.l>.82)pl=' pn'}
+  return`<span class="lgo${pl}${cls?' '+cls:''}"><img data-lg="${alt?'d':'m'}" alt="${esc((DATA&&DATA.n)||'')}"></span>`;
+}
 async function loadLogo(h){
   LOGO_H=h;
-  if(!h){LOGO='';draw(true);return}
+  if(!h){setLogo('','');draw(true);return}
   const r=await getJ(nodeUrl('l'),15000);
   if(LOGO_H!==h)return;
   if(r.ok&&r.d&&await verify(CFG.p,r.d.b,r.d.s)){
-    try{const o=JSON.parse(r.d.b);if(o&&o.h===h&&typeof o.img==='string'&&o.img.length<200000&&/^data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]/.test(o.img))LOGO=o.img}catch(e){}
+    try{const o=JSON.parse(r.d.b);if(o&&o.h===h&&typeof o.img==='string'&&o.img.length<200000&&IMGOK.test(o.img))setLogo(o.img,typeof o.imgD==='string'&&o.imgD.length<200000&&IMGOK.test(o.imgD)?o.imgD:'')}catch(e){}
   }
   draw(true);
 }
@@ -462,7 +572,7 @@ const dotOf=(b,icon)=>b.tm?`<span class="dot tm num">${b.tm}</span>`:`<span clas
 const bandOf=(b,txt,icon)=>`<span class="band${b.tm&&!txt?'':''}">${icon||''}${esc(txt||b.name)}</span>`;
 let SEEN=new Set(),NOW_K=new Set();
 const nw=k=>{NOW_K.add(k);return SEEN.has(k)?'':' nw'};
-const IC2={run:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14" cy="4.5" r="2"/><path d="M7 21l3.5-6.5L14 17v4M6 12.5 9 9l4 1 2.5 3.5H19M13 10l-2.5 4.5"/></svg>',clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',band:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="4"/><path d="M8 8v8M16 8v8"/></svg>'};
+const IC2={bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12.5H6zM9 8V6.5a3 3 0 0 1 6 0V8"/></svg>',fork:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3v7.5a2.5 2.5 0 0 0 5 0V3M9 13v8M17.5 21V3c-2.2 1.4-3.5 4-3.5 7.2V13h3.5"/></svg>',tag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12.6V4.8A1.8 1.8 0 0 1 4.8 3h7.8l8.4 8.4-8.6 8.6z"/><circle cx="8" cy="8" r="1.5"/></svg>',cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',run:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14" cy="4.5" r="2"/><path d="M7 21l3.5-6.5L14 17v4M6 12.5 9 9l4 1 2.5 3.5H19M13 10l-2.5 4.5"/></svg>',clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',band:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="4"/><path d="M8 8v8M16 8v8"/></svg>'};
 const nmOf=b=>b.tm?b.lbl:b.name;
 function model(P){
   const D=DATA,ui=D.ui,now=P.s,its=D.d===P.d?D.it:[];
@@ -477,7 +587,7 @@ function model(P){
     else if(g.E<=now&&now<g.E+ui.done*60){(done[g.k]=done[g.k]||Object.assign(g,{n:0})).n+=n}
   }
   const L=Object.values(live).sort((a,b)=>a.E-b.E);
-  return{now,P,ui,live:L,up:Object.values(up).sort((a,b)=>a.s-b.s).slice(0,3),done:Object.values(done).sort((a,b)=>b.E-a.E),next,present:L.reduce((a,x)=>a+x.n,0),today:D.d===P.d};
+  return{its,now,P,ui,live:L,up:Object.values(up).sort((a,b)=>a.s-b.s).slice(0,3),done:Object.values(done).sort((a,b)=>b.E-a.E),next,present:L.reduce((a,x)=>a+x.n,0),today:D.d===P.d};
 }
 const X=(kind,val,txt)=>`<span data-x="${kind}:${val}">${txt}</span>`;
 function liveCard(M){
@@ -490,7 +600,7 @@ function liveCard(M){
     else if(open)pills.push(`<span class="pill"><i></i>Ouvert jusqu’à ${hm(c)}</span>`);
     if(M.next!=null)pills.push(`<span class="pill b"><i></i>Prochain départ ${hm(M.next)}</span>`);
     if(open&&nowM<c)pills.push(`<span class="pill b"><i></i>Départs ${every(D.st)}</span>`);
-    return`<div class="card grow"><div class="idle"><div class="wv">${I.wave}</div><h1>Bienvenue${D.n?' !':''}</h1>${D.n?`<p>${esc(D.n)}</p>`:''}<div class="pills">${pills.join('')}</div></div></div>`;
+    return`<div class="card grow"><div class="idle">${LOGO?`<div class="hlg">${logoTag('big')}</div>`:`<div class="wv">${I.wave}</div>`}<h1>Bienvenue${D.n?' !':''}</h1>${D.n&&!LOGO?`<p>${esc(D.n)}</p>`:''}<div class="pills">${pills.join('')}</div></div></div>`;
   }
   const rows=M.live.map(g=>{
     const b=g.b,rem=g.E-M.now,hot=rem<=ui.warn*60;
@@ -515,10 +625,11 @@ function doneCard(M){
     out.push(`<div class="card grow"><h2 class="t"><span class="ic g">${IC2.clock}</span><span class="tx">Horaires</span></h2><p class="empty">Départs ${every(D.st)}.${open?'<br>Ouvert jusqu’à '+hm(D.c)+'.':''}</p></div>`);
   }else{
     /* couleurs des prochaines heures : la 1re ligne = le prochain retrait */
-    const h0=Math.floor(M.now/3600)+1,cl=D.c!=null&&!D.x?Math.ceil(D.c/60):h0+4,hs=[],mx=M.done.length?3:5;
+    const h0=Math.floor(M.now/3600)+1,cl=D.c!=null&&!D.x?Math.ceil(D.c/60):h0+4,hs=[],mx=Math.max(1,(M.done.length?3:5)-(D.qr?2:0));
     for(let h=h0;h<=Math.min(h0+mx-1,Math.max(h0+1,cl),26);h++)hs.push(h);
     out.push(`<div class="card grow leg"><h2 class="t"><span class="ic g">${IC2.band}</span><span class="tx">Couleurs</span></h2>${hs.map((h,i)=>{const b=bracelet(h);return`<div class="mini${i?'':' now'}" style="${vars(b.hex)}"><span class="hh num">${hmH(h)}</span>${bandOf(b)}<div class="lb"><small>${i?'Fin à '+hmH(h):'Prochain retrait'}</small></div></div>`}).join('')}</div>`);
   }
+  if(D.qr)out.push(qrCard(D.qr,1));
   return out.join('');
 }
 function stClass(){
@@ -528,30 +639,115 @@ function stClass(){
   if(pub>900000)return['warn','Lago n’a rien envoyé depuis '+Math.round(pub/60000)+' min'];
   return['','En direct'];
 }
-function main(M){
-  const P=M.P,ui=M.ui,st=stClass(),D=DATA,dk=document.body.classList.contains('th-dark');
+function topBar(M,mid){
+  const P=M.P,D=DATA,st=stClass(),dk=document.body.classList.contains('th-dark');
   let date=P.date.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',timeZone:P.tz});date=date.charAt(0).toUpperCase()+date.slice(1);
-  const brand=LOGO?`<img src="${esc(LOGO)}" alt="${esc(D.n||'')}">`:`<div class="nm">${esc(D.n||'Bienvenue')}</div>`;
+  const brand=LOGO?`${logoTag('')}${D.ln&&D.n?`<div class="nm">${esc(D.n)}</div>`:''}`:`<div class="nm">${esc(D.n||'Bienvenue')}</div>`;
+  return`<header class="card ctop"><div class="brand">${brand}</div>${mid}<div class="clk"><div class="hm num">${X('hm',0,hm(Math.floor(P.s/60)))}<i>${X('ss',0,pad(P.s%60))}</i></div><div class="dt"><span><i class="st ${st[0]}" title="${esc(st[1])}" aria-label="${esc(st[1])}"></i>${esc(date)}</span><div class="by">Propulsé par <img src="${dk?LOGO_D:LOGO_L}" alt="lago"></div></div></div></header>`;
+}
+const tickOf=ui=>ui.tick?`<footer class="tick" aria-label="Informations"><div class="tk" style="animation-duration:${Math.max(14,Math.round(ui.tick.length*.32))}s"><span>${esc(ui.tick)}</span><span aria-hidden="true">${esc(ui.tick)}</span></div></footer>`:'';
+function main(M){
+  NOW_K=new Set();
+  if(DATA.k==='r')return mainR(M);
+  if(DATA.k==='a')return mainA(M);
+  const ui=M.ui,D=DATA;
   let occ='';
   if(ui.qty&&M.today){
     if(D.cap>0){const r=Math.min(1,M.present/D.cap);occ=`<div class="occ"><div class="l"><b class="num">${M.present}</b>/ ${D.cap} présents</div><div class="meter${r>=.9?' hi':r>=.7?' mid':''}"><i style="width:${Math.round(r*100)}%"></i></div></div>`}
     else occ=`<div class="occ"><div class="l"><b class="num">${M.present}</b>présent${M.present>1?'s':''}</div></div>`;
   }
-  const tick=ui.tick?`<footer class="tick" aria-label="Informations"><div class="tk" style="animation-duration:${Math.max(14,Math.round(ui.tick.length*.32))}s"><span>${esc(ui.tick)}</span><span aria-hidden="true">${esc(ui.tick)}</span></div></footer>`:'';
-  NOW_K=new Set();
   const up=upCard(M),lv=liveCard(M),dn=doneCard(M);
   return`<div id="tv"${ui.tick?'':' class="notk"'}>
-    <header class="card ctop"><div class="brand">${brand}</div>${occ}<div class="clk"><div class="hm num">${X('hm',0,hm(Math.floor(P.s/60)))}<i>${X('ss',0,pad(P.s%60))}</i></div><div class="dt"><span><i class="st ${st[0]}" title="${esc(st[1])}" aria-label="${esc(st[1])}"></i>${esc(date)}</span><div class="by">Propulsé par <img src="${dk?LOGO_D:LOGO_L}" alt="lago"></div></div></div></header>
+    ${topBar(M,occ)}
     <section class="col cup">${up}</section>
     <section class="col clv">${lv}</section>
     <section class="col cdn">${dn}</section>
-    ${tick}</div>`;
+    ${tickOf(ui)}</div>`;
+}
+/* ---------- restaurant et salon ---------- */
+const eurF=c=>(c%100?(c/100).toFixed(2).replace('.',','):String(c/100))+' €';
+function openInfo(M){
+  const D=DATA,o=D.o,c=D.c,nowM=Math.floor(M.now/60);
+  if(!M.today)return{cl:'on',t:'Bienvenue'};
+  if(D.x||o==null||c==null||!(c>o))return{cl:'off',t:'Fermé aujourd’hui'};
+  if(nowM<o)return{cl:'soon',t:'Ouvre à '+hm(o),s:'Aujourd’hui '+hm(o)+' – '+hm(c)};
+  if(nowM>=c)return{cl:'off',t:'Fermé pour aujourd’hui'};
+  return{cl:'on',t:'Ouvert',s:'jusqu’à '+hm(c)};
+}
+const ostOf=M=>{const oi=openInfo(M);return`<div class="ost ${oi.cl}"><i></i><div><b>${esc(oi.t)}</b>${oi.s?`<small>${esc(oi.s)}</small>`:''}</div></div>`};
+let FI={k:'',v:null};
+function freeInfo(M){
+  const D=DATA,nowM=Math.floor(M.now/60),key=nowM+'|'+D.t+'|'+D.d+'|'+M.its.length;if(FI.k===key)return FI.v;
+  const its=M.its,cap=D.cap,L=Math.max(5,D.fl||30),st=D.st||15;
+  const occ=t=>{let n=0;for(const [s,u,q] of its)if(s<=t&&t<s+u)n+=q;return n};
+  const peak=(a,b)=>{let mx=0;for(let t=a;t<b;t+=5)mx=Math.max(mx,occ(t));return mx};
+  const v={now:0,list:[]};
+  if(D.o!=null&&D.c!=null&&!D.x){
+    if(nowM>=D.o&&nowM<D.c)v.now=Math.max(0,cap-peak(nowM,Math.min(D.c,nowM+L)));
+    for(let t=Math.max(D.o,(Math.floor(nowM/st)+1)*st);t+L<=D.c&&v.list.length<6;t+=st){const f=cap-peak(t,t+L);if(f>0)v.list.push([t,f])}
+  }
+  FI={k:key,v};return v;
+}
+function menuCard(title,cols,icon){
+  const D=DATA;
+  const body=D.mn.map(([g,L])=>`<section class="mg"><h3>${esc(g)}</h3>${L.map(([n,c,d])=>`<div class="mi"><span class="n">${esc(n)}${d&&!/\d\s?(min|h)\b/i.test(n)?` <small>${durL(d)}</small>`:''}</span><i></i><b class="num">${eurF(c)}</b></div>`).join('')}</section>`).join('');
+  return`<div class="card grow mncard"><h2 class="t"><span class="ic o">${icon}</span><span class="tx">${esc(title)}</span><span class="pgd" data-pg></span></h2>${body?`<div class="mnv"><div class="mnc" style="--mc:${cols};--pg:${MPG}">${body}</div></div>`:'<p class="empty">Choisissez dans Lago (Paramètres › Réservations › Écran TV) les rubriques du catalogue à afficher.</p>'}</div>`;
+}
+function qrCard(q,small){const qs=small?(q.n<=33?9:10.5):(q.n<=33?10:q.n<=49?11:11.5);return`<div class="card qrc qh" style="--qs:${qs}rem"><div class="qrb"><svg viewBox="0 0 ${q.n} ${q.n}" shape-rendering="crispEdges" role="img" aria-label="QR code"><path d="${q.d}" fill="#000"/></svg></div><div class="qrt"><b>${esc(q.t||'Réservez en ligne')}</b><small>Scannez avec votre téléphone</small>${q.l?`<span class="url">${esc(q.l).replace(/\//g,'/<wbr>')}</span>`:''}</div></div>`}
+function closedAv(M){const oi=openInfo(M);return`<div class="av cl"><span>${esc(oi.t)}${oi.s?`<br><small>${esc(oi.s)}</small>`:''}</span></div>`}
+function availCard(M){
+  const D=DATA,ui=M.ui,oi=openInfo(M);let body='';
+  if(D.av&&D.cap>0&&M.today&&oi.cl!=='off'){
+    const f=freeInfo(M);
+    if(oi.cl==='on')body+=f.now>0?`<div class="av"><b class="num">${f.now}</b><span>${esc(f.now>1?D.vc.pp:D.vc.p)} disponible${f.now>1?'s':''}<br><small>maintenant</small></span></div>`:'<div class="av full"><b>Complet</b><span>pour le moment</span></div>';
+    else body+=closedAv(M);
+    body+=f.list.length?`<p class="sub">Prochaines disponibilités</p><div class="slots">${f.list.slice(0,4).map(([t,n])=>`<span class="slot num">${hm(t)}<small>${n} pl.</small></span>`).join('')}</div>`:'<p class="empty">Plus de place disponible aujourd’hui.</p>';
+  }else body+=closedAv(M);
+  return`<div class="card grow"><h2 class="t"><span class="ic g">${IC2.clock}</span><span class="tx">${esc(ui.t2)}</span></h2>${body}</div>`;
+}
+function slotsCard(M){
+  const D=DATA,ui=M.ui,oi=openInfo(M);let body='';
+  if(D.av&&D.cap>0&&M.today&&oi.cl!=='off'){
+    const f=freeInfo(M);
+    if(oi.cl==='on')body+=f.now>0?`<div class="av"><span class="ok">${I.check}</span><span>Disponible maintenant<br><small>sans rendez-vous</small></span></div>`:'<div class="av full"><span>Complet pour le moment</span></div>';
+    else body+=closedAv(M);
+    body+=f.list.length?`<p class="sub">Prochains créneaux libres</p><div class="slots">${f.list.map(([t])=>`<span class="slot num">${hm(t)}</span>`).join('')}</div>`:'<p class="empty">Plus de créneau libre aujourd’hui.</p>';
+  }else body+=closedAv(M);
+  return`<div class="card grow"><h2 class="t"><span class="ic g">${IC2.clock}</span><span class="tx">Sans rendez-vous ?</span></h2>${body}</div>`;
+}
+function rdvCard(M){
+  const ui=M.ui,D=DATA,now=M.now,agg={};
+  for(const [s,u,n] of M.its){const k=s+'|'+u;(agg[k]=agg[k]||{s,u,n:0}).n+=n}
+  const L=Object.values(agg).sort((a,b)=>a.s-b.s||a.u-b.u),E=x=>(x.s+x.u)*60;
+  const dn=L.filter(x=>E(x)<=now&&E(x)>now-ui.done*60).slice(-1),cur=L.filter(x=>x.s*60<=now&&now<E(x)),nx=L.filter(x=>x.s*60>now);
+  const q=x=>ui.qty&&x.n>1?` · ${x.n} ${esc(D.vc.pp)}`:'';
+  const rows=[...dn.map(x=>`<div class="rv dn"><b class="tm num">${hm(x.s)}</b><div class="lb"><b>Terminé</b><small>${durL(x.u)}${q(x)}</small></div></div>`),
+    ...cur.map(x=>`<div class="rv on${nw('c'+x.s+'|'+x.u)}" style="${vars(BRAND)}"><span class="ring" data-p="${x.s*60}:${E(x)}"><span class="dot tm num">${hm(x.s)}</span></span><div class="lb"><b>En cours</b><small>fin à ${hm(x.s+x.u)}${q(x)}</small></div><div class="cd num"><em>Reste</em>${X('cd',E(x),left(E(x)-now))}</div></div>`),
+    ...nx.slice(0,6).map((x,i)=>`<div class="rv${i?'':' nx'}${nw('n'+x.s+'|'+x.u)}"><b class="tm num">${hm(x.s)}</b><div class="lb"><b>${durL(x.u)}</b><small>${i?'À venir':'Prochain'}${q(x)}</small></div><span class="in num">dans ${X('in',x.s*60,left(x.s*60-now))}</span></div>`)].slice(0,6);
+  const body=rows.length?`<div class="rvs">${rows.join('')}</div>`:`<p class="empty">${M.today?'Plus de rendez-vous aujourd’hui.':'Aucun rendez-vous pour le moment.'}</p>`;
+  return`<div class="card grow"><h2 class="t"><span class="ic o">${IC2.cal}</span><span class="tx">${esc(ui.t1)}</span></h2>${body}</div>`;
+}
+function mainR(M){
+  const ui=M.ui,D=DATA;
+  return`<div id="tv" class="kr${ui.tick?'':' notk'}">${topBar(M,ostOf(M))}<section class="col cmn">${menuCard(ui.t1,2,IC2[D.mi]||IC2.fork)}</section><section class="col csd">${availCard(M)}${D.qr?qrCard(D.qr):''}</section>${tickOf(ui)}</div>`;
+}
+function mainA(M){
+  const ui=M.ui,D=DATA;
+  return`<div id="tv" class="ka${ui.tick?'':' notk'}">${topBar(M,ostOf(M))}<section class="col crv">${rdvCard(M)}</section><section class="col cmn">${menuCard(ui.t2,1,IC2[D.mi]||IC2.tag)}</section><section class="col csd">${slotsCard(M)}${D.qr?qrCard(D.qr):''}</section>${tickOf(ui)}</div>`;
 }
 function dyn(P){
   app.querySelectorAll('[data-x]').forEach(el=>{
     const [k,v]=el.getAttribute('data-x').split(':'),n=+v;
     const t=k==='cd'||k==='in'?left(n-P.s):k==='hm'?hm(Math.floor(P.s/60)):k==='ss'?pad(P.s%60):'';
     if(el.textContent!==t)el.textContent=t;
+  });
+  /* carte et tarifs : une page toutes les 12 s */
+  app.querySelectorAll('.mnc').forEach(el=>{
+    const W=el.parentElement.clientWidth;if(!W)return;
+    const gap=parseFloat(getComputedStyle(el).columnGap)||0,pages=Math.max(1,Math.round((el.scrollWidth+gap)/(W+gap))),pg=pages>1?Math.floor(P.s/12)%pages:0;
+    MPG=pg;if(el.style.getPropertyValue('--pg')!==String(pg))el.style.setProperty('--pg',String(pg));
+    const dots=el.closest('.card').querySelector('[data-pg]');
+    if(dots){const h=pages>1?Array.from({length:pages},(_,i)=>`<i class="${i===pg?'on':''}"></i>`).join(''):'';if(dots.innerHTML!==h)dots.innerHTML=h}
   });
   /* anneaux : part de temps restante */
   app.querySelectorAll('[data-p]').forEach(el=>{
@@ -564,8 +760,8 @@ function draw(force){
   if(!DATA){waitView();return}
   if(!DEMO&&LIVE.state==='denied'&&Date.now()-LIVE.got>3600000){waitView();return}
   const P=nowPark(),M=model(P),h=main(M);
-  const k=h.replace(/(<span data-x="[^"]*">)[^<]*(<\/span>)/g,'$1$2').replace(/ nw"/g,'"')+'|'+stClass()[0];
-  if(force||k!==KEY){KEY=k;app.innerHTML=h;SEEN=NOW_K}
+  const k=h.replace(/(<span data-x="[^"]*">)[^<]*(<\/span>)/g,'$1$2').replace(/ nw"/g,'"').replace(/--pg:\d+/g,'')+'|'+stClass()[0];
+  if(force||k!==KEY){KEY=k;app.innerHTML=h;SEEN=NOW_K;app.querySelectorAll('img[data-lg]').forEach(im=>{im.src=im.dataset.lg==='d'?LOGO2:LOGO})}
   dyn(P);
 }
 
@@ -580,7 +776,7 @@ function unlock(){
   }catch(e){}
   sndChip();
 }
-function sndChip(){const want=DATA&&(DATA.ui.snd!=='off'||DATA.ui.voice);sndBtn.hidden=!(want&&!SND.on)}
+function sndChip(){const want=DATA&&DATA.k==='s'&&(DATA.ui.snd!=='off'||DATA.ui.voice);sndBtn.hidden=!(want&&!SND.on)}
 function chime(kind){
   const c=SND.ctx,ui=DATA&&DATA.ui;if(!c||!SND.on||!ui)return 0;
   if(c.state==='suspended')try{c.resume()}catch(e){}
@@ -617,7 +813,7 @@ function warnFx(gs){
 }
 function events(P){
   const prev=PREV;PREV=P;
-  if(!DATA||!prev||prev.d!==P.d||P.s<=prev.s||P.s-prev.s>90||DATA.d!==P.d)return;
+  if(!DATA||DATA.k!=='s'||!prev||prev.d!==P.d||P.s<=prev.s||P.s-prev.s>90||DATA.d!==P.d)return;
   const a=prev.s,b=P.s,ends={},warns={};
   for(const [s,u] of DATA.it){
     const g=gOf(s,u),E=g.E,W=E-DATA.ui.warn*60;
@@ -674,7 +870,7 @@ document.addEventListener('submit',async e=>{
 });
 function unpair(){
   try{if(ES)ES.close()}catch(e){}ES=null;
-  CFG=null;DATA=null;NODE=null;LOGO='';LOGO_H='';UNP=0;saveCfg(null);
+  CFG=null;DATA=null;NODE=null;setLogo('','');LOGO_H='';UNP=0;saveCfg(null);
   bar.classList.remove('on');sndBtn.hidden=true;ov.className='';pairView('');
 }
 let WL=null;
@@ -688,9 +884,18 @@ function demoData(){
   DEMO={off:(11*3600+58*60+40-P0)*1000};
   const tz=(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone}catch(e){return 'Europe/Paris'}})();
   const d=(()=>{const n=new Date(Date.now()+DEMO.off);return n.getFullYear()+'-'+pad(n.getMonth()+1)+'-'+pad(n.getDate())})();
-  const it=[[600,90,14],[660,60,8],[705,60,17],[690,60,6],[675,120,9],[720,60,12],[720,90,5],[735,60,10],[750,60,7],[600,60,11]];
-  const c=clean({v:1,t:Date.now(),d,tz,n:o.n||'Parc de démonstration',it,br:o.br,brh:o.brh,bm:o.bm,bw:o.bw,st:o.st,cap:o.cap||200,o:600,c:1140,ui:Object.assign({},DEF,{tick:'Bienvenue ! Chaussettes antidérapantes obligatoires · Anniversaires : réservez à l’accueil · Wifi gratuit'},o.ui||{}),lg:''});
-  if(typeof o.logo==='string'&&/^data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]/.test(o.logo)&&o.logo.length<2000000)LOGO=o.logo;
+  const k=['s','r','a'].includes(o.k)?o.k:'s';
+  const IT={s:[[600,90,14],[660,60,8],[705,60,17],[690,60,6],[675,120,9],[720,60,12],[720,90,5],[735,60,10],[750,60,7],[600,60,11]],
+    r:[[690,90,4],[705,90,2],[715,90,6],[720,90,4],[735,90,3],[750,90,2],[780,90,4],[795,90,5],[1170,90,4],[1185,90,6]],
+    a:[[540,45,1],[600,60,1],[660,45,1],[690,45,1],[705,30,1],[705,60,1],[735,45,1],[750,30,1],[810,90,1],[840,30,1],[870,45,1],[930,60,1],[975,30,1]]}[k];
+  const MN={r:[['Entrées',[['Soupe du jour',700,0],['Salade de chèvre chaud',1050,0],['Terrine maison',900,0],['Œuf parfait, crème de champignons',1100,0]]],['Plats',[['Plat du jour',1450,0],['Entrecôte, frites maison',2400,0],['Pavé de saumon, riz noir',2100,0],['Risotto aux cèpes',1800,0],['Burger du chef',1700,0]]],['Desserts',[['Café gourmand',850,0],['Moelleux au chocolat',750,0],['Tarte du moment',700,0]]],['Boissons',[['Limonade artisanale',450,0],['Verre de vin',550,0],['Bière pression',500,0],['Café',220,0]]]],
+    a:[['Femme',[['Coupe femme',4500,45],['Coupe femme cheveux longs',5500,60],['Brushing court',2500,30],['Brushing long',3500,45],['Couleur',5500,60],['Mèches',7500,90]]],['Homme',[['Coupe homme',2500,30],['Coupe et barbe',3500,45],['Taille de barbe',1500,15]]],['Enfant',[['Coupe enfant',1800,30]]]]};
+  const TK={s:'Bienvenue ! Chaussettes antidérapantes obligatoires · Anniversaires : réservez à l’accueil · Wifi gratuit',r:'Menu du jour à 14,50 € · Terrasse ouverte · Privatisation sur demande',a:'Offre étudiants -20 % le mardi · Cartes cadeaux disponibles'};
+  const T3={r:{t1:'La carte',t2:'Aujourd’hui',t3:'Réservez une table'},a:{t1:'Prochains rendez-vous',t2:'Nos prestations',t3:'Prenez rendez-vous'},s:{}};
+  const DH={s:[600,1140],r:[690,1380],a:[540,1140]}[k];
+  const c=clean({v:1,t:Date.now(),d,tz,n:o.n||{s:'Parc de démonstration',r:'Restaurant de démonstration',a:'Salon de démonstration'}[k],it:IT,br:o.br,brh:o.brh,bm:o.bm,bw:o.bw,st:o.st,cap:o.cap||{s:200,r:40,a:4}[k],o:DH[0],c:DH[1],ui:Object.assign({},DEF,{tick:TK[k]},T3[k],o.ui||{}),lg:'',
+    k,ln:o.ln,mn:Array.isArray(o.mn)?o.mn:(MN[k]||[]),qr:o.qr,fl:o.fl||(k==='r'?60:30),vc:o.vc||{p:k==='r'?'couvert':k==='a'?'client':'personne'}});
+  if(typeof o.logo==='string'&&IMGOK.test(o.logo)&&o.logo.length<2000000)setLogo(o.logo,typeof o.logoD==='string'&&IMGOK.test(o.logoD)&&o.logoD.length<2000000?o.logoD:'');
   return c;
 }
 

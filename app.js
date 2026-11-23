@@ -3911,16 +3911,16 @@ function migrateV(){
 }
 
 /* ---------- X. codes promo, carnets de séances, check-in QR ---------- */
-/* --- encodeur QR (octets, correction M, versions 1 à 10) --- */
+/* --- encodeur QR (octets, correction M, versions 1 à 20) --- */
 const QR=(()=>{
-  const ECCPB=[10,16,26,18,24,16,18,22,22,26],NB=[1,1,1,2,2,4,4,4,5,5];
+  const ECCPB=[10,16,26,18,24,16,18,22,22,26,30,22,22,24,24,28,28,26,26,26],NB=[1,1,1,2,2,4,4,4,5,5,5,8,9,9,10,10,11,13,14,16];
   const mul=(x,y)=>{let z=0;for(let i=7;i>=0;i--){z=(z<<1)^((z>>>7)*0x11D);z^=((y>>>i)&1)*x}return z&255};
   const rawCw=v=>{let r=(16*v+128)*v+64;if(v>=2){const a=Math.floor(v/7)+2;r-=(25*a-10)*a-55;if(v>=7)r-=36}return Math.floor(r/8)};
   const rsDiv=(deg)=>{const r=new Array(deg).fill(0);r[deg-1]=1;let root=1;for(let i=0;i<deg;i++){for(let j=0;j<deg;j++){r[j]=mul(r[j],root);if(j+1<deg)r[j]^=r[j+1]}root=mul(root,2)}return r};
   const rsRem=(data,div)=>{const res=new Array(div.length).fill(0);for(const b of data){const f=b^res.shift();res.push(0);div.forEach((c,i)=>{res[i]^=mul(c,f)})}return res};
   function make(text){
     const bytes=Array.from(new TextEncoder().encode(text));
-    let ver=0;for(let v=1;v<=10;v++){const cap=rawCw(v)-ECCPB[v-1]*NB[v-1];if(bytes.length+2+(v>=10?1:0)<=cap){ver=v;break}}
+    let ver=0;for(let v=1;v<=20;v++){const cap=rawCw(v)-ECCPB[v-1]*NB[v-1];if(bytes.length+2+(v>=10?1:0)<=cap){ver=v;break}}
     if(!ver)throw new Error('trop long');
     const n=ver*4+17,cap=rawCw(ver)-ECCPB[ver-1]*NB[ver-1];
     const bits=[];const put=(val,len)=>{for(let i=len-1;i>=0;i--)bits.push((val>>>i)&1)};
@@ -4783,7 +4783,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v94';
+const LAGO_V='v95';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -10600,8 +10600,48 @@ document.addEventListener('submit',e=>{
      dissocie tous les écrans. Les mises à jour partent de chaque appareil où Lago est ouvert (après chaque enregistrement,
      et toutes les 5 minutes au plus tard). */
 const TV_PAGE='https://lago-software.github.io/ecran.html';
-const TV_DEF=()=>({on:false,k:'',pub:null,priv:null,th:'light',t1:'',t2:'',t3:'',m3:'',tick:'',qty:true,warn:5,win:30,done:10,snd:'carillon',ann:true,voice:true});
+const TV_DEF=()=>({on:false,k:'',pub:null,priv:null,th:'light',t1:'',t2:'',t3:'',m3:'',tick:'',qty:true,warn:5,win:30,done:10,snd:'carillon',ann:true,voice:true,mode:'auto',mg:null,qrOn:null,qrUrl:'',lgn:false});
 const TV_TXT={t1:'Prochains départs',t2:'En piste',t3:'Terminé',m3:'Merci de quitter les pistes'};
+/* v93 : l'écran s'adapte au métier — s : loisirs (sessions, bracelets) · r : restaurant (carte, places) · a : salon (rendez-vous, tarifs) */
+const tvTplId=()=>(S.settings.tpl&&S.settings.tpl.id)||'';
+function tvKind(t){t=t||tvCfg();if(t.mode==='s'||t.mode==='r'||t.mode==='a')return t.mode;const id=tvTplId();return id==='restaurant'||id==='boutique'?'r':id==='coiffeur'||id==='institut-de-beaute'?'a':'s'}
+function tvTxtDef(k){
+  k=k||tvKind();const id=tvTplId(),park=!id||id==='parc-trampoline';
+  if(k==='r')return id==='boutique'?{t1:'Nos produits',t2:'Aujourd’hui',t3:'Retrouvez-nous en ligne',m3:''}:{t1:'La carte',t2:'Aujourd’hui',t3:'Réservez une table',m3:''};
+  if(k==='a'){const d=tv('departs');return{t1:/départ/i.test(d)?'Prochains rendez-vous':d,t2:'Nos prestations',t3:'Prenez rendez-vous',m3:''}}
+  return{t1:tv('departs'),t2:park?'En piste':'En cours',t3:'Terminé',m3:park?'Merci de quitter les pistes':'Merci de rejoindre l’accueil'};
+}
+/* rubriques du catalogue affichables (catégorie › sous-catégorie), dans l'ordre de la caisse */
+function tvGroups(){
+  const out=[];
+  CATS.forEach(c=>{
+    const ps=(S.products||[]).filter(p=>p.active&&p.cat===c.id&&+p.price>0);if(!ps.length)return;
+    const subs=subsFor(c.id),order=[...subs,...[...new Set(ps.map(p=>p.scat||''))].filter(x=>!subs.includes(x))];
+    order.forEach(sc=>{const L=ps.filter(p=>(p.scat||'')===sc);if(L.length)out.push({key:c.id+'|'+sc,cat:c.id,title:sc||c.name,label:c.name+(sc?' › '+sc:''),ps:L})});
+  });
+  return out;
+}
+function tvMenuSel(t,k){t=t||tvCfg();k=k||tvKind(t);const G=tvGroups();if(Array.isArray(t.mg)&&(t.mgT||'')===tvTplId()&&(t.mgK||k)===k)return G.filter(g=>t.mg.includes(g.key));const cats=k==='r'?(tvTplId()==='boutique'?['park','bar','event']:['park','bar']):k==='a'?['park']:[];return G.filter(g=>cats.includes(g.cat))}
+function tvMenu(t,k){let n=0;return tvMenuSel(t,k).slice(0,14).map(g=>[String(g.title).slice(0,40),g.ps.filter(()=>n++<160).slice(0,40).map(p=>[String(p.name).slice(0,60),Math.max(0,Math.round(+p.price)),k==='a'&&+p.dur>0?Math.min(720,Math.round(+p.dur)):0])]).filter(g=>g[1].length)}
+function tvFl(t,k){if(k==='r')return 60;if(k==='a'){const d=tvMenuSel(t,k).flatMap(g=>g.ps).map(p=>+p.dur||0).filter(x=>x>=5);return d.length?Math.min(240,Math.min(...d)):30}return 30}
+const tvQrOn=(t,k)=>{t=t||tvCfg();return t.qrOn==null?(k||tvKind(t))!=='s':!!t.qrOn};
+const tvLagoLink=()=>{try{const w=webCfg();if(w.on&&w.k&&w.pub)return webLink()}catch(e){}return ''};
+function tvQrUrl(t){t=t||tvCfg();const u=String(t.qrUrl||'').trim();if(/^https?:\/\/[^\s"'<>]{3,300}$/i.test(u))return u;return tvLagoLink()}
+function tvQr(t,k){
+  t=t||tvCfg();k=k||tvKind(t);if(!tvQrOn(t,k))return null;const u=tvQrUrl(t);if(!u)return null;
+  let M;try{M=QR.make(u)}catch(e){return null}
+  const n=M.length;let d='';for(let y=0;y<n;y++){let x=0;while(x<n){if(M[y][x]){let l=1;while(x+l<n&&M[y][x+l])l++;d+=`M${x} ${y}h${l}v1h-${l}z`;x+=l}else x++}}
+  let l='';if(u!==tvLagoLink()){try{const U=new URL(u);l=(U.host.replace(/^www\./,'')+(U.pathname.length>1?U.pathname.replace(/\/$/,''):'')).slice(0,40)}catch(e){}}
+  const ui=tvUi(t);return{n,d,l,t:k==='s'?'Réservez en ligne':ui.t3};
+}
+function tvMore(t){const k=tvKind(t);return{k,mi:k==='a'?'tag':tvTplId()==='boutique'?'bag':'fork',av:!!t.qty&&(+S.settings.cap||0)>0&&tvTplId()!=='boutique',ln:!!t.lgn,mn:k==='s'?[]:tvMenu(t,k),qr:tvQr(t,k),fl:tvFl(t,k),vc:{p:NOUN(),pp:PLUR()}}}
+/* luminosité d'un logo (aperçu des réglages : pastille claire/foncée comme sur la télé) */
+const TVLUM={};
+function tvLum(src){
+  if(!src)return null;const id=cfSha(src).slice(0,12);if(id in TVLUM)return TVLUM[id];TVLUM[id]=null;
+  const im=new Image();im.onload=()=>{try{const w=48,h=Math.max(1,Math.round(48*(im.naturalHeight||1)/Math.max(1,im.naturalWidth||1))),c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);const d=x.getImageData(0,0,w,h).data;let s=0,a=0,n=0;for(let i=0;i<d.length;i+=4){const al=d[i+3]/255;if(al<.2)continue;s+=(.2126*d[i]+.7152*d[i+1]+.0722*d[i+2])/255*al;a+=al;n++}TVLUM[id]={l:a?s/a:1,o:n/(w*h)}}catch(e){TVLUM[id]={l:.5,o:1}}tvRedo()};
+  im.onerror=()=>{TVLUM[id]={l:.5,o:1}};im.src=src;return null;
+}
 const TVS={h:'',t:0,lh:'',lgh:'',err:'',busy:false,again:false,lsrc:'',lhash:''};
 /* même objet à chaque appel (les réglages modifiés après un await ne se perdent pas) */
 function tvCfg(){const s=S.settings;if(!s.tv||typeof s.tv!=='object'||Array.isArray(s.tv))s.tv=TV_DEF();else{const d=TV_DEF();for(const k in d)if(!(k in s.tv))s.tv[k]=d[k]}return s.tv}
@@ -10634,33 +10674,41 @@ function tvItems(ds){
 }
 function tvUi(t){
   const tx=(v,n)=>String(v||'').replace(/[\u0000-\u001f]/g,' ').trim().slice(0,n);
-  return{th:t.th==='dark'?'dark':'light',t1:tx(t.t1,60)||TV_TXT.t1,t2:tx(t.t2,60)||TV_TXT.t2,t3:tx(t.t3,60)||TV_TXT.t3,m3:tx(t.m3,140)||TV_TXT.m3,tick:tx(t.tick,400),
+  return{th:t.th==='dark'?'dark':'light',t1:tx(t.t1,60)||tvTxtDef().t1,t2:tx(t.t2,60)||tvTxtDef().t2,t3:tx(t.t3,60)||tvTxtDef().t3,m3:tx(t.m3,140)||tvTxtDef().m3,tick:tx(t.tick,400),
     qty:t.qty!==false,warn:+t.warn||5,win:+t.win||30,done:+t.done||10,snd:['carillon','gong','bip','off'].includes(t.snd)?t.snd:'carillon',ann:t.ann!==false,voice:t.voice!==false};
 }
 function tvOut(t){
   const ds=today(),h=hoursFor(ds),closed=!!h.closed||!(h.c>h.o);
   let tz='Europe/Paris';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||tz}catch(e){}
-  return{v:1,d:ds,tz,n:S.settings.name||'',st:STEP,cap:Math.max(0,+S.settings.cap||0),it:tvItems(ds),...brPub(),x:closed,o:closed?null:h.o,c:closed?null:h.c,ui:tvUi(t),lg:TVS.lgh||''};
+  return{v:1,d:ds,tz,n:S.settings.name||'',st:STEP,cap:Math.max(0,+S.settings.cap||0),it:tvItems(ds),...brPub(),...tvMore(t),x:closed,o:closed?null:h.o,c:closed?null:h.c,ui:tvUi(t),lg:TVS.lgh||''};
 }
+const LOGO_OK=/^data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]/;
+const tvLogoDSrc=()=>{const l=S.settings.logoD||'';return LOGO_OK.test(l)?l:''};
 const tvLogoSrc=()=>{const l=S.settings.logo||(typeof payCfg==='function'?payCfg().logo:'')||'';return /^data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]/.test(l)?l:''};
-async function tvShrink(src){
+async function tvShrink(src,lim){
+  lim=lim||180000;
   try{
     const img=new Image();img.src=src;await img.decode();
-    const k=Math.min(1,640/Math.max(img.naturalWidth||1,img.naturalHeight||1)),c=document.createElement('canvas');
-    c.width=Math.max(1,Math.round((img.naturalWidth||1)*k));c.height=Math.max(1,Math.round((img.naturalHeight||1)*k));
-    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-    for(const q of [.9,.8,.65]){const d=c.toDataURL('image/webp',q);if(d.startsWith('data:image/webp')&&d.length<180000)return d}
-    const p=c.toDataURL('image/png');return p.length<180000?p:'';
+    for(const mx of [640,480,360,260]){
+      const k=Math.min(1,mx/Math.max(img.naturalWidth||1,img.naturalHeight||1)),c=document.createElement('canvas');
+      c.width=Math.max(1,Math.round((img.naturalWidth||1)*k));c.height=Math.max(1,Math.round((img.naturalHeight||1)*k));
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      for(const q of [.9,.8,.65]){const d=c.toDataURL('image/webp',q);if(d.startsWith('data:image/webp')&&d.length<lim)return d}
+      const p=c.toDataURL('image/png');if(p.length<lim)return p;
+    }
+    return '';
   }catch(e){return ''}
 }
 async function tvLogoPub(force){
-  const lg=tvLogoSrc();if(lg!==TVS.lsrc){TVS.lsrc=lg;TVS.lhash=lg?cfSha(lg).slice(0,16):''}
+  const lg=tvLogoSrc(),ld=lg?tvLogoDSrc():'',key=lg+'|'+ld;
+  if(key!==TVS.lsrc){TVS.lsrc=key;TVS.lhash=lg?cfSha(key).slice(0,16):''}
   const h=TVS.lhash;
   if(!force&&h===TVS.lh)return;
   if(!lg){TVS.lh='';TVS.lgh='';return}
-  const img=lg.length<180000?lg:await tvShrink(lg);
+  const lim=ld?90000:180000,fit=async x=>x.length<lim?x:await tvShrink(x,lim);
+  const img=await fit(lg),imgD=ld?await fit(ld):'';
   if(!img){TVS.lh=h;TVS.lgh='';return}
-  const b=JSON.stringify({h,img}),s=await tvSign(b);
+  const b=JSON.stringify(imgD?{h,img,imgD}:{h,img}),s=await tvSign(b);
   const r=await fetch(tvU('l'),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({b,s})});
   if(!r.ok)throw new Error('http '+r.status);
   TVS.lh=h;TVS.lgh=h;
@@ -10739,15 +10787,33 @@ function tvStat(){
 }
 function vSetTv(m){
   if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
-  const t=tvCfg(),cl=cloudOn(),on=t.on&&!!t.k,code=on&&cl?tvCode():'',link=on&&cl?tvLink():'';
+  const t=tvCfg(),cl=cloudOn(),on=t.on&&!!t.k,code=on&&cl?tvCode():'',link=on&&cl?tvLink():'',k=tvKind(t),D=tvTxtDef(k);
   const btn=(act,lbl,cls,extra)=>`<button class="btn ${cls||''}" type="button" data-act="${act}" ${extra||''}>${lbl}</button>`;
+  const tpl=S.settings.tpl&&tplGet(S.settings.tpl.id),tplL=tpl?tpl.label:'Parc de trampolines';
+  const intro={s:'Une télé ou une tablette à l’accueil affiche en direct les sessions en cours avec leur compte à rebours, les prochains départs et les sessions terminées. Un carillon et une annonce vocale préviennent à chaque fin de session : vos clients savent quand sortir, l’équipe n’a plus à le crier.',
+    r:tvTplId()==='boutique'?'Une télé en vitrine ou en boutique affiche vos produits avec leurs prix, en pages qui défilent seules, vos horaires et un QR code vers votre site. Elle se met à jour toute seule : changez un prix dans Lago, la télé suit.':'Une télé en salle ou en vitrine affiche votre carte avec les prix, les places disponibles et un QR code pour réserver une table. Elle se met à jour toute seule : changez un prix dans Lago, la télé suit.',
+    a:'Une télé ou une tablette dans le salon affiche les rendez-vous du jour (sans aucun nom), vos prestations avec leurs tarifs, les prochains créneaux libres et un QR code pour prendre rendez-vous.'}[k];
+  const lg=tvLogoSrc(),ld=tvLogoDSrc(),li=lg?tvLum(lg):null,box=li&&li.o>=.95;
+  const plL=!!(li&&!box&&li.l>.82),plD=!!(lg&&!ld&&(!li||(!box&&li.l<.55)));
+  const titles={s:[['t2','Titre des sessions en cours'],['t1','Titre des départs'],['t3','Titre des sessions terminées'],['m3','Message de fin',140]],
+    r:[['t1','Titre de la carte'],['t2','Titre de la colonne du jour'],['t3','Titre du QR code']],
+    a:[['t1','Titre des rendez-vous'],['t2','Titre des prestations'],['t3','Titre du QR code']]}[k];
+  const tf=titles.map(([id,l,mx])=>tvTxt(id,l,t[id],mx||60,D[id]));
+  const rowsOf=L=>{let h='';for(let i=0;i<L.length;i+=2)h+=`<div class="g2">${L[i]}${L[i+1]||'<div></div>'}</div>`;return h};
+  const qtyL={s:'Afficher le nombre de personnes',r:'Afficher les places disponibles',a:'Afficher les créneaux libres'}[k];
+  const G=tvGroups(),sel=new Set(tvMenuSel(t,k).map(g=>g.key));
+  const qu=tvQrUrl(t),qon=tvQrOn(t,k),qm=qon&&qu?tvQr(t,k):null,lagoQ=qu&&qu===tvLagoLink();
+  const qmsg=!qon?'':!qu?'Aucun lien : indiquez l’adresse de la page de réservation de votre site, ou activez la réservation en ligne de Lago.':!qm?'Ce lien est trop long pour un QR code : indiquez une adresse plus courte.':lagoQ?'Le QR code mène à votre page de réservation Lago.':'Le QR code mène à <b>'+esc(qm.l||qu)+'</b>.';
+  const see={s:'<li><b>En piste</b> : une couleur de bracelet (ou une heure de départ) par ligne, avec le compte à rebours. La prochaine fin grossit et clignote.</li><li><b>Prochains départs</b> : l’heure, la couleur à porter et le nombre de personnes.</li><li><b>Terminé</b> : les sessions à faire sortir, avec votre message.</li><li>Votre logo, l’horloge, la jauge des présents, le texte défilant, et un écran plein à chaque fin de session.</li>',
+    r:'<li><b>La carte</b> : vos plats et boissons avec leurs prix, en pages qui défilent seules.</li><li><b>Aujourd’hui</b> : ouvert ou fermé, et les places disponibles maintenant et dans la journée.</li><li><b>QR code</b> : vos clients réservent une table depuis leur téléphone.</li><li>Votre logo, l’horloge et le texte défilant.</li>',
+    a:'<li><b>Rendez-vous du jour</b> : l’heure, la durée et l’avancement, sans aucun nom.</li><li><b>Prestations</b> : vos tarifs et durées, en pages qui défilent seules.</li><li><b>Créneaux libres</b> : pour les clients sans rendez-vous.</li><li><b>QR code</b> : prise de rendez-vous en ligne.</li><li>Votre logo, l’horloge et le texte défilant.</li>'}[k];
   m.innerHTML=`<div class="payset"><div class="paycol">
    <div class="card"><h3>Écran TV</h3>
-    <p class="muted" style="margin:0 0 10px">Une télé ou une tablette à l’accueil affiche en direct les bracelets en piste avec leur compte à rebours, les prochains départs et les sessions terminées. Un carillon et une annonce vocale préviennent à chaque fin de session : vos clients savent quand sortir, l’équipe n’a plus à le crier.</p>
+    <p class="muted" style="margin:0 0 10px">${intro}</p>
     ${cl?'':`<div class="banner"><span>Reliez d’abord vos appareils (Paramètres › Studio › Équipe connectée) : l’écran TV lit les données en ligne. <button class="btn primary" type="button" data-act="tv_studio" style="margin-left:8px">Ouvrir</button></span></div>`}
     <label class="wchk"><input type="checkbox" id="tv_on" ${t.on?'checked':''} ${cl?'':'disabled'}> <b>Activer l’écran TV</b></label>
     <p class="muted" id="tv_stat" style="margin:8px 0 0">${tvStat()}</p>
-    <div class="acts" style="margin-top:12px">${btn('tv_prev','Voir l’aperçu','primary')}${btn('tv_listen','Écouter l’annonce')}</div></div>
+    <div class="acts" style="margin-top:12px">${btn('tv_prev','Voir l’aperçu','primary')}${k==='s'?btn('tv_listen','Écouter l’annonce'):''}</div></div>
    ${on&&cl?`<div class="card"><h3>Associer une télé</h3>
     ${code?`<ol class="tvsteps"><li><span>Sur la télé, dans le navigateur, ouvrez</span><b class="tvcode">${esc(tvPageShort())}</b></li><li><span>Tapez ce code, puis « Associer »</span><b class="tvcode" id="tv_code">${esc(code)}</b></li></ol>
      <div class="acts" style="margin:4px 0 12px">${btn('tv_copy','Copier le code','','data-what="code"')}</div>`:'<p class="muted" style="margin:0 0 8px">Votre base n’a pas une adresse standard : associez la télé avec le lien ci-dessous.</p>'}
@@ -10755,23 +10821,41 @@ function vSetTv(m){
     <div class="field"><input id="tv_link" readonly onclick="this.select()" value="${esc(link)}"></div>
     <div class="acts">${btn('tv_copy','Copier le lien','','data-what="link"')}${btn('tv_share','Envoyer…')}</div>
     <details style="margin-top:10px"><summary><b>QR code (tablette)</b></summary><div style="display:flex;justify-content:center;margin:10px 0"><div style="background:#fff;padding:8px;border-radius:12px;line-height:0">${qrSvg(link,260)}</div></div></details>
-    <p class="muted" style="margin:10px 0 0">Touchez l’écran de la télé (ou appuyez sur OK) une fois pour autoriser le son, puis « Plein écran ». L’écran reste allumé et se met à jour tout seul. Gardez Lago ouvert sur au moins un appareil, la caisse par exemple.</p></div>`:''}
+    <p class="muted" style="margin:10px 0 0">${k==='s'?'Touchez l’écran de la télé (ou appuyez sur OK) une fois pour autoriser le son, puis « Plein écran ». ':'Sur la télé, choisissez « Plein écran ». '}L’écran reste allumé et se met à jour tout seul. Gardez Lago ouvert sur au moins un appareil, la caisse par exemple.</p></div>`:''}
+   <div class="card"><h3>Type d’écran</h3>
+    <p class="muted" style="margin:0 0 10px">La télé s’adapte à votre activité. « Automatique » suit votre métier (${esc(tplL)}).</p>
+    ${paySeg('mode',[['auto','Automatique'],['s','Loisirs'],['r','Restaurant, bar'],['a','Salon, institut']],t.mode||'auto').replace(/data-payset=/g,'data-tvset=')}
+    <p class="muted" style="margin:10px 0 0">${{s:'<b>Loisirs</b> : sessions en cours avec compte à rebours, prochains départs, couleurs des bracelets, carillon de fin.',r:'<b>Restaurant</b> : carte et prix, places disponibles, horaires du jour, QR code pour réserver.',a:'<b>Salon</b> : rendez-vous du jour sans nom, prestations et tarifs, créneaux libres, QR code pour réserver.'}[k]}</p></div>
+   <div class="card"><h3>Logo</h3>
+    ${lg?`<div class="tvlg"><div class="tvlg-t"><span class="${plL?'pl pn':''}${box?' bx':''}"><img src="${lg}" alt=""></span><small>Fond clair</small></div><div class="tvlg-t dk"><span class="${plD?'pl pw':''}${box?' bx':''}"><img src="${ld||lg}" alt=""></span><small>Fond sombre</small></div></div>`:'<p class="muted" style="margin:0 0 10px">Aucun logo : la télé affiche le nom de votre établissement.</p>'}
+    <div class="acts" style="margin-top:10px"><label class="btn ${lg?'':'primary'}" for="tv_logof">${lg?'Changer le logo':'Choisir un logo'}</label><input type="file" id="tv_logof" accept="image/png,image/jpeg,image/webp" hidden>${lg?btn('tv_logo_rm','Retirer'):''}</div>
+    ${lg?`<p class="muted" style="margin:12px 0 6px">${plD?'Sur fond sombre, votre logo est posé sur une pastille blanche pour rester lisible. ':''}${plL?'Sur fond clair, votre logo (très clair) est posé sur une pastille foncée. ':''}Si vous avez une version blanche de votre logo, ajoutez-la pour le fond sombre.</p>
+     <div class="acts"><label class="btn" for="tv_logod">${ld?'Changer la version claire':'Ajouter une version claire'}</label><input type="file" id="tv_logod" accept="image/png,image/webp" hidden>${ld?btn('tv_logod_rm','Retirer la version claire'):''}</div>
+     <label class="wchk" style="margin-top:10px"><input type="checkbox" data-tvf="lgn" ${t.lgn?'checked':''}> Afficher aussi le nom « ${esc(S.settings.name||'')} » à côté du logo</label>`:''}
+    <p class="muted" style="margin:10px 0 0;font-size:13px">C’est le logo de l’établissement : il apparaît aussi dans Lago et sur les tickets. Image large ou carrée, fond transparent de préférence.</p></div>
    <div class="card"><h3>Affichage</h3>
     <div class="field"><label>Fond</label>${paySeg('th',[['light','Clair'],['dark','Sombre']],t.th).replace(/data-payset=/g,'data-tvset=')}</div>
-    <div class="g2">${tvTxt('t2','Titre des sessions en cours',t.t2,60,TV_TXT.t2)}${tvTxt('t1','Titre des départs',t.t1,60,TV_TXT.t1)}</div>
-    <div class="g2">${tvTxt('t3','Titre des sessions terminées',t.t3,60,TV_TXT.t3)}${tvTxt('m3','Message de fin',t.m3,140,TV_TXT.m3)}</div>
-    <div class="g2">${tvSel('warn','Mettre en avant la fin',t.warn,[2,3,5,10],'min avant')}${tvSel('win','Départs affichés',t.win,[15,30,45,60,90],'min à l’avance')}</div>
-    <div class="g2">${tvSel('done','Sessions terminées affichées',t.done,[5,10,15,20],'min')}<div class="field"><label>&nbsp;</label><label class="wchk"><input type="checkbox" data-tvf="qty" ${t.qty?'checked':''}> Afficher le nombre de personnes</label></div></div></div>
-   <div class="card"><h3>Texte défilant</h3>${tvTxt('tick','Message en bas de l’écran (laisser vide pour le masquer)',t.tick,400,'Ex. Chaussettes antidérapantes obligatoires · Anniversaires : réservez à l’accueil',1)}</div>
-   <div class="card"><h3>Son et annonces</h3>
+    ${rowsOf(tf)}
+    ${k==='s'?`<div class="g2">${tvSel('warn','Mettre en avant la fin',t.warn,[2,3,5,10],'min avant')}${tvSel('win','Départs affichés',t.win,[15,30,45,60,90],'min à l’avance')}</div>
+    <div class="g2">${tvSel('done','Sessions terminées affichées',t.done,[5,10,15,20],'min')}<div class="field"><label>&nbsp;</label><label class="wchk"><input type="checkbox" data-tvf="qty" ${t.qty?'checked':''}> ${qtyL}</label></div></div>`
+    :tvTplId()==='boutique'?'':`<label class="wchk"><input type="checkbox" data-tvf="qty" ${t.qty?'checked':''}> ${qtyL}</label>${(+S.settings.cap||0)>0?'':`<p class="muted" style="margin:6px 0 0">Indiquez votre capacité (Paramètres › Établissement › Park) pour afficher ${k==='r'?'les places':'les créneaux'} disponibles.</p>`}`}</div>
+   ${k==='s'?'':`<div class="card"><h3>${k==='r'?(tvTplId()==='boutique'?'Produits affichés':'Carte affichée'):'Prestations affichées'}</h3>
+    <p class="muted" style="margin:0 0 8px">Les noms et les prix viennent de votre catalogue : modifiez-les dans le catalogue, la télé suit. Choisissez les rubriques à montrer :</p>
+    ${G.length?`<div class="tvmg">${G.map(g=>`<label class="wchk"><input type="checkbox" data-tvmg="${esc(g.key)}" ${sel.has(g.key)?'checked':''}> ${esc(g.label)} <span class="muted">· ${g.ps.length}</span></label>`).join('')}</div>`:'<p class="muted">Aucun produit actif avec un prix dans le catalogue.</p>'}</div>`}
+   <div class="card"><h3>QR code</h3>
+    <label class="wchk"><input type="checkbox" data-tvf="qrOn" ${qon?'checked':''}> Afficher un QR code pour réserver</label>
+    ${qon?`<div style="margin-top:10px">${tvTxt('qrUrl','Lien du QR code',t.qrUrl,300,tvLagoLink()?'Laisser vide : votre page de réservation Lago':'https://votre-site.fr/reservation')}</div>
+    <p class="muted" style="margin:0">${qmsg}</p>${qm?`<div style="display:flex;justify-content:center;margin:10px 0 0"><div style="background:#fff;padding:8px;border-radius:12px;line-height:0">${qrSvg(qu,150)}</div></div>`:''}`:''}</div>
+   <div class="card"><h3>Texte défilant</h3>${tvTxt('tick','Message en bas de l’écran (laisser vide pour le masquer)',t.tick,400,{s:'Ex. Chaussettes antidérapantes obligatoires · Anniversaires : réservez à l’accueil',r:'Ex. Menu du jour à 14,50 € · Terrasse ouverte · Privatisation sur demande',a:'Ex. Offre étudiants -20 % le mardi · Cartes cadeaux disponibles'}[k],1)}</div>
+   ${k==='s'?`<div class="card"><h3>Son et annonces</h3>
     <div class="field"><label>Son à chaque fin de session</label>${paySeg('snd',TV_SND,t.snd).replace(/data-payset=/g,'data-tvset=')}</div>
     <label class="wchk"><input type="checkbox" data-tvf="voice" ${t.voice?'checked':''}> Annonce vocale (« Bracelet orange, votre session est terminée »)</label>
     <label class="wchk" style="margin-top:6px"><input type="checkbox" data-tvf="ann" ${t.ann?'checked':''}> Prévenir aussi ${+t.warn||5} minutes avant la fin</label>
-    <div class="acts" style="margin-top:12px">${btn('tv_listen','Écouter l’annonce')}${btn('tv_listen','Écouter l’avertissement','','data-k="warn"')}</div></div>
+    <div class="acts" style="margin-top:12px">${btn('tv_listen','Écouter l’annonce')}${btn('tv_listen','Écouter l’avertissement','','data-k="warn"')}</div></div>`:''}
   </div><div class="paycol tvside">
    <div class="card"><h3>Ce que voit la télé</h3>
-    <ul class="muted tvlist"><li><b>En piste</b> : une couleur de bracelet par ligne, avec le compte à rebours jusqu’au retrait. La prochaine fin grossit et clignote.</li><li><b>Prochains départs</b> : l’heure, la couleur à porter et le nombre de personnes.</li><li><b>Terminé</b> : les couleurs à faire sortir, avec votre message.</li><li>L’horloge, votre logo, le texte défilant, et un écran plein à chaque fin de session.</li></ul>
-    <p class="muted" style="margin:8px 0 0">Aucune donnée client n’est envoyée à la télé : seulement les horaires, les durées et le nombre de personnes de la journée, signés par Lago. Personne ne peut y afficher autre chose.</p></div>
+    <ul class="muted tvlist">${see}</ul>
+    <p class="muted" style="margin:8px 0 0">Aucune donnée client n’est envoyée à la télé : seulement les horaires, les durées et le nombre de personnes de la journée${k==='s'?'':', avec la carte et les prix'}, signés par Lago. Personne ne peut y afficher autre chose.</p></div>
    ${t.k&&cl?`<div class="card"><h3>Règles Firebase</h3><p class="muted" style="margin:0 0 8px">Une seule fois, puis après chaque nouveau code : dans Firebase › Realtime Database › Règles, remplacez tout par ce texte, puis « Publier ». Elles gardent vos réglages actuels et ajoutent l’écran TV.</p>
     <textarea id="tv_rules" readonly rows="7" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%">${esc(webRules())}</textarea>
     <div class="acts" style="margin-top:8px">${btn('tv_copy','Copier les règles','','data-what="rules"')}</div></div>
@@ -10790,7 +10874,7 @@ document.addEventListener('input',e=>{
   const x=e.target;if(!x||!tvHere()||!x.dataset||!x.dataset.tvf)return;
   const k=x.dataset.tvf,t=tvCfg();
   if(x.type==='checkbox'||x.tagName==='SELECT')return;
-  t[k]=String(x.value||'').replace(/[\u0000-\u001f]/g,' ').slice(0,k==='tick'?400:k==='m3'?140:60);tvDirty();
+  t[k]=String(x.value||'').replace(/[\u0000-\u001f]/g,' ').slice(0,k==='tick'?400:k==='qrUrl'?300:k==='m3'?140:60);tvDirty();
 });
 document.addEventListener('change',async e=>{
   const x=e.target;if(!x||!tvHere())return;
@@ -10804,10 +10888,16 @@ document.addEventListener('change',async e=>{
     }else{t.on=false;save();await tvUnpublish();tvRedo()}
     return;
   }
+  if(x.id==='tv_logof'||x.id==='tv_logod'){
+    const f=x.files&&x.files[0],main=x.id==='tv_logof';x.value='';if(!f)return;
+    fileToData(f,420,r=>{const st=S.settings;if(main){st.logo=r.png;st.logoJ=r.jpg;st.logoW=r.w;st.logoH=r.h;try{chrome()}catch(err){}}else st.logoD=r.png;save();tvRedo();tvPublish(true).then(tvStatDraw);toast(main?'Logo enregistré':'Version claire enregistrée')});
+    return;
+  }
+  if(x.dataset&&x.dataset.tvmg!=null){const cur=new Set(tvMenuSel(t).map(g=>g.key));if(x.checked)cur.add(x.dataset.tvmg);else cur.delete(x.dataset.tvmg);t.mg=[...cur];t.mgT=tvTplId();t.mgK=tvKind(t);tvDirty();return}
   const k=x.dataset&&x.dataset.tvf;if(!k)return;
-  if(x.type==='checkbox'){t[k]=!!x.checked}
+  if(x.type==='checkbox'){t[k]=!!x.checked;if(k==='qrOn')tvRedo()}
   else if(x.tagName==='SELECT'){t[k]=+x.value;if(k==='warn')tvRedo()}
-  else return;
+  else{if(k==='qrUrl')tvRedo();return}
   tvDirty();
 });
 document.addEventListener('click',async e=>{
@@ -10818,9 +10908,14 @@ document.addEventListener('click',async e=>{
   if(b.dataset.tvset){t[b.dataset.tvset]=b.dataset.v;save();tvRedo();tvPublish(true).then(tvStatDraw);if(b.dataset.tvset==='snd'&&b.dataset.v!=='off')tvChime('end',b.dataset.v);return}
   const a=b.dataset.act;
   if(a==='tv_studio'){tab.params='pstudio';render();return}
+  if(a==='tv_logo_rm'||a==='tv_logod_rm'){
+    if(a==='tv_logo_rm'&&!b.dataset.sure){b.dataset.sure='1';b.textContent='Confirmer : retirer le logo';return}
+    const st=S.settings;if(a==='tv_logo_rm'){st.logo='';st.logoJ='';st.logoD='';try{chrome()}catch(err){}}else st.logoD='';
+    save();tvRedo();tvPublish(true).then(tvStatDraw);return;
+  }
   if(a==='tv_prev'){
-    const ui=tvUi(t),o={n:S.settings.name||'',ui,st:STEP,...brPub()},lg=tvLogoSrc();
-    try{localStorage.setItem('lago-ecran-demo',JSON.stringify(lg&&lg.length<1500000?{...o,logo:lg}:o))}catch(err){try{localStorage.setItem('lago-ecran-demo',JSON.stringify(o))}catch(e2){}}
+    const ui=tvUi(t),o={n:S.settings.name||'',ui,st:STEP,cap:Math.max(0,+S.settings.cap||0),...brPub(),...tvMore(t)},lg=tvLogoSrc(),ld=lg?tvLogoDSrc():'';
+    try{localStorage.setItem('lago-ecran-demo',JSON.stringify(lg&&lg.length<1500000?{...o,logo:lg,...(ld&&ld.length<1500000?{logoD:ld}:{})}:o))}catch(err){try{localStorage.setItem('lago-ecran-demo',JSON.stringify(o))}catch(e2){}}
     const w=window.open(new URL('ecran.html#demo',location.href).href,'_blank');if(!w)toast('Autorisez l’ouverture des fenêtres pour voir l’aperçu');
     return;
   }
