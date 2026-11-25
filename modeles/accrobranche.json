@@ -1,6 +1,6 @@
 {
   "id": "accrobranche",
-  "version": 1,
+  "version": 2,
   "label": "Parc accrobranche",
   "resume": "Parcours, groupes scolaires, buvette et anniversaires nature.",
   "settings": {
@@ -13,14 +13,22 @@
     "subs": {
       "park": [
         "Aventure",
-        "Équipement"
+        "Équipement",
+        "Tarifs et pass",
+        "Options"
       ],
       "bar": [
         "Boissons",
-        "Snack"
+        "Snack",
+        "Pique-nique"
       ],
       "gestion": [
-        "Cartes cadeaux"
+        "Cartes cadeaux",
+        "Divers"
+      ],
+      "event": [
+        "Groupes",
+        "Anniversaires"
       ]
     },
     "capacite": 150,
@@ -181,12 +189,54 @@
       "art": "baudrier"
     },
     {
-      "name": "Pass famille (4 pers.)",
+      "name": "Parcours petit (3 à 5 ans)",
       "cat": "park",
-      "price": 75,
+      "price": 9,
       "tva": 10,
       "scat": "Aventure",
-      "art": "p5"
+      "jumper": true,
+      "dur": 60,
+      "art": "arbre"
+    },
+    {
+      "name": "Parcours découverte (1 h)",
+      "cat": "park",
+      "price": 15,
+      "tva": 10,
+      "scat": "Aventure",
+      "jumper": true,
+      "dur": 60,
+      "art": "arbre"
+    },
+    {
+      "name": "Parcours aventure (3 h)",
+      "cat": "park",
+      "price": 28,
+      "tva": 10,
+      "scat": "Aventure",
+      "jumper": true,
+      "dur": 180,
+      "art": "arbre"
+    },
+    {
+      "name": "Parcours nocturne",
+      "cat": "park",
+      "price": 22,
+      "tva": 10,
+      "scat": "Aventure",
+      "jumper": true,
+      "dur": 120,
+      "art": "arbre"
+    },
+    {
+      "name": "Journée complète (tous parcours)",
+      "cat": "park",
+      "price": 35,
+      "tva": 10,
+      "scat": "Aventure",
+      "jumper": true,
+      "dur": 480,
+      "art": "arbre"
     },
     {
       "name": "Location de gants",
@@ -194,49 +244,256 @@
       "price": 2,
       "tva": 20,
       "scat": "Équipement",
-      "art": "b1"
+      "art": "gants"
+    },
+    {
+      "name": "Poncho de pluie",
+      "cat": "park",
+      "price": 2,
+      "tva": 20,
+      "scat": "Équipement"
+    },
+    {
+      "name": "Crème solaire",
+      "cat": "park",
+      "price": 8,
+      "tva": 20,
+      "scat": "Équipement",
+      "art": "flacon"
+    },
+    {
+      "name": "Répulsif anti-moustiques",
+      "cat": "park",
+      "price": 6,
+      "tva": 20,
+      "scat": "Équipement"
+    },
+    {
+      "name": "Sac étanche",
+      "cat": "park",
+      "price": 9,
+      "tva": 20,
+      "scat": "Équipement",
+      "art": "sac"
+    },
+    {
+      "name": "Pass famille (4 pers.)",
+      "cat": "park",
+      "price": 75,
+      "tva": 10,
+      "scat": "Tarifs et pass",
+      "art": "p5"
+    },
+    {
+      "name": "Parcours étudiant",
+      "cat": "park",
+      "price": 17,
+      "tva": 10,
+      "scat": "Tarifs et pass",
+      "jumper": true,
+      "dur": 180,
+      "art": "arbre"
+    },
+    {
+      "name": "Tarif groupe (10 et plus), par personne",
+      "cat": "park",
+      "price": 17,
+      "tva": 10,
+      "scat": "Tarifs et pass",
+      "jumper": true,
+      "dur": 180,
+      "art": "groupe"
+    },
+    {
+      "name": "Pass 2 parcours",
+      "cat": "park",
+      "price": 38,
+      "tva": 10,
+      "scat": "Tarifs et pass",
+      "art": "p5"
+    },
+    {
+      "name": "Tyrolienne géante (supplément)",
+      "cat": "park",
+      "price": 6,
+      "tva": 10,
+      "scat": "Options",
+      "art": "tyrolienne"
+    },
+    {
+      "name": "Saut pendulaire",
+      "cat": "park",
+      "price": 5,
+      "tva": 10,
+      "scat": "Options",
+      "art": "p1"
+    },
+    {
+      "name": "Photo souvenir",
+      "cat": "park",
+      "price": 5,
+      "tva": 20,
+      "scat": "Options"
     },
     {
       "name": "Eau 50 cl",
       "cat": "bar",
       "price": 1.5,
       "tva": 10,
-      "art": "s1"
+      "art": "s1",
+      "scat": "Boissons"
     },
     {
       "name": "Boisson fraîche",
       "cat": "bar",
       "price": 2.5,
       "tva": 10,
-      "art": "s2"
+      "art": "s2",
+      "scat": "Boissons"
     },
     {
       "name": "Café",
       "cat": "bar",
       "price": 1.8,
       "tva": 10,
-      "art": "s3"
+      "art": "tasse",
+      "scat": "Boissons"
+    },
+    {
+      "name": "Coca-Cola, 33 cl",
+      "cat": "bar",
+      "price": 2.5,
+      "tva": 10,
+      "scat": "Boissons",
+      "art": "canette"
+    },
+    {
+      "name": "Ice tea",
+      "cat": "bar",
+      "price": 2.5,
+      "tva": 10,
+      "scat": "Boissons",
+      "art": "s2"
+    },
+    {
+      "name": "Limonade",
+      "cat": "bar",
+      "price": 2,
+      "tva": 10,
+      "scat": "Boissons",
+      "art": "canette"
+    },
+    {
+      "name": "Boisson énergisante",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Boissons",
+      "art": "s2"
+    },
+    {
+      "name": "Bière 25 cl",
+      "cat": "bar",
+      "price": 3,
+      "tva": 20,
+      "scat": "Boissons",
+      "art": "biere"
+    },
+    {
+      "name": "Cidre 25 cl",
+      "cat": "bar",
+      "price": 3,
+      "tva": 20,
+      "scat": "Boissons",
+      "art": "biere"
     },
     {
       "name": "Crêpe",
       "cat": "bar",
       "price": 3.5,
       "tva": 10,
-      "art": "s4"
+      "art": "crepe",
+      "scat": "Snack"
     },
     {
       "name": "Glace",
       "cat": "bar",
       "price": 2.5,
       "tva": 10,
-      "art": "s6"
+      "art": "s6",
+      "scat": "Snack"
     },
     {
       "name": "Sandwich",
       "cat": "bar",
       "price": 5,
       "tva": 10,
+      "art": "sandwich",
+      "scat": "Snack"
+    },
+    {
+      "name": "Hot-dog",
+      "cat": "bar",
+      "price": 4.5,
+      "tva": 10,
+      "scat": "Snack",
       "art": "s5"
+    },
+    {
+      "name": "Frites",
+      "cat": "bar",
+      "price": 3,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "frites"
+    },
+    {
+      "name": "Gaufre sucre",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "s4"
+    },
+    {
+      "name": "Salade composée",
+      "cat": "bar",
+      "price": 7,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "salade"
+    },
+    {
+      "name": "Fruit de saison",
+      "cat": "bar",
+      "price": 1.5,
+      "tva": 5.5,
+      "scat": "Snack",
+      "art": "fruit"
+    },
+    {
+      "name": "Barre de céréales",
+      "cat": "bar",
+      "price": 2,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "cookie"
+    },
+    {
+      "name": "Panier pique-nique (sandwich, fruit, boisson)",
+      "cat": "bar",
+      "price": 9,
+      "tva": 10,
+      "scat": "Pique-nique",
+      "art": "sandwich"
+    },
+    {
+      "name": "Planche à partager (6 pers.)",
+      "cat": "bar",
+      "price": 18,
+      "tva": 10,
+      "scat": "Pique-nique",
+      "art": "fromage"
     },
     {
       "name": "Sortie scolaire (30 élèves)",
@@ -245,7 +502,44 @@
       "tva": 10,
       "art": "groupe",
       "event": true,
-      "guests": 30
+      "guests": 30,
+      "scat": "Groupes"
+    },
+    {
+      "name": "Séminaire team building, par personne",
+      "cat": "event",
+      "price": 28,
+      "tva": 10,
+      "scat": "Groupes",
+      "art": "groupe"
+    },
+    {
+      "name": "Centre de loisirs, par enfant",
+      "cat": "event",
+      "price": 12,
+      "tva": 10,
+      "scat": "Groupes",
+      "art": "groupe"
+    },
+    {
+      "name": "EVG ou EVJF (12 pers.)",
+      "cat": "event",
+      "price": 300,
+      "tva": 10,
+      "scat": "Groupes",
+      "event": true,
+      "guests": 12,
+      "art": "groupe"
+    },
+    {
+      "name": "Privatisation d’un parcours, 2 h",
+      "cat": "event",
+      "price": 400,
+      "tva": 10,
+      "scat": "Groupes",
+      "event": true,
+      "guests": 25,
+      "art": "cle"
     },
     {
       "name": "Anniversaire nature (10 enf.)",
@@ -254,20 +548,65 @@
       "tva": 10,
       "art": "a1",
       "event": true,
-      "guests": 10
+      "guests": 10,
+      "scat": "Anniversaires"
+    },
+    {
+      "name": "Anniversaire aventure, 6 à 11 ans",
+      "cat": "event",
+      "price": 230,
+      "tva": 10,
+      "scat": "Anniversaires",
+      "event": true,
+      "guests": 10,
+      "art": "a1"
+    },
+    {
+      "name": "Gâteau d’anniversaire",
+      "cat": "event",
+      "price": 25,
+      "tva": 10,
+      "scat": "Anniversaires",
+      "art": "dessert"
     },
     {
       "name": "Carte cadeau 20 €",
       "cat": "gestion",
       "price": 20,
       "tva": 20,
-      "art": "cadeau"
+      "art": "cadeau",
+      "scat": "Cartes cadeaux"
     },
     {
       "name": "Carte cadeau 50 €",
       "cat": "gestion",
       "price": 50,
       "tva": 20,
+      "art": "cadeau",
+      "scat": "Cartes cadeaux"
+    },
+    {
+      "name": "Carte cadeau 30 €",
+      "cat": "gestion",
+      "price": 30,
+      "tva": 20,
+      "scat": "Cartes cadeaux",
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 100 €",
+      "cat": "gestion",
+      "price": 100,
+      "tva": 20,
+      "scat": "Cartes cadeaux",
+      "art": "cadeau"
+    },
+    {
+      "name": "Bon cadeau 1 parcours adulte",
+      "cat": "gestion",
+      "price": 25,
+      "tva": 20,
+      "scat": "Cartes cadeaux",
       "art": "cadeau"
     },
     {
@@ -275,7 +614,16 @@
       "cat": "gestion",
       "price": 30,
       "tva": 20,
-      "art": "agenda"
+      "art": "agenda",
+      "scat": "Divers"
+    },
+    {
+      "name": "Remplacement de bracelet",
+      "cat": "gestion",
+      "price": 2,
+      "tva": 20,
+      "scat": "Divers",
+      "art": "bijou"
     }
   ]
 }

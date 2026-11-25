@@ -1,6 +1,6 @@
 {
   "id": "coiffeur",
-  "version": 2,
+  "version": 3,
   "label": "Salon de coiffure",
   "resume": "Prestations, rendez-vous en ligne, produits de soin, cartes cadeaux.",
   "settings": {
@@ -15,20 +15,31 @@
         "Femme",
         "Homme",
         "Enfant",
-        "Couleur"
+        "Couleur",
+        "Coiffage",
+        "Techniques"
       ],
       "bar": [
         "Soins",
-        "Produits"
+        "Produits",
+        "Accessoires"
       ],
       "gestion": [
         "Cartes cadeaux",
-        "Acomptes"
+        "Acomptes",
+        "Divers"
+      ],
+      "event": [
+        "Forfaits",
+        "Mariage"
       ]
     },
     "capacite": 4,
     "intervalle_depart_minutes": 15,
-    "reperage": {"mode": "texte", "mot": "Rendez-vous"},
+    "reperage": {
+      "mode": "texte",
+      "mot": "Rendez-vous"
+    },
     "equipe_minimum": 1,
     "horaires": {
       "ouverture": "09:00",
@@ -121,7 +132,8 @@
       "price": 45,
       "tva": 20,
       "jumper": true,
-      "dur": 45
+      "dur": 45,
+      "art": "ciseaux"
     },
     {
       "name": "Coupe femme cheveux longs",
@@ -130,27 +142,78 @@
       "price": 55,
       "tva": 20,
       "jumper": true,
-      "dur": 60
+      "dur": 60,
+      "art": "ciseaux"
     },
     {
-      "name": "Brushing court",
+      "name": "Coupe courte femme",
       "cat": "park",
-      "scat": "Femme",
-      "price": 25,
+      "price": 40,
       "tva": 20,
-      "jumper": true,
-      "dur": 30,
-      "art": "seche"
-    },
-    {
-      "name": "Brushing long",
-      "cat": "park",
       "scat": "Femme",
-      "price": 35,
-      "tva": 20,
       "jumper": true,
       "dur": 45,
+      "art": "ciseaux"
+    },
+    {
+      "name": "Coupe + brushing court",
+      "cat": "park",
+      "price": 62,
+      "tva": 20,
+      "scat": "Femme",
+      "jumper": true,
+      "dur": 75,
       "art": "seche"
+    },
+    {
+      "name": "Coupe + brushing long",
+      "cat": "park",
+      "price": 78,
+      "tva": 20,
+      "scat": "Femme",
+      "jumper": true,
+      "dur": 90,
+      "art": "seche"
+    },
+    {
+      "name": "Shampoing + coupe + séchage",
+      "cat": "park",
+      "price": 48,
+      "tva": 20,
+      "scat": "Femme",
+      "jumper": true,
+      "dur": 60,
+      "art": "seche"
+    },
+    {
+      "name": "Transformation (nouvelle coupe)",
+      "cat": "park",
+      "price": 60,
+      "tva": 20,
+      "scat": "Femme",
+      "jumper": true,
+      "dur": 75,
+      "art": "ciseaux"
+    },
+    {
+      "name": "Frange seule",
+      "cat": "park",
+      "price": 12,
+      "tva": 20,
+      "scat": "Femme",
+      "jumper": true,
+      "dur": 15,
+      "art": "ciseaux"
+    },
+    {
+      "name": "Rafraîchissement des pointes",
+      "cat": "park",
+      "price": 30,
+      "tva": 20,
+      "scat": "Femme",
+      "jumper": true,
+      "dur": 30,
+      "art": "ciseaux"
     },
     {
       "name": "Coupe homme",
@@ -183,13 +246,124 @@
       "art": "peigne"
     },
     {
+      "name": "Coupe dégradé à la tondeuse",
+      "cat": "park",
+      "price": 22,
+      "tva": 20,
+      "scat": "Homme",
+      "jumper": true,
+      "dur": 30,
+      "art": "tondeuse"
+    },
+    {
+      "name": "Coupe + shampoing",
+      "cat": "park",
+      "price": 30,
+      "tva": 20,
+      "scat": "Homme",
+      "jumper": true,
+      "dur": 35,
+      "art": "flacon"
+    },
+    {
+      "name": "Coupe étudiant (moins de 26 ans)",
+      "cat": "park",
+      "price": 20,
+      "tva": 20,
+      "scat": "Homme",
+      "jumper": true,
+      "dur": 30,
+      "art": "ciseaux"
+    },
+    {
+      "name": "Coupe senior",
+      "cat": "park",
+      "price": 22,
+      "tva": 20,
+      "scat": "Homme",
+      "jumper": true,
+      "dur": 30,
+      "art": "ciseaux"
+    },
+    {
+      "name": "Contours et entretien",
+      "cat": "park",
+      "price": 12,
+      "tva": 20,
+      "scat": "Homme",
+      "jumper": true,
+      "dur": 15,
+      "art": "rasoir"
+    },
+    {
+      "name": "Rasage traditionnel (serviette chaude)",
+      "cat": "park",
+      "price": 22,
+      "tva": 20,
+      "scat": "Homme",
+      "jumper": true,
+      "dur": 30,
+      "art": "baguette"
+    },
+    {
+      "name": "Coupe + barbe + soin",
+      "cat": "park",
+      "price": 45,
+      "tva": 20,
+      "scat": "Homme",
+      "jumper": true,
+      "dur": 60,
+      "art": "rasoir"
+    },
+    {
       "name": "Coupe enfant, moins de 12 ans",
       "cat": "park",
       "scat": "Enfant",
       "price": 18,
       "tva": 20,
       "jumper": true,
-      "dur": 30
+      "dur": 30,
+      "art": "ciseaux"
+    },
+    {
+      "name": "Coupe garçon, 3 à 6 ans",
+      "cat": "park",
+      "price": 14,
+      "tva": 20,
+      "scat": "Enfant",
+      "jumper": true,
+      "dur": 20,
+      "art": "ciseaux"
+    },
+    {
+      "name": "Coupe fille + brushing",
+      "cat": "park",
+      "price": 22,
+      "tva": 20,
+      "scat": "Enfant",
+      "jumper": true,
+      "dur": 40,
+      "art": "seche"
+    },
+    {
+      "name": "Coupe ado, 12 à 17 ans",
+      "cat": "park",
+      "price": 22,
+      "tva": 20,
+      "scat": "Enfant",
+      "jumper": true,
+      "dur": 30,
+      "art": "ciseaux"
+    },
+    {
+      "name": "Premiers cheveux (moins de 3 ans)",
+      "cat": "park",
+      "price": 10,
+      "tva": 20,
+      "scat": "Enfant",
+      "jumper": true,
+      "dur": 15,
+      "art": "enfant"
     },
     {
       "name": "Couleur racines",
@@ -232,18 +406,200 @@
       "art": "pinceau"
     },
     {
+      "name": "Balayage ou ombré hair",
+      "cat": "park",
+      "price": 120,
+      "tva": 20,
+      "scat": "Couleur",
+      "jumper": true,
+      "dur": 150,
+      "art": "meches"
+    },
+    {
+      "name": "Couleur végétale (henné)",
+      "cat": "park",
+      "price": 65,
+      "tva": 20,
+      "scat": "Couleur",
+      "jumper": true,
+      "dur": 90,
+      "art": "pinceau"
+    },
+    {
+      "name": "Décoloration",
+      "cat": "park",
+      "price": 80,
+      "tva": 20,
+      "scat": "Couleur",
+      "jumper": true,
+      "dur": 120,
+      "art": "meches"
+    },
+    {
+      "name": "Couleur homme (camouflage)",
+      "cat": "park",
+      "price": 25,
+      "tva": 20,
+      "scat": "Couleur",
+      "jumper": true,
+      "dur": 30,
+      "art": "pinceau"
+    },
+    {
+      "name": "Gloss brillance",
+      "cat": "park",
+      "price": 30,
+      "tva": 20,
+      "scat": "Couleur",
+      "jumper": true,
+      "dur": 30,
+      "art": "pinceau"
+    },
+    {
+      "name": "Mèches contouring (face)",
+      "cat": "park",
+      "price": 40,
+      "tva": 20,
+      "scat": "Couleur",
+      "jumper": true,
+      "dur": 60,
+      "art": "rasoir"
+    },
+    {
+      "name": "Brushing court",
+      "cat": "park",
+      "scat": "Coiffage",
+      "price": 25,
+      "tva": 20,
+      "jumper": true,
+      "dur": 30,
+      "art": "seche"
+    },
+    {
+      "name": "Brushing long",
+      "cat": "park",
+      "scat": "Coiffage",
+      "price": 35,
+      "tva": 20,
+      "jumper": true,
+      "dur": 45,
+      "art": "seche"
+    },
+    {
+      "name": "Mise en plis",
+      "cat": "park",
+      "price": 28,
+      "tva": 20,
+      "scat": "Coiffage",
+      "jumper": true,
+      "dur": 45,
+      "art": "seche"
+    },
+    {
+      "name": "Chignon",
+      "cat": "park",
+      "price": 35,
+      "tva": 20,
+      "scat": "Coiffage",
+      "jumper": true,
+      "dur": 45,
+      "art": "seche"
+    },
+    {
+      "name": "Boucles ou ondulations",
+      "cat": "park",
+      "price": 30,
+      "tva": 20,
+      "scat": "Coiffage",
+      "jumper": true,
+      "dur": 40,
+      "art": "seche"
+    },
+    {
+      "name": "Lissage au fer",
+      "cat": "park",
+      "price": 20,
+      "tva": 20,
+      "scat": "Coiffage",
+      "jumper": true,
+      "dur": 30,
+      "art": "seche"
+    },
+    {
+      "name": "Coiffage soirée",
+      "cat": "park",
+      "price": 45,
+      "tva": 20,
+      "scat": "Coiffage",
+      "jumper": true,
+      "dur": 45,
+      "art": "seche"
+    },
+    {
+      "name": "Lissage brésilien (kératine)",
+      "cat": "park",
+      "price": 150,
+      "tva": 20,
+      "scat": "Techniques",
+      "jumper": true,
+      "dur": 150,
+      "art": "pot"
+    },
+    {
+      "name": "Permanente",
+      "cat": "park",
+      "price": 65,
+      "tva": 20,
+      "scat": "Techniques",
+      "jumper": true,
+      "dur": 90,
+      "art": "peigne"
+    },
+    {
+      "name": "Défrisage",
+      "cat": "park",
+      "price": 60,
+      "tva": 20,
+      "scat": "Techniques",
+      "jumper": true,
+      "dur": 90,
+      "art": "peigne"
+    },
+    {
+      "name": "Pose d’extensions",
+      "cat": "park",
+      "price": 250,
+      "tva": 20,
+      "scat": "Techniques",
+      "jumper": true,
+      "dur": 180,
+      "art": "peigne"
+    },
+    {
+      "name": "Dépose d’extensions",
+      "cat": "park",
+      "price": 40,
+      "tva": 20,
+      "scat": "Techniques",
+      "jumper": true,
+      "dur": 45,
+      "art": "peigne"
+    },
+    {
       "name": "Soin profond",
       "cat": "bar",
       "scat": "Soins",
       "price": 15,
-      "tva": 20
+      "tva": 20,
+      "art": "pot"
     },
     {
       "name": "Soin réparateur",
       "cat": "bar",
       "scat": "Soins",
       "price": 20,
-      "tva": 20
+      "tva": 20,
+      "art": "pot"
     },
     {
       "name": "Shampoing et coiffage",
@@ -254,39 +610,244 @@
       "art": "seche"
     },
     {
+      "name": "Soin kératine",
+      "cat": "bar",
+      "price": 30,
+      "tva": 20,
+      "scat": "Soins",
+      "art": "pot"
+    },
+    {
+      "name": "Soin cuir chevelu",
+      "cat": "bar",
+      "price": 25,
+      "tva": 20,
+      "scat": "Soins",
+      "art": "pot"
+    },
+    {
+      "name": "Bain d’huile",
+      "cat": "bar",
+      "price": 12,
+      "tva": 20,
+      "scat": "Soins",
+      "art": "pot"
+    },
+    {
+      "name": "Masque express",
+      "cat": "bar",
+      "price": 10,
+      "tva": 20,
+      "scat": "Soins",
+      "art": "pot"
+    },
+    {
+      "name": "Soin anti-chute",
+      "cat": "bar",
+      "price": 28,
+      "tva": 20,
+      "scat": "Soins",
+      "art": "pot"
+    },
+    {
+      "name": "Massage crânien",
+      "cat": "bar",
+      "price": 10,
+      "tva": 20,
+      "scat": "Soins",
+      "art": "pierre"
+    },
+    {
       "name": "Shampoing 250 ml",
       "cat": "bar",
       "scat": "Produits",
       "price": 14.9,
-      "tva": 20
+      "tva": 20,
+      "art": "flacon"
     },
     {
       "name": "Après-shampoing 250 ml",
       "cat": "bar",
       "scat": "Produits",
       "price": 15.9,
-      "tva": 20
+      "tva": 20,
+      "art": "flacon"
     },
     {
       "name": "Masque nourrissant",
       "cat": "bar",
       "scat": "Produits",
       "price": 19.9,
-      "tva": 20
+      "tva": 20,
+      "art": "pot"
     },
     {
       "name": "Cire coiffante",
       "cat": "bar",
       "scat": "Produits",
       "price": 16.5,
-      "tva": 20
+      "tva": 20,
+      "art": "pot"
     },
     {
       "name": "Laque",
       "cat": "bar",
       "scat": "Produits",
       "price": 12.9,
-      "tva": 20
+      "tva": 20,
+      "art": "spray"
+    },
+    {
+      "name": "Sérum cheveux",
+      "cat": "bar",
+      "price": 24.9,
+      "tva": 20,
+      "scat": "Produits",
+      "art": "flacon"
+    },
+    {
+      "name": "Huile capillaire",
+      "cat": "bar",
+      "price": 21.5,
+      "tva": 20,
+      "scat": "Produits",
+      "art": "flacon"
+    },
+    {
+      "name": "Spray thermoprotecteur",
+      "cat": "bar",
+      "price": 16.9,
+      "tva": 20,
+      "scat": "Produits",
+      "art": "spray"
+    },
+    {
+      "name": "Shampoing sec",
+      "cat": "bar",
+      "price": 12.5,
+      "tva": 20,
+      "scat": "Produits",
+      "art": "flacon"
+    },
+    {
+      "name": "Gel coiffant",
+      "cat": "bar",
+      "price": 11.9,
+      "tva": 20,
+      "scat": "Produits",
+      "art": "pot"
+    },
+    {
+      "name": "Crème de coiffage",
+      "cat": "bar",
+      "price": 14.9,
+      "tva": 20,
+      "scat": "Produits",
+      "art": "seche"
+    },
+    {
+      "name": "Mousse coiffante",
+      "cat": "bar",
+      "price": 12.9,
+      "tva": 20,
+      "scat": "Produits",
+      "art": "dessert"
+    },
+    {
+      "name": "Huile à barbe",
+      "cat": "bar",
+      "price": 14.5,
+      "tva": 20,
+      "scat": "Produits",
+      "art": "rasoir"
+    },
+    {
+      "name": "Baume à barbe",
+      "cat": "bar",
+      "price": 13,
+      "tva": 20,
+      "scat": "Produits",
+      "art": "rasoir"
+    },
+    {
+      "name": "Shampoing barbe",
+      "cat": "bar",
+      "price": 12,
+      "tva": 20,
+      "scat": "Produits",
+      "art": "rasoir"
+    },
+    {
+      "name": "Brosse démêlante",
+      "cat": "bar",
+      "price": 14,
+      "tva": 20,
+      "scat": "Accessoires",
+      "art": "peigne"
+    },
+    {
+      "name": "Peigne",
+      "cat": "bar",
+      "price": 4.5,
+      "tva": 20,
+      "scat": "Accessoires",
+      "art": "peigne"
+    },
+    {
+      "name": "Élastiques (lot de 10)",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 20,
+      "scat": "Accessoires",
+      "art": "peigne"
+    },
+    {
+      "name": "Pinces (lot de 6)",
+      "cat": "bar",
+      "price": 5,
+      "tva": 20,
+      "scat": "Accessoires",
+      "art": "peigne"
+    },
+    {
+      "name": "Forfait coupe + couleur + brushing",
+      "cat": "event",
+      "price": 110,
+      "tva": 20,
+      "scat": "Forfaits",
+      "art": "seche"
+    },
+    {
+      "name": "Forfait coupe + brushing",
+      "cat": "event",
+      "price": 62,
+      "tva": 20,
+      "scat": "Forfaits",
+      "art": "seche"
+    },
+    {
+      "name": "Forfait mèches + coupe + brushing",
+      "cat": "event",
+      "price": 140,
+      "tva": 20,
+      "scat": "Forfaits",
+      "art": "seche"
+    },
+    {
+      "name": "Forfait lissage + coupe",
+      "cat": "event",
+      "price": 190,
+      "tva": 20,
+      "scat": "Forfaits",
+      "art": "seche"
+    },
+    {
+      "name": "Forfait homme (coupe, barbe, soin)",
+      "cat": "event",
+      "price": 45,
+      "tva": 20,
+      "scat": "Forfaits",
+      "art": "rasoir"
     },
     {
       "name": "Coiffure de mariée (essai compris)",
@@ -294,47 +855,125 @@
       "price": 160,
       "tva": 20,
       "event": true,
-      "guests": 1
+      "guests": 1,
+      "scat": "Mariage",
+      "art": "couronne"
     },
     {
       "name": "Coiffure d’invitée",
       "cat": "event",
       "price": 50,
-      "tva": 20
+      "tva": 20,
+      "scat": "Mariage",
+      "art": "seche"
     },
     {
-      "name": "Forfait coupe + couleur + brushing",
+      "name": "Coiffure de mariée sans essai",
       "cat": "event",
-      "price": 110,
-      "tva": 20
+      "price": 120,
+      "tva": 20,
+      "scat": "Mariage",
+      "event": true,
+      "guests": 1,
+      "art": "couronne"
+    },
+    {
+      "name": "Essai coiffure de mariée",
+      "cat": "event",
+      "price": 50,
+      "tva": 20,
+      "scat": "Mariage",
+      "art": "couronne"
+    },
+    {
+      "name": "Coiffure témoin",
+      "cat": "event",
+      "price": 60,
+      "tva": 20,
+      "scat": "Mariage",
+      "art": "couronne"
+    },
+    {
+      "name": "Coiffure enfant d’honneur",
+      "cat": "event",
+      "price": 25,
+      "tva": 20,
+      "scat": "Mariage",
+      "art": "seche"
+    },
+    {
+      "name": "Forfait mariée + 2 invitées",
+      "cat": "event",
+      "price": 230,
+      "tva": 20,
+      "scat": "Mariage",
+      "event": true,
+      "guests": 3,
+      "art": "couronne"
     },
     {
       "name": "Carte cadeau 30 €",
       "cat": "gestion",
       "scat": "Cartes cadeaux",
       "price": 30,
-      "tva": 20
+      "tva": 20,
+      "art": "cadeau"
     },
     {
       "name": "Carte cadeau 50 €",
       "cat": "gestion",
       "scat": "Cartes cadeaux",
       "price": 50,
-      "tva": 20
+      "tva": 20,
+      "art": "cadeau"
     },
     {
       "name": "Carte cadeau 100 €",
       "cat": "gestion",
       "scat": "Cartes cadeaux",
       "price": 100,
-      "tva": 20
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 150 €",
+      "cat": "gestion",
+      "price": 150,
+      "tva": 20,
+      "scat": "Cartes cadeaux",
+      "art": "cadeau"
     },
     {
       "name": "Acompte rendez-vous",
       "cat": "gestion",
       "scat": "Acomptes",
       "price": 15,
-      "tva": 20
+      "tva": 20,
+      "art": "agenda"
+    },
+    {
+      "name": "Acompte mariage",
+      "cat": "gestion",
+      "price": 50,
+      "tva": 20,
+      "scat": "Acomptes",
+      "art": "agenda"
+    },
+    {
+      "name": "Supplément cheveux très longs",
+      "cat": "gestion",
+      "price": 10,
+      "tva": 20,
+      "scat": "Divers",
+      "art": "a4"
+    },
+    {
+      "name": "Frais de rendez-vous non honoré",
+      "cat": "gestion",
+      "price": 15,
+      "tva": 20,
+      "scat": "Divers",
+      "art": "agenda"
     }
   ]
 }

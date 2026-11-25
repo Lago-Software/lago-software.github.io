@@ -2776,6 +2776,8 @@ body.navmini .side .logo .lgm{display:block}
 .kd.cx .kdl{text-decoration:line-through;text-decoration-thickness:2px}.kd.cx .kdl b{color:var(--bad)}
 .pill.kdx{background:var(--bad);color:#fff}
 .slz{margin:0 0 10px}
+/* v106 : noms de produits longs — la 3e ligne ne dépasse plus sous les 2 lignes affichées (le remplissage du bas sort de la zone rognée) */
+#grid .tile:not(.ct) .n{padding-bottom:0!important;border-bottom:9px solid transparent!important;background-clip:padding-box}
 body.kfull .side,body.kfull header.top,body.kfull .gbar,body.kfull .glogo{display:none!important}
 .cxacts{display:flex;gap:8px;align-items:center;flex:none;flex-wrap:wrap}
 .cxacts .btn{white-space:nowrap}
@@ -3328,7 +3330,7 @@ body.cart-open #modal .scrim{z-index:70}
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v105" defer></script>
+<script src="app.js?v=v106" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

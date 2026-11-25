@@ -1,6 +1,6 @@
 {
   "id": "boutique",
-  "version": 1,
+  "version": 2,
   "label": "Boutique",
   "resume": "Vêtements, accessoires, cadeaux et cartes cadeaux.",
   "settings": {
@@ -13,14 +13,21 @@
     "subs": {
       "park": [
         "Femme",
-        "Homme"
+        "Homme",
+        "Enfant"
       ],
       "bar": [
         "Sacs",
-        "Bijoux"
+        "Bijoux",
+        "Accessoires"
       ],
       "gestion": [
-        "Cartes cadeaux"
+        "Cartes cadeaux",
+        "Divers"
+      ],
+      "event": [
+        "Maison",
+        "Papeterie"
       ]
     },
     "capacite": 30,
@@ -123,6 +130,70 @@
       "art": "robe"
     },
     {
+      "name": "Veste en jean",
+      "cat": "park",
+      "price": 65,
+      "tva": 20,
+      "scat": "Femme",
+      "art": "pantalon"
+    },
+    {
+      "name": "Manteau en laine",
+      "cat": "park",
+      "price": 129,
+      "tva": 20,
+      "scat": "Femme",
+      "art": "vetement"
+    },
+    {
+      "name": "Jupe plissée",
+      "cat": "park",
+      "price": 45,
+      "tva": 20,
+      "scat": "Femme",
+      "art": "robe"
+    },
+    {
+      "name": "Blouse fluide",
+      "cat": "park",
+      "price": 39,
+      "tva": 20,
+      "scat": "Femme",
+      "art": "vetement"
+    },
+    {
+      "name": "Pantalon large",
+      "cat": "park",
+      "price": 55,
+      "tva": 20,
+      "scat": "Femme",
+      "art": "pantalon"
+    },
+    {
+      "name": "Sweat à capuche",
+      "cat": "park",
+      "price": 49,
+      "tva": 20,
+      "scat": "Femme",
+      "art": "vetement"
+    },
+    {
+      "name": "Legging",
+      "cat": "park",
+      "price": 25,
+      "tva": 20,
+      "scat": "Femme",
+      "art": "pantalon"
+    },
+    {
+      "name": "Robe longue",
+      "cat": "park",
+      "price": 89,
+      "tva": 20,
+      "scat": "Femme",
+      "art": "robe"
+    },
+    {
       "name": "Jean droit",
       "cat": "park",
       "price": 69,
@@ -139,6 +210,86 @@
       "art": "vetement"
     },
     {
+      "name": "Polo",
+      "cat": "park",
+      "price": 29,
+      "tva": 20,
+      "scat": "Homme",
+      "art": "vetement"
+    },
+    {
+      "name": "Sweat col rond",
+      "cat": "park",
+      "price": 49,
+      "tva": 20,
+      "scat": "Homme",
+      "art": "vetement"
+    },
+    {
+      "name": "Short",
+      "cat": "park",
+      "price": 29,
+      "tva": 20,
+      "scat": "Homme",
+      "art": "pantalon"
+    },
+    {
+      "name": "Veste légère",
+      "cat": "park",
+      "price": 79,
+      "tva": 20,
+      "scat": "Homme",
+      "art": "vetement"
+    },
+    {
+      "name": "Pantalon chino",
+      "cat": "park",
+      "price": 59,
+      "tva": 20,
+      "scat": "Homme",
+      "art": "pantalon"
+    },
+    {
+      "name": "Chaussettes (lot de 3)",
+      "cat": "park",
+      "price": 12,
+      "tva": 20,
+      "scat": "Homme",
+      "art": "b1"
+    },
+    {
+      "name": "T-shirt enfant",
+      "cat": "park",
+      "price": 15,
+      "tva": 20,
+      "scat": "Enfant",
+      "art": "vetement"
+    },
+    {
+      "name": "Sweat enfant",
+      "cat": "park",
+      "price": 29,
+      "tva": 20,
+      "scat": "Enfant",
+      "art": "vetement"
+    },
+    {
+      "name": "Pantalon enfant",
+      "cat": "park",
+      "price": 25,
+      "tva": 20,
+      "scat": "Enfant",
+      "art": "pantalon"
+    },
+    {
+      "name": "Robe enfant",
+      "cat": "park",
+      "price": 32,
+      "tva": 20,
+      "scat": "Enfant",
+      "art": "robe"
+    },
+    {
       "name": "Sac cabas",
       "cat": "bar",
       "price": 45,
@@ -152,7 +303,47 @@
       "price": 25,
       "tva": 20,
       "scat": "Sacs",
-      "art": "b1"
+      "art": "echarpe"
+    },
+    {
+      "name": "Sac à dos",
+      "cat": "bar",
+      "price": 59,
+      "tva": 20,
+      "scat": "Sacs",
+      "art": "sac"
+    },
+    {
+      "name": "Pochette",
+      "cat": "bar",
+      "price": 29,
+      "tva": 20,
+      "scat": "Sacs",
+      "art": "sac"
+    },
+    {
+      "name": "Portefeuille",
+      "cat": "bar",
+      "price": 39,
+      "tva": 20,
+      "scat": "Sacs",
+      "art": "sac"
+    },
+    {
+      "name": "Trousse",
+      "cat": "bar",
+      "price": 14,
+      "tva": 20,
+      "scat": "Sacs",
+      "art": "sac"
+    },
+    {
+      "name": "Sac à main",
+      "cat": "bar",
+      "price": 69,
+      "tva": 20,
+      "scat": "Sacs",
+      "art": "sac"
     },
     {
       "name": "Bracelet",
@@ -160,7 +351,7 @@
       "price": 19,
       "tva": 20,
       "scat": "Bijoux",
-      "art": "b1"
+      "art": "bijou"
     },
     {
       "name": "Boucles d’oreilles",
@@ -168,34 +359,222 @@
       "price": 22,
       "tva": 20,
       "scat": "Bijoux",
-      "art": "b1"
+      "art": "bijou"
+    },
+    {
+      "name": "Collier",
+      "cat": "bar",
+      "price": 28,
+      "tva": 20,
+      "scat": "Bijoux",
+      "art": "bijou"
+    },
+    {
+      "name": "Bague",
+      "cat": "bar",
+      "price": 22,
+      "tva": 20,
+      "scat": "Bijoux",
+      "art": "bijou"
+    },
+    {
+      "name": "Montre",
+      "cat": "bar",
+      "price": 79,
+      "tva": 20,
+      "scat": "Bijoux",
+      "art": "bijou"
+    },
+    {
+      "name": "Pendentif",
+      "cat": "bar",
+      "price": 24,
+      "tva": 20,
+      "scat": "Bijoux",
+      "art": "bijou"
+    },
+    {
+      "name": "Bonnet",
+      "cat": "bar",
+      "price": 19,
+      "tva": 20,
+      "scat": "Accessoires",
+      "art": "echarpe"
+    },
+    {
+      "name": "Gants",
+      "cat": "bar",
+      "price": 17,
+      "tva": 20,
+      "scat": "Accessoires",
+      "art": "gants"
+    },
+    {
+      "name": "Ceinture",
+      "cat": "bar",
+      "price": 25,
+      "tva": 20,
+      "scat": "Accessoires",
+      "art": "echarpe"
+    },
+    {
+      "name": "Chapeau",
+      "cat": "bar",
+      "price": 29,
+      "tva": 20,
+      "scat": "Accessoires",
+      "art": "echarpe"
+    },
+    {
+      "name": "Casquette",
+      "cat": "bar",
+      "price": 19,
+      "tva": 20,
+      "scat": "Accessoires",
+      "art": "casque"
+    },
+    {
+      "name": "Lunettes de soleil",
+      "cat": "bar",
+      "price": 35,
+      "tva": 20,
+      "scat": "Accessoires",
+      "art": "lunettes"
+    },
+    {
+      "name": "Foulard",
+      "cat": "bar",
+      "price": 24,
+      "tva": 20,
+      "scat": "Accessoires",
+      "art": "echarpe"
     },
     {
       "name": "Bougie parfumée",
       "cat": "event",
       "price": 18,
       "tva": 20,
-      "art": "bougie"
+      "art": "bougie",
+      "scat": "Maison"
     },
     {
       "name": "Coffret cadeau",
       "cat": "event",
       "price": 35,
       "tva": 20,
-      "art": "cadeau"
+      "art": "cadeau",
+      "scat": "Maison"
+    },
+    {
+      "name": "Diffuseur de parfum",
+      "cat": "event",
+      "price": 29,
+      "tva": 20,
+      "scat": "Maison",
+      "art": "bougie"
+    },
+    {
+      "name": "Savon artisanal",
+      "cat": "event",
+      "price": 6,
+      "tva": 20,
+      "scat": "Maison",
+      "art": "pot"
+    },
+    {
+      "name": "Plaid",
+      "cat": "event",
+      "price": 45,
+      "tva": 20,
+      "scat": "Maison",
+      "art": "echarpe"
+    },
+    {
+      "name": "Coussin",
+      "cat": "event",
+      "price": 25,
+      "tva": 20,
+      "scat": "Maison",
+      "art": "echarpe"
+    },
+    {
+      "name": "Mug",
+      "cat": "event",
+      "price": 12,
+      "tva": 20,
+      "scat": "Maison",
+      "art": "tasse"
+    },
+    {
+      "name": "Carnet",
+      "cat": "event",
+      "price": 9,
+      "tva": 20,
+      "scat": "Papeterie",
+      "art": "p5"
+    },
+    {
+      "name": "Carte postale",
+      "cat": "event",
+      "price": 2,
+      "tva": 20,
+      "scat": "Papeterie",
+      "art": "menu"
+    },
+    {
+      "name": "Livre",
+      "cat": "event",
+      "price": 18,
+      "tva": 5.5,
+      "scat": "Papeterie",
+      "art": "menu"
+    },
+    {
+      "name": "Jeu de cartes",
+      "cat": "event",
+      "price": 12,
+      "tva": 20,
+      "scat": "Papeterie",
+      "art": "menu"
     },
     {
       "name": "Carte cadeau 30 €",
       "cat": "gestion",
       "price": 30,
       "tva": 20,
-      "art": "cadeau"
+      "art": "cadeau",
+      "scat": "Cartes cadeaux"
     },
     {
       "name": "Carte cadeau 50 €",
       "cat": "gestion",
       "price": 50,
       "tva": 20,
+      "art": "cadeau",
+      "scat": "Cartes cadeaux"
+    },
+    {
+      "name": "Carte cadeau 100 €",
+      "cat": "gestion",
+      "price": 100,
+      "tva": 20,
+      "scat": "Cartes cadeaux",
+      "art": "cadeau"
+    },
+    {
+      "name": "Pochon cadeau",
+      "cat": "gestion",
+      "price": 1,
+      "tva": 20,
+      "scat": "Divers",
+      "art": "cadeau"
+    },
+    {
+      "name": "Emballage cadeau",
+      "cat": "gestion",
+      "price": 3,
+      "tva": 20,
+      "scat": "Divers",
       "art": "cadeau"
     }
   ]

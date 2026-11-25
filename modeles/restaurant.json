@@ -1,6 +1,6 @@
 {
   "id": "restaurant",
-  "version": 5,
+  "version": 6,
   "label": "Restaurant",
   "resume": "Carte, boissons, menus et groupes, réservations de table, cartes cadeaux.",
   "settings": {
@@ -13,18 +13,32 @@
     "subs": {
       "park": [
         "Entrées",
+        "Salades",
         "Plats",
-        "Desserts"
+        "Viandes",
+        "Poissons",
+        "Pâtes et pizzas",
+        "Burgers",
+        "Desserts",
+        "Enfants"
       ],
       "bar": [
         "Softs",
         "Bières",
         "Vins",
+        "Apéritifs",
+        "Cocktails",
+        "Alcools",
         "Café"
       ],
       "gestion": [
         "Cartes cadeaux",
-        "Acomptes"
+        "Acomptes",
+        "Divers"
+      ],
+      "event": [
+        "Menus",
+        "Groupes"
       ]
     },
     "capacite": 40,
@@ -308,57 +322,751 @@
       "scat": "Entrées",
       "price": 7,
       "tva": 10,
-      "art": "soupe"
+      "art": "soupe",
+      "alg": [
+        "celeri",
+        "lait"
+      ]
     },
     {
       "name": "Salade de chèvre chaud",
       "cat": "park",
       "scat": "Entrées",
       "price": 10.5,
-      "tva": 10
+      "tva": 10,
+      "alg": [
+        "gluten",
+        "lait",
+        "moutarde"
+      ],
+      "art": "salade"
     },
     {
       "name": "Terrine maison",
       "cat": "park",
       "scat": "Entrées",
       "price": 9,
-      "tva": 10
+      "tva": 10,
+      "alg": [
+        "gluten",
+        "sulfites"
+      ],
+      "art": "assiette"
+    },
+    {
+      "name": "Œuf mayonnaise",
+      "cat": "park",
+      "price": 5.5,
+      "tva": 10,
+      "scat": "Entrées",
+      "alg": [
+        "oeufs",
+        "moutarde"
+      ],
+      "art": "assiette"
+    },
+    {
+      "name": "Velouté de saison",
+      "cat": "park",
+      "price": 7.5,
+      "tva": 10,
+      "scat": "Entrées",
+      "alg": [
+        "lait",
+        "celeri"
+      ],
+      "art": "soupe"
+    },
+    {
+      "name": "Assiette de charcuterie",
+      "cat": "park",
+      "price": 12,
+      "tva": 10,
+      "scat": "Entrées",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Foie gras maison, toasts",
+      "cat": "park",
+      "price": 14,
+      "tva": 10,
+      "scat": "Entrées",
+      "alg": [
+        "gluten",
+        "sulfites"
+      ],
+      "art": "sandwich"
+    },
+    {
+      "name": "Camembert rôti, mouillettes",
+      "cat": "park",
+      "price": 11,
+      "tva": 10,
+      "scat": "Entrées",
+      "alg": [
+        "lait",
+        "gluten"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Escargots de Bourgogne (6)",
+      "cat": "park",
+      "price": 11,
+      "tva": 10,
+      "scat": "Entrées",
+      "alg": [
+        "mollusques",
+        "lait",
+        "gluten"
+      ],
+      "art": "assiette"
+    },
+    {
+      "name": "Tartare de saumon, avocat",
+      "cat": "park",
+      "price": 12.5,
+      "tva": 10,
+      "scat": "Entrées",
+      "alg": [
+        "poisson",
+        "soja",
+        "sesame"
+      ],
+      "art": "poisson"
+    },
+    {
+      "name": "Carpaccio de bœuf, parmesan",
+      "cat": "park",
+      "price": 12.5,
+      "tva": 10,
+      "scat": "Entrées",
+      "alg": [
+        "lait"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Planche à partager",
+      "cat": "park",
+      "price": 18,
+      "tva": 10,
+      "scat": "Entrées",
+      "alg": [
+        "gluten",
+        "lait",
+        "sulfites"
+      ],
+      "art": "fromage"
+    },
+    {
+      "name": "Gambas à l’ail (5)",
+      "cat": "park",
+      "price": 13,
+      "tva": 10,
+      "scat": "Entrées",
+      "alg": [
+        "crustaces"
+      ],
+      "art": "poisson"
+    },
+    {
+      "name": "Salade César",
+      "cat": "park",
+      "price": 12,
+      "tva": 10,
+      "scat": "Salades",
+      "alg": [
+        "gluten",
+        "oeufs",
+        "lait",
+        "poisson",
+        "moutarde"
+      ],
+      "art": "salade"
+    },
+    {
+      "name": "Salade niçoise",
+      "cat": "park",
+      "price": 12,
+      "tva": 10,
+      "scat": "Salades",
+      "alg": [
+        "poisson",
+        "oeufs"
+      ],
+      "art": "salade"
+    },
+    {
+      "name": "Salade de gésiers confits",
+      "cat": "park",
+      "price": 12,
+      "tva": 10,
+      "scat": "Salades",
+      "alg": [
+        "moutarde",
+        "sulfites"
+      ],
+      "art": "salade"
+    },
+    {
+      "name": "Salade de chèvre et lardons",
+      "cat": "park",
+      "price": 12,
+      "tva": 10,
+      "scat": "Salades",
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "salade"
+    },
+    {
+      "name": "Salade du chef",
+      "cat": "park",
+      "price": 13,
+      "tva": 10,
+      "scat": "Salades",
+      "alg": [
+        "oeufs",
+        "lait",
+        "moutarde"
+      ],
+      "art": "salade"
+    },
+    {
+      "name": "Bowl veggie",
+      "cat": "park",
+      "price": 12.5,
+      "tva": 10,
+      "scat": "Salades",
+      "alg": [
+        "soja",
+        "sesame"
+      ],
+      "art": "salade"
     },
     {
       "name": "Plat du jour",
       "cat": "park",
       "scat": "Plats",
       "price": 14.5,
-      "tva": 10
-    },
-    {
-      "name": "Burger maison",
-      "cat": "park",
-      "scat": "Plats",
-      "price": 16,
       "tva": 10,
-      "art": "burger"
-    },
-    {
-      "name": "Pavé de saumon",
-      "cat": "park",
-      "scat": "Plats",
-      "price": 18.5,
-      "tva": 10
-    },
-    {
-      "name": "Entrecôte, frites",
-      "cat": "park",
-      "scat": "Plats",
-      "price": 21,
-      "tva": 10
+      "alg": [
+        "gluten"
+      ],
+      "art": "assiette"
     },
     {
       "name": "Assiette végétarienne",
       "cat": "park",
       "scat": "Plats",
       "price": 14,
-      "tva": 10
+      "tva": 10,
+      "alg": [
+        "gluten",
+        "soja",
+        "celeri"
+      ],
+      "art": "salade"
+    },
+    {
+      "name": "Risotto aux champignons",
+      "cat": "park",
+      "price": 15,
+      "tva": 10,
+      "scat": "Plats",
+      "alg": [
+        "lait",
+        "celeri"
+      ],
+      "art": "pates"
+    },
+    {
+      "name": "Cassoulet toulousain",
+      "cat": "park",
+      "price": 17,
+      "tva": 10,
+      "scat": "Plats",
+      "alg": [
+        "celeri",
+        "sulfites"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Joue de bœuf braisée, purée",
+      "cat": "park",
+      "price": 18,
+      "tva": 10,
+      "scat": "Plats",
+      "alg": [
+        "celeri",
+        "sulfites",
+        "lait"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Choucroute garnie",
+      "cat": "park",
+      "price": 18.5,
+      "tva": 10,
+      "scat": "Plats",
+      "alg": [
+        "moutarde",
+        "sulfites"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Quiche lorraine, salade",
+      "cat": "park",
+      "price": 11.5,
+      "tva": 10,
+      "scat": "Plats",
+      "alg": [
+        "gluten",
+        "oeufs",
+        "lait"
+      ],
+      "art": "salade"
+    },
+    {
+      "name": "Omelette, frites",
+      "cat": "park",
+      "price": 10,
+      "tva": 10,
+      "scat": "Plats",
+      "alg": [
+        "oeufs",
+        "lait"
+      ],
+      "art": "frites"
+    },
+    {
+      "name": "Croque-monsieur, salade",
+      "cat": "park",
+      "price": 10.5,
+      "tva": 10,
+      "scat": "Plats",
+      "alg": [
+        "gluten",
+        "lait",
+        "moutarde"
+      ],
+      "art": "sandwich"
+    },
+    {
+      "name": "Frites maison",
+      "cat": "park",
+      "price": 4,
+      "tva": 10,
+      "scat": "Plats",
+      "art": "frites"
+    },
+    {
+      "name": "Légumes de saison",
+      "cat": "park",
+      "price": 4,
+      "tva": 10,
+      "scat": "Plats",
+      "art": "salade"
+    },
+    {
+      "name": "Gratin dauphinois",
+      "cat": "park",
+      "price": 4.5,
+      "tva": 10,
+      "scat": "Plats",
+      "alg": [
+        "lait"
+      ],
+      "art": "assiette"
+    },
+    {
+      "name": "Riz basmati",
+      "cat": "park",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Plats",
+      "art": "pates"
+    },
+    {
+      "name": "Salade verte",
+      "cat": "park",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Plats",
+      "alg": [
+        "moutarde"
+      ],
+      "art": "salade"
+    },
+    {
+      "name": "Entrecôte, frites",
+      "cat": "park",
+      "scat": "Viandes",
+      "price": 21,
+      "tva": 10,
+      "alg": [
+        "moutarde"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Magret de canard, pommes sarladaises",
+      "cat": "park",
+      "price": 19.5,
+      "tva": 10,
+      "scat": "Viandes",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Confit de canard",
+      "cat": "park",
+      "price": 17.5,
+      "tva": 10,
+      "scat": "Viandes",
+      "art": "viande"
+    },
+    {
+      "name": "Cuisse de poulet rôti, frites",
+      "cat": "park",
+      "price": 14,
+      "tva": 10,
+      "scat": "Viandes",
+      "art": "viande"
+    },
+    {
+      "name": "Tartare de bœuf, frites",
+      "cat": "park",
+      "price": 16.5,
+      "tva": 10,
+      "scat": "Viandes",
+      "alg": [
+        "oeufs",
+        "moutarde"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Bavette à l’échalote",
+      "cat": "park",
+      "price": 17.5,
+      "tva": 10,
+      "scat": "Viandes",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Faux-filet, sauce poivre",
+      "cat": "park",
+      "price": 19,
+      "tva": 10,
+      "scat": "Viandes",
+      "alg": [
+        "lait"
+      ],
+      "art": "arbre"
+    },
+    {
+      "name": "Filet mignon de porc, sauce moutarde",
+      "cat": "park",
+      "price": 16,
+      "tva": 10,
+      "scat": "Viandes",
+      "alg": [
+        "moutarde",
+        "lait"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Côte de bœuf, pour deux (avec garniture)",
+      "cat": "park",
+      "price": 52,
+      "tva": 10,
+      "scat": "Viandes",
+      "alg": [
+        "lait"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Souris d’agneau, flageolets",
+      "cat": "park",
+      "price": 19,
+      "tva": 10,
+      "scat": "Viandes",
+      "alg": [
+        "celeri"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Pavé de saumon",
+      "cat": "park",
+      "scat": "Poissons",
+      "price": 18.5,
+      "tva": 10,
+      "alg": [
+        "poisson",
+        "lait"
+      ],
+      "art": "poisson"
+    },
+    {
+      "name": "Dos de cabillaud, beurre blanc",
+      "cat": "park",
+      "price": 18.5,
+      "tva": 10,
+      "scat": "Poissons",
+      "alg": [
+        "poisson",
+        "lait",
+        "sulfites"
+      ],
+      "art": "poisson"
+    },
+    {
+      "name": "Fish and chips",
+      "cat": "park",
+      "price": 14.5,
+      "tva": 10,
+      "scat": "Poissons",
+      "alg": [
+        "poisson",
+        "gluten",
+        "oeufs"
+      ],
+      "art": "chips"
+    },
+    {
+      "name": "Gambas flambées, riz",
+      "cat": "park",
+      "price": 19.5,
+      "tva": 10,
+      "scat": "Poissons",
+      "alg": [
+        "crustaces",
+        "sulfites"
+      ],
+      "art": "poisson"
+    },
+    {
+      "name": "Moules marinières, frites",
+      "cat": "park",
+      "price": 14.5,
+      "tva": 10,
+      "scat": "Poissons",
+      "alg": [
+        "mollusques",
+        "celeri",
+        "sulfites"
+      ],
+      "art": "poisson"
+    },
+    {
+      "name": "Tartare de thon",
+      "cat": "park",
+      "price": 17,
+      "tva": 10,
+      "scat": "Poissons",
+      "alg": [
+        "poisson",
+        "soja",
+        "sesame"
+      ],
+      "art": "poisson"
+    },
+    {
+      "name": "Lasagnes maison",
+      "cat": "park",
+      "price": 14,
+      "tva": 10,
+      "scat": "Pâtes et pizzas",
+      "alg": [
+        "gluten",
+        "lait",
+        "oeufs"
+      ],
+      "art": "pates"
+    },
+    {
+      "name": "Tagliatelles carbonara",
+      "cat": "park",
+      "price": 13.5,
+      "tva": 10,
+      "scat": "Pâtes et pizzas",
+      "alg": [
+        "gluten",
+        "oeufs",
+        "lait"
+      ],
+      "art": "pates"
+    },
+    {
+      "name": "Spaghetti bolognaise",
+      "cat": "park",
+      "price": 13.5,
+      "tva": 10,
+      "scat": "Pâtes et pizzas",
+      "alg": [
+        "gluten",
+        "celeri"
+      ],
+      "art": "pates"
+    },
+    {
+      "name": "Penne aux légumes grillés",
+      "cat": "park",
+      "price": 12.5,
+      "tva": 10,
+      "scat": "Pâtes et pizzas",
+      "alg": [
+        "gluten"
+      ],
+      "art": "salade"
+    },
+    {
+      "name": "Pizza margherita",
+      "cat": "park",
+      "price": 11,
+      "tva": 10,
+      "scat": "Pâtes et pizzas",
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "pizza"
+    },
+    {
+      "name": "Pizza reine",
+      "cat": "park",
+      "price": 13,
+      "tva": 10,
+      "scat": "Pâtes et pizzas",
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "pizza"
+    },
+    {
+      "name": "Pizza quatre fromages",
+      "cat": "park",
+      "price": 13.5,
+      "tva": 10,
+      "scat": "Pâtes et pizzas",
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "pizza"
+    },
+    {
+      "name": "Pizza chorizo",
+      "cat": "park",
+      "price": 13.5,
+      "tva": 10,
+      "scat": "Pâtes et pizzas",
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "pizza"
+    },
+    {
+      "name": "Pizza végétarienne",
+      "cat": "park",
+      "price": 12.5,
+      "tva": 10,
+      "scat": "Pâtes et pizzas",
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "pizza"
+    },
+    {
+      "name": "Burger maison",
+      "cat": "park",
+      "scat": "Burgers",
+      "price": 16,
+      "tva": 10,
+      "art": "burger",
+      "alg": [
+        "gluten",
+        "lait",
+        "oeufs",
+        "moutarde",
+        "sesame"
+      ]
+    },
+    {
+      "name": "Cheeseburger, frites",
+      "cat": "park",
+      "price": 14.5,
+      "tva": 10,
+      "scat": "Burgers",
+      "alg": [
+        "gluten",
+        "lait",
+        "oeufs",
+        "moutarde",
+        "sesame"
+      ],
+      "art": "burger"
+    },
+    {
+      "name": "Burger chèvre et miel, frites",
+      "cat": "park",
+      "price": 15.5,
+      "tva": 10,
+      "scat": "Burgers",
+      "alg": [
+        "gluten",
+        "lait",
+        "moutarde",
+        "sesame"
+      ],
+      "art": "burger"
+    },
+    {
+      "name": "Burger végétarien, frites",
+      "cat": "park",
+      "price": 14.5,
+      "tva": 10,
+      "scat": "Burgers",
+      "alg": [
+        "gluten",
+        "soja",
+        "sesame"
+      ],
+      "art": "burger"
+    },
+    {
+      "name": "Burger poulet croustillant, frites",
+      "cat": "park",
+      "price": 14.5,
+      "tva": 10,
+      "scat": "Burgers",
+      "alg": [
+        "gluten",
+        "oeufs",
+        "moutarde",
+        "sesame"
+      ],
+      "art": "burger"
     },
     {
       "name": "Tarte du moment",
@@ -366,7 +1074,12 @@
       "scat": "Desserts",
       "price": 7,
       "tva": 10,
-      "art": "dessert"
+      "art": "dessert",
+      "alg": [
+        "gluten",
+        "oeufs",
+        "lait"
+      ]
     },
     {
       "name": "Mousse au chocolat",
@@ -374,7 +1087,11 @@
       "scat": "Desserts",
       "price": 6.5,
       "tva": 10,
-      "art": "dessert"
+      "art": "dessert",
+      "alg": [
+        "oeufs",
+        "lait"
+      ]
     },
     {
       "name": "Café gourmand",
@@ -382,7 +1099,233 @@
       "scat": "Desserts",
       "price": 8,
       "tva": 10,
+      "art": "dessert",
+      "alg": [
+        "gluten",
+        "oeufs",
+        "lait",
+        "coque"
+      ]
+    },
+    {
+      "name": "Crème brûlée",
+      "cat": "park",
+      "price": 7,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "oeufs",
+        "lait"
+      ],
       "art": "dessert"
+    },
+    {
+      "name": "Fondant au chocolat",
+      "cat": "park",
+      "price": 7.5,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "gluten",
+        "oeufs",
+        "lait"
+      ],
+      "art": "dessert"
+    },
+    {
+      "name": "Tiramisu",
+      "cat": "park",
+      "price": 7,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "gluten",
+        "oeufs",
+        "lait"
+      ],
+      "art": "dessert"
+    },
+    {
+      "name": "Profiteroles au chocolat",
+      "cat": "park",
+      "price": 8,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "gluten",
+        "oeufs",
+        "lait"
+      ],
+      "art": "eclair"
+    },
+    {
+      "name": "Cheesecake, coulis de fruits rouges",
+      "cat": "park",
+      "price": 7.5,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "gluten",
+        "oeufs",
+        "lait"
+      ],
+      "art": "dessert"
+    },
+    {
+      "name": "Tarte tatin, crème fraîche",
+      "cat": "park",
+      "price": 7.5,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "tarte"
+    },
+    {
+      "name": "Panna cotta, fruits rouges",
+      "cat": "park",
+      "price": 7,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "lait"
+      ],
+      "art": "dessert"
+    },
+    {
+      "name": "Île flottante",
+      "cat": "park",
+      "price": 6.5,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "oeufs",
+        "lait"
+      ],
+      "art": "dessert"
+    },
+    {
+      "name": "Crêpe Suzette",
+      "cat": "park",
+      "price": 8,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "gluten",
+        "oeufs",
+        "lait",
+        "sulfites"
+      ],
+      "art": "crepe"
+    },
+    {
+      "name": "Salade de fruits frais",
+      "cat": "park",
+      "price": 6,
+      "tva": 10,
+      "scat": "Desserts",
+      "art": "salade"
+    },
+    {
+      "name": "Assiette de fromages",
+      "cat": "park",
+      "price": 8.5,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "lait"
+      ],
+      "art": "fromage"
+    },
+    {
+      "name": "Coupe glacée, 2 boules",
+      "cat": "park",
+      "price": 6.5,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "lait"
+      ],
+      "art": "s6"
+    },
+    {
+      "name": "Dame blanche",
+      "cat": "park",
+      "price": 8,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "lait"
+      ],
+      "art": "dessert"
+    },
+    {
+      "name": "Boule de glace ou sorbet",
+      "cat": "park",
+      "price": 2.5,
+      "tva": 10,
+      "scat": "Desserts",
+      "alg": [
+        "lait"
+      ],
+      "art": "s6"
+    },
+    {
+      "name": "Nuggets de poulet, frites",
+      "cat": "park",
+      "price": 8,
+      "tva": 10,
+      "scat": "Enfants",
+      "alg": [
+        "gluten",
+        "oeufs"
+      ],
+      "art": "viande"
+    },
+    {
+      "name": "Steak haché, frites",
+      "cat": "park",
+      "price": 8.5,
+      "tva": 10,
+      "scat": "Enfants",
+      "art": "viande"
+    },
+    {
+      "name": "Jambon, pâtes",
+      "cat": "park",
+      "price": 7.5,
+      "tva": 10,
+      "scat": "Enfants",
+      "alg": [
+        "gluten",
+        "oeufs"
+      ],
+      "art": "pates"
+    },
+    {
+      "name": "Pizza enfant",
+      "cat": "park",
+      "price": 8,
+      "tva": 10,
+      "scat": "Enfants",
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "pizza"
+    },
+    {
+      "name": "Glace, 2 boules",
+      "cat": "park",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Enfants",
+      "alg": [
+        "lait"
+      ],
+      "art": "s6"
     },
     {
       "name": "Eau plate 50 cl",
@@ -414,7 +1357,95 @@
       "scat": "Softs",
       "price": 3.5,
       "tva": 10,
+      "art": "jus"
+    },
+    {
+      "name": "Eau plate, 1 L",
+      "cat": "bar",
+      "price": 5,
+      "tva": 10,
+      "scat": "Softs",
+      "art": "s1"
+    },
+    {
+      "name": "Eau gazeuse, 1 L",
+      "cat": "bar",
+      "price": 5.5,
+      "tva": 10,
+      "scat": "Softs",
+      "art": "s1"
+    },
+    {
+      "name": "Coca-Cola, 33 cl",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Softs",
+      "art": "canette"
+    },
+    {
+      "name": "Limonade",
+      "cat": "bar",
+      "price": 3,
+      "tva": 10,
+      "scat": "Softs",
+      "art": "canette"
+    },
+    {
+      "name": "Ice tea",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Softs",
       "art": "s2"
+    },
+    {
+      "name": "Orangina",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Softs",
+      "art": "canette"
+    },
+    {
+      "name": "Sirop à l’eau",
+      "cat": "bar",
+      "price": 1.8,
+      "tva": 10,
+      "scat": "Softs",
+      "art": "s2"
+    },
+    {
+      "name": "Diabolo",
+      "cat": "bar",
+      "price": 2.8,
+      "tva": 10,
+      "scat": "Softs",
+      "art": "s2"
+    },
+    {
+      "name": "Jus d’orange pressé",
+      "cat": "bar",
+      "price": 4.5,
+      "tva": 10,
+      "scat": "Softs",
+      "art": "jus"
+    },
+    {
+      "name": "Citron pressé",
+      "cat": "bar",
+      "price": 4,
+      "tva": 10,
+      "scat": "Softs",
+      "art": "jus"
+    },
+    {
+      "name": "Smoothie du jour",
+      "cat": "bar",
+      "price": 5,
+      "tva": 10,
+      "scat": "Softs",
+      "art": "jus"
     },
     {
       "name": "Bière pression 25 cl",
@@ -422,7 +1453,10 @@
       "scat": "Bières",
       "price": 3.5,
       "tva": 20,
-      "art": "biere"
+      "art": "biere",
+      "alg": [
+        "gluten"
+      ]
     },
     {
       "name": "Bière pression 50 cl",
@@ -430,28 +1464,363 @@
       "scat": "Bières",
       "price": 6.5,
       "tva": 20,
+      "art": "biere",
+      "alg": [
+        "gluten"
+      ]
+    },
+    {
+      "name": "Bière en bouteille, 33 cl",
+      "cat": "bar",
+      "price": 4.5,
+      "tva": 20,
+      "scat": "Bières",
+      "alg": [
+        "gluten"
+      ],
       "art": "biere"
+    },
+    {
+      "name": "Bière artisanale, 33 cl",
+      "cat": "bar",
+      "price": 5.5,
+      "tva": 20,
+      "scat": "Bières",
+      "alg": [
+        "gluten"
+      ],
+      "art": "biere"
+    },
+    {
+      "name": "Panaché, 25 cl",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 20,
+      "scat": "Bières",
+      "alg": [
+        "gluten"
+      ],
+      "art": "biere"
+    },
+    {
+      "name": "Bière sans alcool, 33 cl",
+      "cat": "bar",
+      "price": 4,
+      "tva": 10,
+      "scat": "Bières",
+      "alg": [
+        "gluten"
+      ],
+      "art": "cocktail"
+    },
+    {
+      "name": "Cidre brut, 33 cl",
+      "cat": "bar",
+      "price": 4.5,
+      "tva": 20,
+      "scat": "Bières",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "champagne"
+    },
+    {
+      "name": "Pichet de bière, 1 L",
+      "cat": "bar",
+      "price": 11,
+      "tva": 20,
+      "scat": "Bières",
+      "alg": [
+        "gluten"
+      ],
+      "art": "verre"
     },
     {
       "name": "Verre de vin rouge",
       "cat": "bar",
       "scat": "Vins",
       "price": 4.5,
-      "tva": 20
+      "tva": 20,
+      "alg": [
+        "sulfites"
+      ],
+      "art": "verre"
     },
     {
       "name": "Verre de vin blanc",
       "cat": "bar",
       "scat": "Vins",
       "price": 4.5,
-      "tva": 20
+      "tva": 20,
+      "alg": [
+        "sulfites"
+      ],
+      "art": "verre"
     },
     {
       "name": "Bouteille de vin, 75 cl",
       "cat": "bar",
       "scat": "Vins",
       "price": 22,
-      "tva": 20
+      "tva": 20,
+      "alg": [
+        "sulfites"
+      ],
+      "art": "bouteille"
+    },
+    {
+      "name": "Verre de vin rosé",
+      "cat": "bar",
+      "price": 4.5,
+      "tva": 20,
+      "scat": "Vins",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "verre"
+    },
+    {
+      "name": "Pichet de vin, 25 cl",
+      "cat": "bar",
+      "price": 7,
+      "tva": 20,
+      "scat": "Vins",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "verre"
+    },
+    {
+      "name": "Pichet de vin, 50 cl",
+      "cat": "bar",
+      "price": 13,
+      "tva": 20,
+      "scat": "Vins",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "verre"
+    },
+    {
+      "name": "Bouteille de rosé, 75 cl",
+      "cat": "bar",
+      "price": 21,
+      "tva": 20,
+      "scat": "Vins",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "bouteille"
+    },
+    {
+      "name": "Bouteille de vin blanc, 75 cl",
+      "cat": "bar",
+      "price": 22,
+      "tva": 20,
+      "scat": "Vins",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "bouteille"
+    },
+    {
+      "name": "Coupe de crémant",
+      "cat": "bar",
+      "price": 6.5,
+      "tva": 20,
+      "scat": "Vins",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "champagne"
+    },
+    {
+      "name": "Verre de champagne",
+      "cat": "bar",
+      "price": 9,
+      "tva": 20,
+      "scat": "Vins",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "champagne"
+    },
+    {
+      "name": "Bouteille de champagne, 75 cl",
+      "cat": "bar",
+      "price": 55,
+      "tva": 20,
+      "scat": "Vins",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "champagne"
+    },
+    {
+      "name": "Kir",
+      "cat": "bar",
+      "price": 4,
+      "tva": 20,
+      "scat": "Apéritifs",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "cocktail"
+    },
+    {
+      "name": "Kir royal",
+      "cat": "bar",
+      "price": 8,
+      "tva": 20,
+      "scat": "Apéritifs",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "cocktail"
+    },
+    {
+      "name": "Pastis",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 20,
+      "scat": "Apéritifs",
+      "art": "cocktail"
+    },
+    {
+      "name": "Martini",
+      "cat": "bar",
+      "price": 4.5,
+      "tva": 20,
+      "scat": "Apéritifs",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "cocktail"
+    },
+    {
+      "name": "Porto",
+      "cat": "bar",
+      "price": 5,
+      "tva": 20,
+      "scat": "Apéritifs",
+      "alg": [
+        "sulfites"
+      ]
+    },
+    {
+      "name": "Aperol Spritz",
+      "cat": "bar",
+      "price": 8,
+      "tva": 20,
+      "scat": "Apéritifs",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "cocktail"
+    },
+    {
+      "name": "Mojito",
+      "cat": "bar",
+      "price": 9,
+      "tva": 20,
+      "scat": "Cocktails",
+      "art": "cocktail"
+    },
+    {
+      "name": "Piña colada",
+      "cat": "bar",
+      "price": 9,
+      "tva": 20,
+      "scat": "Cocktails",
+      "alg": [
+        "coque"
+      ],
+      "art": "cocktail"
+    },
+    {
+      "name": "Margarita",
+      "cat": "bar",
+      "price": 9,
+      "tva": 20,
+      "scat": "Cocktails",
+      "art": "cocktail"
+    },
+    {
+      "name": "Moscow mule",
+      "cat": "bar",
+      "price": 9.5,
+      "tva": 20,
+      "scat": "Cocktails"
+    },
+    {
+      "name": "Cocktail sans alcool",
+      "cat": "bar",
+      "price": 6,
+      "tva": 10,
+      "scat": "Cocktails",
+      "art": "cocktail"
+    },
+    {
+      "name": "Sangria, verre",
+      "cat": "bar",
+      "price": 5,
+      "tva": 20,
+      "scat": "Cocktails",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "cocktail"
+    },
+    {
+      "name": "Sangria, pichet",
+      "cat": "bar",
+      "price": 14,
+      "tva": 20,
+      "scat": "Cocktails",
+      "alg": [
+        "sulfites"
+      ],
+      "art": "verre"
+    },
+    {
+      "name": "Gin tonic",
+      "cat": "bar",
+      "price": 8,
+      "tva": 20,
+      "scat": "Alcools",
+      "art": "cocktail"
+    },
+    {
+      "name": "Rhum, 4 cl",
+      "cat": "bar",
+      "price": 7,
+      "tva": 20,
+      "scat": "Alcools",
+      "art": "cocktail"
+    },
+    {
+      "name": "Whisky, 4 cl",
+      "cat": "bar",
+      "price": 7,
+      "tva": 20,
+      "scat": "Alcools",
+      "art": "cocktail"
+    },
+    {
+      "name": "Vodka, 4 cl",
+      "cat": "bar",
+      "price": 6,
+      "tva": 20,
+      "scat": "Alcools",
+      "art": "cocktail"
+    },
+    {
+      "name": "Digestif (cognac, armagnac)",
+      "cat": "bar",
+      "price": 7,
+      "tva": 20,
+      "scat": "Alcools",
+      "art": "cocktail"
     },
     {
       "name": "Café",
@@ -459,7 +1828,7 @@
       "scat": "Café",
       "price": 2,
       "tva": 10,
-      "art": "s3"
+      "art": "tasse"
     },
     {
       "name": "Thé ou infusion",
@@ -467,7 +1836,83 @@
       "scat": "Café",
       "price": 3,
       "tva": 10,
-      "art": "s3"
+      "art": "theiere"
+    },
+    {
+      "name": "Café allongé",
+      "cat": "bar",
+      "price": 2.2,
+      "tva": 10,
+      "scat": "Café",
+      "art": "tasse"
+    },
+    {
+      "name": "Café noisette",
+      "cat": "bar",
+      "price": 2.3,
+      "tva": 10,
+      "scat": "Café",
+      "art": "tasse"
+    },
+    {
+      "name": "Café crème",
+      "cat": "bar",
+      "price": 3.2,
+      "tva": 10,
+      "scat": "Café",
+      "alg": [
+        "lait"
+      ],
+      "art": "cappuccino"
+    },
+    {
+      "name": "Café décaféiné",
+      "cat": "bar",
+      "price": 2.2,
+      "tva": 10,
+      "scat": "Café",
+      "art": "tasse"
+    },
+    {
+      "name": "Double expresso",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Café",
+      "art": "tasse"
+    },
+    {
+      "name": "Cappuccino",
+      "cat": "bar",
+      "price": 3.8,
+      "tva": 10,
+      "scat": "Café",
+      "alg": [
+        "lait"
+      ],
+      "art": "cappuccino"
+    },
+    {
+      "name": "Chocolat chaud",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Café",
+      "alg": [
+        "lait"
+      ],
+      "art": "chocolat"
+    },
+    {
+      "name": "Irish coffee",
+      "cat": "bar",
+      "price": 8,
+      "tva": 20,
+      "scat": "Café",
+      "alg": [
+        "lait"
+      ],
+      "art": "cappuccino"
     },
     {
       "name": "Menu du jour (entrée + plat ou plat + dessert)",
@@ -475,7 +1920,13 @@
       "price": 18.5,
       "tva": 10,
       "jumper": true,
-      "dur": 90
+      "dur": 90,
+      "scat": "Menus",
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "menu"
     },
     {
       "name": "Menu enfant",
@@ -483,7 +1934,87 @@
       "price": 9.5,
       "tva": 10,
       "jumper": true,
-      "dur": 60
+      "dur": 60,
+      "scat": "Menus",
+      "alg": [
+        "gluten",
+        "lait",
+        "oeufs"
+      ],
+      "art": "menuenfant"
+    },
+    {
+      "name": "Formule midi (plat + café)",
+      "cat": "event",
+      "price": 15,
+      "tva": 10,
+      "scat": "Menus",
+      "jumper": true,
+      "dur": 60,
+      "alg": [
+        "gluten"
+      ],
+      "art": "menu"
+    },
+    {
+      "name": "Menu gourmand (entrée, plat, dessert)",
+      "cat": "event",
+      "price": 29.5,
+      "tva": 10,
+      "scat": "Menus",
+      "jumper": true,
+      "dur": 120,
+      "alg": [
+        "gluten",
+        "lait",
+        "oeufs"
+      ],
+      "art": "menu"
+    },
+    {
+      "name": "Menu découverte, 4 plats",
+      "cat": "event",
+      "price": 38,
+      "tva": 10,
+      "scat": "Menus",
+      "jumper": true,
+      "dur": 120,
+      "alg": [
+        "gluten",
+        "lait",
+        "oeufs",
+        "poisson"
+      ],
+      "art": "menu"
+    },
+    {
+      "name": "Brunch du dimanche",
+      "cat": "event",
+      "price": 24.5,
+      "tva": 10,
+      "scat": "Menus",
+      "jumper": true,
+      "dur": 90,
+      "alg": [
+        "gluten",
+        "lait",
+        "oeufs"
+      ],
+      "art": "chrono"
+    },
+    {
+      "name": "Menu étudiant (plat + dessert)",
+      "cat": "event",
+      "price": 12.5,
+      "tva": 10,
+      "scat": "Menus",
+      "jumper": true,
+      "dur": 60,
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "menu"
     },
     {
       "name": "Menu groupe, par personne",
@@ -491,7 +2022,9 @@
       "price": 32,
       "tva": 10,
       "event": true,
-      "guests": 20
+      "guests": 20,
+      "scat": "Groupes",
+      "art": "menu"
     },
     {
       "name": "Privatisation de la salle, 30 personnes",
@@ -500,21 +2033,93 @@
       "tva": 10,
       "event": true,
       "guests": 30,
-      "poste": "none"
+      "poste": "none",
+      "scat": "Groupes",
+      "art": "cle"
+    },
+    {
+      "name": "Repas d’anniversaire, par personne",
+      "cat": "event",
+      "price": 28,
+      "tva": 10,
+      "scat": "Groupes",
+      "event": true,
+      "guests": 10,
+      "alg": [
+        "gluten",
+        "lait",
+        "oeufs"
+      ],
+      "art": "a1"
+    },
+    {
+      "name": "Apéritif dînatoire, par personne",
+      "cat": "event",
+      "price": 22,
+      "tva": 10,
+      "scat": "Groupes",
+      "event": true,
+      "guests": 20,
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "cocktail"
+    },
+    {
+      "name": "Cocktail de bienvenue, par personne",
+      "cat": "event",
+      "price": 8,
+      "tva": 20,
+      "scat": "Groupes",
+      "event": true,
+      "guests": 20,
+      "art": "cocktail"
+    },
+    {
+      "name": "Repas d’entreprise, par personne",
+      "cat": "event",
+      "price": 34,
+      "tva": 10,
+      "scat": "Groupes",
+      "event": true,
+      "guests": 15,
+      "alg": [
+        "gluten",
+        "lait"
+      ],
+      "art": "groupe"
     },
     {
       "name": "Carte cadeau 30 €",
       "cat": "gestion",
       "scat": "Cartes cadeaux",
       "price": 30,
-      "tva": 20
+      "tva": 20,
+      "art": "cadeau"
     },
     {
       "name": "Carte cadeau 50 €",
       "cat": "gestion",
       "scat": "Cartes cadeaux",
       "price": 50,
-      "tva": 20
+      "tva": 20,
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 100 €",
+      "cat": "gestion",
+      "price": 100,
+      "tva": 20,
+      "scat": "Cartes cadeaux",
+      "art": "cadeau"
+    },
+    {
+      "name": "Bon repas pour deux, 70 €",
+      "cat": "gestion",
+      "price": 70,
+      "tva": 20,
+      "scat": "Cartes cadeaux"
     },
     {
       "name": "Acompte groupe",
@@ -522,7 +2127,43 @@
       "scat": "Acomptes",
       "price": 100,
       "tva": 10,
+      "poste": "none",
+      "art": "agenda"
+    },
+    {
+      "name": "Acompte privatisation",
+      "cat": "gestion",
+      "price": 200,
+      "tva": 10,
+      "scat": "Acomptes",
+      "poste": "none",
+      "art": "agenda"
+    },
+    {
+      "name": "Droit de bouchon",
+      "cat": "gestion",
+      "price": 8,
+      "tva": 20,
+      "scat": "Divers",
       "poste": "none"
+    },
+    {
+      "name": "Couvert supplémentaire",
+      "cat": "gestion",
+      "price": 2,
+      "tva": 10,
+      "scat": "Divers",
+      "poste": "none",
+      "art": "a4"
+    },
+    {
+      "name": "Gâteau d’anniversaire apporté, service",
+      "cat": "gestion",
+      "price": 5,
+      "tva": 10,
+      "scat": "Divers",
+      "poste": "none",
+      "art": "dessert"
     }
   ]
 }

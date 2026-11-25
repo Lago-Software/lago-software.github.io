@@ -1,6 +1,6 @@
 {
   "id": "parc-trampoline",
-  "version": 2,
+  "version": 3,
   "label": "Parc de trampolines",
   "resume": "Sessions de saut, bar, anniversaires, privatisations, cartes cadeaux.",
   "settings": {
@@ -18,12 +18,31 @@
         "Crêpes & paninis",
         "Pizza",
         "Pop corn",
-        "Glaces"
+        "Glaces",
+        "Sucré",
+        "Bières et vins"
+      ],
+      "park": [
+        "Sessions",
+        "Tarifs réduits",
+        "Pass et abonnements",
+        "Équipement et boutique"
+      ],
+      "event": [
+        "Anniversaires",
+        "Groupes et privatisations",
+        "Options"
+      ],
+      "gestion": [
+        "Cartes cadeaux",
+        "Divers"
       ]
     },
     "capacite": 200,
     "intervalle_depart_minutes": 15,
-    "reperage": {"mode": "couleurs"},
+    "reperage": {
+      "mode": "couleurs"
+    },
     "equipe_minimum": 3,
     "horaires": {
       "ouverture": "10:00",
@@ -70,7 +89,8 @@
       "tva": 10,
       "jumper": true,
       "dur": 60,
-      "art": "p1"
+      "art": "p1",
+      "scat": "Sessions"
     },
     {
       "name": "Session 1 h 30",
@@ -79,7 +99,8 @@
       "tva": 10,
       "jumper": true,
       "dur": 90,
-      "art": "p2"
+      "art": "p2",
+      "scat": "Sessions"
     },
     {
       "name": "Session 2 h",
@@ -88,7 +109,8 @@
       "tva": 10,
       "jumper": true,
       "dur": 120,
-      "art": "p2"
+      "art": "p2",
+      "scat": "Sessions"
     },
     {
       "name": "Mini sauteur, moins de 6 ans",
@@ -97,42 +119,200 @@
       "tva": 10,
       "jumper": true,
       "dur": 45,
-      "art": "p3"
+      "art": "p3",
+      "scat": "Sessions"
     },
     {
       "name": "Accompagnateur",
       "cat": "park",
       "price": 2,
       "tva": 10,
-      "art": "p4"
+      "art": "p4",
+      "scat": "Sessions"
+    },
+    {
+      "name": "Session dodgeball, 1 h",
+      "cat": "park",
+      "price": 15,
+      "tva": 10,
+      "scat": "Sessions",
+      "jumper": true,
+      "dur": 60,
+      "art": "p1"
+    },
+    {
+      "name": "Session ninja (parcours), 1 h",
+      "cat": "park",
+      "price": 16,
+      "tva": 10,
+      "scat": "Sessions",
+      "jumper": true,
+      "dur": 60,
+      "art": "p1"
+    },
+    {
+      "name": "Session nocturne, 1 h",
+      "cat": "park",
+      "price": 16,
+      "tva": 10,
+      "scat": "Sessions",
+      "jumper": true,
+      "dur": 60,
+      "art": "p1"
+    },
+    {
+      "name": "Session 30 min (découverte)",
+      "cat": "park",
+      "price": 9,
+      "tva": 10,
+      "scat": "Sessions",
+      "jumper": true,
+      "dur": 30,
+      "art": "agenda"
+    },
+    {
+      "name": "Session 1 h, étudiant",
+      "cat": "park",
+      "price": 12,
+      "tva": 10,
+      "scat": "Tarifs réduits",
+      "jumper": true,
+      "dur": 60,
+      "art": "p1"
+    },
+    {
+      "name": "Session 1 h, groupe (10 et plus)",
+      "cat": "park",
+      "price": 11.5,
+      "tva": 10,
+      "scat": "Tarifs réduits",
+      "jumper": true,
+      "dur": 60,
+      "art": "groupe"
+    },
+    {
+      "name": "Session 1 h, matin en semaine",
+      "cat": "park",
+      "price": 10,
+      "tva": 10,
+      "scat": "Tarifs réduits",
+      "jumper": true,
+      "dur": 60,
+      "art": "p1"
+    },
+    {
+      "name": "Pass famille (2 adultes + 2 enfants), 1 h",
+      "cat": "park",
+      "price": 48,
+      "tva": 10,
+      "scat": "Tarifs réduits",
+      "jumper": true,
+      "dur": 60,
+      "art": "p5"
     },
     {
       "name": "Pass 10 sessions",
       "cat": "park",
       "price": 120,
       "tva": 10,
+      "art": "p5",
+      "scat": "Pass et abonnements"
+    },
+    {
+      "name": "Pass 5 sessions",
+      "cat": "park",
+      "price": 62,
+      "tva": 10,
+      "scat": "Pass et abonnements",
       "art": "p5"
+    },
+    {
+      "name": "Carte 20 sessions",
+      "cat": "park",
+      "price": 220,
+      "tva": 10,
+      "scat": "Pass et abonnements",
+      "art": "p5"
+    },
+    {
+      "name": "Abonnement mensuel illimité",
+      "cat": "park",
+      "price": 39,
+      "tva": 10,
+      "scat": "Pass et abonnements",
+      "art": "carte"
     },
     {
       "name": "Chaussettes antidérapantes",
       "cat": "park",
       "price": 2.5,
       "tva": 20,
-      "art": "b1"
+      "art": "b1",
+      "scat": "Équipement et boutique"
     },
     {
       "name": "Gourde",
       "cat": "park",
       "price": 8,
       "tva": 20,
-      "art": "b2"
+      "art": "s1",
+      "scat": "Équipement et boutique"
     },
     {
       "name": "T-shirt du parc",
       "cat": "park",
       "price": 15,
       "tva": 20,
-      "art": "b3"
+      "art": "vetement",
+      "scat": "Équipement et boutique"
+    },
+    {
+      "name": "Chaussettes enfant",
+      "cat": "park",
+      "price": 2.5,
+      "tva": 20,
+      "scat": "Équipement et boutique",
+      "art": "b1"
+    },
+    {
+      "name": "Sweat du parc",
+      "cat": "park",
+      "price": 35,
+      "tva": 20,
+      "scat": "Équipement et boutique",
+      "art": "vetement"
+    },
+    {
+      "name": "Casquette du parc",
+      "cat": "park",
+      "price": 12,
+      "tva": 20,
+      "scat": "Équipement et boutique",
+      "art": "casque"
+    },
+    {
+      "name": "Sac de sport du parc",
+      "cat": "park",
+      "price": 18,
+      "tva": 20,
+      "scat": "Équipement et boutique",
+      "art": "sac"
+    },
+    {
+      "name": "Porte-clés du parc",
+      "cat": "park",
+      "price": 4,
+      "tva": 20,
+      "scat": "Équipement et boutique",
+      "art": "cle"
+    },
+    {
+      "name": "Location de casier",
+      "cat": "park",
+      "price": 1,
+      "tva": 20,
+      "scat": "Équipement et boutique",
+      "art": "cle"
     },
     {
       "name": "Eau 50 cl",
@@ -156,7 +336,63 @@
       "scat": "Boissons fraîches",
       "price": 2.5,
       "tva": 10,
+      "art": "jus"
+    },
+    {
+      "name": "Coca-Cola, 33 cl",
+      "cat": "bar",
+      "price": 2.5,
+      "tva": 10,
+      "scat": "Boissons fraîches",
+      "art": "canette"
+    },
+    {
+      "name": "Ice tea",
+      "cat": "bar",
+      "price": 2.5,
+      "tva": 10,
+      "scat": "Boissons fraîches",
       "art": "s2"
+    },
+    {
+      "name": "Limonade",
+      "cat": "bar",
+      "price": 2,
+      "tva": 10,
+      "scat": "Boissons fraîches",
+      "art": "canette"
+    },
+    {
+      "name": "Sirop à l’eau",
+      "cat": "bar",
+      "price": 1,
+      "tva": 10,
+      "scat": "Boissons fraîches",
+      "art": "s2"
+    },
+    {
+      "name": "Eau gazeuse 50 cl",
+      "cat": "bar",
+      "price": 1.8,
+      "tva": 10,
+      "scat": "Boissons fraîches",
+      "art": "s1"
+    },
+    {
+      "name": "Boisson énergisante",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Boissons fraîches",
+      "art": "s2"
+    },
+    {
+      "name": "Jus d’orange pressé",
+      "cat": "bar",
+      "price": 4,
+      "tva": 10,
+      "scat": "Boissons fraîches",
+      "art": "jus"
     },
     {
       "name": "Café",
@@ -164,7 +400,7 @@
       "scat": "Boissons chaudes",
       "price": 1.8,
       "tva": 10,
-      "art": "s3"
+      "art": "tasse"
     },
     {
       "name": "Chocolat chaud",
@@ -172,7 +408,31 @@
       "scat": "Boissons chaudes",
       "price": 2.5,
       "tva": 10,
-      "art": "s3"
+      "art": "chocolat"
+    },
+    {
+      "name": "Café allongé",
+      "cat": "bar",
+      "price": 2,
+      "tva": 10,
+      "scat": "Boissons chaudes",
+      "art": "tasse"
+    },
+    {
+      "name": "Cappuccino",
+      "cat": "bar",
+      "price": 2.8,
+      "tva": 10,
+      "scat": "Boissons chaudes",
+      "art": "cappuccino"
+    },
+    {
+      "name": "Thé ou infusion",
+      "cat": "bar",
+      "price": 2,
+      "tva": 10,
+      "scat": "Boissons chaudes",
+      "art": "theiere"
     },
     {
       "name": "Hot-dog",
@@ -187,7 +447,56 @@
       "cat": "bar",
       "scat": "Snack",
       "price": 2,
-      "tva": 10
+      "tva": 10,
+      "art": "chips"
+    },
+    {
+      "name": "Nuggets (6)",
+      "cat": "bar",
+      "price": 4.5,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "frites"
+    },
+    {
+      "name": "Frites",
+      "cat": "bar",
+      "price": 3,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "frites"
+    },
+    {
+      "name": "Sandwich jambon-beurre",
+      "cat": "bar",
+      "price": 4.5,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "sandwich"
+    },
+    {
+      "name": "Croque-monsieur",
+      "cat": "bar",
+      "price": 4.5,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "sandwich"
+    },
+    {
+      "name": "Menu enfant (hot-dog, chips, boisson)",
+      "cat": "bar",
+      "price": 6.5,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "menuenfant"
+    },
+    {
+      "name": "Menu parc (sandwich, boisson, dessert)",
+      "cat": "bar",
+      "price": 8,
+      "tva": 10,
+      "scat": "Snack",
+      "art": "menu"
     },
     {
       "name": "Gaufre sucre",
@@ -203,7 +512,7 @@
       "scat": "Crêpes & paninis",
       "price": 3,
       "tva": 10,
-      "art": "s4"
+      "art": "crepe"
     },
     {
       "name": "Panini jambon fromage",
@@ -211,28 +520,119 @@
       "scat": "Crêpes & paninis",
       "price": 5.5,
       "tva": 10,
-      "art": "s5"
+      "art": "sandwich"
+    },
+    {
+      "name": "Crêpe Nutella",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Crêpes & paninis",
+      "art": "crepe"
+    },
+    {
+      "name": "Gaufre Nutella",
+      "cat": "bar",
+      "price": 4,
+      "tva": 10,
+      "scat": "Crêpes & paninis",
+      "art": "s4"
+    },
+    {
+      "name": "Gaufre chantilly",
+      "cat": "bar",
+      "price": 4,
+      "tva": 10,
+      "scat": "Crêpes & paninis",
+      "art": "s4"
+    },
+    {
+      "name": "Panini poulet",
+      "cat": "bar",
+      "price": 5.5,
+      "tva": 10,
+      "scat": "Crêpes & paninis",
+      "art": "sandwich"
+    },
+    {
+      "name": "Panini trois fromages",
+      "cat": "bar",
+      "price": 5.5,
+      "tva": 10,
+      "scat": "Crêpes & paninis",
+      "art": "sandwich"
     },
     {
       "name": "Pizza margherita",
       "cat": "bar",
       "scat": "Pizza",
       "price": 7,
-      "tva": 10
+      "tva": 10,
+      "art": "pizza"
     },
     {
       "name": "Pizza reine",
       "cat": "bar",
       "scat": "Pizza",
       "price": 8,
-      "tva": 10
+      "tva": 10,
+      "art": "pizza"
+    },
+    {
+      "name": "Pizza quatre fromages",
+      "cat": "bar",
+      "price": 8.5,
+      "tva": 10,
+      "scat": "Pizza",
+      "art": "pizza"
+    },
+    {
+      "name": "Pizza chorizo",
+      "cat": "bar",
+      "price": 8.5,
+      "tva": 10,
+      "scat": "Pizza",
+      "art": "pizza"
+    },
+    {
+      "name": "Pizza végétarienne",
+      "cat": "bar",
+      "price": 8,
+      "tva": 10,
+      "scat": "Pizza",
+      "art": "pizza"
+    },
+    {
+      "name": "Pizza enfant",
+      "cat": "bar",
+      "price": 5.5,
+      "tva": 10,
+      "scat": "Pizza",
+      "art": "pizza"
     },
     {
       "name": "Pop corn",
       "cat": "bar",
       "scat": "Pop corn",
       "price": 3,
-      "tva": 10
+      "tva": 10,
+      "art": "popcorn"
+    },
+    {
+      "name": "Pop corn sucré, grand",
+      "cat": "bar",
+      "price": 4,
+      "tva": 10,
+      "scat": "Pop corn",
+      "art": "popcorn"
+    },
+    {
+      "name": "Pop corn salé, grand",
+      "cat": "bar",
+      "price": 4,
+      "tva": 10,
+      "scat": "Pop corn",
+      "art": "popcorn"
     },
     {
       "name": "Glace",
@@ -251,13 +651,94 @@
       "art": "s6"
     },
     {
+      "name": "Glace, 2 boules",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Glaces",
+      "art": "s6"
+    },
+    {
+      "name": "Milkshake",
+      "cat": "bar",
+      "price": 4.5,
+      "tva": 10,
+      "scat": "Glaces",
+      "art": "s6"
+    },
+    {
+      "name": "Bonbons",
+      "cat": "bar",
+      "price": 2,
+      "tva": 10,
+      "scat": "Sucré",
+      "art": "bonbons"
+    },
+    {
+      "name": "Cookie",
+      "cat": "bar",
+      "price": 2.5,
+      "tva": 10,
+      "scat": "Sucré",
+      "art": "cookie"
+    },
+    {
+      "name": "Muffin",
+      "cat": "bar",
+      "price": 2.5,
+      "tva": 10,
+      "scat": "Sucré",
+      "art": "dessert"
+    },
+    {
+      "name": "Barre chocolatée",
+      "cat": "bar",
+      "price": 1.8,
+      "tva": 10,
+      "scat": "Sucré",
+      "art": "vetement"
+    },
+    {
+      "name": "Bière 25 cl",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 20,
+      "scat": "Bières et vins",
+      "art": "biere"
+    },
+    {
+      "name": "Bière 50 cl",
+      "cat": "bar",
+      "price": 6,
+      "tva": 20,
+      "scat": "Bières et vins",
+      "art": "biere"
+    },
+    {
+      "name": "Bière sans alcool",
+      "cat": "bar",
+      "price": 3.5,
+      "tva": 10,
+      "scat": "Bières et vins",
+      "art": "cocktail"
+    },
+    {
+      "name": "Verre de vin",
+      "cat": "bar",
+      "price": 4,
+      "tva": 20,
+      "scat": "Bières et vins",
+      "art": "verre"
+    },
+    {
       "name": "Anniversaire Essentiel",
       "cat": "event",
       "price": 249,
       "tva": 10,
       "event": true,
       "guests": 10,
-      "art": "a1"
+      "art": "a1",
+      "scat": "Anniversaires"
     },
     {
       "name": "Anniversaire Premium",
@@ -266,7 +747,38 @@
       "tva": 10,
       "event": true,
       "guests": 10,
-      "art": "a2"
+      "art": "a2",
+      "scat": "Anniversaires"
+    },
+    {
+      "name": "Anniversaire Ado, 12 à 15 ans",
+      "cat": "event",
+      "price": 279,
+      "tva": 10,
+      "scat": "Anniversaires",
+      "event": true,
+      "guests": 10,
+      "art": "a1"
+    },
+    {
+      "name": "Anniversaire Mini, moins de 6 ans",
+      "cat": "event",
+      "price": 199,
+      "tva": 10,
+      "scat": "Anniversaires",
+      "event": true,
+      "guests": 8,
+      "art": "a1"
+    },
+    {
+      "name": "Anniversaire à la carte (salle seule)",
+      "cat": "event",
+      "price": 90,
+      "tva": 10,
+      "scat": "Anniversaires",
+      "event": true,
+      "guests": 10,
+      "art": "a1"
     },
     {
       "name": "Privatisation 2 h",
@@ -274,7 +786,9 @@
       "price": 590,
       "tva": 10,
       "event": true,
-      "guests": 30
+      "guests": 30,
+      "scat": "Groupes et privatisations",
+      "art": "cle"
     },
     {
       "name": "Team building",
@@ -282,38 +796,159 @@
       "price": 450,
       "tva": 10,
       "event": true,
-      "guests": 20
+      "guests": 20,
+      "scat": "Groupes et privatisations",
+      "art": "groupe"
+    },
+    {
+      "name": "Sortie scolaire (classe de 25)",
+      "cat": "event",
+      "price": 275,
+      "tva": 10,
+      "scat": "Groupes et privatisations",
+      "event": true,
+      "guests": 25,
+      "art": "groupe"
+    },
+    {
+      "name": "Centre de loisirs, par enfant",
+      "cat": "event",
+      "price": 8,
+      "tva": 10,
+      "scat": "Groupes et privatisations",
+      "art": "groupe"
+    },
+    {
+      "name": "EVG ou EVJF",
+      "cat": "event",
+      "price": 420,
+      "tva": 10,
+      "scat": "Groupes et privatisations",
+      "event": true,
+      "guests": 12,
+      "art": "groupe"
+    },
+    {
+      "name": "Soirée privée nocturne",
+      "cat": "event",
+      "price": 700,
+      "tva": 10,
+      "scat": "Groupes et privatisations",
+      "event": true,
+      "guests": 40,
+      "art": "groupe"
     },
     {
       "name": "Enfant supplémentaire",
       "cat": "event",
       "price": 19,
       "tva": 10,
-      "art": "a3"
+      "art": "enfant",
+      "scat": "Options"
     },
     {
-      "name": "Acompte événement",
-      "cat": "gestion",
-      "price": 60,
-      "tva": 10
+      "name": "Gâteau d’anniversaire",
+      "cat": "event",
+      "price": 25,
+      "tva": 10,
+      "scat": "Options",
+      "art": "dessert"
+    },
+    {
+      "name": "Heure supplémentaire de salle",
+      "cat": "event",
+      "price": 40,
+      "tva": 10,
+      "scat": "Options",
+      "art": "a4"
+    },
+    {
+      "name": "Pack boissons enfants (10)",
+      "cat": "event",
+      "price": 18,
+      "tva": 10,
+      "scat": "Options",
+      "art": "p5"
+    },
+    {
+      "name": "Sac de bonbons invité",
+      "cat": "event",
+      "price": 3,
+      "tva": 10,
+      "scat": "Options",
+      "art": "bonbons"
+    },
+    {
+      "name": "Animateur supplémentaire, 1 h",
+      "cat": "event",
+      "price": 30,
+      "tva": 10,
+      "scat": "Options",
+      "art": "a4"
     },
     {
       "name": "Carte cadeau 20 €",
       "cat": "gestion",
       "price": 20,
-      "tva": 20
+      "tva": 20,
+      "scat": "Cartes cadeaux",
+      "art": "cadeau"
     },
     {
       "name": "Carte cadeau 50 €",
       "cat": "gestion",
       "price": 50,
-      "tva": 20
+      "tva": 20,
+      "scat": "Cartes cadeaux",
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 30 €",
+      "cat": "gestion",
+      "price": 30,
+      "tva": 20,
+      "scat": "Cartes cadeaux",
+      "art": "cadeau"
+    },
+    {
+      "name": "Carte cadeau 100 €",
+      "cat": "gestion",
+      "price": 100,
+      "tva": 20,
+      "scat": "Cartes cadeaux",
+      "art": "cadeau"
+    },
+    {
+      "name": "Acompte événement",
+      "cat": "gestion",
+      "price": 60,
+      "tva": 10,
+      "scat": "Divers",
+      "art": "agenda"
     },
     {
       "name": "Caution matériel",
       "cat": "gestion",
       "price": 20,
-      "tva": 20
+      "tva": 20,
+      "scat": "Divers",
+      "art": "cadenas"
+    },
+    {
+      "name": "Remplacement de bracelet ou de carte",
+      "cat": "gestion",
+      "price": 2,
+      "tva": 20,
+      "scat": "Divers",
+      "art": "bijou"
+    },
+    {
+      "name": "Perte de clé de casier",
+      "cat": "gestion",
+      "price": 5,
+      "tva": 20,
+      "scat": "Divers",
+      "art": "cle"
     }
   ]
 }
