@@ -267,7 +267,20 @@ const clientName=id=>{const c=S.clients.find(c=>c.id===id);return c?c.name:''};
 function head(title,actions=''){
   return `<header class="top"><div><div class="logo logo-m">${S.settings.logo?logoHtml():lagoLogo('l')}</div><h1>${title}</h1><p class="sub">${dlong(today())}</p></div><div class="top-actions">${actions}${rolePill()}</div></header>`;
 }
-function showModal(html){$('#modal').innerHTML=`<div class="scrim" data-act="scrim"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`}
+/* Une fenêtre déjà ouverte est mise à jour sur place : plus de fermeture/réouverture (animation, flou, défilement remis en haut)
+   à chaque choix. Le défilement et le champ actif sont conservés tant que le titre reste le même. */
+function showModal(html){
+  const host=$('#modal'),m=host.querySelector('.scrim>.modal');
+  if(m){
+    const h2=n=>{const e=n.querySelector('h2');return e?e.textContent:''};
+    const t=document.createElement('div');t.innerHTML=html;
+    const keep=!!h2(t)&&h2(t)===h2(m),st=m.scrollTop,ae=document.activeElement,aid=ae&&m.contains(ae)&&ae.id?ae.id:'';
+    let ss=null;try{if(aid&&ae.selectionStart!=null)ss=[ae.selectionStart,ae.selectionEnd]}catch(e){}
+    m.innerHTML=html;m.scrollTop=keep?st:0;
+    if(aid){const n=document.getElementById(aid);if(n&&m.contains(n)){try{n.focus({preventScroll:true});if(ss)n.setSelectionRange(ss[0],ss[1])}catch(e){}}}
+    return;
+  }
+  host.innerHTML=`<div class="scrim" data-act="scrim"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`}
 function closeModal(){$('#modal').innerHTML='';pay=null}
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2400)}
 const mh=t=>`<div class="mh"><h2>${t}</h2><button class="ix" data-act="close" aria-label="Fermer">${ic('x')}</button></div>`;
@@ -280,6 +293,7 @@ const tab={resa:'apercu',staff:'equipe',clients:'fiches',gestion:'produits',para
 const SUBS={apercu:vDay,resas:vResas,events:vEvents,bracelets:vBracelets,sjour:vStaffDay,equipe:vTeam,conges:vLeaves,fiches:vClients,fidelite:vLoyalty,mailing:vMailing,produits:vProducts,rapports:vReports,caisse:vCashbox,pgen:vSetGen,ppark:vSetPark,pteam:vSetTeam,ploy:vSetLoy,papp:vSetApp};
 const bar=a=>a?`<div class="top-actions" style="margin-bottom:12px">${a}</div>`:'';
 function tabbedBase(m,title){
+  if(view==='params'&&tab.params==='papp')tab.params='pstudio';
   {const L=tabsFor(view);if(L.length&&!L.some(x=>x[0]===tab[view]))tab[view]=L[0][0]}
   m.innerHTML=head(title)+tabsBar(view)+`<div id="sub"></div>`;
   try{m.querySelectorAll('.tabs button.on').forEach(b=>{const bar=b.parentNode;if(bar.scrollWidth>bar.clientWidth+2)bar.scrollLeft+=b.getBoundingClientRect().left-bar.getBoundingClientRect().left-(bar.clientWidth-b.offsetWidth)/2})}catch(e){}
@@ -2322,13 +2336,14 @@ function pdfBuild(title,sub,foot,fn,o){
     if(first){
       if(LG){const hh=34,ww=Math.min(150,hh*LG.w/LG.h),ih=ww*LG.h/LG.w;cur.push(`q ${ww.toFixed(1)} 0 0 ${ih.toFixed(1)} ${M} ${(H-30-ih).toFixed(1)} cm /Im1 Do Q`)}
       else op(M,H-47,st.name||'We Fly',18,1,BLUE);
-      opR(W-M,H-46,foot,8,0,MUT);
-      let ty=H-94;const bw=o.badge?tw(o.badge[0],9.5,1)+30:0,aw=W-2*M-bw-(bw?16:0);let ts=20;while(ts>16&&tw(title,ts,1)>aw)ts-=.5;const tl=wrapT(title,aw,ts,1).slice(0,2);
-      tl.forEach((l,i)=>op(M,ty-i*24,l,ts,1,INK));
-      const by=ty-(tl.length-1)*24;
-      if(o.badge){const T=TONE[o.badge[1]]||TONE.mute;rr(W-M-bw,by-6,bw,24,12,T.bg,T.bd,.9);const cx=W-M-bw+13;cur.push(`${T.fg} rg ${rrp(cx-3.5,by+6-3.5+0,7,7,3.5)} f`);op(cx+8,by+2.6,o.badge[0],9.5,1,T.fg)}
-      if(sub)op(M,by-22,sub,11.5,0,MUT);
-      y=by-(sub?44:28);
+      opR(W-M,H-46,foot,8,0,MUT);if(o.ref)opR(W-M,H-58,'Réf. '+o.ref,8,1,MUT);
+      const bw=o.badge?tw(o.badge[0],9.5,1)+30:0,aw=W-2*M-30-14-bw-(bw?14:0);let ts=21;while(ts>16&&tw(title,ts,1)>aw)ts-=.5;const tl=wrapT(title,aw,ts,1).slice(0,2);
+      const pt=H-72,b0=pt-14-ts*.8,ph=14+ts*.8+(tl.length-1)*(ts+4)+(sub?21:0)+13;
+      rr(M,pt-ph,W-2*M,ph,14,'0.953 0.967 0.996',HAIR,.8);rr(M+13,pt-ph+13,4.5,ph-26,2.2,ORG);
+      tl.forEach((l,i)=>op(M+30,b0-i*(ts+4),l,ts,1,INK));
+      if(o.badge){const T=TONE[o.badge[1]]||TONE.mute,bx=W-M-14-bw,by=b0-5;rr(bx,by,bw,24,12,T.bg,T.bd,.9);cur.push(`${T.fg} rg ${rrp(bx+9.5,by+8.5,7,7,3.5)} f`);op(bx+21,by+8,o.badge[0],9.5,1,T.fg)}
+      if(sub)op(M+30,b0-(tl.length-1)*(ts+4)-22,sub,11.5,0,MUT);
+      y=pt-ph-16;
     }else{
       op(M,H-36,st.name||'We Fly',11,1,BLUE);opR(W-M,H-36,title+(sub?'  ·  '+sub:''),8.5,0,MUT);rect(M,H-46,W-2*M,.7,HAIR);y=H-70;
     }
@@ -2393,6 +2408,14 @@ function pdfBuild(title,sub,foot,fn,o){
           if(s[1])op(x+14,y-34,s[1],11,1,INK);if(s[2])op(x+14,y-47,s[2],8.5,0,MUT);
           rect(x+14,y-h+22,bw-28,.7,'0.62 0.67 0.76');op(x+14,y-h+10,'Signature',7.5,0,MUT)});
         y-=h+8},
+      seal:list=>{
+        const n=list.length,g=12,bw=(CW-g*(n-1))/n,h=52;need(h+10);y-=6;
+        list.forEach((q,i)=>{const x=M+i*(bw+g),good=q[3]==='ok',T=TONE[good?'ok':'mute'];
+          rr(x,y-h,bw,h,10,T.bg,T.bd,.8);const cx=x+26,cy=y-h/2;
+          rr(cx-11,cy-11,22,22,11,good?'0.13 0.62 0.36':'0.62 0.67 0.76');
+          if(good)seg(WHITE,1.9,[[cx-5,cy-.3],[cx-1.6,cy-3.7],[cx+5.2,cy+3.9]]);else seg(WHITE,1.9,[[cx-4.5,cy],[cx+4.5,cy]]);
+          const tx=x+50,lw=bw-62;op(tx,y-18,q[0],8,0,MUT);op(tx,y-31,wrapT(q[1]||'-',lw,11,1)[0],11,1,INK);if(q[2])op(tx,y-43,wrapT(q[2],lw,8.5,0)[0],8.5,0,MUT)});
+        y-=h+8},
       sig:(l,v)=>w.sigs([[l,v||'']]),
       row:(l,s)=>w.chk(l,s),
       img:(u,iw,ih,lab)=>{np();const mw=W-2*M,mh=y-bottom-16;if(lab){op(M,y,lab,10,1,MUT);y-=14}const k=Math.min(mw/iw,(y-bottom)/ih),dw=iw*k,dh=ih*k;const ix=imgs.push({bin:atob(u.split(',')[1]),w:iw,h:ih})-1;pim[pages.length-1]=ix;cur.push(`q ${dw.toFixed(1)} 0 0 ${dh.toFixed(1)} ${(M+(mw-dw)/2).toFixed(1)} ${(y-dh).toFixed(1)} cm /Ix${ix} Do Q`);y=bottom}
@@ -2435,7 +2458,7 @@ function pdfFor(k,id){
       w.sum([[nOk,nOk>1?'conformes':'conforme','ok'],[nKo,nKo>1?'non conformes':'non conforme',nKo?'bad':'mute'],[nNo,nNo>1?'non renseignés':'non renseigné','mute']]);
       CHECKS.forEach(g=>{w.sec(g.g,pdfN(g.items.length,'point'));g.items.forEach(([kk,l])=>{const a=c.items[kk];w.chk(l,a?(a.s==='ok'?'C':'NC'):'-',a&&a.s==='ko'?a.note:'')})});
       if(c.note&&String(c.note).trim()){w.sec('Note du contrôleur');w.box('',String(c.note).trim())}
-      w.sigs([['Contrôleur',by,c.done?'Validé le '+dfr(day)+' à '+hm(c.ts):''],['Visa du responsable','','']])},{v2:1,badge})]}
+      w.seal([['Contrôle réalisé par',by||'-',c.done?'Validé le '+dfr(day)+' à '+hm(c.ts):'Contrôle non validé',c.done?'ok':'mute']])},{v2:1,badge,ref:'CQ-'+String(day).replace(/-/g,'')})]}
   if(k==='monthly'){const r=monRec(),ml=monLabel(ctl.mon),v=i=>r.items[i];
     const nC=MPTS.filter((_,i)=>v(i)==='C').length,nNC=MPTS.filter((_,i)=>v(i)==='NC').length,nSO=MPTS.filter((_,i)=>v(i)==='SO').length,nNo=MPTS.length-nC-nNC-nSO;
     const badge=nNC?[nNC>1?nNC+' NON CONFORMES':'1 NON CONFORME','bad']:r.signed||nC?['CONFORME','ok']:['EN COURS','mute'];
@@ -2446,20 +2469,22 @@ function pdfFor(k,id){
       MPTS.forEach((l,i)=>w.chk((i+1)+'. '+l,r.items[i]||'-'));
       w.sec('Observations et suites');w.box('Observations',r.obs);w.box('Action corrective',r.fix);
       w.fields([['Zone condamnée',r.zone],['Structure conforme',r.conf],['Rédigé par',sname(r.writer)]],3);
-      w.gap(4);w.sigs([['Signature',sname(r.writer||r.by),r.signed?'Signé le '+new Date(r.signed).toLocaleDateString('fr-FR'):''],['Visa du responsable','','']])},{v2:1,badge})]}
+      w.seal([['Rédigé par',sname(r.writer||r.by),r.signed?'Signé électroniquement le '+new Date(r.signed).toLocaleDateString('fr-FR'):'Non signé',r.signed?'ok':'mute']])},{v2:1,badge,ref:'CM-'+String(ctl.mon).replace(/-/g,'')})]}
   const d=k==='inc'?S.incidents.find(x=>x.id===id):k==='incdraft'?ctl.inc:k==='mnt'?S.maint.find(x=>x.id===id):ctl.mnt;if(!d)return null;
   if(k==='inc'||k==='incdraft')return['Rapport incident-'+d.date,pdfBuild('RAPPORT D’INCIDENT',pdfLong(d.date)+'  ·  '+(d.time||''),'RAPPORT D’INCIDENT',w=>{
     w.meta([['Lieu',S.settings.name],['Date et heure',dfr(d.date)+' à '+d.time],['Rédigé par',sname(d.writer)]]);
+    {const nt=(d.types||[]).length+(d.autre?1:0),ns=(d.secours||[]).length,pn=d.pain==null||d.pain===''?null:+d.pain;
+      w.sum([...(pn==null?[]:[[pn+'/10','de douleur',pn>=7?'bad':pn>=4?'warn':'ok']]),[nt,nt>1?'types d’incident':'type d’incident','blue'],[ns,ns>1?'gestes de secours':'geste de secours',ns?'ok':'mute']])}
     w.sec('Personne concernée');w.fields([['Type',d.who],['Nom',d.nom],['Prénom',d.prenom],['Date de naissance',dfr(d.naiss)],['Téléphone',d.tel]],3);
     w.sec('Incident');w.chips('Type d’incident',[...(d.types||[]),...(d.autre?[d.autre]:[])]);w.box('Description',d.desc);w.scale('Douleur ressentie',d.pain,10);
     w.sec('Premiers secours');w.chips('Gestes réalisés',d.secours);w.fields([['Secouriste',sname(d.secouriste)]],3);
-    w.gap(4);w.sigs([['Rédacteur du rapport',sname(d.writer),d.signed?'Signé le '+new Date(d.signed).toLocaleString('fr-FR'):'Non signé'],['Visa du responsable','','']]);
-    (d.scans||[]).forEach((sc,i)=>w.img(sc.u,sc.w,sc.h,'Rapport papier numérisé - page '+(i+1)+' sur '+d.scans.length))},{v2:1,badge:d.signed?['SIGNÉ','ok']:['BROUILLON','mute']})];
+    w.seal([['Rédacteur du rapport',sname(d.writer),d.signed?'Signé électroniquement le '+new Date(d.signed).toLocaleString('fr-FR'):'Non signé',d.signed?'ok':'mute']]);
+    (d.scans||[]).forEach((sc,i)=>w.img(sc.u,sc.w,sc.h,'Rapport papier numérisé - page '+(i+1)+' sur '+d.scans.length))},{v2:1,badge:d.signed?['SIGNÉ','ok']:['BROUILLON','mute'],ref:'INC-'+String(d.date||'').replace(/-/g,'')+'-'+String(d.time||'').replace(':','')})];
   return['Rapport maintenance-'+d.date,pdfBuild('RAPPORT DE MAINTENANCE',pdfLong(d.date),'RAPPORTS DE MAINTENANCE',w=>{
     w.meta([['Date',dfr(d.date)],['Équipement',mntEq(d)],['Nature de l’intervention',d.type],['Technicien',d.tech]]);
-    w.sec('Intervention');w.box('Problème constaté',d.pb);w.box('Action réalisée',d.action);
+    w.sec('Intervention');w.box('Problème constaté',d.pb,'bad');w.box('Action réalisée',d.action,'ok');
     w.fields([['Pièces remplacées',d.pieces],['Temps passé',d.min?d.min+' min':'']],2);
-    w.gap(4);w.sigs([['Technicien',d.tech||'',''],['Visa du responsable','','']])},{v2:1,badge:[String(d.statut||'À faire').toUpperCase(),d.statut==='Terminé'?'ok':d.statut==='En cours'?'warn':'mute']})];
+    w.seal([['Intervention réalisée par',d.tech||'-',d.statut==='Terminé'?'Intervention terminée':'Statut : '+String(d.statut||'à faire').toLowerCase(),d.statut==='Terminé'?'ok':'mute']])},{v2:1,badge:[String(d.statut||'À faire').toUpperCase(),d.statut==='Terminé'?'ok':d.statut==='En cours'?'warn':'mute'],ref:'MNT-'+String(d.date||'').replace(/-/g,'')+'-'+String(d.id||'').slice(-3).toUpperCase()})];
 }
 async function doPdf(k,id){
   const r=pdfFor(k,id);if(!r){toast('Rien à exporter');return}
@@ -3089,7 +3114,7 @@ NAV.splice(NAV.length-1,0,['stats','Statistiques','chart','Stats']);VIEWS.stats=
 MTL.splice(MTL.length-1,0,['Statistiques','chart','stats','',[]]);
 /* ---- statistiques : tableau de bord de pilotage ---- */
 let stTab='pilotage';
-const STTABS=[['pilotage','Pilotage'],['ventes','Ventes'],['frequentation','Fréquentation'],['clients','Clients'],['exploitation','Exploitation']];
+const STTABS=[['pilotage','Pilotage'],['ventes','Ventes'],['categories','Catégories'],['frequentation','Fréquentation'],['clients','Clients'],['exploitation','Exploitation']];
 const sxDay=s=>dkey(new Date(s.ts)),sxTk=s=>!s.qw&&s.ty!=='av';
 const sxWd=d=>(new Date(d+'T12:00').getDay()+6)%7,WDN=['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
 const sxPct=(a,b)=>b?Math.round(a/b*100):0,sxN=n=>Math.round(n).toLocaleString('fr-FR'),sxS=(n,w)=>n>1?w+'s':w;
@@ -3252,9 +3277,48 @@ function sxTabExpl(R,cur){
    ${mn.length?`<ul class="sx-ul">${mn.slice(0,4).map(x=>`<li>${esc(x.equip||x.type||'Intervention')} <small>${esc(x.statut||'')}</small></li>`).join('')}</ul>`:''}</div></div>
    <div class="card"><h3>Caisse</h3>${cl.length?`<div class="mini"><div><b class="num">${cl.length}</b><span>clôture${cl.length>1?'s':''} sur la période</span></div><div><b class="num">${bad.length}</b><span>avec écart</span></div><div><b class="num">${eurN(diff)}</b><span>écart cumulé</span></div></div>`:sxEmpty('Aucune clôture de caisse sur la période.')}</div>`;
 }
+/* ---- v107 : onglet « Catégories » (ventes par catégorie, sous-catégorie et produit, à la Hiboutik) ---- */
+function sxCatData(c){
+  const cats={};
+  c.all.forEach(s=>s.lines.forEach(l=>{
+    const o=cats[l.cat]=cats[l.cat]||{id:l.cat,q:0,ttc:0,ht:0,subs:{},prods:{}},ht=l.ttc/(1+(+l.rate||0)/100),p=prod(l.pid),sc=(p&&p.scat)||'Sans sous-catégorie';
+    o.q+=l.qty;o.ttc+=l.ttc;o.ht+=ht;
+    const sb=o.subs[sc]=o.subs[sc]||{n:sc,q:0,ttc:0,ht:0};sb.q+=l.qty;sb.ttc+=l.ttc;sb.ht+=ht;
+    const pr=o.prods[l.pid]=o.prods[l.pid]||{n:l.name,q:0,ttc:0,ht:0,rate:+l.rate||0,sc};pr.q+=l.qty;pr.ttc+=l.ttc;pr.ht+=ht;
+  }));
+  return cats;
+}
+function sxDonut(L,tot){
+  const R=42,C=2*Math.PI*R;let off=0;
+  const seg=L.map(x=>{const len=tot>0?Math.max(0,x.ttc)/tot*C:0,s=`<circle cx="60" cy="60" r="${R}" fill="none" stroke="var(${cat(x.id).v})" stroke-width="20" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)"><title>${esc(cat(x.id).name)} : ${eurN(x.ttc)}</title></circle>`;off+=len;return s}).join('');
+  return `<svg class="sx-dn" viewBox="0 0 120 120" role="img" aria-label="Répartition du chiffre d’affaires par catégorie"><circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--line)" stroke-width="20"/>${seg}<text x="60" y="56" text-anchor="middle" class="dn-l">CA TTC</text><text x="60" y="72" text-anchor="middle" class="dn-v">${esc(Math.round(tot/100).toLocaleString('fr-FR'))} €</text></svg>`;
+}
+function sxTabCats(R,cur,prev){
+  const D=sxCatData(cur),P=sxCatData(prev),L=Object.values(D).sort((a,b)=>b.ttc-a.ttc),tot=sumBy(L,x=>x.ttc),totQ=sumBy(L,x=>x.q),totHt=sumBy(L,x=>x.ht),ptot=sumBy(Object.values(P),x=>x.ttc);
+  if(!L.length)return `<div class="card">${sxEmpty('Aucune vente sur la période. Les ventes par catégorie apparaîtront ici dès le premier encaissement.')}</div>`;
+  const top=L[0],avg=totQ?tot/totQ:0;
+  const row=x=>{const c=cat(x.id),pc=P[x.id],d=pc&&pc.ttc?dlt(x.ttc,pc.ttc):null;
+    const subs=Object.values(x.subs).sort((a,b)=>b.ttc-a.ttc),prods=Object.values(x.prods).sort((a,b)=>b.ttc-a.ttc).slice(0,6);
+    return `<details class="sx-cr"><summary class="sx-crs"><span class="sx-cn"><i style="background:var(${c.v})"></i><b>${esc(c.name)}</b></span><span class="num">${sxN(x.q)}</span><b class="num">${eurN(x.ttc)}</b><span class="num sx-ht">${eurN(x.ht)}</span><span class="num">${sxPct(x.ttc,tot)} %</span><span class="sx-ev">${d==null?'<span class="muted">–</span>':sxD(d)}</span></summary>
+      <div class="sx-crb">${subs.length>1||(subs[0]&&subs[0].n!=='Sans sous-catégorie')?`<h4 class="sx-h4" style="margin-top:0">Par sous-catégorie</h4><table class="sx-t"><thead><tr><th>Sous-catégorie</th><th>Articles</th><th>CA TTC</th><th>Part</th></tr></thead><tbody>${subs.map(s=>`<tr><td>${esc(s.n)}</td><td class="num">${sxN(s.q)}</td><td class="num">${eurN(s.ttc)}</td><td class="num">${sxPct(s.ttc,x.ttc)} %</td></tr>`).join('')}</tbody></table>`:''}
+       <h4 class="sx-h4">Produits les plus vendus</h4>${bars(prods.map(p=>[p.n+' ×'+sxN(p.q),p.ttc]),eurN,`var(${c.v})`)}</div></details>`};
+  return `<div class="kpis st6">${sxKpi('CA TTC',eurN(tot),dlt(tot,ptot),'toutes catégories')}${sxKpi('Catégorie n°1',esc(cat(top.id).name),null,sxPct(top.ttc,tot)+' % du CA')}${sxKpi('Articles vendus',sxN(totQ),null,'net des avoirs')}${sxKpi('Prix moyen par article',eurN(avg),null,'TTC')}</div>
+   <div class="card"><div class="mtitle"><h3>Ventes par catégorie</h3><button class="btn" data-act="sx_csv">Exporter (CSV)</button></div>
+    <div class="sx-cat"><div class="sx-dw">${sxDonut(L,tot)}<ul class="sx-lg">${L.map(x=>`<li><i style="background:var(${cat(x.id).v})"></i><span>${esc(cat(x.id).name)}</span><b class="num">${sxPct(x.ttc,tot)} %</b></li>`).join('')}</ul></div>
+    <div class="sx-ct"><div class="sx-crh"><span>Catégorie</span><span>Articles</span><span>CA TTC</span><span class="sx-ht">CA HT</span><span>Part</span><span class="sx-ev">Évolution</span></div>${L.map(row).join('')}
+    <div class="sx-crs sx-crt"><span class="sx-cn"><b>Total</b></span><span class="num">${sxN(totQ)}</span><b class="num">${eurN(tot)}</b><span class="num sx-ht">${eurN(totHt)}</span><span class="num">100 %</span><span class="sx-ev">${ptot?sxD(dlt(tot,ptot)):''}</span></div></div></div>
+    <p class="muted sx-note">Touchez une catégorie pour voir ses sous-catégories et ses produits. Montants nets des remises et des avoirs. Évolution : par rapport à la période précédente.</p></div>`;
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="sx_csv"]');if(!b)return;
+  const R=stRange(stP),cur=sxCalc(R.days),D=sxCatData(cur),f=v=>(v/100).toFixed(2).replace('.',','),q=t=>'"'+String(t==null?'':t).replace(/"/g,'""')+'"';
+  const rows=[['Catégorie','Sous-catégorie','Produit','Quantité','CA TTC (€)','CA HT (€)','TVA (%)'].map(q).join(';')];
+  Object.values(D).sort((a,b)=>b.ttc-a.ttc).forEach(x=>Object.values(x.prods).sort((a,b)=>b.ttc-a.ttc).forEach(p=>rows.push([q(cat(x.id).name),q(p.sc),q(p.n),p.q,f(p.ttc),f(p.ht),String(p.rate).replace('.',',')].join(';'))));
+  if(rows.length<2){toast('Aucune vente à exporter sur la période');return}
+  saveBytes('Ventes-par-categorie-'+R.from+'_'+R.to+'.csv',new TextEncoder().encode('﻿'+rows.join('\r\n')),'text/csv');
+});
 function vStatsPro(m){
   const R=stRange(stP),cur=sxCalc(R.days),prev=sxCalc(R.pdays),heat=sxHeat(cur),wk=sxWeek(R,cur),cl=sxClients(R);
-  const body=stTab==='ventes'?sxTabVentes(R,cur,prev):stTab==='frequentation'?sxTabFreq(R,cur,prev,wk,heat):stTab==='clients'?sxTabClients(R,cur,prev,cl):stTab==='exploitation'?sxTabExpl(R,cur):sxTabPilotage(R,cur,prev,cl,wk,heat);
+  const body=stTab==='ventes'?sxTabVentes(R,cur,prev):stTab==='categories'?sxTabCats(R,cur,prev):stTab==='frequentation'?sxTabFreq(R,cur,prev,wk,heat):stTab==='clients'?sxTabClients(R,cur,prev,cl):stTab==='exploitation'?sxTabExpl(R,cur):sxTabPilotage(R,cur,prev,cl,wk,heat);
   m.innerHTML=head('Statistiques')+`<div class="sx-bar"><div class="seg stseg sx-tabs" role="tablist" aria-label="Rubriques">${STTABS.map(([k,l])=>`<button role="tab" aria-selected="${stTab===k}" class="${stTab===k?'on':''}" data-act="sx_t" data-k="${k}">${l}</button>`).join('')}</div>
    <div class="seg stseg" role="group" aria-label="Période">${stPeriods.map(([k,l])=>`<button class="${stP===k?'on':''}" data-act="sx_p" data-k="${k}">${l}</button>`).join('')}</div></div>
    <p class="muted sx-per">${R.n>1?`Du ${dshort(R.from)} au ${dshort(R.to)}`:'Aujourd’hui'} · comparé à ${R.n>1?`les ${R.n} jours précédents`:'hier'}</p>${body}`;
@@ -4075,7 +4139,7 @@ function vSetVis(m){
    <tr class="vis-h"><th colspan="${P.length+1}">Éléments précis</th></tr>
    ${VEXTRA.map(([k,l])=>row(l,k,1)).join('')}
    </tbody></table></div>
-   <p class="muted" style="font-size:13px;margin-top:10px">Pour masquer un écran à tout le monde, y compris vous, utilisez Studio › Fonctionnalités. Pour savoir qui remplit les contrôles : Comptes › Sécurité.</p></div>`;
+   <p class="muted" style="font-size:13px;margin-top:10px">Pour masquer un écran à tout le monde, y compris vous, utilisez Personnaliser › Menus et fonctions. Pour savoir qui remplit les contrôles : Comptes › Sécurité.</p></div>`;
 }
 TABS.params.splice(TABS.params.findIndex(x=>x[0]==='pprof')+1,0,['pvis','Visibilité']);SUBS.pvis=vSetVis;
 document.addEventListener('change',e=>{
@@ -4229,7 +4293,7 @@ function wvPdf(w){
   });
   saveBytes('Decharge-'+w.name.replace(/\s+/g,'-')+'.pdf',bytes,'application/pdf');
 }
-TABS.clients.push(['decharges','Décharges']);SUBS.decharges=vWaivers;
+SUBS.decharges=vWaivers;  /* v107 : l’onglet « Décharges » n’est plus proposé */
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act^="wv_"]');if(!b)return;const a=b.dataset.act;
   if(a==='wv_new')wvNew();
@@ -4468,6 +4532,7 @@ function psNewModal(){
 const entries=()=>S.entries||(S.entries=[]);
 const entered=s=>entries().filter(e=>e.ref===s.no).reduce((a,e)=>a+e.n,0);
 function wvStatus(cl){
+  if(!wvs().length)return{t:'',c:''};
   if(!cl)return{t:'Aucun client rattaché : vérifiez la décharge à l’accueil.',c:''};
   const nn=norm(cl.name),w=wvs().find(w=>wvOk(w)&&(norm(w.name)===nn||(cl.phone&&w.phone===cl.phone)||(w.kids||[]).some(k=>norm(k.name)===nn)));
   return w?{t:'Décharge valide jusqu’au '+new Date(w.exp+'T12:00').toLocaleDateString('fr-FR'),c:'ok'}:{t:'Pas de décharge valide trouvée : à faire signer avant l’entrée.',c:'bad'};
@@ -4494,7 +4559,7 @@ function ciLookup(raw){
     const [sd,sm]=s.slot?s.slot.split('|'):[null,null],late=sd&&sd!==today();
     showModal(`${mh('Billet '+esc(s.no))}<div class="row"><span class="grow"><b>${esc(cl?cl.name:'Client comptoir')}</b><span class="muted">${tot} ${NOUN()}${tot>1?'s':''}${s.slot?' · '+(sd===today()?'aujourd’hui':dshort(sd))+' à '+fm(+sm):''}</span></span><span class="pill ${rem?'ok':''}">${done}/${tot} entré${done>1?'s':''}</span></div>
      ${late?`<p class="warn-t">Ce billet est prévu le ${dshort(sd)}.</p>`:''}${tot?'':'<p class="warn-t">Ce ticket ne contient aucune séance de saut.</p>'}
-     <p class="${wv.c==='bad'?'warn-t':'muted'}" style="margin:8px 0">${esc(wv.t)}</p>
+     ${wv.t?`<p class="${wv.c==='bad'?'warn-t':'muted'}" style="margin:8px 0">${esc(wv.t)}</p>`:''}
      ${rem?`<div class="field"><label for="cin_n">Personnes qui entrent</label><input id="cin_n" type="number" min="1" max="${rem}" value="${rem}"></div><button class="btn-pay" data-act="x3_cigo" data-kind="ticket" data-ref="${esc(s.no)}">Valider l’entrée</button>`:`<p class="muted">${tot?'Tout le monde est déjà entré.':''}</p>`}`);
     return;
   }
@@ -4503,7 +4568,7 @@ function ciLookup(raw){
     const st=passState(p),cl=p.clientId?clientById(p.clientId):null,wv=wvStatus(cl),[l,cc]=PSLX[st];
     showModal(`${mh('Carnet '+esc(p.code))}<div class="row"><span class="grow"><b>${esc(cl?cl.name:'Sans client')}</b><span class="muted">${esc(p.name)}${p.exp?' · jusqu’au '+new Date(p.exp+'T12:00').toLocaleDateString('fr-FR'):''}</span></span><span class="pill ${cc}">${l}</span></div>
      <div class="gc-card" style="margin:10px 0"><strong>${p.left} / ${p.n}</strong><span>séances restantes</span></div>
-     <p class="${wv.c==='bad'?'warn-t':'muted'}" style="margin:8px 0">${esc(wv.t)}</p>
+     ${wv.t?`<p class="${wv.c==='bad'?'warn-t':'muted'}" style="margin:8px 0">${esc(wv.t)}</p>`:''}
      ${st==='ok'?`<div class="field"><label for="cin_n">Séances à utiliser</label><input id="cin_n" type="number" min="1" max="${p.left}" value="1"></div><button class="btn-pay" data-act="x3_cigo" data-kind="pass" data-ref="${esc(p.code)}">Valider l’entrée</button>`:''}`);
     return;
   }
@@ -4992,7 +5057,36 @@ function clearDemo(){
   save();
 }
 /* Studio : carte « Équipe connectée » */
-const rulesTxt=r=>`{\n  "rules": {\n    ".read": false,\n    ".write": false,\n    "${r}": { ".read": true, ".write": true }\n  }\n}`;
+/* ===== Règles Firebase : UN SEUL texte pour tout (équipe, réservation en ligne, paiement, écran TV) =====
+   v107 : avant, chaque page proposait ses propres règles (équipe seule, puis réservation, puis télé) et coller l'une
+   effaçait les autres : paiement et réservation en ligne cessaient de marcher sans message clair. Désormais le même
+   texte est proposé partout et se colle UNE seule fois : les clés de la réservation et de l'écran TV sont des
+   jokers ($k), donc activer ou renouveler une fonction ne demande plus de recoller les règles.
+   fbPubTv() est recopiée à l'identique dans console.html (règles des établissements) : un test vérifie qu'elles sont égales. */
+/*FBR*/
+function fbPubTv(){
+  const sig=n=>"newData.hasChildren(['b','s']) && newData.child('b').isString() && newData.child('b').val().length < "+n+" && newData.child('s').isString() && newData.child('s').val().length < 200";
+  const key='$k.length >= 12 && $k.length <= 40',keyTv='$k.length >= 6 && $k.length <= 40';   /* clé du site : 20 caractères ; code de l'écran TV : 8 */
+  return{
+    pub:{$k:{'.validate':key,
+      cfg:{'.read':true,'.write':true},
+      base:{'.read':true,'.write':true},
+      web:{'.read':true,'.write':true,$d:{$i:{'.validate':'newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000'}}},
+      pay:{'.read':true,'.write':true,'.validate':sig(120000)},
+      pn:{'.read':true,'.indexOn':['t'],$ref:{
+        '.write':"$ref.length >= 9 && $ref.length <= 11 && $ref.contains('-') && (!newData.exists() ? data.child('t').val() < now - 2592000000 : (!data.exists() || newData.child('s').val() >= data.child('s').val()))",
+        '.validate':"newData.hasChildren(['t','s','a']) && newData.child('t').isNumber() && newData.child('s').isNumber() && newData.child('s').val() >= 1 && newData.child('s').val() <= 2 && newData.child('a').isNumber() && newData.child('a').val() >= 0 && newData.child('a').val() <= 10000000"}},
+      req:{'.read':true,'.indexOn':['ts'],$id:{
+        '.write':"!data.exists() || (!newData.exists() && data.child('ts').val() < now - 604800000)",
+        '.validate':"newData.hasChildren(['ts','k','iv','ct']) && newData.child('ts').isNumber() && newData.child('ts').val() > now - 600000 && newData.child('ts').val() < now + 600000 && newData.child('ct').isString() && newData.child('ct').val().length < 8000"}}}},
+    tv:{$k:{'.validate':keyTv,'.read':true,
+      d:{'.write':'newData.exists()','.validate':sig(60000)},
+      l:{'.write':'newData.exists()','.validate':sig(200000)}}}
+  };
+}
+/*FBR-END*/
+const fbRules=room=>JSON.stringify({rules:{'.read':false,'.write':false,[room||'room']:{'.read':true,'.write':true},...fbPubTv()}},null,2);
+const rulesTxt=r=>fbRules(r);
 const zInvite=link=>'Bonjour, voici Lago (caisse et planning). Ouvre ce lien une fois sur ton téléphone, puis choisis ton prénom et entre ton mot de passe (ton responsable crée ton compte). Si tu as ajouté Lago sur ton écran d’accueil : ouvre l’appli, touche « Rejoindre l’équipe » et colle ce lien : '+link;
 const b64Link=o=>btoa(JSON.stringify(o)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const zLink=()=>{const c=cloudCfg();return c&&c.u&&!c.pending?location.origin+location.pathname+'#cloud='+b64Link({u:c.u,r:c.r}):''};
@@ -5016,8 +5110,9 @@ function vSetStudio(m){
      <div class="acts"><button class="btn" data-act="z_now">Synchroniser maintenant</button><button class="btn danger" data-act="z_off">Déconnecter cet appareil</button></div>`;
   }else if(c&&c.pending){
     h=`<h3>Équipe connectée : dernière étape</h3>
-     <ol class="muted" style="margin:0 0 8px 18px;padding:0"><li>Dans Firebase, ouvrez Realtime Database › onglet Règles.</li><li>Remplacez tout le contenu par le texte ci-dessous, puis cliquez sur Publier.</li><li>Revenez ici et cliquez sur « Vérifier et envoyer mes données ».</li></ol>
-     <textarea readonly rows="8" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace">${esc(rulesTxt(c.r))}</textarea>
+     <ol class="muted" style="margin:0 0 8px 18px;padding:0"><li>Dans Firebase, ouvrez Realtime Database › onglet Règles.</li><li>Remplacez tout le contenu par le texte ci-dessous, puis cliquez sur Publier. Ce texte couvre aussi la réservation en ligne, le paiement et l’écran TV : vous ne le collerez qu’une fois.</li><li>Revenez ici et cliquez sur « Vérifier et envoyer mes données ».</li></ol>
+     <textarea readonly rows="12" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%">${esc(rulesTxt(c.r))}</textarea>
+     <div class="acts" style="margin-top:8px"><button class="btn" data-act="z_rules">Copier les règles</button></div>
      <div class="acts" style="margin-top:10px"><button class="btn primary" data-act="z_go">Vérifier et envoyer mes données</button><button class="btn" data-act="z_off">Annuler</button></div><p class="muted" id="z_msg" style="margin:8px 0 0"></p>`;
   }else{
     h=`<h3>Équipe connectée (données partagées)</h3>
@@ -5030,6 +5125,42 @@ function vSetStudio(m){
   const nd=demoCount()||!S.noDemo,first=m.querySelector(':scope > .card');
   if(first)first.insertAdjacentHTML('afterend',`<div class="card" style="margin-bottom:14px"><h3>Données de démonstration</h3>${nd?`<p class="muted" style="margin:0 0 10px">Ventes, clients, réservations et affluence d’exemple (Camille Martin, Anniversaire de Léo, « 73 personnes présentes »…). Sont conservés : votre équipe, vos plannings, vos comptes, vos produits, vos réglages et tout ce que vous avez saisi vous-même.</p><div class="acts"><button class="btn danger" data-act="z_demo">Vider les données de démonstration</button></div>`:`<p class="muted" style="margin:0">Il n’y a plus de données d’exemple : tout ce qui est affiché est à vous.</p>`}</div>`);
 }
+/* ===== v107 : « Personnaliser » en UNE page =========================================================================
+   Avant : « Apparence » et « Studio » (3 400 px de haut), avec les couleurs, les textes et la police en double.
+   Maintenant : les mêmes cartes (mêmes boutons, mêmes réglages) rangées en 6 rubriques repliables ; l'identité et les couleurs
+   sont ouvertes, le reste se déplie d'un geste. L'onglet « Studio » (id pstudio) devient « Personnaliser » ; « Apparence » (papp) disparaît. */
+const PZ={};
+const vSetAppRaw=vSetApp,vSetStudioRaw=vSetStudio;
+function vSetPerso(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const A=document.createElement('div'),Z=document.createElement('div');
+  vSetAppRaw(A);vSetStudioRaw(Z);
+  const card=(root,t)=>[...root.querySelectorAll('.card')].find(c=>{const h=c.querySelector('h3');return !!h&&h.textContent.trim().startsWith(t)});
+  const H=(...cs)=>cs.filter(Boolean).map(c=>c.outerHTML).join('');
+  const st=S.settings,sy=st.sty||{},c0=cloudCfg();
+  const themes=`<div class="card"><h3>Thème</h3><div class="stgrid">${PRESETS.map((p,i)=>`<button class="prs ${st.brand===p[1]&&st.accent===p[2]?'on':''}" data-act="st_preset" data-i="${i}"><span><i style="background:${p[1]}"></i><i style="background:${p[2]}"></i></span><b>${p[0]}</b></button>`).join('')}</div></div>`;
+  const more=`<details class="pzmore" data-pzm="col"><summary>Choisir mes couleurs</summary><div class="cols" style="margin-top:6px">${H(card(A,'Couleur principale'),card(A,'Couleur d’action'))}</div>
+    <h3 style="margin:12px 0 8px;font-size:15px">Fond, cartes, textes, alertes</h3><div class="stgrid cols2">${STY.map(([k,l,d])=>`<div class="field"><label>${l}</label><input type="color" class="cpick wide" data-stc="${k}" value="${sy[k]||d}"></div>`).join('')}</div><p class="muted" style="font-size:13px;margin:8px 0 0">Gardez un bon contraste entre le fond et le texte.</p></details>`;
+  /* style : angles, taille, police et menu de gauche dans une seule carte */
+  const look=card(A,'Style');
+  if(look){const z=look.querySelector('[data-look="zoom"]'),f=fld('Police du logiciel',`<select data-sfont="1">${Object.keys(FONTS).map(k=>`<option value="${k}" ${(st.font||'def')===k?'selected':''}>${FONTS[k][0]}</option>`).join('')}</select>`);
+    if(z&&z.closest('.field'))z.closest('.field').insertAdjacentHTML('afterend',f);else look.insertAdjacentHTML('beforeend',f)}
+  /* aperçu : un seul bouton « couleurs d'origine » (celui de l'ancien Studio, qui remet aussi les couleurs avancées) */
+  const ap=card(A,'Aperçu');
+  if(ap){const rb=ap.querySelector('[data-act="theme"][data-k="reset"]');if(rb){rb.dataset.act='st_resetcol';rb.removeAttribute('data-k')}ap.style.marginTop='14px'}
+  const sec=(id,t,d,body,open)=>`<details class="pz" data-pz="${id}" ${(PZ[id]!==undefined?PZ[id]:open)?'open':''}><summary><b>${t}</b><span>${d}</span></summary><div class="pzb">${body}</div></details>`;
+  m.innerHTML=
+    sec('id','Identité','Logo, message d’accueil, pied de ticket',`<div class="cols">${H(card(A,'Logo'),card(A,'Textes'))}</div>`,true)+
+    sec('look','Couleurs et style','Thème, couleurs, angles, police, taille',themes+more+`<div style="margin-top:14px">${H(look)}</div>`+H(ap),true)+
+    sec('fn','Menus et fonctions','Ce qui apparaît dans Lago, plan de salle, accès caisse',H(card(Z,'Fonctions de caisse'),card(Z,'Service en salle'),card(Z,'Fonctionnalités')),false)+
+    sec('txt','Textes et noms','Changer n’importe quel libellé du logiciel',H(card(Z,'Textes et noms')),false)+
+    sec('equipe','Équipe connectée et données','Base en ligne partagée, démonstration, envoi vers Google Sheets',H(card(Z,'Équipe connectée'),card(Z,'Données de démonstration'),card(Z,'Envoi des rapports')),!!(c0&&c0.pending))+
+    sec('adv','Avancé','Style CSS, sauvegarde complète, réinitialisation',H(card(Z,'Style avancé'),card(Z,'Sauvegarde complète')),false);
+}
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('pz')&&d.dataset.pz)PZ[d.dataset.pz]=d.open},true);
+vSetApp=function(m){vSetPerso(m)};vSetStudio=function(m){vSetPerso(m)};
+SUBS.pstudio=vSetPerso;
+{const i=TABS.params.findIndex(x=>x[0]==='papp');if(i>=0)TABS.params.splice(i,1);const t=TABS.params.find(x=>x[0]==='pstudio');if(t)t[1]='Personnaliser'}
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act^="z_"]');if(!b)return;const a=b.dataset.act,redraw=()=>{if(view==='params'&&tab.params==='pstudio')vSetStudio($('#sub'))};
   if(a==='z_gen'){
@@ -5047,6 +5178,7 @@ document.addEventListener('click',async e=>{
     askYes('Déconnecter cet appareil de la base d’équipe ? Les données déjà synchronisées restent en ligne et sur cet appareil.',()=>{if(CL.es)CL.es.close();CL.es=null;CL.ready=false;cloudSet(null);try{localStorage.removeItem(CBOX)}catch(x){}chrome();redraw();toast('Appareil déconnecté')},'Déconnecter');
   }else if(a==='z_now'){cloudKick(0);toast('Synchronisation…')}
   else if(a==='z_copy'){const l=zLink();if(l)zCopy(l,'Lien copié : collez-le dans un message')}
+  else if(a==='z_rules'){const c=cloudCfg();if(c)zCopy(fbRules(c.r),'Règles copiées : collez-les dans Firebase')}
   else if(a==='z_share'){
     const l=zLink();if(!l)return;
     if(navigator.share){try{await navigator.share({title:'Lago',text:zInvite(''),url:l})}catch(err){if(err&&err.name!=='AbortError')zCopy(zInvite(l),'Message copié : collez-le dans une conversation')}}
@@ -5135,7 +5267,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v106';
+const LAGO_V='v107';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -6604,9 +6736,9 @@ function plLowSlots(p,d,ds,dc){
   return low;
 }
 /* état d'affichage (jour choisi, direction de la dernière glissade, vue semaine sur grand écran) */
-let plSel=null,plSelPlan=null,plWeekV=false,plDir=0;
+let plSel=null,plSelPlan=null,plWeekV=true,plDir=0;
 const plMQ=window.matchMedia?matchMedia('(max-width:640px)'):{matches:false};
-const plIsWeek=()=>plWeekV&&!plMQ.matches;
+const plIsWeek=()=>plWeekV;
 const plTdIdx=p=>planFor(today())===p?dowOf(today()):-1;
 const plCls=k=>k<MIN_STAFF?'bad':k===MIN_STAFF?'warn':'ok';
 const plCnt=(p,d,ds,dc,i)=>{const c=(dc||p.cells[d]||{})[i]||{};return S.staff.filter(s=>c[s.id]==='w'&&!(ds&&onLeave(s.id,ds))).length};
@@ -6641,6 +6773,35 @@ function plStrip(p,sel,td){
     const n=nrows(p,d),ks=Array.from({length:n},(_,i)=>plCnt(p,d,null,null,i)),low=ks.filter(k=>k<MIN_STAFF).length;
     return `<button type="button" class="pls${d===sel?' on':''}${d===td?' today':''}" ${wk?'':`role="tab" aria-selected="${d===sel}" tabindex="${d===sel?0:-1}"`} data-act="${wk?'plgo':'plday'}" data-d="${d}" data-pd="${d}" aria-label="${nm}${d===td?' (aujourd’hui)':''} : ${low?low+' créneau'+(low>1?'x':'')+' à renforcer':'équipe complète'}"><b>${nm.slice(0,3)}</b><span class="cvs" aria-hidden="true">${ks.map(k=>`<i class="${plCls(k)}"></i>`).join('')}</span></button>`}).join('')}</nav>`;
 }
+/* ---------- vue Semaine : toute l'équipe sur 7 jours, d'un seul coup d'œil (v107) ---------- */
+function plWeekDates(p){
+  const t=today();let mon;
+  if(p.base||!p.from||(t>=p.from&&t<=p.to))mon=(()=>{const d=new Date(t+'T12:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return dkey(d)})();
+  else mon=addDays(p.from,-dowOf(p.from));
+  return Array.from({length:7},(_,d)=>addDays(mon,d));
+}
+function plWeekHtml(p,td){
+  const ds7=plWeekDates(p),t=today(),vs=visStaff();
+  const blocks=(s,d)=>{
+    if(onLeave(s.id,ds7[d]))return [['lv','Congé','']];
+    const n=nrows(p,d),dc=p.cells[d]||{},o=[];
+    for(let i=0;i<n;i++){const v=(dc[i]||{})[s.id];if(v&&((dc[i-1]||{})[s.id]||'')!==v)o.push([v,v==='g'?'Gestion':'',plBlock(p,d,null,dc,i,s.id,v)])}
+    return o;
+  };
+  const split=txt=>{const a=String(txt).split('–');return a.length===2?`<i>${esc(a[0])}</i><i class="sep">–</i><i>${esc(a[1])}</i>`:`<i>${esc(txt)}</i>`};
+  const head=DAYN.map((nm,d)=>`<th scope="col"><button type="button" class="wkh${ds7[d]===t?' today':''}" data-act="plwkday" data-d="${d}" aria-label="${nm} ${dshort(ds7[d])} : voir le détail du jour"><b>${nm.slice(0,3)}</b><span>${+ds7[d].slice(8)}</span></button></th>`).join('');
+  const body=vs.map(s=>{
+    const col=scol(s),h=planHours(p,s.id);
+    const cells=DAYN.map((nm,d)=>{
+      const bl=blocks(s,d);
+      const inner=!bl.length?`<span class="wkoff">·</span>`:bl.map(b=>b[0]==='lv'?`<span class="wkb lv">Congé</span>`:`<span class="wkb ${b[0]}" style="--c:${col};color:${b[0]==='g'?'var(--ink-2)':inkOn(col)}">${b[0]==='g'?`<em>Gest.</em>`:''}${split(b[2])}</span>`).join('');
+      return `<td class="${ds7[d]===t?'today':''}"><button type="button" class="wkc" data-act="plwkday" data-d="${d}" aria-label="${esc(fname(s))}, ${nm} : ${bl.length?bl.map(b=>b[0]==='lv'?'congé':(b[0]==='g'?'gestion ':'')+b[2]).join(' et '):'repos'}">${inner}</button></td>`}).join('');
+    return `<tr><th class="pn" scope="row"><span class="pnc"><span class="pav" style="background:${col};color:${inkOn(col)}">${esc(initials(s.name))}</span><span class="pnx"><span class="pnm">${esc(fname(s))}</span><em class="phr">${h.w||h.g?plHF(h.w||h.g)+(!h.w&&h.g?' gestion':''):'Repos'}</em></span></span></th>${cells}</tr>`}).join('');
+  const cov=DAYN.map((nm,d)=>{const n=nrows(p,d);let mn=99;for(let i=0;i<n;i++)mn=Math.min(mn,plCnt(p,d,null,null,i));if(mn===99)mn=0;
+    return `<td class="${ds7[d]===t?'today':''}"><span class="cvb ${plCls(mn)}" role="img" aria-label="${nm} : au minimum ${mn} personne${mn>1?'s':''} en poste">${mn}</span></td>`}).join('');
+  return `<div class="card wkcard"><div class="ptw"><table class="wkt"><thead><tr><th class="pn"><span class="sr">Personne</span></th>${head}</tr></thead><tbody>${body||`<tr><td colspan="8" class="muted" style="padding:18px">Aucun employé à afficher.</td></tr>`}</tbody><tfoot><tr class="cvr"><th class="pn" scope="row">Équipe</th>${cov}</tr></tfoot></table></div>
+    <div class="wklg"><span><i class="wkb w" style="--c:var(--brand)"></i>Présent</span><span><i class="wkb g" style="--c:var(--brand)"></i>Gestion</span><span><i class="wkb lv"></i>Congé</span><span class="muted">« Équipe » : minimum de personnes présentes sur la journée. Touchez un jour pour ${isAdmin()?'le détailler et le modifier':'le détailler'}.</span></div></div>`;
+}
 function vTeam(m){
   const p=curPlan();
   if(plSelPlan!==p.id){plSelPlan=p.id;plSel=null}
@@ -6657,9 +6818,9 @@ function vTeam(m){
     <div class="plrow"><div class="chips pch">${chips}</div><div class="seg plview" role="group" aria-label="Affichage"><button type="button" class="${wk?'':'on'}" data-act="plwk" data-k="jour">Jour</button><button type="button" class="${wk?'on':''}" data-act="plwk" data-k="semaine">Semaine</button></div></div>
     ${low.length?`<div class="banner"><span>${low.length} créneau${low.length>1?'x':''} sous le minimum de ${MIN_STAFF} personnes (${low.slice(0,4).join(', ')}${low.length>4?'…':''}).</span></div>`:`<div class="banner ok"><span>Tous les créneaux respectent le minimum de ${MIN_STAFF} personnes.</span></div>`}
     ${td>=0?poCard('plan'):''}
-    ${plStrip(p,wk?-1:plSel,td)}
-    ${wk?`<div class="dgrid">${[0,1,2,3,4,5,6].map(d=>dayCard(p,d,null)).join('')}</div>`:`<div class="plday${dir?' sl'+(dir>0?'r':'l'):''}">${dayCard(p,plSel,null)}</div>`}
-    <div class="card plcard" style="margin-top:14px"><h3>Total des heures par semaine</h3><div class="tts">${tot}</div><p class="muted" style="margin-top:12px">CP : ${cpLabel()}${isAdmin()?' · Touchez une case pour la remplir : <b>présent</b>, puis <b>gestion</b>, puis vide.':' · Seul l’administrateur peut modifier le planning.'}</p></div></div>`;
+    ${wk?plWeekHtml(p,td):plStrip(p,plSel,td)}
+    ${wk?'':`<div class="plday${dir?' sl'+(dir>0?'r':'l'):''}">${dayCard(p,plSel,null)}</div>`}
+    <div class="card plcard" style="margin-top:14px"><h3>Total des heures par semaine</h3><div class="tts">${tot}</div><p class="muted" style="margin-top:12px">CP : ${cpLabel()}${isAdmin()?' · Dans la vue Jour, touchez une case pour la remplir : <b>présent</b>, puis <b>gestion</b>, puis vide.':' · Seul l’administrateur peut modifier le planning.'}</p></div></div>`;
 }
 /* changer de jour : toucher le bandeau, glisser vers la gauche / la droite, ou flèches du clavier */
 function plStep(k){
@@ -6667,10 +6828,11 @@ function plStep(k){
   plDir=k;plSel=n;redrawStaff();
 }
 document.addEventListener('click',e=>{
-  const b=e.target.closest('[data-act="plgo"],[data-act="plday"],[data-act="plwk"]');if(!b)return;
+  const b=e.target.closest('[data-act="plgo"],[data-act="plday"],[data-act="plwk"],[data-act="plwkday"]');if(!b)return;
   const a=b.dataset.act;
   if(a==='plgo'){const c=document.getElementById('pld'+b.dataset.d);if(c)c.scrollIntoView({behavior:'smooth',block:'start'})}
   else if(a==='plday'){const d=+b.dataset.d;if(d===plSel)return;plDir=d>plSel?1:-1;plSel=d;redrawStaff();const t=document.querySelector('.pls.on');if(t&&e.detail===0)t.focus()}
+  else if(a==='plwkday'){plWeekV=false;plSel=+b.dataset.d;plDir=0;redrawStaff();window.scrollTo(0,0)}
   else{plWeekV=b.dataset.k==='semaine';redrawStaff()}
 });
 document.addEventListener('keydown',e=>{
@@ -8069,10 +8231,57 @@ const webLink=()=>WEB_PAGE+'?c='+webEmbedParam();
 function webIframe(){
   return `<iframe id="lago-resa" src="${webLink()}" title="Réserver une session" style="width:100%;min-height:760px;border:0" loading="lazy"></iframe>\n<scr`+`ipt>addEventListener('message',function(e){if(e.origin==='https://lago-software.github.io'&&e.data&&e.data.lagoHeight){document.getElementById('lago-resa').style.height=e.data.lagoHeight+'px'}})</scr`+`ipt>`;
 }
-function webRules(){
-  const c=cloudCfg(),w=webCfg();
-  return `{\n  "rules": {\n    ".read": false,\n    ".write": false,\n    "${c?c.r:'room'}": { ".read": true, ".write": true },\n    "pub": {\n      "${w.k}": {\n        "cfg":  { ".read": true, ".write": true },\n        "base": { ".read": true, ".write": true },\n        "web": {\n          ".read": true, ".write": true,\n          "$d": { "$i": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" } }\n        },\n        "pay": { ".read": true, ".write": true, ".validate": "newData.hasChildren(['b','s']) && newData.child('b').isString() && newData.child('b').val().length < 120000 && newData.child('s').isString() && newData.child('s').val().length < 200" },\n        "pn": {\n          ".read": true, ".indexOn": ["t"],\n          "$ref": {\n            ".write": "$ref.length >= 9 && $ref.length <= 11 && $ref.contains('-') && (!newData.exists() ? data.child('t').val() < now - 2592000000 : (!data.exists() || newData.child('s').val() >= data.child('s').val()))",\n            ".validate": "newData.hasChildren(['t','s','a']) && newData.child('t').isNumber() && newData.child('s').isNumber() && newData.child('s').val() >= 1 && newData.child('s').val() <= 2 && newData.child('a').isNumber() && newData.child('a').val() >= 0 && newData.child('a').val() <= 10000000"\n          }\n        },\n        "req": {\n          ".read": true, ".indexOn": ["ts"],\n          "$id": {\n            ".write": "!data.exists() || (!newData.exists() && data.child('ts').val() < now - 604800000)",\n            ".validate": "newData.hasChildren(['ts','k','iv','ct']) && newData.child('ts').isNumber() && newData.child('ts').val() > now - 600000 && newData.child('ts').val() < now + 600000 && newData.child('ct').isString() && newData.child('ct').val().length < 8000"\n          }\n        }\n      }\n    }\n  }\n}`;
+function webRules(){const c=cloudCfg();return fbRules(c?c.r:'room')}
+/* message clair selon la réponse de Firebase (avant : tout s'affichait « Hors ligne », même un refus des règles) */
+function fbErr(e,more){
+  const m=/http (\d+)/.exec(String(e&&e.message||e)),c=m?+m[1]:0,x=more||'';
+  if(c===401||c===403)return 'Firebase refuse l’écriture : collez les règles proposées dans Paramètres › Réservation en ligne, puis touchez « Tester la connexion »';
+  if(c===404)return 'Adresse de la base Firebase introuvable : vérifiez-la dans Paramètres › Personnaliser › Équipe connectée';
+  if(c===400)return 'Firebase a refusé les données (règles à mettre à jour) : touchez « Tester la connexion » dans Paramètres › Réservation en ligne';
+  if(c>=500)return 'Firebase est momentanément indisponible'+x;
+  return 'Hors ligne'+x;
 }
+/* ---------- test de la connexion : lit et écrit chaque nœud utilisé, et dit lequel est refusé ---------- */
+async function fbDiag(){
+  const c=cloudCfg(),rows=[],row=(s,t,h)=>rows.push({s,t,h:h||''});
+  if(!c||!c.u||c.pending)return[{s:'ko',t:'La base Firebase n’est pas encore connectée',h:'Paramètres › Personnaliser › Équipe connectée : terminez d’abord « Équipe connectée ».'}];
+  const host=webDbNow()||webDb();
+  const q=async(m,p,b)=>{try{const r=await fetch(host+'/'+p,{method:m,cache:'no-store',headers:b===undefined?undefined:{'content-type':'application/json'},body:b===undefined?undefined:JSON.stringify(b)});let t='';try{t=await r.text()}catch(e){}return{s:r.status,ok:r.ok,t}}catch(e){return{s:0,ok:false,t:''}}};
+  const w=webCfg(),t=tvCfg(),k=w.k||('diag'+Math.random().toString(36).slice(2,12)+'xyz'),P='pub/'+k+'/';
+  const root=await q('GET','.json?shallow=true');
+  if(root.s===0)return[{s:'ko',t:'Base injoignable',h:'Vérifiez la connexion internet de cet appareil, puis recommencez.'}];
+  if(root.s===404)return[{s:'ko',t:'Adresse de la base incorrecte',h:'Vérifiez l’adresse dans Paramètres › Personnaliser › Équipe connectée.'}];
+  if(root.ok)row('warn','Votre base est ouverte à tout le monde','Les règles actuelles laissent lire toutes les données. Collez les règles proposées pour la verrouiller.');
+  else row('ok','Base Firebase joignable et verrouillée');
+  const rm=await q('GET',c.r+'/.json?shallow=true');
+  row(rm.ok?'ok':'ko',rm.ok?'Équipe connectée : lecture et écriture autorisées':'Équipe connectée : refusée par les règles',rm.ok?'':'Collez les règles proposées dans Firebase › Realtime Database › Règles, puis « Publier ».');
+  /* lecture des pages publiques */
+  const rd=await Promise.all(['cfg','base','web','pay'].map(n=>q('GET',P+n+'.json')));
+  const badR=['cfg','base','web','pay'].filter((n,i)=>!rd[i].ok);
+  row(badR.length?'ko':'ok',badR.length?'Pages de réservation et de paiement : lecture refusée ('+badR.join(', ')+')':'Pages de réservation et de paiement : lecture autorisée',badR.length?'Règles à mettre à jour : collez le texte proposé puis « Publier » dans Firebase.':'');
+  /* écriture des places réservées (essai effacé aussitôt) */
+  const wp=await q('PUT',P+'web/_essai.json',{0:0});
+  if(wp.ok)q('DELETE',P+'web/_essai.json').catch(()=>{});
+  row(wp.ok?'ok':'ko',wp.ok?'Réservations en ligne : écriture des places autorisée':'Réservations en ligne : écriture refusée',wp.ok?'':'Règles à mettre à jour : collez le texte proposé puis « Publier » dans Firebase.');
+  /* paiements et demandes (index) */
+  const [pn,rq]=await Promise.all([q('GET',P+'pn.json?orderBy="t"&limitToFirst=1'),q('GET',P+'req.json?orderBy="ts"&limitToFirst=1')]);
+  const badI=[pn.ok?'':'pn',rq.ok?'':'req'].filter(Boolean);
+  row(badI.length?'ko':'ok',badI.length?'Paiements et demandes des clients : '+(pn.s===400||rq.s===400?'index manquant':'lecture refusée'):'Paiements et demandes des clients : lecture autorisée',badI.length?'Règles à mettre à jour : collez le texte proposé puis « Publier » dans Firebase.':'');
+  /* publication réelle (seulement si la réservation est activée) */
+  if(webReady()){const ok=await webPublish(true).catch(()=>false);row(ok?'ok':'ko',ok?'Publication des places libres : réussie':'Publication des places libres : échec',ok?'':(WEBR.err||''));
+    if(payCfg().pub&&payCfg().on){const ok2=await payPublish(true).catch(()=>false);row(ok2?'ok':'ko',ok2?'Publication de la page de paiement : réussie':'Publication de la page de paiement : échec',ok2?'':(PAYS.err||''))}}
+  else if(w.on)row('warn','La réservation en ligne est activée, mais pas encore prête','Attendez la synchronisation de l’équipe, puis recommencez.');
+  if(t.k){const tr=await q('GET','tv/'+t.k+'/d.json');row(tr.ok?'ok':'ko',tr.ok?'Écran TV : lecture autorisée':'Écran TV : lecture refusée',tr.ok?'':'Règles à mettre à jour : collez le texte proposé puis « Publier » dans Firebase.')}
+  return rows;
+}
+const fbDiagHtml=rows=>`<ul class="fbd-l">${rows.map(r=>`<li class="${r.s}"><b aria-hidden="true">${r.s==='ok'?'✓':r.s==='warn'?'!':'✕'}</b><span>${esc(r.t)}${r.h?`<small>${esc(r.h)}</small>`:''}</span></li>`).join('')}</ul><p class="fbd-v ${rows.some(r=>r.s==='ko')?'ko':rows.some(r=>r.s==='warn')?'warn':'ok'}">${rows.some(r=>r.s==='ko')?'Un point est refusé : mettez à jour les règles Firebase (texte ci-dessus), puis relancez le test.':rows.some(r=>r.s==='warn')?'Tout fonctionne, avec un point d’attention.':'Tout fonctionne : réservation, paiement et écran TV peuvent être utilisés.'}</p>`;
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act="fb_diag"]');if(!b||b.disabled)return;
+  const box=b.closest('.card')&&b.closest('.card').querySelector('.fbd');if(!box)return;
+  b.disabled=true;box.innerHTML='<p class="muted" role="status">Test en cours…</p>';
+  let rows;try{rows=await fbDiag()}catch(x){rows=[{s:'ko',t:'Le test a échoué',h:String(x&&x.message||x)}]}
+  b.disabled=false;box.innerHTML=fbDiagHtml(rows);
+});
 /* ---------- publication des places libres ---------- */
 const webSlotCap=()=>S.settings.cap;
 function webLoad(ds,t){
@@ -8106,7 +8315,7 @@ async function webPublish(force){
     const r=await fetch(webU('').replace(/\.json$/,'')+'.json',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({cfg:cfgO,base:baseO})});
     if(!r.ok)throw new Error('http '+r.status);
     WEBR.h=h;WEBR.t=Date.now();WEBR.err='';w.lastPub=WEBR.t;return true;
-  }catch(e){WEBR.err=/40[13]/.test(String(e.message))?'Règles Firebase à mettre à jour (voir Paramètres › Réservation en ligne)':'Hors ligne';return false}
+  }catch(e){WEBR.err=fbErr(e);return false}
 }
 let webTimer=0;
 function webSched(){if(!webCfg().on)return;clearTimeout(webTimer);webTimer=setTimeout(()=>{webPublish().catch(()=>{})},4000)}
@@ -8195,7 +8404,7 @@ async function webPoll(){
     WEBR.pend=0;
     /* remise à jour des compteurs publics : après un moment sans nouvelle demande */
     if(Date.now()-WEBR.rec>300000&&Date.now()-Math.max(maxTs,WEBR.seen||0)>180000)await webReconcile();
-  }catch(e){WEBR.err='Hors ligne'}
+  }catch(e){WEBR.err=fbErr(e)}
   finally{WEBR.busy=false}
 }
 async function webTick(){
@@ -8271,9 +8480,10 @@ function vSetWeb(m){
   const when=WEBR.t?new Date(WEBR.t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—';
   m.innerHTML=`<div class="card"><h3>Réservation en ligne</h3>
     <p class="muted" style="margin:0 0 10px">Vos clients réservent et choisissent leur créneau sur votre site, en voyant les vraies places libres. La réservation arrive dans Lago, le planning se met à jour et le règlement se fait à l’accueil.</p>
-    ${cl?'':'<div class="banner"><span>Il faut d’abord connecter l’équipe (Paramètres › Studio) : la réservation passe par la même base en ligne.</span></div>'}
+    ${cl?'':'<div class="banner"><span>Il faut d’abord connecter l’équipe (Paramètres › Personnaliser › Équipe connectée) : la réservation passe par la même base en ligne.</span></div>'}
     <label class="wchk"><input type="checkbox" id="web_on" ${w.on?'checked':''} ${cl?'':'disabled'}> <b>Ouvrir la réservation en ligne</b></label>
-    ${w.on&&cl?`<p class="muted" style="margin:8px 0 0">${ready?(WEBR.err?'<b style="color:var(--bad)">'+esc(WEBR.err)+'</b>':'Dernière mise à jour des places : '+when):'Préparation…'}</p>`:''}</div>
+    ${w.on&&cl?`<p class="muted" style="margin:8px 0 0">${ready?(WEBR.err?'<b style="color:var(--bad)">'+esc(WEBR.err)+'</b>':'Dernière mise à jour des places : '+when):'Préparation…'}</p>`:''}
+    ${cl?`<div class="acts" style="margin-top:10px"><button class="btn" data-act="fb_diag">Tester la connexion</button></div><div class="fbd" aria-live="polite"></div>`:''}</div>
    <div class="card"><h3>Formules proposées</h3><p class="muted" style="margin:0 0 6px">Cochez ce que le client peut réserver. Les tarifs viennent de vos produits.</p>${sess.map(sRow).join('')||'<p class="muted">Aucune formule avec durée (produit « sauteur »).</p>'}
     <h4 style="margin:14px 0 4px">Options</h4>${oRow?opts.map(oRow).join(''):''}</div>
    <div class="card"><h3>Règles</h3>
@@ -8285,8 +8495,8 @@ function vSetWeb(m){
     <div class="field"><label for="web_info">Message affiché sur la première étape (facultatif)</label><input id="web_info" value="${esc(w.info)}" maxlength="200" placeholder="Chaussettes antidérapantes obligatoires (en vente sur place)."></div>
     <div class="field"><label for="web_cgv">Conditions de réservation (facultatif)</label><textarea id="web_cgv" rows="4" maxlength="1500" placeholder="Annulation gratuite jusqu’à 24 h avant, retard, âge minimum, taille…">${esc(w.cgv)}</textarea></div></div>
    ${w.on&&cl?`<div class="card"><h3>Installer sur votre site</h3>
-    <ol class="muted" style="margin:0 0 10px 18px;padding:0"><li>Dans Firebase › Realtime Database › Règles, remplacez tout par le texte ci-dessous, puis cliquez sur Publier (une seule fois).</li><li>Collez le code d’intégration dans la page de votre site où la réservation doit apparaître (bloc « HTML personnalisé »).</li></ol>
-    <b>1. Règles Firebase</b><textarea readonly rows="9" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%;margin:6px 0">${esc(webRules())}</textarea>
+    <ol class="muted" style="margin:0 0 10px 18px;padding:0"><li>Dans Firebase › Realtime Database › Règles, remplacez tout par le texte ci-dessous, puis cliquez sur Publier (une seule fois : ce texte sert aussi au paiement et à l’écran TV).</li><li>Collez le code d’intégration dans la page de votre site où la réservation doit apparaître (bloc « HTML personnalisé »).</li></ol>
+    <b>1. Règles Firebase</b><textarea readonly rows="12" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%;margin:6px 0">${esc(webRules())}</textarea>
     <div class="acts" style="margin-bottom:12px"><button class="btn" data-act="web_copy" data-what="rules">Copier les règles</button></div>
     <b>2. Code d’intégration</b><textarea readonly rows="6" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%;margin:6px 0">${esc(webIframe())}</textarea>
     <div class="acts"><button class="btn primary" data-act="web_copy" data-what="iframe">Copier le code</button><a class="btn" target="_blank" rel="noopener" href="${esc(webLink())}">Ouvrir la page de réservation</a></div>
@@ -8308,7 +8518,7 @@ document.addEventListener('change',async e=>{
   const w=webDefaults(webCfg());let redo=false;
   if(t.id==='web_on'){
     if(t.checked){
-      if(!cloudOn()){t.checked=false;toast('Connectez d’abord l’équipe (Paramètres › Studio)');return}
+      if(!cloudOn()){t.checked=false;toast('Connectez d’abord l’équipe (Paramètres › Personnaliser › Équipe connectée)');return}
       w.on=true;webSite(w);try{await webKeys(w)}catch(x){w.on=false;t.checked=false;toast('Ce navigateur ne permet pas de créer les clés de chiffrement');return}
       toast('Réservation en ligne activée');
     }else{w.on=false;fetch(webU('cfg'),{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({on:false})}).catch(()=>{});toast('Réservation en ligne fermée')}
@@ -8526,7 +8736,7 @@ async function payPublish(force){
     const r=await fetch(webU('pay'),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({b,s,t:Date.now()})});
     if(!r.ok)throw new Error('http '+r.status);
     PAYS.h=b;PAYS.t=Date.now();PAYS.err='';return true;
-  }catch(e){PAYS.err=/40[13]/.test(String(e.message))?'Règles Firebase à mettre à jour (voir ci-dessous)':'Hors ligne';return false}
+  }catch(e){PAYS.err=fbErr(e);return false}
 }
 /* la publication et la relève des signaux suivent celles de la réservation en ligne */
 {const f0=webPublish;webPublish=async function(force){const r=await f0(force);if(payCfg().pub)await payPublish(force).catch(()=>{});return r}}
@@ -8684,9 +8894,9 @@ function vSetPay(m){
     ${payTxt('title','Titre',p.title,80,cp.title)}${payTxt('intro','Message sous le titre',p.intro,300,'Ex. Un acompte garantit votre créneau.','ta')}${payTxt('btn','Texte du bouton',p.btn,40,cp.btn)}${payTxt('note','Mention de sécurité',p.note,300,cp.note,'ta')}
     ${payTxt('thT','Titre après le paiement',p.thT,80,cp.thT)}${payTxt('thM','Message après le paiement',p.thM,300,cp.thM,'ta')}${payTxt('help','Aide en bas de page',p.help,200,'Ex. Un souci avec le paiement ? Appelez-nous.')}
     ${payTxt('site','Adresse de votre site (bouton « Retour au site »)',p.site,200,'https://www.monparc.fr')}</div>
-   <div class="card"><h3>Règles Firebase</h3><p class="muted" style="margin:0 0 8px">Une seule fois : si vous utilisiez déjà la réservation en ligne, remplacez les règles Firebase par celles-ci (elles ajoutent la page de paiement), puis recopiez le code d’intégration sur votre site (il contient maintenant la clé de vérification).</p>
-    <textarea readonly rows="6" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%">${esc(webRules())}</textarea>
-    <div class="acts" style="margin-top:8px">${copyBtn('rules','Copier les règles')}${copyBtn('iframe','Copier le code d’intégration')}</div></div>
+   <div class="card"><h3>Règles Firebase</h3><p class="muted" style="margin:0 0 8px">Ce sont les mêmes règles que pour la réservation en ligne et l’écran TV : si vous les avez déjà collées dans Firebase, il n’y a rien à refaire. Sinon, remplacez-y les règles par celles-ci (une seule fois), puis recopiez le code d’intégration sur votre site (il contient la clé de vérification).</p>
+    <textarea readonly rows="8" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%">${esc(webRules())}</textarea>
+    <div class="acts" style="margin-top:8px">${copyBtn('rules','Copier les règles')}${copyBtn('iframe','Copier le code d’intégration')}<button class="btn" data-act="fb_diag">Tester la connexion</button></div><div class="fbd" aria-live="polite"></div></div>
   </div><div class="paycol payside"><div class="card"><h3>Aperçu</h3>
     ${payTabs('data-payprev')}
     <div class="payframe"><div id="pay_prev" role="img" aria-label="Aperçu de la page de paiement"></div></div>
@@ -10329,7 +10539,7 @@ const syTitle=s=>({local:'Appareil non relié à l’équipe',sync:'Synchronisat
 const syAgo=ts=>{if(!ts)return 'jamais';const s=Math.max(0,Math.round((Date.now()-ts)/1000));return s<5?'à l’instant':s<60?'il y a '+s+' s':s<3600?'il y a '+Math.round(s/60)+' min':'à '+hm(ts)};
 function syErrTxt(e){
   const t=String(e||'');
-  if(/http 40[13]/.test(t))return 'La base en ligne refuse l’accès : les règles de sécurité de la base ne laissent plus passer cet appareil. Prévenez votre responsable (Paramètres › Studio).';
+  if(/http 40[13]/.test(t))return 'La base en ligne refuse l’accès : les règles de sécurité de la base ne laissent plus passer cet appareil. Prévenez votre responsable (Paramètres › Personnaliser › Équipe connectée).';
   if(/http 404|http 405/.test(t))return 'Adresse de la base introuvable : le lien d’équipe est peut-être périmé.';
   if(/http 5\d\d/.test(t))return 'Le serveur de la base répond par une erreur : nouvel essai automatique.';
   if(/abort|délai|Failed to fetch|NetworkError|Load failed/i.test(t))return 'Connexion lente ou bloquée : nouvel essai automatique.';
@@ -11087,19 +11297,23 @@ function cseState(c){if(c.off)return['Désactivé','bad'];if(c.from&&c.from>toda
 const cseSum=L=>({n:L.length,ca:sumBy(L,s=>s.total||0),rem:sumBy(L,s=>s.promo?s.promo.amt:0),pers:sumBy(L,s=>s.jumpers||0)});
 function vCse(m){
   const L=[...cseL()].sort((a,b)=>a.name.localeCompare(b.name,'fr')),all=cseSum(L.flatMap(cseSales));
-  m.innerHTML=`<div class="impo"><span>Un CSE signe une convention : ses salariés bénéficient d’une remise sur présentation de leur code ou de la carte à QR code, et vous suivez son activité ici.</span><button class="btn primary" data-act="cse_new">${ic('plus')}Nouveau CSE</button></div>
+  m.innerHTML=`<div class="impo"><span>Chaque CSE reçoit un code et une carte à QR code : ses salariés bénéficient de la remise, et vous suivez son activité ici.</span><button class="btn primary" data-act="cse_new">${ic('plus')}Nouveau CSE</button></div>
    <div class="pst" style="margin-bottom:12px"><span><b class="num">${L.filter(c=>cseState(c)[1]==='ok').length}</b> CSE actif${L.filter(c=>cseState(c)[1]==='ok').length>1?'s':''}</span><span><b class="num">${eurP(all.ca)}</b> encaissés</span><span><b class="num">${eurP(all.rem)}</b> de remises accordées</span></div>
    <div class="card">${L.length?L.map(c=>{const st=cseState(c),s=cseSum(cseSales(c));return `<button class="row rowbtn" data-act="cse_open" data-id="${c.id}"><span class="gc-chip">${ic('users')}</span><span class="grow"><b>${esc(c.name)}</b><span class="muted">${c.pct} % · ${esc(c.code)} · ${s.n} ticket${s.n>1?'s':''}</span></span><span style="text-align:right"><b class="num">${eurP(s.ca)}</b><span class="pill ${st[1]}" style="margin-top:2px">${st[0]}</span></span></button>`}).join(''):`<div class="empty">Aucun CSE pour l’instant. Créez le premier pour obtenir son code et sa carte.</div>`}</div>`;
 }
 function cseForm(id){
-  const c=id?cseL().find(x=>x.id===id):null;
+  const c=id?cseL().find(x=>x.id===id):null,more=!!(c&&(c.cat||c.from||c.to||c.contact||c.phone||c.email||c.notes));
+  const pcts=[5,10,15,20],pv=c?c.pct:10;
   showModal(`${mh(c?'Modifier le CSE':'Nouveau CSE')}<form id="cseform"><input type="hidden" id="cse_id" value="${c?c.id:''}">
    ${fld('Nom du CSE ou de l’entreprise',`<input id="cse_n" required autocomplete="off" value="${c?esc(c.name):''}" placeholder="CSE Sogimex">`)}
-   <div class="two">${fld('Remise (%)',`<input id="cse_p" type="number" min="1" max="100" inputmode="numeric" required value="${c?c.pct:10}">`)}${fld('Produits concernés',`<select id="cse_k"><option value="">Tout le ticket</option>${CATS.map(x=>`<option value="${x.id}" ${c&&c.cat===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`)}</div>
-   <div class="two">${fld('Convention du',`<input id="cse_f" type="date" value="${c&&c.from||''}">`)}${fld('au',`<input id="cse_t" type="date" value="${c&&c.to||''}">`)}</div>
-   <div class="two">${fld('Contact',`<input id="cse_c" autocomplete="off" value="${c?esc(c.contact||''):''}" placeholder="Prénom Nom">`)}${fld('Téléphone',`<input id="cse_ph" type="tel" autocomplete="off" value="${c?esc(c.phone||''):''}">`)}</div>
-   ${fld('E-mail',`<input id="cse_e" type="email" autocomplete="off" value="${c?esc(c.email||''):''}">`)}
-   ${fld('Notes (conditions particulières)',`<textarea id="cse_no" rows="2">${c?esc(c.notes||''):''}</textarea>`)}
+   ${fld('Remise accordée',`<div class="chips" style="margin:0 0 8px">${pcts.map(v=>`<button type="button" class="chip ${pv===v?'on':''}" data-act="cse_pct" data-v="${v}">${v} %</button>`).join('')}</div><div style="display:flex;align-items:center;gap:8px"><input id="cse_p" type="number" min="1" max="100" inputmode="numeric" required value="${pv}" style="max-width:110px"><span class="muted">% sur le ticket</span></div>`)}
+   <details class="cse-more" ${more?'open':''} style="margin:4px 0 12px"><summary style="cursor:pointer;font-weight:700;color:var(--brand-t);padding:8px 0">Plus d’options (facultatif)</summary>
+    <div style="display:grid;gap:10px;margin-top:6px">
+    ${fld('Produits concernés',`<select id="cse_k"><option value="">Tout le ticket</option>${CATS.map(x=>`<option value="${x.id}" ${c&&c.cat===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`)}
+    <div class="two">${fld('Valable du',`<input id="cse_f" type="date" value="${c&&c.from||''}">`)}${fld('au',`<input id="cse_t" type="date" value="${c&&c.to||''}">`)}</div>
+    <div class="two">${fld('Contact',`<input id="cse_c" autocomplete="off" value="${c?esc(c.contact||''):''}" placeholder="Prénom Nom">`)}${fld('Téléphone',`<input id="cse_ph" type="tel" autocomplete="off" value="${c?esc(c.phone||''):''}">`)}</div>
+    ${fld('E-mail',`<input id="cse_e" type="email" autocomplete="off" value="${c?esc(c.email||''):''}">`)}
+    ${fld('Notes (conditions particulières)',`<textarea id="cse_no" rows="2">${c?esc(c.notes||''):''}</textarea>`)}</div></details>
    <button class="btn primary" type="submit" style="width:100%">${c?'Enregistrer':'Créer le CSE et son code'}</button></form>`);
   setTimeout(()=>$('#cse_n')&&$('#cse_n').focus(),50);
 }
@@ -11145,6 +11359,7 @@ document.addEventListener('click',e=>{
   else if(a==='cse_rel'&&c){const mo=($('#cse_mo')||{}).value||today().slice(0,7);saveBytes('Releve-CSE-'+norm(c.name).replace(/[^a-z0-9]+/g,'-')+'-'+mo+'.pdf',csePdf(c,'rel',mo))}
   else if(a==='cse_off'&&c){c.off=!c.off;cseSync(c);save();cseOpen(c.id);if(view==='gestion'&&tab.gestion==='cse')vCse($('#sub'))}
   else if(a==='cse_del'&&c)askYes('Supprimer ce CSE et son code ? Les tickets déjà encaissés ne changent pas.',()=>{S.cse=cseL().filter(x=>x.id!==c.id);S.promos=promos().filter(p=>p.cse!==c.id);save();closeModal();if(view==='gestion'&&tab.gestion==='cse')vCse($('#sub'))},'Supprimer');
+  else if(a==='cse_pct'){const i=$('#cse_p');if(i)i.value=d.v;document.querySelectorAll('#cseform [data-act="cse_pct"]').forEach(x=>x.classList.toggle('on',x===b))}
   else if(a==='cse_apply'){x3Apply(d.code)}
 });
 document.addEventListener('submit',e=>{
@@ -11302,7 +11517,7 @@ async function tvPublish(force){
     const r=await fetch(tvU('d'),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({b,s,p:t.pub})});
     if(!r.ok)throw new Error('http '+r.status);
     TVS.h=h;TVS.t=Date.now();TVS.err='';return true;
-  }catch(e){TVS.err=/40[13]/.test(String(e&&e.message))?'Règles Firebase à mettre à jour (voir ci-dessous)':'Hors ligne : nouvel essai dans une minute';return false}
+  }catch(e){TVS.err=fbErr(e,' (nouvel essai dans une minute)');return false}
   finally{TVS.busy=false;if(TVS.again){const f=TVS.again==='f';TVS.again=false;setTimeout(()=>{tvPublish(f).catch(()=>{})},50)}}
 }
 /* écran désactivé ou code changé : un contenu signé « off » (les règles interdisent d'effacer le nœud, pour que personne ne puisse vider l'écran) */
@@ -11317,20 +11532,6 @@ function tvSched(){if(!tvCfg().on)return;clearTimeout(tvTimer);tvTimer=setTimeou
 async function tvTick(){if(typeof ME==='undefined'||!ME||!tvReady())return;await tvPublish().catch(()=>{})}
 setInterval(()=>{tvTick().catch(()=>{})},60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')tvTick().catch(()=>{})});
-/* ---------- règles Firebase : celles de la réservation en ligne, plus l'écran TV ---------- */
-function tvRulesBlock(k){
-  const v=n=>`newData.hasChildren(['b','s']) && newData.child('b').isString() && newData.child('b').val().length < ${n} && newData.child('s').isString() && newData.child('s').val().length < 200`;
-  return{[k]:{'.read':true,'d':{'.write':'newData.exists()','.validate':v(60000)},'l':{'.write':'newData.exists()','.validate':v(200000)}}};
-}
-{const f0=webRules;webRules=function(){
-  const t=tvCfg(),w=webCfg(),txt=f0();
-  if(!t.k&&w.k)return txt;
-  let o;try{o=JSON.parse(txt)}catch(e){return txt}
-  if(!o||!o.rules)return txt;
-  if(!w.k)delete o.rules.pub;
-  if(t.k)o.rules.tv=tvRulesBlock(t.k);
-  return JSON.stringify(o,null,2);
-}}
 /* ---------- son (même carillon que la télé) ---------- */
 let tvAC=null;
 function tvChime(kind,snd){
@@ -11387,7 +11588,7 @@ function vSetTv(m){
   m.innerHTML=`<div class="payset"><div class="paycol">
    <div class="card"><h3>Écran TV</h3>
     <p class="muted" style="margin:0 0 10px">${intro}</p>
-    ${cl?'':`<div class="banner"><span>Reliez d’abord vos appareils (Paramètres › Studio › Équipe connectée) : l’écran TV lit les données en ligne. <button class="btn primary" type="button" data-act="tv_studio" style="margin-left:8px">Ouvrir</button></span></div>`}
+    ${cl?'':`<div class="banner"><span>Reliez d’abord vos appareils (Paramètres › Personnaliser › Équipe connectée) : l’écran TV lit les données en ligne. <button class="btn primary" type="button" data-act="tv_studio" style="margin-left:8px">Ouvrir</button></span></div>`}
     <label class="wchk"><input type="checkbox" id="tv_on" ${t.on?'checked':''} ${cl?'':'disabled'}> <b>Activer l’écran TV</b></label>
     <p class="muted" id="tv_stat" style="margin:8px 0 0">${tvStat()}</p>
     <div class="acts" style="margin-top:12px">${btn('tv_prev','Voir l’aperçu','primary')}${k==='s'?btn('tv_listen','Écouter l’annonce'):''}</div></div>
@@ -11433,10 +11634,10 @@ function vSetTv(m){
    <div class="card"><h3>Ce que voit la télé</h3>
     <ul class="muted tvlist">${see}</ul>
     <p class="muted" style="margin:8px 0 0">Aucune donnée client n’est envoyée à la télé : seulement les horaires, les durées et le nombre de personnes de la journée${k==='s'?'':', avec la carte et les prix'}, signés par Lago. Personne ne peut y afficher autre chose.</p></div>
-   ${t.k&&cl?`<div class="card"><h3>Règles Firebase</h3><p class="muted" style="margin:0 0 8px">Une seule fois, puis après chaque nouveau code : dans Firebase › Realtime Database › Règles, remplacez tout par ce texte, puis « Publier ». Elles gardent vos réglages actuels et ajoutent l’écran TV.</p>
-    <textarea id="tv_rules" readonly rows="7" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%">${esc(webRules())}</textarea>
-    <div class="acts" style="margin-top:8px">${btn('tv_copy','Copier les règles','','data-what="rules"')}</div></div>
-   <div class="card"><h3>Dissocier les écrans</h3><p class="muted" style="margin:0 0 8px">Un nouveau code coupe tous les écrans associés (télé remplacée, tablette perdue…). Recollez ensuite les règles Firebase, puis associez à nouveau vos télés.</p>
+   ${t.k&&cl?`<div class="card"><h3>Règles Firebase</h3><p class="muted" style="margin:0 0 8px">Ce sont les mêmes règles que pour la réservation en ligne et le paiement : si vous les avez déjà collées, rien à refaire (même après un nouveau code). Sinon, dans Firebase › Realtime Database › Règles, remplacez tout par ce texte, puis « Publier ».</p>
+    <textarea id="tv_rules" readonly rows="8" onclick="this.select()" style="font:12px/1.4 ui-monospace,monospace;width:100%">${esc(webRules())}</textarea>
+    <div class="acts" style="margin-top:8px">${btn('tv_copy','Copier les règles','','data-what="rules"')}<button class="btn" data-act="fb_diag">Tester la connexion</button></div><div class="fbd" aria-live="polite"></div></div>
+   <div class="card"><h3>Dissocier les écrans</h3><p class="muted" style="margin:0 0 8px">Un nouveau code coupe tous les écrans associés (télé remplacée, tablette perdue…). Associez ensuite à nouveau vos télés avec le nouveau code : les règles Firebase ne changent pas.</p>
     <div class="acts">${btn('tv_new','Créer un nouveau code','danger')}</div></div>`:''}
   </div></div>`;
 }
@@ -11458,7 +11659,7 @@ document.addEventListener('change',async e=>{
   const t=tvCfg();
   if(x.id==='tv_on'){
     if(x.checked){
-      if(!cloudOn()){x.checked=false;toast('Reliez d’abord vos appareils (Paramètres › Studio)');return}
+      if(!cloudOn()){x.checked=false;toast('Reliez d’abord vos appareils (Paramètres › Personnaliser › Équipe connectée)');return}
       t.on=true;if(!t.k)t.k=tvNewKey();
       try{await tvKeys(t)}catch(err){t.on=false;x.checked=false;toast('Ce navigateur ne permet pas de signer les données : utilisez un navigateur récent');return}
       save();tvRedo();await tvPublish(true);tvRedo();
@@ -11484,7 +11685,7 @@ document.addEventListener('click',async e=>{
   const t=tvCfg();
   if(b.dataset.tvset){t[b.dataset.tvset]=b.dataset.v;save();tvRedo();tvPublish(true).then(tvStatDraw);if(b.dataset.tvset==='snd'&&b.dataset.v!=='off')tvChime('end',b.dataset.v);return}
   const a=b.dataset.act;
-  if(a==='tv_studio'){tab.params='pstudio';render();return}
+  if(a==='tv_studio'){tab.params='pstudio';PZ.equipe=true;render();return}
   if(a==='tv_logo_rm'||a==='tv_logod_rm'){
     if(a==='tv_logo_rm'&&!b.dataset.sure){b.dataset.sure='1';b.textContent='Confirmer : retirer le logo';return}
     const st=S.settings;if(a==='tv_logo_rm'){st.logo='';st.logoJ='';st.logoD='';try{chrome()}catch(err){}}else st.logoD='';
@@ -11516,7 +11717,7 @@ document.addEventListener('click',async e=>{
     t.k=tvNewKey();t.pub=null;t.priv=null;
     try{await tvKeys(t)}catch(err){}
     save();tvRedo();await tvPublish(true);tvRedo();
-    toast('Nouveau code créé : recollez les règles Firebase, puis associez vos écrans');
+    toast('Nouveau code créé : associez vos écrans avec ce code');
   }
 });
 /* Planning clients › Bracelets : lien vers l'écran TV */
@@ -11531,7 +11732,7 @@ const PGRP=[
  ['caisse','Caisse et clients',['pcat','ploy','pmail']],
  ['resa','Réservations',['pweb','ppay','ptv']],
  ['conf','Légal et sécurité',['pcf','pobl','prgpd','pctl','psante']],
- ['perso','Personnaliser',['papp','pstudio']]
+ ['perso','Personnaliser',['pstudio']]
 ];
 function pgrpOf(t){const g=PGRP.find(x=>x[2].includes(t));return g?g[0]:'autre'}
 tabsFor=(o=>function(id){const L=o.apply(this,arguments);if(id!=='params')return L;const ord=t=>{const gi=PGRP.findIndex(x=>x[2].includes(t));return gi<0?[PGRP.length,0]:[gi,PGRP[gi][2].indexOf(t)]};return L.map((x,i)=>[x,i]).sort((a,b)=>{const p=ord(a[0][0]),q=ord(b[0][0]);return p[0]-q[0]||p[1]-q[1]||a[1]-b[1]}).map(x=>x[0])})(tabsFor);

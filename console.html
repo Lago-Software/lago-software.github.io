@@ -247,11 +247,35 @@ function parseCfg(t){
 /* ---------- règles de sécurité ---------- */
 const UIDOK=/^[A-Za-z0-9]{10,64}$/;
 const rulesOwner=uid=>JSON.stringify({rules:{'.read':`auth != null && auth.uid === '${uid}'`,'.write':`auth != null && auth.uid === '${uid}'`}},null,2);
+/*FBR*/
+/* bloc identique à celui de Lago (app.js) : réservation en ligne, paiement et écran TV. Un test vérifie qu’il est identique. */
+function fbPubTv(){
+  const sig=n=>"newData.hasChildren(['b','s']) && newData.child('b').isString() && newData.child('b').val().length < "+n+" && newData.child('s').isString() && newData.child('s').val().length < 200";
+  const key='$k.length >= 12 && $k.length <= 40',keyTv='$k.length >= 6 && $k.length <= 40';   /* clé du site : 20 caractères ; code de l'écran TV : 8 */
+  return{
+    pub:{$k:{'.validate':key,
+      cfg:{'.read':true,'.write':true},
+      base:{'.read':true,'.write':true},
+      web:{'.read':true,'.write':true,$d:{$i:{'.validate':'newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000'}}},
+      pay:{'.read':true,'.write':true,'.validate':sig(120000)},
+      pn:{'.read':true,'.indexOn':['t'],$ref:{
+        '.write':"$ref.length >= 9 && $ref.length <= 11 && $ref.contains('-') && (!newData.exists() ? data.child('t').val() < now - 2592000000 : (!data.exists() || newData.child('s').val() >= data.child('s').val()))",
+        '.validate':"newData.hasChildren(['t','s','a']) && newData.child('t').isNumber() && newData.child('s').isNumber() && newData.child('s').val() >= 1 && newData.child('s').val() <= 2 && newData.child('a').isNumber() && newData.child('a').val() >= 0 && newData.child('a').val() <= 10000000"}},
+      req:{'.read':true,'.indexOn':['ts'],$id:{
+        '.write':"!data.exists() || (!newData.exists() && data.child('ts').val() < now - 604800000)",
+        '.validate':"newData.hasChildren(['ts','k','iv','ct']) && newData.child('ts').isNumber() && newData.child('ts').val() > now - 600000 && newData.child('ts').val() < now + 600000 && newData.child('ct').isString() && newData.child('ct').val().length < 8000"}}}},
+    tv:{$k:{'.validate':keyTv,'.read':true,
+      d:{'.write':'newData.exists()','.validate':sig(60000)},
+      l:{'.write':'newData.exists()','.validate':sig(200000)}}}
+  };
+}
+/*FBR-END*/
 function rulesClient(r,uid){
   const own=`auth != null && auth.uid === '${uid}'`;
   return JSON.stringify({rules:{
     '.read':false,'.write':false,
     [r]:{'.read':true,'.write':true},
+    ...fbPubTv(),
     '_susp':{'.read':true,'.write':own,
       'on':{'.validate':'newData.isBoolean()'},
       'msg':{'.validate':'newData.isString() && newData.val().length <= 300'},
@@ -358,6 +382,8 @@ async function runChecks(c){
   let r2=await db(c.u,null,'PUT','zz-sonde',1);
   if(r2.ok)await db(c.u,null,'DELETE','zz-sonde');
   add(denied(r)&&denied(r2),'Aucun autre chemin n’est accessible',denied(r)&&denied(r2)?'Seul le chemin du client est ouvert, avec son identifiant secret.':'Un chemin hors du client est lisible ou modifiable sans compte.');
+  r=await db(c.u,null,'GET','pub/zzzzzzzzzzzz/cfg');r2=await db(c.u,null,'GET','tv/zzzzzzzzzzzz/d');
+  add(r.ok&&r2.ok,'Réservation en ligne, paiement et écran TV prêts',r.ok&&r2.ok?'Les règles les autorisent : rien à recoller le jour où le client les active.':'Ces règles manquent : collez le texte ci-dessous (il les inclut), puis « Publier ».');
   r=await db(c.u,null,'GET','_susp');
   add(r.ok,'L’état de suspension est lisible par Lago',r.ok?'Lago peut vérifier si l’espace est suspendu.':'Sans cette lecture, la suspension ne peut pas être appliquée.');
   const cur=r.ok?r.d:null;
@@ -474,7 +500,7 @@ function vWiz(){
    <p class="small muted">Votre compte propriétaire sera créé dans ce projet avec le même e-mail et mot de passe que la console.</p>
    <div class="acts"><button class="btn pri" data-a="w2" type="button"${busy()}>Analyser et créer le compte propriétaire</button><button class="btn" data-a="wback" type="button">Retour</button></div></div>`;
   else if(st===3){const c=w.c;h+=`<div class="box"><h3>Collez les règles de sécurité</h3>
-   <p class="muted">Le projet est lié à votre compte propriétaire. Il reste à fermer la base : tout est interdit sauf le chemin secret du client et votre compte.</p>
+   <p class="muted">Le projet est lié à votre compte propriétaire. Il reste à fermer la base : tout est interdit sauf le chemin secret du client, votre compte, et les pages de réservation, de paiement et d’écran TV du client (déjà prévues : il n’y aura rien à recoller plus tard).</p>
    <ol class="ol"><li>Realtime Database › onglet <b>Règles</b>.</li><li>Remplacez tout le contenu par le texte ci-dessous, puis « Publier ».</li></ol>
    <textarea id="w_rules" readonly rows="12" onclick="this.select()">${esc(rulesClient(c.r,c.ou))}</textarea>
    <div class="acts"><button class="btn" data-a="wcopyrules" type="button">Copier les règles</button><button class="btn pri" data-a="w3" type="button"${busy()}>J’ai publié : vérifier</button></div>
