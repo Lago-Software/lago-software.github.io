@@ -5135,7 +5135,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v103';
+const LAGO_V='v104';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -11727,9 +11727,41 @@ setInterval(()=>{
 const WAL_API='https://api.walletwallet.dev';
 const WAL_PRE=[['orange','Orange'],['blue','Bleu'],['green','Vert'],['red','Rouge'],['purple','Violet'],['dark','Noir']];
 const WAL={err:{},fail:{},busy:false,logo:null,usage:null};
+/* relais facultatif (Cloudflare Workers, gratuit) : garde la clé WalletWallet hors des appareils et autorise l’appel depuis Lago */
+const WAL_WORKER=String.raw`// Relais WalletWallet pour Lago (Cloudflare Workers)
+// Variables à créer : WW_KEY (secret) = votre clé WalletWallet ; TOKEN (secret) = un code de votre choix ;
+// ORIGINS (texte, facultatif) = adresses de Lago autorisées, séparées par des virgules.
+export default {
+  async fetch(req, env) {
+    const origin = req.headers.get("Origin") || "";
+    const allowed = String(env.ORIGINS || "https://lago-software.github.io").split(",").map(s => s.trim());
+    const cors = allowed.includes(origin) ? {
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Headers": "authorization,content-type",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+      "Access-Control-Max-Age": "86400",
+      "Vary": "Origin"
+    } : null;
+    if (!cors) return new Response("origine refusee", { status: 403 });
+    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+    const reply = (o, s) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json", ...cors } });
+    const url = new URL(req.url);
+    const same = (a, b) => { if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; };
+    if (!env.TOKEN || !env.WW_KEY || !same(req.headers.get("Authorization") || "", "Bearer " + env.TOKEN)) return reply({ error: "code d'acces refuse" }, 401);
+    if (!/^\/api\/(passes(\/[\w-]+(\/google)?)?|auth\/usage)$/.test(url.pathname)) return reply({ error: "chemin refuse" }, 404);
+    const h = new Headers({ Authorization: "Bearer " + env.WW_KEY });
+    const ct = req.headers.get("Content-Type"); if (ct) h.set("Content-Type", ct);
+    const body = req.method === "GET" || req.method === "DELETE" ? undefined : await req.text();
+    const r = await fetch("https://api.walletwallet.dev" + url.pathname, { method: req.method, headers: h, body, redirect: "manual" });
+    const out = new Headers(r.headers); for (const k in cors) out.set(k, cors[k]);
+    return new Response(r.body, { status: r.status, headers: out });
+  }
+};
+`;
 function walCfg(){const w=S.settings&&S.settings.wallet;return w&&typeof w==='object'?w:{}}
-function walKey(){return String(walCfg().key||'').trim()}
-function walOn(){const w=walCfg();return !!(w.on&&/^ww_[A-Za-z0-9_]{8,}$/.test(walKey()))}
+function walRelay(){const u=String(walCfg().api||'').trim().replace(/\/+$/,'');return /^https:\/\/[a-z0-9.-]+\.workers\.dev$/i.test(u)?u:''}
+function walKey(){const w=walCfg();return String(walRelay()?w.tok:w.key||'').trim()}
+function walOn(){const w=walCfg();return !!(w.on&&(walRelay()?walKey().length>=8:/^ww_[A-Za-z0-9_]{8,}$/.test(walKey())))}
 function walCode(c){return 'LAGO:CL-'+c.id}
 function walParse(raw){const m=/^(?:LAGO:)?CL-([a-z0-9]{3,12})$/i.exec(String(raw||'').trim());return m?(S.clients||[]).find(c=>c.id===m[1].toLowerCase()||c.id===m[1])||null:null}
 /* appel du service */
@@ -11737,7 +11769,7 @@ async function walReq(method,path,body){
   const w=walCfg(),ac=new AbortController(),to=setTimeout(()=>ac.abort(),15000);
   try{
     const h={Authorization:'Bearer '+walKey()};if(body)h['Content-Type']='application/json';
-    const r=await fetch((w.api||WAL_API)+path,{method,signal:ac.signal,headers:h,body:body?JSON.stringify(body):undefined});
+    const r=await fetch((walRelay()||WAL_API)+path,{method,signal:ac.signal,headers:h,body:body?JSON.stringify(body):undefined});
     let j=null;try{j=await r.json()}catch(e){}
     if(!r.ok){const e=new Error((j&&(j.error||j.message))||('http '+r.status));e.status=r.status;e.body=j;throw e}
     return j||{};
@@ -11746,7 +11778,7 @@ async function walReq(method,path,body){
 function walErr(e){
   const s=e&&e.status,t=String((e&&e.message)||e||'');
   if(e&&e.name==='AbortError')return 'pas de réponse du service (connexion ?)';
-  if(s===401)return 'clé refusée par WalletWallet : vérifiez-la dans Paramètres › Carte wallet';
+  if(s===401)return walRelay()?'code d’accès refusé par le relais : vérifiez-le dans Paramètres › Carte wallet':'clé refusée par WalletWallet : vérifiez-la dans Paramètres › Carte wallet';
   if(s===403)return 'cette carte appartient à un autre compte WalletWallet';
   if(s===404)return 'carte introuvable chez WalletWallet';
   if(s===429){const d=e.body&&e.body.resetDate?new Date(e.body.resetDate).toLocaleDateString('fr-FR'):'';return 'limite mensuelle de cartes atteinte'+(d?' (remise à zéro le '+d+')':'')}
@@ -11873,6 +11905,7 @@ clientDetail=(o=>function(id){
 function walRedraw(id){const c=clientById(id),b=document.getElementById('walbox');if(c&&b)b.innerHTML=walBlock(c)}
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act^="wal_"]');if(!b)return;const a=b.dataset.act,c=b.dataset.id?clientById(b.dataset.id):null;
+  if(a==='wal_cpcode'){try{await navigator.clipboard.writeText(WAL_WORKER);toast('Code du relais copié')}catch(x){toast('Sélectionnez le code puis copiez-le')}return}
   if(a==='wal_save'){walSave();return}
   if(a==='wal_test'){walTest();return}
   if(a==='wal_cp'&&c){try{await navigator.clipboard.writeText(c.wurl);toast('Lien copié')}catch(x){toast(c.wurl)}return}
@@ -11911,7 +11944,7 @@ document.addEventListener('click',e=>{if(e.target.closest('[data-act="wal_scan"]
 const WAL_COL={orange:'#F76300',blue:'#31ACF0',green:'#2E9E5B',red:'#D64545',purple:'#7A4FD6',dark:'#1D1F27'};
 function walForm(){
   const g=id=>document.getElementById(id),v=id=>{const e=g(id);return e?e.value:''},ck=id=>{const e=g(id);return !!(e&&e.checked)};
-  return {on:ck('wl_on'),key:String(v('wl_key')).trim(),preset:v('wl_pre')||'orange',pro:ck('wl_pro'),color:ck('wl_pro')?walHex(v('wl_col')):'',logoOn:ck('wl_logo'),
+  return {on:ck('wl_on'),key:String(v('wl_key')).trim(),api:String(v('wl_api')).trim().replace(/\/+$/,''),tok:String(v('wl_tok')).trim(),preset:v('wl_pre')||'orange',pro:ck('wl_pro'),color:ck('wl_pro')?walHex(v('wl_col')):'',logoOn:ck('wl_logo'),
     title:walT(v('wl_title'),30),logoText:walT(v('wl_logot'),40),ptsLabel:walT(v('wl_pl'),16),back:walT(v('wl_back'),500),showLv:ck('wl_lv'),showNx:ck('wl_nx'),showRw:ck('wl_rw')};
 }
 function walPrev(){
@@ -11937,7 +11970,17 @@ function vSetWallet(m){
   m.innerHTML=`<div class="card"><h3>Carte de fidélité sur téléphone ${ok?'<span class="pill ok">Activée</span>':'<span class="pill warn">À configurer</span>'}</h3>
    <p class="muted" style="font-size:13.5px;margin:0 0 12px">Chaque client peut mettre sa carte de fidélité dans <b>Apple Wallet</b> ou <b>Google Wallet</b>. Elle affiche son code (à scanner en caisse), ses points et son palier, et se met à jour toute seule après chaque achat. Le service s’appelle <b>WalletWallet</b> : gratuit jusqu’à 1 000 cartes créées ou modifiées par mois, sans compte développeur Apple.</p>
    ${ck('wl_on',w.on,'Activer les cartes wallet')}
-   ${fld('Clé WalletWallet','<input id="wl_key" type="password" value="'+esc(w.key||'')+'" placeholder="ww_live_…" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off">','Gardez-la pour vous : elle permet de créer des cartes sur votre compte.')}
+   ${fld('Clé WalletWallet','<input id="wl_key" type="password" value="'+esc(w.key||'')+'" placeholder="ww_live_…" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off">','Gardez-la pour vous : elle permet de créer des cartes sur votre compte. Inutile si vous utilisez un relais (ci-dessous).')}
+   <details class="walrel" ${w.api?'open':''}><summary><b>Relais (avancé, facultatif)</b></summary>
+    <p class="muted" style="font-size:13.5px;margin:8px 0">À utiliser si le navigateur bloque l’appel direct à WalletWallet, ou pour que la clé ne soit enregistrée sur aucun appareil : elle reste dans un petit relais gratuit chez Cloudflare.</p>
+    ${fld('Adresse du relais','<input id="wl_api" value="'+esc(w.api||'')+'" placeholder="https://lago-wallet.votre-compte.workers.dev" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off">')}
+    ${fld('Code d’accès du relais','<input id="wl_tok" type="password" value="'+esc(w.tok||'')+'" placeholder="le code choisi dans Cloudflare" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off">')}
+    <ol class="mmsteps" style="font-size:13.5px"><li>Sur <b>dash.cloudflare.com</b> (compte gratuit) : <b>Workers et Pages › Créer › Créer un Worker</b>, nommez-le puis <b>Déployer</b>.</li>
+     <li><b>Modifier le code</b> : remplacez tout par le code ci-dessous, puis <b>Déployer</b>.</li>
+     <li><b>Paramètres › Variables et secrets</b> : ajoutez <code>WW_KEY</code> (votre clé WalletWallet) et <code>TOKEN</code> (un code de votre choix, long) en type <b>Secret</b>.</li>
+     <li>Copiez l’adresse du Worker (elle finit par <code>.workers.dev</code>) et le code ci-dessus.</li></ol>
+    <div class="acts" style="margin:0 0 6px"><button class="btn" type="button" data-act="wal_cpcode">Copier le code du relais</button></div>
+    <pre class="walcode" tabindex="0">${esc(WAL_WORKER)}</pre></details>
    <p id="wl_msg" class="muted" style="min-height:20px;font-size:13.5px;margin:10px 0 0" role="status">${ok?nb+' carte'+(nb>1?'s':'')+' créée'+(nb>1?'s':''):''}</p>
    <div class="acts"><button class="btn primary" data-act="wal_save">Enregistrer</button><button class="btn" data-act="wal_test" ${ok?'':'disabled'}>Tester la connexion</button></div></div>
   <div class="card"><h3>Apparence de la carte</h3>
@@ -11969,7 +12012,10 @@ document.addEventListener('change',e=>{
 });
 function walSave(){
   const f=walForm(),msg=document.getElementById('wl_msg');
-  if(f.on&&!/^ww_[A-Za-z0-9_]{8,}$/.test(f.key)){if(msg)msg.textContent='Collez la clé WalletWallet (elle commence par ww_).';window.scrollTo(0,0);return}
+  const bad=t=>{if(msg)msg.textContent=t;window.scrollTo(0,0)};
+  if(f.api&&!/^https:\/\/[a-z0-9.-]+\.workers\.dev$/i.test(f.api)){bad('L’adresse du relais doit ressembler à https://nom.compte.workers.dev');return}
+  if(f.on&&f.api&&f.tok.length<8){bad('Indiquez le code d’accès du relais (8 caractères au minimum).');return}
+  if(f.on&&!f.api&&!/^ww_[A-Za-z0-9_]{8,}$/.test(f.key)){bad('Collez la clé WalletWallet (elle commence par ww_).');return}
   S.settings.wallet=Object.assign({},walCfg(),f);
   const dirty=walOn()?S.clients.filter(c=>c.wid&&!c.anon&&c.wh!==walHash(c)).length:0;
   save();toast(dirty?'Enregistré : '+dirty+' carte'+(dirty>1?'s':'')+' à mettre à jour':'Réglage enregistré');vSetWallet($('#sub'));

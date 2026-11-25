@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' https://*.firebasedatabase.app https://*.firebaseio.com wss://*.firebasedatabase.app https://api.emailjs.com https://api.walletwallet.dev https://script.google.com https://script.googleusercontent.com https://api.anthropic.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'"><meta name="referrer" content="no-referrer">
+<html lang="fr"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' https://*.firebasedatabase.app https://*.firebaseio.com wss://*.firebasedatabase.app https://api.emailjs.com https://api.walletwallet.dev https://*.workers.dev https://script.google.com https://script.googleusercontent.com https://api.anthropic.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'"><meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#31ACF0">
 <meta name="application-name" content="Lago"><meta name="mobile-web-app-capable" content="yes">
@@ -3196,6 +3196,9 @@ body.cart-open #modal .scrim{z-index:70}
 .walp-qr{background:#fff;border-radius:10px;padding:8px;width:136px;height:136px;margin:4px auto 0}
 .walp-qr svg{width:100%;height:100%;display:block;border:0;padding:0}
 .walpro[hidden]{display:none}
+.walrel{margin:10px 0;padding:10px 12px;border:1px solid var(--line,#dfe6ee);border-radius:12px}
+.walrel summary{cursor:pointer}
+.walcode{max-height:220px;overflow:auto;font-size:12px;line-height:1.45;background:#0f1730;color:#e8eefc;border-radius:10px;padding:12px;white-space:pre;margin:0}
 
 @media(max-width:420px){.walqr{flex-direction:column;align-items:flex-start}}
 
@@ -3319,7 +3322,7 @@ body.cart-open #modal .scrim{z-index:70}
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v103" defer></script>
+<script src="app.js?v=v104" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>
