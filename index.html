@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' https://*.firebasedatabase.app https://*.firebaseio.com wss://*.firebasedatabase.app https://api.emailjs.com https://script.google.com https://script.googleusercontent.com https://api.anthropic.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'"><meta name="referrer" content="no-referrer">
+<html lang="fr"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' https://*.firebasedatabase.app https://*.firebaseio.com wss://*.firebasedatabase.app https://api.emailjs.com https://api.walletwallet.dev https://script.google.com https://script.googleusercontent.com https://api.anthropic.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'"><meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#31ACF0">
 <meta name="application-name" content="Lago"><meta name="mobile-web-app-capable" content="yes">
@@ -3175,6 +3175,30 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
 #main:has(.qpos) .tabs,#main:has(.qpos) .impo{display:none}
 /* téléphone : les fenêtres (envoi en cuisine, note, client) passent devant le ticket ouvert */
 body.cart-open #modal .scrim{z-index:70}
+/* carte wallet : fiche client */
+.walc{margin:0 0 12px;padding:12px 14px}
+.walqr{display:flex;gap:14px;align-items:center;margin:8px 0}
+.walq{flex:none;width:150px;height:150px}
+.walq svg{width:100%;height:100%;display:block;border:0;padding:0;box-shadow:none}
+.walc .mrow{border:0;padding:0;margin:0 0 4px}
+.walfx{display:grid;grid-template-columns:1fr;gap:16px}
+.walside{order:-1}
+@media(min-width:760px){.walfx{grid-template-columns:1fr 260px;align-items:start}.walside{order:0;position:sticky;top:12px}}
+.walp{border-radius:16px;padding:16px 16px 14px;box-shadow:0 6px 18px rgba(8,20,40,.18);max-width:300px;margin:0 auto}
+.walp small{display:block;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;opacity:.8;margin-bottom:1px}
+.walp b{font-size:15px;font-weight:700}
+.walp-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.walp-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
+.walp-logo img{width:28px;height:28px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,.9)}
+.walp-h{text-align:right}.walp-h b{font-size:22px}
+.walp-main{margin:14px 0 10px}.walp-main b{font-size:19px}
+.walp-sec{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px}
+.walp-qr{background:#fff;border-radius:10px;padding:8px;width:136px;height:136px;margin:4px auto 0}
+.walp-qr svg{width:100%;height:100%;display:block;border:0;padding:0}
+.walpro[hidden]{display:none}
+
+@media(max-width:420px){.walqr{flex-direction:column;align-items:flex-start}}
+
 .qpos .qbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .qpos .qbar b{font-family:var(--f-display);font-size:20px}
 .qpos .qbar .btn{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:6px 14px}
@@ -3295,7 +3319,7 @@ body.cart-open #modal .scrim{z-index:70}
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v102" defer></script>
+<script src="app.js?v=v103" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

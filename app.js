@@ -5135,7 +5135,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v102';
+const LAGO_V='v103';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -9098,12 +9098,14 @@ function cnRegistre(){
   if(w.on)R.splice(1,0,{t:'Réservation en ligne',f:'Recevoir et gérer les réservations faites par les clients sur le site.',b:'Exécution du contrat (mesures précontractuelles) ; consentement pour les offres.',d:'Nom, e-mail, téléphone, message, créneau choisi. La demande est chiffrée avant son envoi et déchiffrée uniquement par l’établissement.',p:'Clients.',r:'Équipe habilitée ; hébergeur technique (Google Firebase) qui ne voit que des données chiffrées.',c:'Demande chiffrée supprimée du serveur après 8 jours ; réservation conservée '+cnAns(ret)+' après la dernière visite.'});
   if(S.clients.some(x=>x.optin)||w.on)R.push({t:'Offres et actualités (prospection)',f:'Envoyer des offres aux clients qui l’ont accepté.',b:'Consentement (case non cochée par défaut, retrait possible à tout moment).',d:'Nom, e-mail, téléphone.',p:'Clients ayant donné leur accord.',r:'Équipe habilitée ; prestataire d’envoi d’e-mails si utilisé (EmailJS).',c:'Jusqu’au retrait du consentement, ou '+cnAns(ret)+' sans interaction.'});
   if(typeof mailCfg==='function'&&mailCfg())R.push({t:'Envoi de documents par e-mail',f:'Envoyer au client, à sa demande, son ticket, un avoir, sa carte cadeau ou la confirmation de sa réservation.',b:'Exécution du contrat ; demande du client.',d:'Nom, adresse e-mail et contenu du document envoyé. Un journal conserve la date, le destinataire, le type de document et l’auteur de l’envoi (pas le contenu du message).',p:'Clients.',r:'Prestataire d’envoi (EmailJS) et service de messagerie de l’établissement.',c:'Journal d’envoi : 12 mois.'});
+  if(typeof walOn==='function'&&walOn())R.push({t:'Carte de fidélité sur téléphone (Apple Wallet, Google Wallet)',f:'Permettre au client de garder sa carte de fidélité sur son téléphone et d’y voir ses points.',b:'Consentement du client (il demande sa carte).',d:'Nom, points de fidélité, palier, numéro de carte.',p:'Clients qui demandent une carte.',r:'Équipe habilitée ; prestataire WalletWallet.',c:'Jusqu’au retrait de la carte ou à l’anonymisation de la fiche.'});
   return R;
 }
 const CN_SUB=[
  ['GitHub, Inc. (GitHub Pages)','Héberge l’application (fichiers statiques). Ne reçoit aucune donnée de l’établissement.','États-Unis · clauses contractuelles types'],
  ['Google Ireland Ltd. (Firebase Realtime Database)','Héberge les données partagées de l’équipe (région Europe, Belgique).','Union européenne · contrat de sous-traitance Google Cloud'],
  ['EmailJS (seulement si vous activez l’envoi d’e-mails)','Transmet à la messagerie de l’établissement les e-mails demandés depuis l’application (mot de passe oublié, tickets, avoirs, cartes cadeaux, confirmations de réservation) : adresse du destinataire et contenu du message.','Voir leur politique de confidentialité'],
+ ['WalletWallet (seulement si vous activez les cartes de fidélité sur téléphone)','Crée et met à jour les cartes Apple Wallet et Google Wallet demandées par les clients : nom, points et palier.','Voir leur politique de confidentialité'],
  ['Anthropic (seulement si vous activez l’assistance par IA)','Traite le texte envoyé à l’assistant. N’y mettez aucune donnée de client.','Voir leur politique de confidentialité'],
  ['Google Apps Script (seulement si vous reliez une feuille de calcul)','Reçoit les exports que vous lui envoyez.','Voir les conditions Google']
 ];
@@ -11719,5 +11721,269 @@ setInterval(()=>{
     setTimeout(()=>{if(view==='caisse'&&['cx_salle','cx_cuis'].includes(tab.caisse)&&!(md&&md.innerHTML.trim()))cxSub()},900);
   }catch(e){}
 },6000);
+/* ---------- carte de fidélité sur téléphone (Apple Wallet et Google Wallet) via WalletWallet ----------
+   Réglage : S.settings.wallet={on,key,pro,preset}. Sur la fiche client : S.clients[].wid (n° de carte chez le service),
+   wurl (page d’installation), wh (empreinte du contenu déjà envoyé). Les points sont renvoyés au téléphone tout seuls. */
+const WAL_API='https://api.walletwallet.dev';
+const WAL_PRE=[['orange','Orange'],['blue','Bleu'],['green','Vert'],['red','Rouge'],['purple','Violet'],['dark','Noir']];
+const WAL={err:{},fail:{},busy:false,logo:null,usage:null};
+function walCfg(){const w=S.settings&&S.settings.wallet;return w&&typeof w==='object'?w:{}}
+function walKey(){return String(walCfg().key||'').trim()}
+function walOn(){const w=walCfg();return !!(w.on&&/^ww_[A-Za-z0-9_]{8,}$/.test(walKey()))}
+function walCode(c){return 'LAGO:CL-'+c.id}
+function walParse(raw){const m=/^(?:LAGO:)?CL-([a-z0-9]{3,12})$/i.exec(String(raw||'').trim());return m?(S.clients||[]).find(c=>c.id===m[1].toLowerCase()||c.id===m[1])||null:null}
+/* appel du service */
+async function walReq(method,path,body){
+  const w=walCfg(),ac=new AbortController(),to=setTimeout(()=>ac.abort(),15000);
+  try{
+    const h={Authorization:'Bearer '+walKey()};if(body)h['Content-Type']='application/json';
+    const r=await fetch((w.api||WAL_API)+path,{method,signal:ac.signal,headers:h,body:body?JSON.stringify(body):undefined});
+    let j=null;try{j=await r.json()}catch(e){}
+    if(!r.ok){const e=new Error((j&&(j.error||j.message))||('http '+r.status));e.status=r.status;e.body=j;throw e}
+    return j||{};
+  }finally{clearTimeout(to)}
+}
+function walErr(e){
+  const s=e&&e.status,t=String((e&&e.message)||e||'');
+  if(e&&e.name==='AbortError')return 'pas de réponse du service (connexion ?)';
+  if(s===401)return 'clé refusée par WalletWallet : vérifiez-la dans Paramètres › Carte wallet';
+  if(s===403)return 'cette carte appartient à un autre compte WalletWallet';
+  if(s===404)return 'carte introuvable chez WalletWallet';
+  if(s===429){const d=e.body&&e.body.resetDate?new Date(e.body.resetDate).toLocaleDateString('fr-FR'):'';return 'limite mensuelle de cartes atteinte'+(d?' (remise à zéro le '+d+')':'')}
+  if(s===400)return 'carte refusée par WalletWallet'+(t&&!/^http/.test(t)?' : '+t.slice(0,100):'');
+  if(!s&&/Failed to fetch|NetworkError|Load failed/i.test(t))return 'service injoignable (connexion, ou appel bloqué par le navigateur)';
+  return t.replace(/^http \d+\s*/,'').slice(0,120)||'erreur inconnue';
+}
+/* contenu de la carte (les points, le palier et le prochain palier se recalculent à chaque fois) */
+function walT(s,n){return String(s==null?'':s).replace(/\s+/g,' ').trim().slice(0,n||60)}
+function walHex(s){return /^#[0-9a-fA-F]{6}$/.test(String(s||''))?String(s):''}
+function walBody(c){
+  const st=S.settings||{},w=walCfg(),nm=String(st.name||'Lago'),pts=+c.pts||0,lv=level(pts),nx=nextPal(pts),rw=(c.rewards||[]).filter(r=>!r.used);
+  const ppe=String(st.ppe||1).replace('.',','),contact=[st.addr,st.phone,(typeof mlContact==='function'?mlContact():'')].filter(Boolean).join('\n');
+  const pl=walT(w.ptsLabel,16)||'Points',sec=[];
+  if(w.showLv!==false)sec.push({label:'Palier',value:lv?lv.name:'Nouveau'});
+  if(w.showNx!==false)sec.push({label:'Prochain palier',value:nx?'encore '+(nx.pts-pts)+' pt'+((nx.pts-pts)>1?'s':''):'atteint'});
+  if(w.showRw!==false&&rw.length)sec.push({label:'À utiliser',value:eur(rw.reduce((a,r)=>a+(palOf(r.pal)?palOf(r.pal).amt:0),0))+' offerts'});
+  const info=walT(w.back,500);
+  const b={
+    organizationName:nm.slice(0,64),logoText:walT(w.logoText,40)||nm,description:'Carte de fidélité '+nm,
+    barcodeValue:walCode(c),barcodeFormat:'QR',barcodeAltText:'',
+    headerFields:[{label:pl,value:String(pts),changeMessage:'Vous avez maintenant %@ '+pl.toLowerCase()}],
+    primaryFields:[{label:walT(w.title,30)||'Carte de fidélité',value:String(c.name||'')}],
+    backFields:[
+      {label:'Comment ça marche',value:'1 € dépensé = '+ppe+' point'+(+st.ppe>1?'s':'')+'. '+PAL.map(p=>p.name+' dès '+p.pts+' points : '+eur(p.amt)+' offerts').join(' ; ')+'.'},
+      {label:'En caisse',value:'Présentez le code de cette carte avant de payer pour cumuler vos points et utiliser vos offres.'}
+    ].concat(info?[{label:'Infos',value:info}]:[]).concat(contact?[{label:'Contact',value:contact}]:[]),
+    colorPreset:WAL_PRE.some(x=>x[0]===w.preset)?w.preset:'orange'
+  };
+  if(sec.length)b.secondaryFields=sec;
+  return b;
+}
+function walHash(c){
+  const w=walCfg(),s=JSON.stringify(walBody(c))+'|'+(w.pro?(walHex(w.color)||S.settings.brand||'')+'|'+(w.logoOn===false?0:String((S.settings.logo||'').length)):'');
+  let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return String(h>>>0)+':'+s.length;
+}
+/* logo de l’établissement converti en PNG 160×160 (formule Pro seulement) */
+function walLogoPng(){
+  const src=S.settings.logo;if(!src)return Promise.resolve('');
+  if(WAL.logo&&WAL.logo.k===src)return Promise.resolve(WAL.logo.v);
+  return new Promise(res=>{
+    const im=new Image();
+    im.onload=()=>{try{
+      const cv=document.createElement('canvas');cv.width=cv.height=160;const x=cv.getContext('2d'),r=Math.min(160/im.width,160/im.height),w=im.width*r,h=im.height*r;
+      x.drawImage(im,(160-w)/2,(160-h)/2,w,h);const v=cv.toDataURL('image/png');WAL.logo={k:src,v};res(v);
+    }catch(e){res('')}};
+    im.onerror=()=>res('');im.src=src;
+  });
+}
+async function walFull(c){
+  const b=walBody(c),w=walCfg();
+  if(w.pro){
+    const col=walHex(w.color)||walHex(S.settings.brand);if(col)b.color=col;
+    if(w.logoOn!==false){const lg=await walLogoPng();if(lg)b.logoURL=lg}
+  }
+  return b;
+}
+/* création, mise à jour, retrait */
+async function walCreate(c){
+  const r=await walReq('POST','/api/passes',await walFull(c));
+  if(!r.serialNumber)throw new Error('réponse inattendue du service');
+  c.wid=String(r.serialNumber);c.wurl=String(r.shareUrl||'');c.wh=walHash(c);c.wts=Date.now();
+  delete WAL.err[c.id];save();return r;
+}
+async function walPush(c){
+  if(!c.wid)return false;const h=walHash(c);if(c.wh===h)return false;
+  try{await walReq('PUT','/api/passes/'+encodeURIComponent(c.wid),await walFull(c));c.wh=h;c.wts=Date.now();delete WAL.err[c.id];delete WAL.fail[c.id];return true}
+  catch(e){
+    if(e.status===404){c.wid='';c.wurl='';c.wh='';WAL.err[c.id]=walErr(e)}
+    else{WAL.err[c.id]=walErr(e);WAL.fail[c.id]=Date.now()}
+    throw e;
+  }
+}
+async function walRevoke(id){try{await walReq('DELETE','/api/passes/'+encodeURIComponent(id))}catch(e){}}
+async function walFlush(){
+  if(WAL.busy||!walOn()||(typeof navigator!=='undefined'&&navigator.onLine===false))return;
+  WAL.busy=true;let n=0,ch=false;
+  try{
+    for(const c of S.clients){
+      if(!c.wid||c.anon)continue;
+      if(WAL.fail[c.id]&&Date.now()-WAL.fail[c.id]<600000)continue;
+      if(c.wh===walHash(c))continue;
+      if(n++>=10)break;
+      try{if(await walPush(c))ch=true}catch(e){if(e.status===401||e.status===429)break}
+    }
+    if(ch)save();
+  }finally{WAL.busy=false}
+}
+/* règles de confidentialité : une fiche effacée ou anonymisée retire aussi sa carte du téléphone */
+cnAnon=(o=>function(c){const id=c&&c.wid,r=o.apply(this,arguments);if(id){c.wid='';c.wurl='';c.wh='';if(walOn())walRevoke(id)}return r})(cnAnon);
+/* envoi du lien au client */
+function walMsg(c){const nm=S.settings.name||'Lago';return 'Bonjour '+firstName(c.name)+', voici votre carte de fidélité '+nm+' à ajouter à votre téléphone (Apple Wallet ou Google Wallet) : '+c.wurl}
+async function walMail(c){
+  const doc=mlRender({subject:'Votre carte de fidélité '+(S.settings.name||''),title:'Votre carte de fidélité',pre:'Ajoutez-la à votre téléphone',parts:[
+    {t:'p',x:mlHello(c.name)},{t:'p',x:'Voici votre carte de fidélité. Ouvrez ce lien depuis votre téléphone pour l’ajouter à Apple Wallet ou à Google Wallet : vos points s’y mettront à jour tout seuls.'},
+    {t:'box',x:c.wurl},{t:'small',x:'Présentez le code de la carte en caisse avant de payer.'}]});
+  return mlSend({to:c.email,toName:c.name,subject:doc.subject,html:doc.html,kind:'wallet',ref:c.name});
+}
+ML_KIND.wallet='Carte wallet';
+/* fiche client : bloc « Carte sur téléphone » */
+function walBlock(c){
+  const err=WAL.err[c.id];
+  if(!c.wid)return `<div class="card walc"><div class="mrow"><b>Carte sur téléphone</b></div>
+    <p class="muted" style="margin:4px 0 10px;font-size:13.5px">Ajoute la carte de fidélité à Apple Wallet ou Google Wallet. Les points s’y mettent à jour tout seuls.</p>
+    ${err?`<p class="warn-t" role="alert" style="margin:0 0 8px">${esc(err)}</p>`:''}
+    <button class="btn primary" type="button" data-act="wal_new" data-id="${c.id}">Créer la carte wallet</button></div>`;
+  const ok=c.wh===walHash(c);
+  return `<div class="card walc"><div class="mrow"><b>Carte sur téléphone</b><span class="pill ${ok&&!err?'ok':'warn'}">${err?'À vérifier':ok?'À jour':'Mise à jour en cours'}</span></div>
+    <div class="walqr">${c.wurl?`<div class="walq">${qrSvg(c.wurl,150)}</div>`:''}<p class="muted" style="font-size:13.5px;margin:0">Le client scanne ce code avec son téléphone, ou reçoit le lien ci-dessous. Sur iPhone, ouvrez-le dans Safari.</p></div>
+    ${err?`<p class="warn-t" role="alert" style="margin:8px 0 0">${esc(err)}</p>`:''}
+    <div class="acts" style="margin-top:10px">${c.wurl?`<button class="btn" type="button" data-act="wal_cp" data-id="${c.id}">Copier le lien</button>`:''}
+     ${c.phone&&c.wurl?`<button class="btn" type="button" data-act="wal_sms" data-id="${c.id}">Envoyer par SMS</button>`:''}
+     ${c.email&&c.wurl?`<button class="btn" type="button" data-act="wal_mail" data-id="${c.id}">Envoyer par e-mail</button>`:''}
+     <button class="btn" type="button" data-act="wal_up" data-id="${c.id}">Mettre à jour</button>
+     <button class="btn" type="button" data-act="wal_rm" data-id="${c.id}">Retirer la carte</button></div></div>`;
+}
+clientDetail=(o=>function(id){
+  o.apply(this,arguments);
+  try{
+    const c=clientById(id),f=document.getElementById('cedit');
+    if(c&&!c.anon&&walOn()&&f&&!document.getElementById('walbox'))f.insertAdjacentHTML('beforebegin','<div id="walbox">'+walBlock(c)+'</div>');
+  }catch(e){}
+})(clientDetail);
+function walRedraw(id){const c=clientById(id),b=document.getElementById('walbox');if(c&&b)b.innerHTML=walBlock(c)}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act^="wal_"]');if(!b)return;const a=b.dataset.act,c=b.dataset.id?clientById(b.dataset.id):null;
+  if(a==='wal_save'){walSave();return}
+  if(a==='wal_test'){walTest();return}
+  if(a==='wal_cp'&&c){try{await navigator.clipboard.writeText(c.wurl);toast('Lien copié')}catch(x){toast(c.wurl)}return}
+  if(a==='wal_sms'&&c){location.href='sms:'+String(c.phone).replace(/[^\d+]/g,'')+'?&body='+encodeURIComponent(walMsg(c));return}
+  if(a==='wal_mail'&&c){
+    if(mailCfg()){b.disabled=true;try{await walMail(c);toast('E-mail envoyé à '+c.email)}catch(x){toast('Envoi impossible : '+mlErrTxt(x))}b.disabled=false}
+    else location.href='mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent('Votre carte de fidélité '+(S.settings.name||''))+'&body='+encodeURIComponent(walMsg(c));
+    return;
+  }
+  if(!c)return;
+  if(a==='wal_new'||a==='wal_up'){
+    if(!walOn()){toast('Activez la carte wallet dans Paramètres');return}
+    b.disabled=true;b.textContent='Un instant…';
+    try{if(a==='wal_new')await walCreate(c);else{c.wh='';await walPush(c);save()}toast(a==='wal_new'?'Carte créée':'Carte mise à jour')}
+    catch(x){WAL.err[c.id]=walErr(x);toast('Carte non créée : '+walErr(x))}
+    walRedraw(c.id);return;
+  }
+  if(a==='wal_rm'){askYes('Retirer la carte de '+c.name+' ? Elle sera invalidée sur son téléphone.',async()=>{const id=c.wid;c.wid='';c.wurl='';c.wh='';save();if(walOn())await walRevoke(id);walRedraw(c.id);toast('Carte retirée')},'Retirer');return}
+});
+/* lecture du code de la carte : client choisi en caisse, fiche ouverte dans Entrées */
+ciLookup=(o=>function(raw){const c=walParse(raw);if(c){clientDetail(c.id);return}return o.apply(this,arguments)})(ciLookup);
+drawPick=(o=>function(t){
+  const c=walParse(t);
+  if(c){cart.clientId=c.id;closeModal();if(view==='caisse')drawCart();toast('Client : '+c.name);return}
+  return o.apply(this,arguments);
+})(drawPick);
+pickClient=(o=>function(){
+  o.apply(this,arguments);
+  try{
+    const s=document.querySelector('#modal .search');
+    if(s&&walOn()&&window.BarcodeDetector&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)s.insertAdjacentHTML('afterend','<button class="btn" type="button" data-act="wal_scan" style="width:100%;margin:8px 0">Scanner la carte du client</button>');
+  }catch(e){}
+})(pickClient);
+document.addEventListener('click',e=>{if(e.target.closest('[data-act="wal_scan"]'))ciCam()});
+/* réglage */
+const WAL_COL={orange:'#F76300',blue:'#31ACF0',green:'#2E9E5B',red:'#D64545',purple:'#7A4FD6',dark:'#1D1F27'};
+function walForm(){
+  const g=id=>document.getElementById(id),v=id=>{const e=g(id);return e?e.value:''},ck=id=>{const e=g(id);return !!(e&&e.checked)};
+  return {on:ck('wl_on'),key:String(v('wl_key')).trim(),preset:v('wl_pre')||'orange',pro:ck('wl_pro'),color:ck('wl_pro')?walHex(v('wl_col')):'',logoOn:ck('wl_logo'),
+    title:walT(v('wl_title'),30),logoText:walT(v('wl_logot'),40),ptsLabel:walT(v('wl_pl'),16),back:walT(v('wl_back'),500),showLv:ck('wl_lv'),showNx:ck('wl_nx'),showRw:ck('wl_rw')};
+}
+function walPrev(){
+  const el=document.getElementById('wl_prev');if(!el)return;
+  const f=walForm(),old=S.settings.wallet,had=Object.prototype.hasOwnProperty.call(S.settings,'wallet');
+  S.settings.wallet=Object.assign({},old,f);
+  try{
+    const c={id:'exemple',name:'Camille Martin',pts:120,rewards:[{pal:'p100',used:false}]},b=walBody(c);
+    const col=f.pro?(walHex(f.color)||walHex(S.settings.brand)||WAL_COL.orange):(WAL_COL[f.preset]||WAL_COL.orange);
+    const r=parseInt(col.slice(1,3),16),g2=parseInt(col.slice(3,5),16),bl=parseInt(col.slice(5,7),16),fg=(r*299+g2*587+bl*114)/1000>170?'#111':'#fff';
+    const fl=x=>`<span><small>${esc(x.label)}</small><b>${esc(x.value)}</b></span>`;
+    const lg=f.pro&&f.logoOn&&S.settings.logo?`<img src="${esc(S.settings.logo)}" alt="">`:'';
+    el.innerHTML=`<div class="walp" style="background:${col};color:${fg}"><div class="walp-top"><span class="walp-logo">${lg}${esc(b.logoText)}</span><span class="walp-h">${fl(b.headerFields[0])}</span></div>
+      <div class="walp-main">${fl(b.primaryFields[0])}</div>${b.secondaryFields?`<div class="walp-sec">${b.secondaryFields.map(fl).join('')}</div>`:''}
+      <div class="walp-qr">${qrSvg(walCode(c),120)}</div></div><p class="muted" style="font-size:12.5px;margin:8px 0 0;text-align:center">Aperçu indicatif : l’aspect exact dépend d’Apple Wallet et de Google Wallet.</p>`;
+  }finally{if(had)S.settings.wallet=old;else delete S.settings.wallet}
+}
+function vSetWallet(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const w=walCfg(),ok=walOn(),nb=S.clients.filter(c=>c.wid).length,pro=!!w.pro;
+  const inp=(id,v,ph,mx)=>`<input id="${id}" value="${esc(v||'')}" placeholder="${esc(ph)}" maxlength="${mx}" autocomplete="off">`;
+  const ck=(id,on,t)=>`<label class="check" style="margin:2px 0"><input type="checkbox" id="${id}" ${on?'checked':''}><span>${t}</span></label>`;
+  m.innerHTML=`<div class="card"><h3>Carte de fidélité sur téléphone ${ok?'<span class="pill ok">Activée</span>':'<span class="pill warn">À configurer</span>'}</h3>
+   <p class="muted" style="font-size:13.5px;margin:0 0 12px">Chaque client peut mettre sa carte de fidélité dans <b>Apple Wallet</b> ou <b>Google Wallet</b>. Elle affiche son code (à scanner en caisse), ses points et son palier, et se met à jour toute seule après chaque achat. Le service s’appelle <b>WalletWallet</b> : gratuit jusqu’à 1 000 cartes créées ou modifiées par mois, sans compte développeur Apple.</p>
+   ${ck('wl_on',w.on,'Activer les cartes wallet')}
+   ${fld('Clé WalletWallet','<input id="wl_key" type="password" value="'+esc(w.key||'')+'" placeholder="ww_live_…" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off">','Gardez-la pour vous : elle permet de créer des cartes sur votre compte.')}
+   <p id="wl_msg" class="muted" style="min-height:20px;font-size:13.5px;margin:10px 0 0" role="status">${ok?nb+' carte'+(nb>1?'s':'')+' créée'+(nb>1?'s':''):''}</p>
+   <div class="acts"><button class="btn primary" data-act="wal_save">Enregistrer</button><button class="btn" data-act="wal_test" ${ok?'':'disabled'}>Tester la connexion</button></div></div>
+  <div class="card"><h3>Apparence de la carte</h3>
+   <div class="walfx"><div class="walform">
+    ${fld('Titre de la carte',inp('wl_title',w.title,'Carte de fidélité',30))}
+    ${fld('Nom affiché en haut',inp('wl_logot',w.logoText,S.settings.name||'Nom de l’établissement',40))}
+    ${fld('Nom des points',inp('wl_pl',w.ptsLabel,'Points',16),'Par exemple : Étoiles, Tampons, Crédits.')}
+    <div class="field"><label>Informations affichées</label>${ck('wl_lv',w.showLv!==false,'Le palier atteint')}${ck('wl_nx',w.showNx!==false,'Les points qu’il reste avant le prochain palier')}${ck('wl_rw',w.showRw!==false,'L’offre disponible à utiliser')}</div>
+    ${fld('Message au dos de la carte','<textarea id="wl_back" rows="3" maxlength="500" placeholder="Ex. : Ouvert tous les jours de 10 h à 20 h. Anniversaire : une session offerte.">'+esc(w.back||'')+'</textarea>','Visible quand le client retourne la carte.')}
+    ${fld('Couleur de la carte','<select id="wl_pre">'+WAL_PRE.map(x=>'<option value="'+x[0]+'"'+((w.preset||'orange')===x[0]?' selected':'')+'>'+x[1]+'</option>').join('')+'</select>','Couleurs proposées par la formule gratuite.')}
+    ${ck('wl_pro',pro,'J’ai la formule Pro de WalletWallet (couleur libre et logo)')}
+    <div class="walpro" ${pro?'':'hidden'}>${fld('Couleur libre','<input id="wl_col" type="color" value="'+esc(walHex(w.color)||walHex(S.settings.brand)||'#F76300')+'" style="height:44px;padding:4px">','Remplace la couleur ci-dessus.')}
+     ${ck('wl_logo',w.logoOn!==false,'Afficher le logo de l’établissement (Paramètres › Établissement)')}</div>
+   </div>
+   <div class="walside"><div class="lab" style="margin-bottom:6px">Aperçu</div><div id="wl_prev"></div></div></div>
+   <p class="muted" style="font-size:13px;margin:10px 0 0">Quand vous enregistrez un changement d’apparence, toutes les cartes déjà créées se mettent à jour sur les téléphones (une mise à jour par carte, comptée dans la limite mensuelle du service).</p>
+   <div class="acts"><button class="btn primary" data-act="wal_save">Enregistrer</button></div></div>
+  <div class="card"><h3>Mise en place (5 minutes, une seule fois)</h3>
+   <ol class="mmsteps"><li><b>Créez un compte gratuit</b> sur <b>walletwallet.dev</b>.</li><li>Copiez votre <b>clé d’API</b> (elle commence par <code>ww_live_</code>) et collez-la ci-dessus.</li><li>Enregistrez, puis cliquez sur <b>Tester la connexion</b>.</li>
+   <li>Ouvrez la fiche d’un client : bouton <b>Créer la carte wallet</b>. Le client scanne le code affiché, ou reçoit le lien par SMS ou e-mail.</li></ol>
+   <p class="muted" style="font-size:13px;margin:8px 0 0">Données transmises à WalletWallet : nom du client, points et palier. Le code de la carte ne contient qu’un numéro. La carte est retirée du téléphone quand la fiche est anonymisée. Pensez à demander l’accord du client avant de créer sa carte.</p></div>`;
+  walPrev();
+}
+document.addEventListener('input',e=>{if(e.target&&/^wl_/.test(e.target.id||''))walPrev()});
+document.addEventListener('change',e=>{
+  if(!e.target||!/^wl_/.test(e.target.id||''))return;
+  if(e.target.id==='wl_pro'){const p=document.querySelector('.walpro');if(p)p.hidden=!e.target.checked}
+  walPrev();
+});
+function walSave(){
+  const f=walForm(),msg=document.getElementById('wl_msg');
+  if(f.on&&!/^ww_[A-Za-z0-9_]{8,}$/.test(f.key)){if(msg)msg.textContent='Collez la clé WalletWallet (elle commence par ww_).';window.scrollTo(0,0);return}
+  S.settings.wallet=Object.assign({},walCfg(),f);
+  const dirty=walOn()?S.clients.filter(c=>c.wid&&!c.anon&&c.wh!==walHash(c)).length:0;
+  save();toast(dirty?'Enregistré : '+dirty+' carte'+(dirty>1?'s':'')+' à mettre à jour':'Réglage enregistré');vSetWallet($('#sub'));
+  if(dirty)setTimeout(walFlush,300);
+}
+async function walTest(){
+  const msg=document.getElementById('wl_msg');if(msg)msg.textContent='Test en cours…';
+  try{const u=await walReq('GET','/api/auth/usage');const n=u&&u.count!=null?u.count:'?',l=u&&u.limit!=null?u.limit:'?';if(msg)msg.textContent='Connexion réussie : '+n+' carte'+(n>1?'s':'')+' sur '+l+' ce mois-ci ('+(u.plan||'offre gratuite')+').'}
+  catch(e){if(msg)msg.textContent='Échec : '+walErr(e)}
+}
+TABS.params.splice(Math.max(1,TABS.params.findIndex(x=>x[0]==='pmail')+1),0,['pwal','Carte wallet']);SUBS.pwal=vSetWallet;
+(()=>{const g=PGRP.find(x=>x[0]==='caisse');if(g&&!g[2].includes('pwal'))g[2].splice(Math.max(0,g[2].indexOf('pmail')+1),0,'pwal')})();
+/* mise à jour des points : après chaque vente, puis toutes les 30 s */
+finalize=(o=>function(){const r=o.apply(this,arguments);try{setTimeout(walFlush,2500)}catch(e){}return r})(finalize);
+setInterval(()=>{try{walFlush()}catch(e){}},30000);
 init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();try{if(evDemoFill())save()}catch(e){}applySettings();cart=newCart();chrome();route();bootGate();
 })();
