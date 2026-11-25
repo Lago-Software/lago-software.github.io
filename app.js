@@ -5135,7 +5135,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v104';
+const LAGO_V='v105';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -11483,6 +11483,12 @@ function algPrint(){
 function salleCfg(){const s=S.settings.salle;return s&&typeof s==='object'?s:null}
 function salleOn(){const c=salleCfg();return !!(c&&c.on)}
 function tblList(){const c=salleCfg();return c&&Array.isArray(c.tables)?c.tables:[]}
+/* zones du plan (salle, terrasse…) : sans zone, un seul plan comme avant */
+function salleZones(){const c=salleCfg();return c&&Array.isArray(c.zones)?c.zones:[]}
+let salleZ=null;
+function zoneCur(){const Z=salleZones();if(!Z.length)return null;return Z.some(z=>z.id===salleZ)?salleZ:Z[0].id}
+function zoneOf(t){const Z=salleZones();if(!Z.length)return null;return t&&t.z&&Z.some(z=>z.id===t.z)?t.z:Z[0].id}
+function zoneName(t){const id=zoneOf(t),z=salleZones().find(x=>x.id===id);return z?z.name:''}
 const tblById=id=>tblList().find(t=>t.id===id)||tkwOf(id);
 function tkwOf(id){const a=(S.addi||[]).find(x=>x.tableId===id&&x.name);return a?{id,name:a.name,seats:0,tk:true}:null}
 const addiL=()=>S.addi||(S.addi=[]);
@@ -11542,26 +11548,38 @@ function tblUnsent(c){
   const sent=c.sent||{};
   return (c.lines||[]).map(l=>{const p=prod(l.pid),po=posteOf(p),q=l.qty-(sent[l.pid]||0);return po&&q>0?{pid:l.pid,q,po,n:p.name,note:l.note||'',co:courseOf(p)}:null}).filter(Boolean);
 }
+/* articles déjà envoyés puis retirés ou diminués : la cuisine doit en être prévenue */
+function tblCancels(c){
+  const sent=c.sent||{},q={};(c.lines||[]).forEach(l=>{q[l.pid]=(q[l.pid]||0)+l.qty});
+  return Object.keys(sent).map(pid=>{const k=sent[pid]-(q[pid]||0),p=prod(pid),po=p?posteOf(p):'cuisine';return k>0&&po?{cx:1,pid,q:k,po,n:p?p.name:'Article',note:'',co:p?courseOf(p):2}:null}).filter(Boolean);
+}
 let SENDQ=[];
 function tblSendModal(){
   if(!cart.tableId)return;
-  const U=tblUnsent(cart);if(!U.length){toast('Tout est déjà parti en cuisine');return}
-  SENDQ=U.sort((a,b)=>a.co-b.co);
+  const U=tblUnsent(cart),X=tblCancels(cart);if(!U.length&&!X.length){toast('Tout est déjà parti en cuisine');return}
+  SENDQ=X.concat(U.sort((a,b)=>a.co-b.co));
   const t=tblById(cart.tableId);
   let last=-1,h='';
-  SENDQ.forEach((x,i)=>{if(x.co!==last){h+=`<div class="sndh">${COURSES[x.co]}</div>`;last=x.co}
+  SENDQ.forEach((x,i)=>{
+    if(x.cx){if(i===0)h+=`<div class="sndh cx">À annuler (déjà envoyé)</div>`;h+=`<label class="check snd cx"><input type="checkbox" data-sk="${i}" checked><span class="grow"><b>✕ ${x.q} × ${esc(x.n)}</b></span><span class="pill">${POSTES[x.po]}</span></label>`;return}
+    if(x.co!==last){h+=`<div class="sndh">${COURSES[x.co]}</div>`;last=x.co}
     h+=`<label class="check snd"><input type="checkbox" data-sk="${i}" checked><span class="grow"><b>${x.q} × ${esc(x.n)}</b>${x.note?`<small>${esc(x.note)}</small>`:''}</span><span class="pill">${POSTES[x.po]}</span></label>`});
-  showModal(`${mh('Envoyer en cuisine · '+esc(t?tnL(t.name):''))}<p class="muted" style="margin:0 0 8px">Décochez ce qui doit attendre (par exemple les plats pendant les entrées).</p>${h}<div class="acts" style="margin-top:14px"><button class="btn" data-act="closemodal">Annuler</button><button class="btn primary" data-act="tbl_sendgo">${ic('chef')}Envoyer</button></div>`);
+  showModal(`${mh('Envoyer en cuisine · '+esc(t?tnL(t.name):''))}<p class="muted" style="margin:0 0 8px">${U.length?'Décochez ce qui doit attendre (par exemple les plats pendant les entrées).':'Ces articles ont déjà été envoyés : la cuisine sera prévenue de l’annulation.'}</p>${h}<div class="acts" style="margin-top:14px"><button class="btn" data-act="closemodal">Annuler</button><button class="btn primary" data-act="tbl_sendgo">${ic('chef')}Envoyer</button></div>`);
 }
 function tblSend(sel){
   const c=cart;if(!c.tableId||!sel.length)return;
-  c.sent=c.sent||{};const by={},t=tblById(c.tableId);
-  sel.forEach(x=>{(by[x.po]=by[x.po]||[]).push(x);c.sent[x.pid]=(c.sent[x.pid]||0)+x.q});
+  c.sent=c.sent||{};const by={},cx={},t=tblById(c.tableId),zn=salleZones().length&&t?zoneName(t):'';
+  sel.forEach(x=>{
+    if(x.cx){(cx[x.po]=cx[x.po]||[]).push(x);const k=(c.sent[x.pid]||0)-x.q;if(k>0)c.sent[x.pid]=k;else delete c.sent[x.pid]}
+    else{(by[x.po]=by[x.po]||[]).push(x);c.sent[x.pid]=(c.sent[x.pid]||0)+x.q}
+  });
   const today0=today();let n=kdsL().filter(o=>dkey(new Date(o.ts))===today0).length;
-  Object.keys(by).forEach(po=>{n++;kdsL().push({id:uid(),ts:Date.now(),n,tableId:c.tableId,tn:t?t.name:'?',cv:c.covers||0,po,st:'new',lines:by[po].map(x=>({n:x.n,q:x.q,note:x.note,co:x.co}))})});
+  const mk=(po,L,isCx)=>{n++;kdsL().push(Object.assign({id:uid(),ts:Date.now(),n,tableId:c.tableId,tn:t?t.name:'?',cv:c.covers||0,po,st:'new',lines:L.map(x=>({n:x.n,q:x.q,note:x.note||'',co:x.co}))},zn?{zn}:{},isCx?{cx:1}:{}))};
+  Object.keys(cx).forEach(po=>mk(po,cx[po],true));
+  Object.keys(by).forEach(po=>mk(po,by[po],false));
   tblPersist();closeModal();drawCart();drawCbar();
-  const txt=Object.keys(by).map(po=>by[po].reduce((a,x)=>a+x.q,0)+' '+(po==='bar'?'au bar':'en cuisine')).join(' · ');
-  toast('Envoyé : '+txt);
+  const cnt=o=>Object.keys(o).map(po=>o[po].reduce((a,x)=>a+x.q,0)+' '+(po==='bar'?'au bar':'en cuisine')).join(' · ');
+  toast([Object.keys(by).length?'Envoyé : '+cnt(by):'',Object.keys(cx).length?'Annulé : '+cnt(cx):''].filter(Boolean).join(' — '));
 }
 function kdsPrune(){
   const L=S.kds;if(!L||!L.length)return;const lim=Date.now()-12*3600e3,old=Date.now()-36*3600e3;
@@ -11571,13 +11589,13 @@ let kdsF='all',kdsSeen=null;
 function kdsBeep(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start();setTimeout(()=>{o.frequency.value=1175},140);setTimeout(()=>{o.stop();c.close()},300)}catch(e){}}
 function kdsCol(st){return kdsL().filter(o=>o.st===st&&(kdsF==='all'||o.po===kdsF)).sort((a,b)=>a.ts-b.ts)}
 function kdsCard(o){
-  const m=tblMin(o.st==='prep'&&o.tp?o.tp:o.ts),all=tblMin(o.ts),cl=all>=15?'bad':all>=8?'warn':'ok';
+  const m=tblMin(o.st==='prep'&&o.tp?o.tp:o.ts),all=tblMin(o.ts),cl=o.cx?'bad':all>=15?'bad':all>=8?'warn':'ok';
   let last=-1,ls='';
   (o.lines||[]).slice().sort((a,b)=>a.co-b.co).forEach(l=>{if(o.po==='cuisine'&&l.co!==last){ls+=`<div class="kdc">${COURSES[l.co]||''}</div>`;last=l.co}
     ls+=`<div class="kdl"><b>${l.q}×</b> ${esc(l.n)}${l.note?`<small>${esc(l.note)}</small>`:''}</div>`});
-  const nx={new:['Lancer','kd_next'],prep:['Prêt','kd_next'],ready:['Servi','kd_next']}[o.st];
-  return `<div class="kd ${cl}" data-st="${o.st}"><div class="kdh"><b class="kdt">${esc(tnL(o.tn))}</b><span class="kdm">${all} min</span></div>
-    <div class="kds"><span class="pill ${o.po==='bar'?'':'warn'}">${POSTES[o.po]}</span><span class="muted">#${o.n}${o.cv?' · '+o.cv+' couvert'+(o.cv>1?'s':''):''} · ${hm(o.ts)}</span></div>${ls}
+  const nx=o.cx?['Vu','kd_next']:{new:['Lancer','kd_next'],prep:['Prêt','kd_next'],ready:['Servi','kd_next']}[o.st];
+  return `<div class="kd ${cl}${o.cx?' cx':''}" data-st="${o.st}"><div class="kdh"><b class="kdt">${esc(tnL(o.tn))}</b><span class="kdm">${all} min</span></div>
+    <div class="kds">${o.cx?'<span class="pill kdx">Annulation</span>':''}<span class="pill ${o.po==='bar'?'':'warn'}">${POSTES[o.po]}</span><span class="muted">#${o.n}${o.zn?' · '+esc(o.zn):''}${o.cv?' · '+o.cv+' couvert'+(o.cv>1?'s':''):''} · ${hm(o.ts)}</span></div>${ls}
     <div class="kda"><button class="btn primary" data-act="${nx[1]}" data-id="${o.id}">${nx[0]}</button><button class="ix" data-act="kd_print" data-id="${o.id}" aria-label="Imprimer le bon">${ic('ticket')}</button></div></div>`;
 }
 function cxCuis(m){
@@ -11589,15 +11607,15 @@ function cxCuis(m){
   <div class="kdgrid">${cols.map(([st,l])=>{const L=kdsCol(st);return `<section class="kdcol"><h3>${l}${L.length?` <span class="pill ${st==='new'?'warn':''}">${L.length}</span>`:''}</h3>${L.length?L.map(kdsCard).join(''):'<p class="muted kdempty">Rien pour le moment.</p>'}</section>`}).join('')}</div>`;
 }
 function kdsPrint(o){
-  const rows=(o.lines||[]).sort((a,b)=>a.co-b.co).map(l=>`<tr><td style="font-size:22px;font-weight:800;padding:2px 10px 2px 0">${l.q}×</td><td style="font-size:20px">${esc(l.n)}${l.note?`<div style="font-size:15px">→ ${esc(l.note)}</div>`:''}</td></tr>`).join('');
-  printHtml('Bon '+POSTES[o.po],`<h1 style="font-size:30px">${esc(tnL(o.tn))}</h1><p>${POSTES[o.po]} · bon n° ${o.n} · ${hm(o.ts)}${o.cv?' · '+o.cv+' couverts':''}</p><table>${rows}</table>`,'body{margin:6mm}');
+  const rows=(o.lines||[]).sort((a,b)=>a.co-b.co).map(l=>`<tr><td style="font-size:22px;font-weight:800;padding:2px 10px 2px 0">${o.cx?'✕ ':''}${l.q}×</td><td style="font-size:20px">${esc(l.n)}${l.note?`<div style="font-size:15px">→ ${esc(l.note)}</div>`:''}</td></tr>`).join('');
+  printHtml('Bon '+POSTES[o.po],`<h1 style="font-size:30px">${o.cx?'ANNULATION · ':''}${esc(tnL(o.tn))}</h1><p>${o.zn?esc(o.zn)+' · ':''}${POSTES[o.po]} · bon n° ${o.n} · ${hm(o.ts)}${o.cv?' · '+o.cv+' couverts':''}</p><table>${rows}</table>`,'body{margin:6mm}');
 }
 /* ---- plan de salle ---- */
 let salleEdit=false,salleSel=null,slCov=2,slDrag=null;
 function tblState(t){
   const a=tblOrder(t.id);if(!a)return{k:'free'};
   const os=kdsL().filter(o=>o.tableId===t.id&&o.st!=='done'),ready=os.filter(o=>o.st==='ready').length,cooking=os.filter(o=>o.st!=='ready').length;
-  const un=a.cart?tblUnsent(a.cart).length:0;
+  const un=a.cart?tblUnsent(a.cart).length+tblCancels(a.cart).length:0;
   return{k:'busy',a,tot:a.cart?tblTotal(a.cart):0,min:tblMin(a.ts),ready,cooking,un,cv:a.cart&&a.cart.covers};
 }
 function tblHtml(t){
@@ -11611,15 +11629,17 @@ function tkwHtml(){
   return `<div class="tkw"><button class="btn" data-act="sl_tk">${ic('plus')}Vente à emporter</button>${L.map(a=>{const s=tblState(tkwOf(a.tableId));return `<button class="btn tkc ${s.ready?'rdy':''}" data-act="sl_tap" data-id="${a.tableId}"><b>${esc(a.name)}</b><small>${eur(s.tot||0)}${s.ready?' · à remettre':s.cooking?' · en cuisine':''}</small></button>`}).join('')}</div>`;
 }
 function cxSalle(m){
-  const T=tblList(),busy=T.filter(t=>tblOrder(t.id)),cv=busy.reduce((a,t)=>{const o=tblOrder(t.id);return a+((o.cart&&o.cart.covers)||0)},0),ca=busy.reduce((a,t)=>{const o=tblOrder(t.id);return a+(o.cart?tblTotal(o.cart):0)},0);
+  const T=tblList(),Z=salleZones(),zc=zoneCur(),V=Z.length?T.filter(t=>zoneOf(t)===zc):T,busy=T.filter(t=>tblOrder(t.id)),cv=busy.reduce((a,t)=>{const o=tblOrder(t.id);return a+((o.cart&&o.cart.covers)||0)},0),ca=busy.reduce((a,t)=>{const o=tblOrder(t.id);return a+(o.cart?tblTotal(o.cart):0)},0);
   const sel=salleEdit&&T.find(t=>t.id===salleSel);
   m.innerHTML=`<div class="slbar"><div class="slst"><div><b>${busy.length}/${T.length}</b><small>tables occupées</small></div><div><b>${cv}</b><small>couverts en cours</small></div><div><b>${eur(ca)}</b><small>additions ouvertes</small></div></div>
     <div class="slacts">${salleEdit?`<button class="btn" data-act="sl_add" data-sh="c">+ Ronde</button><button class="btn" data-act="sl_add" data-sh="s">+ Carrée</button><button class="btn" data-act="sl_add" data-sh="r">+ Rectangle</button><button class="btn primary" data-act="sl_edit">${ic('check')}Terminé</button>`:`<button class="btn" data-act="sl_edit">${ic('gear')}Modifier le plan</button>`}</div></div>
+    ${salleEdit||Z.length>1?`<div class="chips slz">${Z.map(z=>{const n=T.filter(t=>zoneOf(t)===z.id&&tblOrder(t.id)).length,rd=T.some(t=>zoneOf(t)===z.id&&tblState(t).ready);return `<button class="chip ${z.id===zc?'on':''}" data-act="sl_zone" data-id="${z.id}">${esc(z.name)}${n?` <span class="pill ${rd?'ok':''}">${n}</span>`:''}</button>`}).join('')}${salleEdit?`<button class="chip" data-act="sl_zadd">+ Zone</button>`:''}</div>`:''}
     ${salleEdit?'':tkwHtml()}
     <div class="slleg"><span><i class="slg zfree"></i>Libre</span><span><i class="slg zbusy"></i>Occupée</span><span><i class="slg zrdy"></i>À servir</span></div>
-    <div class="slplan ${salleEdit?'edit':''}" id="plan">${T.length?T.map(tblHtml).join(''):'<p class="muted" style="padding:24px">Aucune table : touchez « Modifier le plan » puis ajoutez vos tables.</p>'}</div>
+    <div class="slplan ${salleEdit?'edit':''}" id="plan">${V.length?V.map(tblHtml).join(''):`<p class="muted" style="padding:24px">${T.length?'Aucune table dans cette zone : touchez « Modifier le plan ».':'Aucune table : touchez « Modifier le plan » puis ajoutez vos tables.'}</p>`}</div>
     ${salleEdit?(sel?`<div class="card sledit"><h3>Table ${esc(sel.name)}</h3><div class="two"><div class="field"><label for="sl_n">Nom</label><input id="sl_n" value="${esc(sel.name)}" maxlength="12" data-sln="1"></div><div class="field"><label>Places</label><div class="step"><button data-act="sl_seat" data-d="-1" aria-label="Moins de places">${ic('minus')}</button><b class="num">${sel.seats}</b><button data-act="sl_seat" data-d="1" aria-label="Plus de places">${ic('plus')}</button></div></div></div>
-      <div class="acts"><button class="btn ${sel.sh==='c'?'primary':''}" data-act="sl_shape" data-sh="c">Ronde</button><button class="btn ${sel.sh==='s'?'primary':''}" data-act="sl_shape" data-sh="s">Carrée</button><button class="btn ${sel.sh==='r'?'primary':''}" data-act="sl_shape" data-sh="r">Rectangle</button><button class="btn danger" data-act="sl_del" data-id="${sel.id}">${ic('trash')}Supprimer</button></div></div>`:'<p class="muted" style="margin-top:10px">Glissez les tables pour les placer, touchez-en une pour changer son nom, ses places ou sa forme.</p>'):''}`;
+      ${Z.length>1?`<div class="field"><label for="sl_z">Zone</label><select id="sl_z" data-slz="1">${Z.map(z=>`<option value="${z.id}" ${zoneOf(sel)===z.id?'selected':''}>${esc(z.name)}</option>`).join('')}</select></div>`:''}
+      <div class="acts"><button class="btn ${sel.sh==='c'?'primary':''}" data-act="sl_shape" data-sh="c">Ronde</button><button class="btn ${sel.sh==='s'?'primary':''}" data-act="sl_shape" data-sh="s">Carrée</button><button class="btn ${sel.sh==='r'?'primary':''}" data-act="sl_shape" data-sh="r">Rectangle</button><button class="btn danger" data-act="sl_del" data-id="${sel.id}">${ic('trash')}Supprimer</button></div></div>`:`<p class="muted" style="margin-top:10px">Glissez les tables pour les placer, touchez-en une pour changer son nom, ses places ou sa forme.</p>${Z.length?`<div class="acts"><button class="btn" data-act="sl_zren">Renommer la zone</button><button class="btn danger" data-act="sl_zdel">Supprimer la zone</button></div>`:'<p class="muted">Salle et terrasse, étage… : touchez « + Zone » pour séparer le plan en plusieurs zones.</p>'}`):''}`;
 }
 function slOpenModal(id){
   const t=tblById(id);if(!t)return;const s=tblState(t);
@@ -11632,7 +11652,7 @@ function slOpenModal(id){
 }
 function slMoveModal(id){
   const L=tblList().filter(t=>t.id!==id&&!tblOrder(t.id));
-  showModal(`${mh('Changer de table')}${L.length?`<div class="slpick">${L.map(t=>`<button class="btn" data-act="sl_moveto" data-id="${id}" data-to="${t.id}">${esc(t.name)}<small>${t.seats} pl.</small></button>`).join('')}</div>`:'<p class="muted">Aucune table libre.</p>'}`);
+  showModal(`${mh('Changer de table')}${L.length?`<div class="slpick">${L.map(t=>`<button class="btn" data-act="sl_moveto" data-id="${id}" data-to="${t.id}">${esc(t.name)}<small>${t.seats} pl.${salleZones().length?' · '+esc(zoneName(t)):''}</small></button>`).join('')}</div>`:'<p class="muted">Aucune table libre.</p>'}`);
 }
 /* ---- clics ---- */
 document.addEventListener('click',e=>{
@@ -11652,12 +11672,23 @@ document.addEventListener('click',e=>{
   else if(a==='sl_edit'){salleEdit=!salleEdit;salleSel=null;cxSub()}
   else if(a==='sl_sel'){if(slDrag&&slDrag.moved){slDrag=null;return}salleSel=d.id;cxSub()}
   else if(a==='sl_add'){const c=salleCfg();if(!c)return;c.tables=c.tables||[];const n=c.tables.reduce((x,t)=>Math.max(x,parseInt(t.name)||0),0)+1,k=c.tables.length%8;
-    const t={id:'t'+uid(),name:String(n),seats:d.sh==='r'?6:d.sh==='s'?4:2,x:4+k*3,y:4+k*3,sh:d.sh};c.tables.push(t);salleSel=t.id;save();cxSub()}
+    const t={id:'t'+uid(),name:String(n),seats:d.sh==='r'?6:d.sh==='s'?4:2,x:4+k*3,y:4+k*3,sh:d.sh};if(zoneCur())t.z=zoneCur();c.tables.push(t);salleSel=t.id;save();cxSub()}
   else if(a==='sl_seat'){const t=tblById(salleSel);if(t){t.seats=Math.max(1,Math.min(40,t.seats+(+d.d)));save();cxSub()}}
   else if(a==='sl_shape'){const t=tblById(salleSel);if(t){t.sh=d.sh;t.x=Math.min(t.x,100-TBL_W[t.sh]);save();cxSub()}}
   else if(a==='sl_del'){if(tblOrder(d.id)){toast('Cette table a une addition ouverte');return}askYes('Supprimer cette table du plan ?',()=>{const c=salleCfg();c.tables=c.tables.filter(t=>t.id!==d.id);salleSel=null;save();cxSub()},'Supprimer')}
+  else if(a==='sl_zone'){salleZ=d.id;salleSel=null;cxSub()}
+  else if(a==='sl_zadd'){showModal(`${mh('Nouvelle zone')}<div class="field"><label for="zn">Nom de la zone</label><input id="zn" maxlength="20" placeholder="Terrasse" autocomplete="off"></div><div class="acts"><button class="btn primary" data-act="sl_zgo">Ajouter</button></div>`);setTimeout(()=>{const i=$('#zn');if(i)i.focus()},50)}
+  else if(a==='sl_zgo'){const v=($('#zn').value||'').trim().slice(0,20),c=salleCfg();if(!v||!c)return;
+    if(!Array.isArray(c.zones)||!c.zones.length){c.zones=[{id:'z1',name:'Salle'}];(c.tables||[]).forEach(t=>{t.z='z1'})}
+    const z={id:'z'+uid(),name:v};c.zones.push(z);salleZ=z.id;salleSel=null;save();closeModal();cxSub()}
+  else if(a==='sl_zren'){const z=salleZones().find(x=>x.id===zoneCur());if(!z)return;showModal(`${mh('Renommer la zone')}<div class="field"><label for="zn">Nom de la zone</label><input id="zn" maxlength="20" value="${esc(z.name)}" autocomplete="off"></div><div class="acts"><button class="btn primary" data-act="sl_zrgo">Enregistrer</button></div>`)}
+  else if(a==='sl_zrgo'){const z=salleZones().find(x=>x.id===zoneCur()),v=($('#zn').value||'').trim().slice(0,20);if(z&&v){z.name=v;save()}closeModal();cxSub()}
+  else if(a==='sl_zdel'){const c=salleCfg(),zid=zoneCur(),z=salleZones().find(x=>x.id===zid);if(!c||!z)return;
+    askYes('Supprimer la zone « '+z.name+' » ? Ses tables passent dans une autre zone.',()=>{const rest=c.zones.filter(x=>x.id!==zid);
+      if(rest.length<=1){c.zones=[];(c.tables||[]).forEach(t=>{delete t.z})}else{c.zones=rest;(c.tables||[]).forEach(t=>{if(zoneOf(t)===zid||t.z===zid)t.z=rest[0].id})}
+      salleZ=null;salleSel=null;save();cxSub()},'Supprimer')}
   else if(a==='kd_f'){kdsF=d.id;cxSub()}
-  else if(a==='kd_next'){const o=kdsL().find(x=>x.id===d.id);if(o){const now=Date.now();if(o.st==='new'){o.st='prep';o.tp=now}else if(o.st==='prep'){o.st='ready';o.tr=now;if(!o.tp)o.tp=o.ts}else if(o.st==='ready'){o.st='done';o.td=now}save();cxSub();renderNav()}}
+  else if(a==='kd_next'){const o=kdsL().find(x=>x.id===d.id);if(o){const now=Date.now();if(o.cx){o.st='done';o.td=now}else if(o.st==='new'){o.st='prep';o.tp=now}else if(o.st==='prep'){o.st='ready';o.tr=now;if(!o.tp)o.tp=o.ts}else if(o.st==='ready'){o.st='done';o.td=now}save();cxSub();renderNav()}}
   else if(a==='kd_print'){const o=kdsL().find(x=>x.id===d.id);if(o)kdsPrint(o)}
   else if(a==='kd_full'){document.body.classList.toggle('kfull');try{if(document.body.classList.contains('kfull')&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});else if(document.fullscreenElement)document.exitFullscreen()}catch(x){}}
   else if(a==='tbl_plan'){tblStash();cart=newCart();tblLastJ='';tab.caisse='cx_salle';cxRefresh()}
@@ -11676,6 +11707,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target;
+  if(t.dataset&&t.dataset.slz){const s=tblById(salleSel);if(s){s.z=t.value;salleZ=t.value;save();cxSub()}return}
   if(t.dataset&&t.dataset.salle!==undefined){const st=S.settings;if(t.checked){st.salle=st.salle||{};st.salle.on=true;if(!st.salle.tables||!st.salle.tables.length)st.salle.tables=tblDefault()}else if(st.salle)st.salle.on=false;save();renderNav();toast(t.checked?'Service en salle activé : onglets Plan de salle et Cuisine dans la caisse':'Service en salle désactivé');if(view==='params')VIEWS.params($('#main'))}
 });
 /* glisser les tables en mode modification */
@@ -11696,13 +11728,13 @@ document.addEventListener('pointerup',()=>{if(slDrag&&slDrag.moved){save();const
 /* cases à cocher du modal d'envoi : rien à faire (lues au clic). Barre d'actions et ticket pour une table */
 {const d0=drawCbar;drawCbar=function(){
   if(!cart.tableId||!salleOn())return d0();
-  const el=$('#cbar');if(!el)return;const T=totals(cart),n=tblUnsent(cart).length;
+  const el=$('#cbar');if(!el)return;const T=totals(cart),n=tblUnsent(cart).length+tblCancels(cart).length;
   el.innerHTML=`<button data-act="tbl_plan">${ic('table')}<span>Plan</span></button><button data-act="tbl_send" class="${n?'kit':''}">${ic('chef')}<span>Cuisine${n?' ('+n+')':''}</span></button><button data-act="pickclient">${ic('user')}<span>Client</span></button><button data-act="tdisc">${ic('ticket')}<span>Remise</span></button><button data-act="cbpay" class="go">${ic('cash')}<span>Payer${T.total?' '+eur(T.total):''}</span></button>`;
 }}
 function tblDecorate(){
   const el=$('#cart');if(!el||!cart.tableId||!salleOn())return;
   const t=tblById(cart.tableId),sec=el.querySelector('.sec');
-  if(sec)sec.insertAdjacentHTML('afterbegin',`<div class="tblbn">${ic('table')}<span class="grow"><b>${esc(t?tnL(t.name):'?')}</b><small>${cart.covers?cart.covers+' couvert'+(cart.covers>1?'s':''):''}</small></span><button class="btn" data-act="tbl_send">${ic('chef')}Envoyer en cuisine</button></div>`);
+  if(sec)sec.insertAdjacentHTML('afterbegin',`<div class="tblbn">${ic('table')}<span class="grow"><b>${esc(t?tnL(t.name):'?')}</b><small>${cart.covers?cart.covers+' couvert'+(cart.covers>1?'s':''):''}</small></span><button class="btn" data-act="tbl_send">${ic('chef')}Envoyer en cuisine</button></div>${tblCancels(cart).length?`<div class="tblcx"><b>À annuler en cuisine :</b> ${tblCancels(cart).map(x=>x.q+' × '+esc(x.n)).join(', ')}</div>`:''}`);
   el.querySelectorAll('.cl').forEach(row=>{
     const b=row.querySelector('[data-act="qty"]');if(!b)return;const pid=b.dataset.id,l=cart.lines.find(x=>x.pid===pid);if(!l)return;
     const sent=Math.min(l.qty,(cart.sent||{})[pid]||0),u=row.querySelector('.cl-u'),p=prod(pid);
