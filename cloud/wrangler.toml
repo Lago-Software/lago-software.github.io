@@ -1,0 +1,12 @@
+name = "lago-cloud"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+FB_URL = "https://REMPLACER-default-rtdb.europe-west1.firebasedatabase.app"
+APP_URL = "https://lago-software.github.io/"
+WORKER_URL = "https://lago-cloud.REMPLACER.workers.dev"
+ALLOW_ORIGINS = "https://lago-software.github.io,https://lago-caisse.fr"
+
+# Secrets (commande « wrangler secret put NOM ») : STRIPE_KEY, STRIPE_WHSEC, STRIPE_WHSEC_CONNECT, FB_SA
+# Facultatif : TURNSTILE_SECRET (anti-robots), liaison KV « RL » (limite d'inscriptions par adresse IP)
