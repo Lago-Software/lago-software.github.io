@@ -2238,7 +2238,7 @@ let SAMPLE=null,DL=null;
 (async()=>{try{if(window.claude&&claude.use){SAMPLE=await claude.use('sample');DL=await claude.use('downloads')}}catch(e){}
   try{if(window.claude&&claude.use&&!DL)DL=await claude.use('downloads')}catch(e){}
   if(SAMPLE&&view==='controle')subR()})();
-const aiOk=()=>{aiSync();return !!SAMPLE};
+const aiOk=()=>{aiSync();return !!SAMPLE&&optOn('ia')};
 const AIERR={not_granted:'L’assistant n’est pas autorisé pour cette page.',sampling_disabled:'L’assistant n’est pas disponible sur ce compte.',rate_limited:'Trop de demandes. Réessayez dans un instant.',upstream_error:'Connexion interrompue. Réessayez.',invalid_json:'Réponse illisible, réessayez.',refused:'Demande refusée.',cancelled:''};
 function aiCtx(){
   const t=today(),sales=S.sales.filter(s=>ymd(s.ts)===t),ca=sales.reduce((a,s)=>a+s.total,0);
@@ -4999,7 +4999,7 @@ async function cloudBoot(){
 /* démarrage : avant l’écran de connexion */
 function bootGate(){
   window.__lagoUp=1;{const bs=document.getElementById('boot');if(bs)bs.remove()}
-  if(/^#cloud=/i.test(location.hash)){const x=joinParse(location.hash);if(x&&tplLinkBusy(x)){window.__joinBlock=1;setTimeout(tplBlockNote,600)}else if(x)cloudSet({u:x.u,r:x.r,fresh:true,boot:x.b?{t:x.t,n:x.n}:undefined});else window.__joinBad=true;history.replaceState(null,'',location.pathname+location.search)}
+  if(/^#cloud=/i.test(location.hash)){const x=joinParse(location.hash);if(x&&tplLinkBusy(x)){window.__joinBlock=1;setTimeout(tplBlockNote,600)}else if(x)cloudSet(joinCfg(x));else window.__joinBad=true;history.replaceState(null,'',location.pathname+location.search)}
   if(!cloudOn()){bootGateBase();return}
   const sp=document.createElement('div');sp.id='zsplash';sp.style.cssText='position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:#31ACF0;color:#fff;font:600 18px system-ui';sp.textContent='Connexion à l’équipe…';document.body.appendChild(sp);
   cloudBoot().catch(e=>{
@@ -5091,7 +5091,7 @@ const fbRules=room=>JSON.stringify({rules:{'.read':false,'.write':false,[room||'
 const rulesTxt=r=>fbRules(r);
 const zInvite=link=>'Bonjour, voici Lago (caisse et planning). Ouvre ce lien une fois sur ton téléphone, puis choisis ton prénom et entre ton mot de passe (ton responsable crée ton compte). Si tu as ajouté Lago sur ton écran d’accueil : ouvre l’appli, touche « Rejoindre l’équipe » et colle ce lien : '+link;
 const b64Link=o=>btoa(JSON.stringify(o)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-const zLink=()=>{const c=cloudCfg();return c&&c.u&&!c.pending?location.origin+location.pathname+'#cloud='+b64Link({u:c.u,r:c.r}):''};
+const zLink=()=>{const c=cloudCfg();return c&&c.u&&!c.pending?location.origin+location.pathname+'#cloud='+b64Link({u:c.u,r:c.r,...(c.m?{m:1,w:c.w}:{})}):''};
 async function zCopy(t,ok){
   try{await navigator.clipboard.writeText(t);toast(ok);return}catch(e){}
   try{const i=$('#z_link');if(i&&t===i.value){i.select();i.setSelectionRange(0,99999)}else{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
@@ -5101,7 +5101,7 @@ function vSetStudio(m){
   vSetStudioY(m);if(!isAdmin())return;
   const c=cloudCfg();let h;
   if(c&&c.u&&!c.pending){
-    const link=location.origin+location.pathname+'#cloud='+b64Link({u:c.u,r:c.r});
+    const link=location.origin+location.pathname+'#cloud='+b64Link({u:c.u,r:c.r,...(c.m?{m:1,w:c.w}:{})});
     h=`<h3>Équipe connectée</h3><p class="muted" style="margin:0 0 8px">Tous les appareils qui utilisent ce lien partagent les mêmes données, en direct.</p>
      <div class="zst" data-s="${CL.state}" style="display:flex;margin-bottom:8px"><i></i><b>${CL.state==='ok'?'Synchronisé':CL.state==='sync'?'Synchronisation…':'Hors ligne'}</b></div>
      ${CL.state==='off'&&CL.err?`<p class="muted" style="margin:-4px 0 8px;font-size:12px">Dernière erreur : ${esc(CL.err)}</p>`:''}
@@ -5287,13 +5287,15 @@ setInterval(gateStat,2000);
 document.addEventListener('change',e=>{if(e.target.id==='gshow'){const p=document.getElementById('gp');if(p)p.type=e.target.checked?'text':'password'}});
 
 /* ---- rejoindre l'équipe en collant le lien (appli installée sur l'écran d'accueil) ---- */
+/* config enregistrée à partir d'un lien d'équipe : m = espace en libre-service, w = serveur d'abonnement, o = clé du propriétaire (jamais recopiée dans les liens d'équipe) */
+function joinCfg(x){return{u:x.u,r:x.r,fresh:true,boot:x.b?{t:x.t,n:x.n}:undefined,...(x.m?{m:1,w:x.w}:{}),...(x.o?{o:x.o}:{})}}
 function joinParse(t){
   t=String(t||'').trim();
   try{t=decodeURIComponent(t)}catch(e){}
   const i=t.indexOf('cloud=');let b=i>=0?t.slice(i+6):t;
   b=b.replace(/[^A-Za-z0-9+\/=_-].*$/s,'').replace(/-/g,'+').replace(/_/g,'/');
   while(b.length%4)b+='=';
-  try{const x=JSON.parse(atob(b));if(x&&typeof x.u==='string'&&typeof x.r==='string'&&/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])[^\s]+/.test(x.u)&&x.r){const o={u:x.u,r:x.r};if(x.b===1||x.g===1){o.g=1;if(x.b===1)o.b=1}if(typeof x.t==='string'&&/^[a-z0-9-]{2,30}$/.test(x.t))o.t=x.t;if(typeof x.n==='string')o.n=x.n.replace(/[\u0000-\u001f]/g,' ').trim().slice(0,80);return o}}catch(e){}
+  try{const x=JSON.parse(atob(b));if(x&&typeof x.u==='string'&&typeof x.r==='string'&&/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])[^\s]+/.test(x.u)&&x.r){const o={u:x.u,r:x.r};if(x.b===1||x.g===1){o.g=1;if(x.b===1)o.b=1}if(typeof x.t==='string'&&/^[a-z0-9-]{2,30}$/.test(x.t))o.t=x.t;if(typeof x.n==='string')o.n=x.n.replace(/[\u0000-\u001f]/g,' ').trim().slice(0,80);if(x.m===1&&typeof x.w==='string'&&/^https:\/\/[a-z0-9.-]+\/?$/i.test(x.w)&&/^c\/[a-z0-9]{10,40}$/.test(x.r)){o.m=1;o.w=x.w.replace(/\/+$/,'')}if(typeof x.o==='string'&&/^[A-Za-z0-9_-]{16,64}$/.test(x.o))o.o=x.o;return o}}catch(e){}
   return null;
 }
 function gateJoin(){
@@ -5316,7 +5318,7 @@ document.addEventListener('submit',e=>{
   const er=document.getElementById('gerr'),x=joinParse(document.getElementById('gjl').value);
   if(!x){if(er)er.textContent='Ce lien n’est pas reconnu. Copiez le lien complet reçu (il contient « #cloud= »).';return}
   if(tplLinkBusy(x)){if(er)er.textContent='Ce lien crée un nouvel espace : il ne peut pas être ouvert sur un appareil qui contient déjà un Lago. Utilisez une fenêtre de navigation privée.';return}
-  cloudSet({u:x.u,r:x.r,fresh:true,boot:x.b?{t:x.t,n:x.n}:undefined});
+  cloudSet(joinCfg(x));
   const bt=e.target.querySelector('button[type=submit]');if(bt){bt.disabled=true;bt.textContent='Connexion à l’équipe…'}
   setTimeout(()=>location.reload(),150);
 });
@@ -5860,7 +5862,7 @@ document.addEventListener('submit',e=>{
   if(!x){if(er)er.textContent='Ce lien n’est pas reconnu. Copiez le lien complet (il contient « #cloud= »).';return}
   if(tplLinkBusy(x)){if(er)er.textContent='Ce lien crée un nouvel espace : il ne peut pas être ouvert sur un appareil qui contient déjà un Lago. Utilisez une fenêtre de navigation privée.';return}
   msBackup('avant-equipe');
-  cloudSet({u:x.u,r:x.r,fresh:true,boot:x.b?{t:x.t,n:x.n}:undefined});
+  cloudSet(joinCfg(x));
   const bt=e.target.querySelector('button[type=submit]');if(bt){bt.disabled=true;bt.textContent='Connexion à l’équipe…'}
   setTimeout(()=>location.reload(),150);
 });
@@ -8561,6 +8563,7 @@ const PAYR=(()=>{
   const unb64u=t=>{t=String(t).replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a};
   const HEX=/^#[0-9a-f]{6}$/i,REF=/^[A-Z0-9]{2,4}-[A-Z2-9]{6}$/;
   /* lien de paiement Stripe : uniquement buy.stripe.com / donate.stripe.com, sans paramètres (les nôtres sont ajoutés à l'envoi) */
+  const WURL=/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)*\.(workers\.dev|lago-caisse\.fr)$/;
   const LINK=/^https:\/\/(buy|donate)\.stripe\.com\/[A-Za-z0-9_-]{4,90}$/;
   const LOGO=/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
   const MODES=['total','pct','per'],BGS=['light','tint','brand'],RADII=['square','soft','round'],FONTS=['sans','round','serif'];
@@ -8576,7 +8579,7 @@ const PAYR=(()=>{
     return{
       on:o.on===true,name:s(o.name,80),tel:s(o.tel,30),mail:s(o.mail,120),addr:s(o.addr,160),
       site:/^https:\/\/[^\s"'<>\\]{3,200}$/.test(o.site||'')?o.site:'',
-      link:LINK.test(o.link||'')?o.link:'',
+      link:LINK.test(o.link||'')?o.link:'',w:o.cn===true&&WURL.test(o.w||'')?o.w:'',
       logo:typeof o.logo==='string'&&o.logo.length<=90000&&LOGO.test(o.logo)?o.logo:'',
       brand:HEX.test(o.brand||'')?o.brand:'#31ACF0',accent:HEX.test(o.accent||'')?o.accent:'#F76300',
       bg:BGS.includes(o.bg)?o.bg:'tint',radius:RADII.includes(o.radius)?o.radius:'soft',font:FONTS.includes(o.font)?o.font:'sans',
@@ -8604,6 +8607,7 @@ const PAYR=(()=>{
   }
   /* lien envoyé à Stripe : le code de réservation sert de référence (rapprochement dans le tableau de bord Stripe) */
   function href(c,ref){
+    if(c.w)return '#pay';
     if(!c.link)return '';
     const q=['locale=fr'];if(REF.test(ref||''))q.push('client_reference_id='+encodeURIComponent(ref));
     return c.link+'?'+q.join('&');
@@ -8686,7 +8690,7 @@ const PAYR=(()=>{
       body=`<main class="pyr-c"><h1>${esc(c.title)}</h1>${c.intro?`<p class="pyr-in">${esc(c.intro)}</p>`:''}
         <section class="pyr-tk" aria-label="Récapitulatif"><div class="pyr-r"><span>Réservation</span><b class="pyr-ref">${esc(ctx.ref||'RES-XXXXXX')}</b></div>${ctx.first?`<div class="pyr-r"><span>Au nom de</span><b>${esc(ctx.first)}</b></div>`:''}<div class="pyr-cut" aria-hidden="true"></div><div class="pyr-am"><span>${c.mode==='total'?'Total à régler':'Acompte à régler'}</span><b>${eur(ctx.amt||0)}</b></div></section>
         <a class="pyr-btn" data-pyr="go" ${hf?`href="${esc(hf)}" target="_top" rel="noopener noreferrer"`:'aria-disabled="true" role="link"'}>${I.lock}<span>${esc(c.btn)}</span></a>
-        <p class="pyr-hint"><span>Sur la page de paiement, saisissez exactement <b>${eur2(ctx.amt||0)} €</b></span><button type="button" class="pyr-cp" data-pyr="copy" data-v="${eur2(ctx.amt||0)}">Copier</button></p>
+        ${c.w?'':`<p class="pyr-hint"><span>Sur la page de paiement, saisissez exactement <b>${eur2(ctx.amt||0)} €</b></span><button type="button" class="pyr-cp" data-pyr="copy" data-v="${eur2(ctx.amt||0)}">Copier</button></p>`}
         <p class="pyr-note">${I.lock}<span>${esc(c.note)}</span></p></main>`;
     }
     return `<div class="pyr-w">${head}${body}${foot}</div>`;
@@ -8719,7 +8723,7 @@ async function paySign(txt){
 /* configuration affichée au client (même nettoyage que la page publique) */
 function payCfgRaw(p){
   const w=webCfg(),lg=S.settings.legal||{},c=cnf();
-  return{on:!!p.on,name:S.settings.name||'',tel:S.settings.phone||'',mail:mlMailStr(),addr:S.settings.addr||'',site:p.site,link:p.link,logo:p.logo,
+  return{on:!!p.on,name:S.settings.name||'',tel:S.settings.phone||'',mail:mlMailStr(),addr:S.settings.addr||'',site:p.site,link:p.link,w:(cloudCfg()&&cloudCfg().w)||'',cn:!!p.cn,logo:p.logo,
     brand:p.brand||S.settings.brand||'#31ACF0',accent:p.accent||S.settings.accent||'#F76300',bg:p.bg,radius:p.radius,font:p.font,
     title:p.title,intro:p.intro,btn:p.btn,note:p.note,thT:p.thT,thM:p.thM,help:p.help,cgv:w.cgv||'',
     legal:[lg.raison||'',lg.forme||'',lg.siret?'SIRET '+lg.siret:''].filter(Boolean).join(' · '),med:c.med&&c.med.n?c.med.n+(c.med.u?' – '+c.med.u:''):'',
@@ -8727,6 +8731,7 @@ function payCfgRaw(p){
 }
 const payOut=()=>PAYR.clean(payCfgRaw(payCfg()));
 const payLinkOk=v=>PAYR.LINK.test(v||'');
+const payWk=()=>{const c=cloudCfg(),p=payCfg();return !!(c&&c.m&&c.w&&p.cn)};
 /* lien à indiquer dans Stripe (« après le paiement, rediriger vers… ») et lien à donner au client */
 const payBack=()=>PAYER_PAGE+'?c='+webEmbedParam()+'&ok=1';
 async function payPublish(force){
@@ -8772,7 +8777,7 @@ async function payPoll(){
   finally{PAYS.busy=false}
 }
 /* ---------- état de paiement d'une réservation ---------- */
-const payOn=()=>{const p=payCfg();return !!(p.on&&payLinkOk(p.link))};
+const payOn=()=>{const p=payCfg();return !!(p.on&&(payLinkOk(p.link)||payWk()))};
 function pyState(b){return b.paid?'ok':(b.pn&&b.pn.s===2?'chk':(b.pn&&b.pn.s===1?'go':''))}
 function payBadge(b){
   const s=pyState(b);if(!s)return '';
@@ -8841,7 +8846,7 @@ function payPrev(){
 }
 function payPrevDraw(host){
   const root=host.shadowRoot||host.attachShadow({mode:'open'});
-  const c=payOut();c.on=true;if(!c.link)c.link='https://buy.stripe.com/exemple';
+  const c=payOut();c.on=true;if(!c.link)c.link='https://buy.stripe.com/exemple';if(ssOn())c.w='https://apercu.workers.dev';
   const people=4,total=9600,amt=PAYR.amount(c,total,people);
   const ctx=PAYS.prev==='thanks'?{st:'thanks',ref:'RES-7KQ4M2'}:{st:'pay',ref:'RES-7KQ4M2',amt,first:'Camille',href:'#'};
   root.innerHTML=`<style>:host{display:block}*{margin:0}${PAYR.css(c)}</sty`+`le><div class="pyr" style="min-height:0">${PAYR.html(c,ctx)}</div>`;
@@ -8932,7 +8937,8 @@ document.addEventListener('change',e=>{
   if(t.id==='pay_on'){
     if(t.checked){
       if(!webReady()){t.checked=false;toast('Activez d’abord la réservation en ligne');return}
-      if(!payLinkOk(p.link)){t.checked=false;toast('Collez d’abord votre lien de paiement Stripe');const i=$('#payf_link');if(i)i.focus();return}
+      if(ssOn()){if(!p.cn){t.checked=false;toast('Connectez d’abord votre compte Stripe');return}}
+      else if(!payLinkOk(p.link)){t.checked=false;toast('Collez d’abord votre lien de paiement Stripe');const i=$('#payf_link');if(i)i.focus();return}
       p.on=true;payKeys().then(()=>{save();return payPublish(true)}).then(ok=>{toast(ok?'Paiement en ligne activé':'Activé, mais la publication a échoué : '+(PAYS.err||'réessayez')); payRedo()});
     }else{p.on=false;save();payPublish(true).catch(()=>{});toast('Paiement en ligne désactivé');payRedo()}
     return;
@@ -10193,7 +10199,7 @@ function suspDraw(){
 async function suspCheck(){
   const c=cloudCfg();if(!c||!c.u||!/^https?:\/\//.test(c.u))return;
   try{
-    const r=await fetch(c.u.replace(/\/+$/,'')+'/_susp.json',{cache:'no-store'});
+    const r=await fetch(c.u.replace(/\/+$/,'')+(c.m?'/_susp/'+c.r+'.json':'/_susp.json'),{cache:'no-store'});
     if(!r.ok)return;
     const j=await r.json(),on=!!(j&&typeof j==='object'&&j.on===true);
     SUSP.on=on;SUSP.msg=on&&typeof j.msg==='string'?j.msg.slice(0,300):'';suspDraw();
@@ -12473,65 +12479,33 @@ finalize=(o=>function(){const r=o.apply(this,arguments);try{setTimeout(walFlush,
 setInterval(()=>{try{walFlush()}catch(e){}},30000);
 /* ======================================================================
    v108 — Lago est GRATUIT. Les options payantes sont FACULTATIVES (modèle Hiboutik : base gratuite complète, options en plus).
-   · plans.json (à la racine du site) décide de tout, sans nouvelle version : interrupteur « enforce », options, et ce qui est verrouillé.
+   · plans.json (à la racine du site), sans nouvelle version : interrupteur « enforce » et ce qui est verrouillé (fonction → option). Les options et leur paiement : serveur d'abonnement ci-dessous.
    · Tant que « enforce » est faux, RIEN n'est verrouillé.
    · Version « Simple » par défaut pour les nouvelles installations, personnalisable (Paramètres → Personnaliser).
    · Compteur anonyme d'appareils (facultatif, adresse « stats » dans plans.json) lu dans la console propriétaire.
    ====================================================================== */
 IC.lock='<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>';
 var PLAN=null;
-const PLAN_KEY='lago_plans',PLAN_GRACE=3*864e5,NEW_MODE='simple',DEV_KEY='lago_dev';
+const PLAN_KEY='lago_plans',NEW_MODE='simple',DEV_KEY='lago_dev';
 const planUrl=u=>typeof u==='string'&&/^https:\/\/[^\s"'<>]+$/.test(u)?u:'';
+/* plans.json : « enforce » (interrupteur général), « gates » (fonction → option requise), « stats » (compteur d'appareils).
+   Les options elles-mêmes (prix, paiement, activation) viennent du serveur d'abonnement : voir optOn() plus bas. */
 function planClean(c){
   c=c&&typeof c==='object'?c:{};
-  const o={enforce:c.enforce===true,api:planUrl(c.api).replace(/\/+$/,''),stats:planUrl(c.stats).replace(/\/+$/,''),pub:null,options:{},gates:{}};
-  const p=c.pub;if(p&&typeof p==='object'&&p.kty==='EC'&&p.crv==='P-256'&&typeof p.x==='string'&&typeof p.y==='string')o.pub={kty:'EC',crv:'P-256',x:p.x,y:p.y};
-  const op=c.options&&typeof c.options==='object'?c.options:{};
-  Object.keys(op).slice(0,20).forEach(id=>{if(!/^[a-z0-9_-]{1,30}$/.test(id))return;const x=op[id]||{};
-    o.options[id]={name:String(x.name||id).slice(0,40),price:String(x.price||'').slice(0,60),blurb:String(x.blurb||'').slice(0,240),link:planUrl(x.link),portal:planUrl(x.portal),feats:(Array.isArray(x.feats)?x.feats:[]).slice(0,12).map(f=>String(f).slice(0,120))}});
+  const o={enforce:c.enforce===true,stats:planUrl(c.stats).replace(/\/+$/,''),gates:{}};
   const g=c.gates&&typeof c.gates==='object'?c.gates:{};
-  Object.keys(g).slice(0,200).forEach(k=>{if((/^(tab|act|blk):[A-Za-z0-9_-]{1,60}$/.test(k)||k==='cloud')&&o.options[g[k]])o.gates[k]=g[k]});
+  Object.keys(g).slice(0,200).forEach(k=>{if((/^(tab|act|blk):[A-Za-z0-9_-]{1,60}$/.test(k)||k==='cloud')&&/^[a-z0-9_-]{1,30}$/.test(String(g[k])))o.gates[k]=String(g[k])});
   return o}
 try{const c=JSON.parse(localStorage.getItem(PLAN_KEY)||'null');if(c)PLAN=planClean(c)}catch(e){}
 
-/* ---------- licence : signée (ECDSA P-256) par le service Cloudflare, vérifiée ici ---------- */
-const LICV={opts:{}};
-const licSt=()=>{const s=S.settings;if(!s.lic||typeof s.lic!=='object')s.lic={};return s.lic};
-function licCid(){const l=licSt();if(!/^[A-Za-z0-9]{20}$/.test(l.cid||'')){const a=new Uint8Array(20);crypto.getRandomValues(a);const al='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';l.cid=[...a].map(x=>al[x%al.length]).join('');save()}return l.cid}
-const b64d=s=>{s=String(s).replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a};
-async function licCheck(tok,cid){
-  try{
-    if(!PLAN||!PLAN.pub||typeof tok!=='string'||!cid)return null;
-    const [p,sg]=tok.split('.');if(!p||!sg)return null;
-    const k=await crypto.subtle.importKey('jwk',PLAN.pub,{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
-    if(!(await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},k,b64d(sg),new TextEncoder().encode(p))))return null;
-    const o=JSON.parse(new TextDecoder().decode(b64d(p)));
-    if(!o||o.v!==1||o.id!==cid||!o.opts||typeof o.opts!=='object')return null;
-    const out={};Object.keys(o.opts).forEach(k=>{if(/^[a-z0-9_-]{1,30}$/.test(k)&&+o.opts[k]>0)out[k]=+o.opts[k]});return out}
-  catch(e){return null}
-}
-async function licVerify(){const l=licSt();const o=l.tok?await licCheck(l.tok,l.cid):null;LICV.opts=o||{};if(JSON.stringify(l.ok||{})!==JSON.stringify(LICV.opts)){l.ok=LICV.opts;if(!o)delete l.tok;save()}return LICV.opts}
-const hasOpt=o=>((LICV.opts&&LICV.opts[o])||0)+PLAN_GRACE>Date.now();
-/* Demande la licence au service : { ok, n } — n = nombre d'options actives, ou erreur « net » / « conf » */
-async function licFetch(){
-  if(!PLAN||!PLAN.api||!PLAN.pub)return{ok:false,err:'conf'};
-  try{
-    const r=await fetch(PLAN.api+'/license?cid='+encodeURIComponent(licCid()),{cache:'no-store'});
-    const j=await r.json();if(!j||!j.ok)return{ok:false,err:'net'};
-    const l=licSt();
-    if(!j.tok){delete l.tok;l.ok={};LICV.opts={};save();return{ok:true,n:0}}
-    const o=await licCheck(j.tok,l.cid);if(!o)return{ok:false,err:'sig'};
-    l.tok=j.tok;l.ok=o;LICV.opts=o;l.at=Date.now();save();return{ok:true,n:Object.keys(o).length}}
-  catch(e){return{ok:false,err:'net'}}
-}
-
 /* ---------- verrous : « clés » écrites dans plans.json → option requise ---------- */
 const gateOpt=k=>(PLAN&&PLAN.gates&&PLAN.gates[k])||'';
-function gateOk(k){if(!PLAN||!PLAN.enforce)return true;const o=gateOpt(k);return !o||hasOpt(o)}
-const optOf=k=>PLAN&&PLAN.options&&PLAN.options[gateOpt(k)]||null;
-function lockInner(k,label){const o=optOf(k);return `<div class="lockc"><span class="lockic">${ic('lock')}</span><div><h3>${esc(label||'Cette fonction')} : option « ${esc(o?o.name:'payante')} »</h3>${o&&o.blurb?`<p class="muted">${esc(o.blurb)}</p>`:''}<div class="acts"><button type="button" class="btn primary" data-act="goto" data-v="params" data-t="pabo">Voir l’option</button></div></div></div>`}
+/* verrouillé seulement si : interrupteur « enforce » allumé, la fonction est listée, et l'espace n'a pas l'option (optOn est toujours vrai hors espaces en libre-service) */
+function gateOk(k){if(!PLAN||!PLAN.enforce)return true;if(k==='cloud'&&ssOn())return true;const o=gateOpt(k);return !o||optOn(o)}
+const optOf=k=>{const id=gateOpt(k);return id==='pack'?SSPACK:SSOPT.find(x=>x.k===id)||null};
+function lockInner(k,label){const o=optOf(k);return `<div class="lockc"><span class="lockic">${ic('lock')}</span><div><h3>${esc(label||'Cette fonction')} : option « ${esc(o?o.n:'payante')} »</h3>${o&&o.d?`<p class="muted">${esc(o.d)}</p>`:''}<div class="acts"><button type="button" class="btn primary" data-act="goto" data-v="params" data-t="pabo">Voir l’option</button></div></div></div>`}
 const lockCard=(k,label)=>`<div class="card">${lockInner(k,label)}</div>`;
-function upsell(k,label){showModal(`${mh('Option « '+esc(optOf(k)?optOf(k).name:'payante')+' »')}<p style="margin:0 0 8px">${esc(label||'Cette fonction')} fait partie d’une option payante.</p>${optOf(k)&&optOf(k).blurb?`<p class="muted" style="margin:0 0 8px">${esc(optOf(k).blurb)}</p>`:''}<div class="acts" style="margin-top:14px"><button type="button" class="btn" data-act="close">Plus tard</button><button type="button" class="btn primary" data-act="goto" data-v="params" data-t="pabo">Voir l’option</button></div>`)}
+function upsell(k,label){showModal(`${mh('Option « '+esc(optOf(k)?optOf(k).n:'payante')+' »')}<p style="margin:0 0 8px">${esc(label||'Cette fonction')} fait partie d’une option payante.</p>${optOf(k)&&optOf(k).d?`<p class="muted" style="margin:0 0 8px">${esc(optOf(k).d)}</p>`:''}<div class="acts" style="margin-top:14px"><button type="button" class="btn" data-act="close">Plus tard</button><button type="button" class="btn primary" data-act="goto" data-v="params" data-t="pabo">Voir l’option</button></div>`)}
 /* un clic sur une action verrouillée ouvre l'explication au lieu de l'action */
 document.addEventListener('click',e=>{
   if(!PLAN||!PLAN.enforce)return;
@@ -12564,50 +12538,11 @@ document.addEventListener('click',e=>{
   const k=b.dataset.k;if(k==='perso')return;if(!MODES[k])return;
   modeApply(k);save();chrome();render();toast('Version « '+MODES[k].l+' » activée')
 });
-/* en version Simple : seuls quelques réglages sont affichés ; l'onglet Abonnement n'apparaît que s'il y a des options */
+/* en version Simple : seuls quelques réglages sont affichés (l'onglet Abonnement n'existe que dans les espaces en libre-service) */
 tabsFor=(o=>function(id){const L=o.apply(this,arguments);if(id!=='params')return L;
   let r=L;
   if(modeKey()==='simple')r=r.filter(x=>MODES.simple.par.includes(x[0]));
-  if(!PLAN||!Object.keys(PLAN.options).length)r=r.filter(x=>x[0]!=='pabo');
   return r})(tabsFor);
-
-/* ---------- Paramètres → Abonnement ---------- */
-function aboLink(o){if(!o.link)return '';try{const u=new URL(o.link);u.searchParams.set('client_reference_id',licCid());return u.toString()}catch(e){return ''}}
-const dFR=ts=>new Date(ts).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
-function vSetAbo(m){
-  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
-  const P=PLAN,ids=P?Object.keys(P.options):[],gated=P&&P.enforce&&Object.keys(P.gates).length;
-  if(!ids.length){m.innerHTML='<div class="card"><h3>Lago est gratuit</h3><p class="muted">Aucune option payante pour le moment : toutes les fonctions sont incluses.</p></div>';return}
-  const cid=licCid();
-  m.innerHTML=`<div class="card"><h3>Lago est gratuit</h3><p class="muted" style="margin:0">${gated?'La base est gratuite, sans limite de durée ni de ventes. Les options ci-dessous ajoutent des fonctions en plus, au mois et sans engagement.':'Toutes les fonctions sont actuellement incluses. Les options ci-dessous sont facultatives.'}</p></div>
-   ${ids.map(id=>{const o=P.options[id],exp=LICV.opts[id]||0,on=hasOpt(id),lk=aboLink(o);
-     const feats=Object.keys(P.gates).filter(k=>P.gates[k]===id);
-     return `<div class="card abo" data-opt="${esc(id)}"><div class="row" style="align-items:flex-start;gap:12px"><div class="grow"><h3 style="margin:0">${esc(o.name)} ${on?'<span class="pill ok">Active</span>':''}</h3>${o.price?`<div class="aboprice">${esc(o.price)}</div>`:''}${o.blurb?`<p class="muted" style="margin:6px 0 0">${esc(o.blurb)}</p>`:''}</div></div>
-      ${o.feats.length?`<ul class="abof">${o.feats.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>`:''}
-      ${on?`<p class="muted" style="margin:10px 0 0">${exp>Date.now()?'Active jusqu’au '+dFR(exp)+' (renouvelée automatiquement).':'Période terminée : le renouvellement est en cours de vérification.'}</p>`:''}
-      <div class="acts" style="margin-top:12px">${on?(o.portal?`<a class="btn" href="${esc(o.portal)}" target="_blank" rel="noopener">Gérer ou arrêter l’abonnement</a>`:''):(lk?`<a class="btn primary" href="${esc(lk)}" target="_blank" rel="noopener">Activer cette option</a>`:'<span class="muted">Bientôt disponible</span>')}</div></div>`}).join('')}
-   <div class="card"><h3>Déjà payé ?</h3><p class="muted" style="margin:0 0 10px">L’activation est automatique. Si rien n’a changé après quelques instants, vérifiez ici.</p>
-    <div class="acts"><button type="button" class="btn" data-act="abo_chk">Vérifier mon paiement</button><span id="abomsg" class="muted" role="status"></span></div>
-    <p class="muted" style="font-size:12.5px;margin:12px 0 0">Identifiant de ce logiciel : <b>${esc(cid)}</b></p></div>`;
-}
-TABS.params.push(['pabo','Abonnement']);SUBS.pabo=vSetAbo;
-PGRP.push(['abo','Abonnement',['pabo']]);
-async function aboCheck(quiet){
-  const r=await licFetch(),msg=$('#abomsg');
-  const t=r.ok?(r.n?'Option activée, merci !':'Aucun paiement trouvé pour le moment.'):r.err==='conf'?'Les abonnements ne sont pas encore configurés.':r.err==='sig'?'Licence refusée : contactez le support.':'Connexion impossible. Réessayez dans un instant.';
-  if(msg)msg.textContent=t;else if(!quiet)toast(t);
-  if(r.ok&&r.n){chrome();if(view==='params'&&tab.params==='pabo')vSetAbo($('#sub'));else route()}
-  return r}
-document.addEventListener('click',e=>{
-  const b=e.target.closest&&e.target.closest('[data-act="abo_chk"]');if(!b)return;
-  b.disabled=true;aboCheck().finally(()=>{b.disabled=false})
-});
-/* retour de Stripe (« ?premium=ok ») : on interroge le service quelques secondes, le temps que le paiement soit confirmé */
-async function aboReturn(){
-  try{const u=new URL(location.href);if(u.searchParams.get('premium')!=='ok')return;u.searchParams.delete('premium');history.replaceState(null,'',u.pathname+u.search+u.hash)}catch(e){return}
-  for(let i=0;i<8;i++){const r=await licFetch();if(r.ok&&r.n){toast('Option activée, merci !');chrome();route();return}if(!r.ok&&r.err==='conf')return;await new Promise(f=>setTimeout(f,3000))}
-  toast('Paiement en cours de confirmation : vérifiez dans Paramètres → Abonnement')
-}
 
 /* ---------- plans.json (réglages distants) ---------- */
 async function planLoad(){
@@ -12617,7 +12552,6 @@ async function planLoad(){
     const c=planClean(await r.json()),s=JSON.stringify(c);
     if(s===JSON.stringify(PLAN))return false;
     PLAN=c;try{localStorage.setItem(PLAN_KEY,s)}catch(e){}
-    await licVerify();
     if(!$('#modal').innerHTML){chrome();render()}
     return true}
   catch(e){return false}
@@ -12640,14 +12574,173 @@ window.addEventListener('appinstalled',()=>{statPing('ins')});
 /* ---------- démarrage ---------- */
 async function v108Boot(){
   gateWatch();
-  try{LICV.opts=(S.settings.lic&&S.settings.lic.ok)||{}}catch(e){}
-  try{await licVerify()}catch(e){}
   await planLoad();
   statPing('dev');if(isStandalone())statPing('ins');
-  aboReturn();
-  /* renouvellement discret de la licence : au plus une fois par 6 h, seulement s'il y en a une */
-  try{const l=licSt();if(PLAN&&PLAN.api&&l.tok&&Date.now()-(l.at||0)>216e5)await licFetch()}catch(e){}
 }
 
+/* ===== v107 : abonnement et options (espaces créés en libre-service sur lago-caisse.fr) =====
+   Lago est gratuit. Les options se paient chaque mois via le serveur d'abonnement (Stripe) : le paiement active l'option tout seul.
+   Rien ne change pour les clients existants : tout ce bloc ne s'applique que si le lien d'activation portait « m » et l'adresse du serveur « w ». */
+const SSOPT=[
+ {k:'cast',n:'Écran TV (Cast)',d:'Affichez le planning, les files et vos offres sur la télé de l’accueil.',p:900},
+ {k:'qr',n:'Check-in par QR code',d:'Vos clients se présentent avec leur code : l’entrée est validée en une seconde.',p:500},
+ {k:'wallet',n:'Carte de fidélité wallet',d:'La carte de fidélité dans Apple Wallet et Google Wallet.',p:900},
+ {k:'ia',n:'Recherche et assistant IA',d:'Posez vos questions à vos chiffres, résumés et conseils.',p:900},
+ {k:'multi',n:'Multi-établissements',d:'Plusieurs sites sous un même compte. Activé par l’équipe Lago après votre paiement.',p:1900},
+ {k:'export',n:'Rapports et exports',d:'Rapport mensuel signé, exports PDF.',p:900},
+ {k:'support',n:'Support prioritaire',d:'Une réponse humaine sous 4 heures ouvrées.',p:1900}];
+const SSPACK={k:'pack',n:'Pack Tout',p:5900};
+var SSKEY='lago-ent';
+var SS={ent:null,conn:null,busy:'',sig:''};
+function ssOn(){const c=cloudCfg();return !!(c&&c.m===1&&/^https:\/\//.test(c.w||'')&&/^c\/[a-z0-9]+$/.test(c.r||''))}
+const ssOwner=()=>{const c=cloudCfg();return !!(c&&c.o)};
+const ssEur=c=>(c/100).toLocaleString('fr-FR',{minimumFractionDigits:c%100?2:0,maximumFractionDigits:2})+' €';
+function ssEnt(){
+  if(SS.ent)return SS.ent;
+  try{const o=JSON.parse(localStorage.getItem(SSKEY)||'null'),c=cloudCfg();if(o&&c&&o.r===c.r&&o.e&&typeof o.e==='object'){SS.ent=o.e;return SS.ent}}catch(e){}
+  return null;
+}
+function optOn(k){
+  if(!ssOn())return true;
+  const e=ssEnt();
+  return !!(e&&(e[k]===1||e.pack===1));
+}
+async function ssPost(path,body){
+  const c=cloudCfg(),r=await fetch(c.w+'/v1/'+path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(Object.assign({r:c.r,o:c.o},body||{}))});
+  let j=null;try{j=await r.json()}catch(e){}
+  if(!r.ok)throw new Error((j&&j.error)||('Erreur '+r.status));
+  return j||{};
+}
+async function ssLoad(){
+  if(!ssOn())return;const c=cloudCfg();
+  try{
+    const r=await fetch(c.u.replace(/\/+$/,'')+'/_ent/'+c.r+'.json',{cache:'no-store'});if(!r.ok)return;
+    const j=await r.json(),e=j&&typeof j==='object'?j:{};
+    const sig=JSON.stringify(e,Object.keys(e).filter(x=>x!=='at').sort());
+    SS.ent=e;try{localStorage.setItem(SSKEY,JSON.stringify({r:c.r,e,t:Date.now()}))}catch(x){}
+    if(sig!==SS.sig){const first=SS.sig==='';SS.sig=sig;if(!first)ssRefresh()}
+  }catch(e){}
+}
+function ssRefresh(){try{if(!document.querySelector('#modal .modal'))render()}catch(e){}}
+/* paiements reçus par Stripe : ils pointent tout seuls les réservations (jamais plus que le total de la réservation) */
+async function ssPayApply(){
+  if(!ssOn()||!payWk())return;const c=cloudCfg();
+  try{
+    const r=await fetch(c.u.replace(/\/+$/,'')+'/_pay/'+c.r+'.json',{cache:'no-store'});if(!r.ok)return;
+    const j=await r.json();if(!j||typeof j!=='object')return;
+    let n=0,sum=0;
+    for(const code of Object.keys(j)){
+      const p=j[code],b=webArr().find(x=>x.ref===code);
+      if(!b||!p||!(p.a>0)||(b.paid&&b.paid.s===p.s)||(b.paid&&!b.paid.s))continue;
+      b.paid={a:Math.min(Math.round(p.a),b.total||Math.round(p.a)),ts:p.at||Date.now(),by:'Stripe',s:p.s||'x'};b.pn=null;n++;sum+=b.paid.a;
+    }
+    if(n){save();toast(n>1?n+' paiements reçus par Stripe, pointés automatiquement':'Paiement de '+ssEur(sum)+' reçu et pointé automatiquement');ssRefresh()}
+  }catch(e){}
+}
+function ssUpsell(k){
+  const o=k==='pack'?SSPACK:SSOPT.find(x=>x.k===k);if(!o)return '';
+  const own=ssOwner();
+  return `<div class="card ssup" style="text-align:center;padding:26px 18px"><h3 style="margin:0 0 6px">${esc(o.n)}</h3>
+   <p class="muted" style="margin:0 0 12px">${esc(o.d||'')}</p>
+   <p style="margin:0 0 14px"><b>${ssEur(o.p)}</b> HT par mois, sans engagement, résiliable à tout moment.</p>
+   ${own&&isAdmin()?`<button type="button" class="btn primary" data-act="ss_buy" data-k="${k}">Activer cette option</button> <button type="button" class="btn" data-act="ss_go">Voir toutes les options</button>`
+    :`<p class="muted" style="margin:0">Cette option se règle depuis l’appareil du propriétaire de l’espace (Paramètres › Abonnement).</p>`}</div>`;
+}
+function vSetAbo(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const own=ssOwner(),e=ssEnt()||{},any=Object.keys(e).some(x=>x!=='at');
+  const row=o=>{const on=o.k==='pack'?e.pack===1:(e[o.k]===1);const viaPack=on&&e.pack===1&&o.k!=='pack';
+    return `<div class="row" style="align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)"><span class="grow"><b>${esc(o.n)}</b>${o.d?`<span class="muted" style="display:block;font-size:13px">${esc(o.d)}</span>`:''}</span>
+     <span style="white-space:nowrap;text-align:right"><b>${ssEur(o.p)}</b><span class="muted"> /mois</span></span>
+     ${on?`<span class="pill" style="background:var(--ok-bg,#e4f7ec);color:var(--ok,#157347)">${viaPack?'Inclus dans le pack':'Actif'}</span>`
+       :(own?`<button type="button" class="btn ${o.k==='pack'?'primary':''}" data-act="ss_buy" data-k="${o.k}" ${SS.busy?'disabled':''}>Activer</button>`:'')}</div>`};
+  m.innerHTML=`<div class="card"><h3>Votre abonnement</h3>
+   <p class="muted" style="margin:0 0 6px">Lago est gratuit : la caisse, les réservations, le planning et les rapports de base n’ont pas de prix. Vous n’ajoutez que les options dont vous avez besoin, au mois, sans engagement. Prix hors taxes ; la TVA est ajoutée au paiement.</p>
+   ${own?'':'<div class="banner"><span>Seul l’appareil du propriétaire (celui qui a créé cet espace) peut activer ou résilier une option.</span></div>'}
+   ${row(SSPACK).replace('<b>'+esc(SSPACK.n)+'</b>','<b>'+esc(SSPACK.n)+'</b><span class="muted" style="display:block;font-size:13px">Toutes les options ci-dessous, au prix d’un pack (au lieu de '+ssEur(SSOPT.reduce((a,x)=>a+x.p,0))+').</span>')}
+   ${SSOPT.map(row).join('')}
+   ${own&&any?`<div class="acts" style="margin-top:12px"><button type="button" class="btn" data-act="ss_portal">Factures, moyen de paiement, résiliation</button></div>`:''}
+   <p class="muted" id="ss_msg" style="margin:10px 0 0">Après le paiement, l’option s’active toute seule en quelques secondes.</p></div>`;
+}
+async function ssBuy(k){
+  if(SS.busy)return;SS.busy=k;const msg=$('#ss_msg');if(msg)msg.textContent='Ouverture du paiement sécurisé…';
+  try{const j=await ssPost('checkout',{opt:k});if(!/^https:\/\/(checkout|billing)\.stripe\.com\//.test(j.url||''))throw new Error('Réponse inattendue');location.href=j.url}
+  catch(e){SS.busy='';toast('Paiement impossible : '+(e.message||e));if(msg)msg.textContent='Paiement impossible : '+(e.message||e)}
+}
+async function ssPortal(){
+  try{const j=await ssPost('portal');if(!/^https:\/\/billing\.stripe\.com\//.test(j.url||''))throw new Error('Réponse inattendue');location.href=j.url}
+  catch(e){toast('Impossible d’ouvrir la gestion : '+(e.message||e))}
+}
+/* compte Stripe du client (encaissement en ligne, commission prélevée à chaque paiement) */
+async function ssConnLoad(redraw){
+  if(!ssOn()||!ssOwner())return;
+  try{
+    const j=await ssPost('connect/status'),p=payCfg();SS.conn=j;
+    if(!!j.on!==!!p.cn){p.cn=!!j.on;if(!j.on)p.on=false;save();payPublish(true).catch(()=>{});if(redraw!==false&&view==='params'&&tab.params==='ppay')render()}
+    else if(redraw!==false)ssConnDraw();
+  }catch(e){}
+}
+function ssConnHtml(){
+  const p=payCfg(),own=ssOwner(),j=SS.conn||{},bps=j.bps||200,pct=(bps/100).toLocaleString('fr-FR')+' %';
+  let st,btn='';
+  if(p.cn){st='<b style="color:var(--ok,#157347)">Compte Stripe connecté : vous pouvez encaisser en ligne.</b>'}
+  else if(j.details){st='Stripe vérifie votre dossier. Dès qu’il est validé, l’encaissement s’ouvre tout seul.';btn='Reprendre sur Stripe'}
+  else{st='Connectez votre compte Stripe (ou créez-le en quelques minutes) pour recevoir les paiements de vos clients.';btn='Connecter mon compte Stripe'}
+  return `<div class="card" id="ss_conn"><h3>Encaissement en ligne</h3>
+   <p class="muted" style="margin:0 0 8px">Vos clients paient par carte sur une page sécurisée Stripe, à vos couleurs. L’argent arrive directement sur <b>votre</b> compte Stripe. Lago prélève <b>${pct}</b> du montant de chaque paiement en ligne, en plus des frais de Stripe. Aucune commission sur les paiements à l’accueil.</p>
+   <p style="margin:0 0 10px" id="ss_cst">${st}</p>
+   ${own?(btn?`<button type="button" class="btn primary" data-act="ss_conn">${btn}</button> <button type="button" class="btn" data-act="ss_connref">J’ai terminé : vérifier</button>`:''):'<p class="muted">Seul le propriétaire de l’espace peut connecter le compte Stripe.</p>'}</div>`;
+}
+function ssConnDraw(){const d=$('#ss_conn');if(d)d.outerHTML=ssConnHtml()}
+async function ssConnStart(){
+  try{
+    const w=webCfg();webSite(w);save();
+    const j=await ssPost('connect/start',{k:w.k});
+    if(!/^https:\/\/(connect|dashboard)\.stripe\.com\//.test(j.url||''))throw new Error('Réponse inattendue');location.href=j.url;
+  }catch(e){toast('Connexion impossible : '+(e.message||e))}
+}
+/* câblage */
+SUBS.ppay=(f=>function(m){
+  f.apply(this,arguments);
+  if(!ssOn()||!isAdmin())return;
+  [...m.querySelectorAll('.card')].forEach(c=>{const h=c.querySelector('h3'),t=h?h.textContent:'';
+    if(/Votre lien de paiement Stripe/.test(t))c.outerHTML=ssConnHtml();else if(/Règles Firebase/.test(t))c.remove()});
+  const intro=m.querySelector('.card p.muted');if(intro&&/Lago ne touche aucun paiement/.test(intro.textContent))intro.textContent='Après avoir réservé, votre client peut régler tout de suite ou verser un acompte, depuis une page à vos couleurs. L’argent va directement sur votre compte Stripe ; Lago ne voit aucune donnée bancaire.';
+  ssConnLoad();
+})(SUBS.ppay);
+[['ptv','cast'],['pwal','wallet'],['entrees','qr']].forEach(([sub,k])=>{
+  const f=SUBS[sub];if(!f)return;
+  SUBS[sub]=function(m){if(optOn(k))return f.apply(this,arguments);m.innerHTML=ssUpsell(k)};
+});
+document.addEventListener('click',e=>{
+  if(!ssOn())return;
+  const x=e.target.closest('[data-act="m_pdf"]');
+  if(x&&!optOn('export')){e.preventDefault();e.stopImmediatePropagation();showModal(`${mh('Rapports et exports')}${ssUpsell('export')}<div class="acts"><button class="btn" data-act="close">Fermer</button></div>`)}
+},true);
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act^="ss_"]');if(!b)return;
+  const a=b.dataset.act;
+  if(a==='ss_buy'){if(!isAdmin()||!ssOwner()){toast('Réservé au propriétaire de l’espace');return}ssBuy(b.dataset.k)}
+  else if(a==='ss_go'){const md=$('#modal');if(md)md.innerHTML='';view='params';tab.params='pabo';render()}
+  else if(a==='ss_portal')ssPortal();
+  else if(a==='ss_conn')ssConnStart();
+  else if(a==='ss_connref'){b.disabled=true;ssConnLoad().finally(()=>{b.disabled=false})}
+});
+TABS.params.splice(1,0,['pabo','Abonnement']);SUBS.pabo=vSetAbo;
+PGRP.unshift(['abo','Abonnement',['pabo']]);
+tabsFor=(o=>function(id){const L=o.apply(this,arguments);return id==='params'&&!ssOn()?L.filter(x=>x[0]!=='pabo'):L})(tabsFor);
+setTimeout(ssLoad,900);setInterval(()=>{if(!document.hidden)ssLoad()},60000);addEventListener('focus',()=>{ssLoad();ssPayApply()});
+setTimeout(ssPayApply,2500);setInterval(()=>{if(!document.hidden)ssPayApply()},60000);
+/* retour de Stripe : abonnement payé (on attend l'activation) ou compte connecté */
+setTimeout(()=>{
+  if(!ssOn())return;
+  try{
+    const q=new URLSearchParams(location.search),a=q.get('abonnement'),s=q.get('stripe');
+    if(a||s){history.replaceState(null,'',location.pathname+location.hash)}
+    if(a==='ok'){toast('Paiement reçu : activation en cours…');let n=0;const t=setInterval(()=>{ssLoad();if(++n>20)clearInterval(t)},3000);view='params';tab.params='pabo';try{render()}catch(e){}}
+    else if(a==='annule')toast('Paiement annulé : rien n’a été débité');
+    if(s){view='params';tab.params='ppay';ssConnLoad(false).finally(()=>{try{render()}catch(e){}})}
+  }catch(e){}
+},1200);
 init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();try{if(evDemoFill())save()}catch(e){}applySettings();cart=newCart();chrome();route();bootGate();v108Boot();
 })();

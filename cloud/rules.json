@@ -1,0 +1,39 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "c": {
+      "$r": {
+        ".read": "root.child('_r').child($r).exists()",
+        ".write": "root.child('_r').child($r).exists()"
+      }
+    },
+    "_ent": {
+      "c": {
+        "$r": {
+          ".read": true
+        }
+      }
+    },
+    "_pay": {
+      "c": {
+        "$r": {
+          ".read": true
+        }
+      }
+    },
+    "_susp": {
+      "c": {
+        "$r": {
+          ".read": true
+        }
+      }
+    },
+    "pub": {
+      "$k": {
+        ".read": true,
+        ".write": "$k.length >= 16"
+      }
+    }
+  }
+}
