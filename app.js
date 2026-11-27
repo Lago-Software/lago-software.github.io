@@ -79,7 +79,7 @@ function saveBase(){
   queueMicrotask(()=>{MS.q=false;const j=JSON.stringify(S);if(MS.ok){if(j.length<MS_WAL)msLsPut(j);msWrite(j)}else msFallback(j)});
 }
 /* fermeture de l'onglet avec une écriture encore en attente : copie de secours immédiate dans localStorage (la plus récente fait foi au redémarrage) */
-function msFlush(){if(MS.ok&&MS.pend!==null)msLsPut(MS.pend)}
+function msFlush(){if(window.__noFlush)return;if(MS.ok&&MS.pend!==null)msLsPut(MS.pend)}
 addEventListener('pagehide',msFlush);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')msFlush()});
 const msBoot=()=>{const j=MS.pre;MS.pre=null;return j};
@@ -4949,7 +4949,7 @@ async function cloudSync(){
 }
 function cloudKick(ms){if(!cloudOn()||!CL.ready)return;clearTimeout(CL.t);CL.t=setTimeout(cloudSync,ms==null?700:ms)}
 const getAt=(t,parts)=>parts.reduce((x,k)=>isO(x)?x[k]:undefined,t);
-function cloudStash(){
+function cloudStash(){if(window.__noFlush)return;
   if(!CL.ready||!cloudOn())return;
   if(CL.sv===CL.okSv){try{localStorage.removeItem(CBOX)}catch(e){}return}
   try{const p={},o={};diffT(CL.B,projS(),'',p);
@@ -4999,7 +4999,7 @@ async function cloudBoot(){
 /* démarrage : avant l’écran de connexion */
 function bootGate(){
   window.__lagoUp=1;{const bs=document.getElementById('boot');if(bs)bs.remove()}
-  if(/^#cloud=/i.test(location.hash)){const x=joinParse(location.hash);if(x&&tplLinkBusy(x)){window.__joinBlock=1;setTimeout(tplBlockNote,600)}else if(x)cloudSet(joinCfg(x));else window.__joinBad=true;history.replaceState(null,'',location.pathname+location.search)}
+  if(/^#cloud=/i.test(location.hash)){const x=joinParse(location.hash);if(x&&tplLinkBusy(x)){window.__joinBlock=1;window.__joinX=x;setTimeout(tplBlockNote,600)}else if(x)cloudSet(joinCfg(x));else window.__joinBad=true;history.replaceState(null,'',location.pathname+location.search)}
   if(!cloudOn()){bootGateBase();return}
   const sp=document.createElement('div');sp.id='zsplash';sp.style.cssText='position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:#31ACF0;color:#fff;font:600 18px system-ui';sp.textContent='Connexion à l’équipe…';document.body.appendChild(sp);
   cloudBoot().catch(e=>{
@@ -5269,7 +5269,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v110';
+const LAGO_V='v111';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -10183,10 +10183,26 @@ function tplLinkBusy(x){
 function tplBlockNote(){
   if(document.getElementById('zblock'))return;
   const d=document.createElement('div');d.id='zblock';d.className='zblock';d.setAttribute('role','alertdialog');d.setAttribute('aria-modal','true');
-  d.innerHTML=`<div class="zbc"><h2>Lien ignoré</h2><p>Cet appareil contient déjà un Lago. Pour ne pas mélanger les données, le lien n’a pas été utilisé.</p><p>Ouvrez-le dans une fenêtre de navigation privée, ou sur un autre appareil.</p><button class="btn primary" type="button" data-act="zblock_ok">Compris</button></div>`;
+  d.innerHTML=`<div class="zbc"><h2>Nouvel espace Lago</h2><p>Cet appareil contient déjà un Lago. Que voulez-vous faire ?</p><p class="muted">Pour passer sur le nouvel espace, une sauvegarde de votre Lago actuel est téléchargée d’abord, puis cet appareil est remis à zéro. Votre Lago actuel reste intact dans sa base en ligne s’il est synchronisé.</p><div style="display:grid;gap:8px;margin-top:6px"><button class="btn primary" type="button" data-act="zblock_ok" style="justify-self:stretch">Garder mon Lago actuel</button><button class="btn" type="button" data-act="zblock_switch" style="justify-self:stretch">Sauvegarder, puis passer sur le nouvel espace</button></div></div>`;
   document.body.appendChild(d);
 }
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act="zblock_ok"]');if(b){const d=document.getElementById('zblock');if(d)d.remove()}});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act="zblock_ok"],[data-act="zblock_switch"]');if(!b)return;
+  const d=document.getElementById('zblock');
+  if(b.dataset.act==='zblock_ok'){if(d)d.remove();return}
+  const x=window.__joinX;if(!x||b.disabled)return;b.disabled=true;b.textContent='Sauvegarde en cours…';
+  try{
+    if(accs().length>0||cloudOn()){await exportAll();await new Promise(r=>setTimeout(r,1500))}   /* sauvegarde téléchargée avant toute remise à zéro */
+    window.__noFlush=1;
+    try{if(MS.db){MS.db.close();MS.db=null}}catch(_){}
+    const drop=n=>new Promise(r=>{try{const q=indexedDB.deleteDatabase(n);q.onsuccess=q.onerror=q.onblocked=()=>r();setTimeout(r,2500)}catch(_){r()}});
+    await drop('lago-main');await drop(BKDB);
+    const keep=/^lago-(theme|anim|navmini|lite-auto|ucss)$/;
+    try{Object.keys(localStorage).filter(k=>/^lago/i.test(k)&&!keep.test(k)).forEach(k=>localStorage.removeItem(k));sessionStorage.removeItem(SKEY)}catch(_){}
+    cloudSet(joinCfg(x));
+  }catch(err){window.__noFlush=0;b.disabled=false;b.textContent='Sauvegarder, puis passer sur le nouvel espace';toast('Impossible pour le moment');return}
+  location.replace(location.pathname+location.search);
+});
 
 /* ---- suspension par le propriétaire ---- */
 const SUSP={on:false,msg:''};
