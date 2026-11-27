@@ -9,6 +9,7 @@
     "tab:conges": "staff",
     "tab:fidelite": "fid",
     "tab:mailing": "fid",
-    "tab:ploy": "fid"
+    "tab:ploy": "fid",
+    "nav:chat": "staff"
   }
 }

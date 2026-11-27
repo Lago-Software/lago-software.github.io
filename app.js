@@ -1753,7 +1753,7 @@ function renderPay(){
     return;
   }
   const rows=pay.list.map((p,i)=>`<div class="prow2"><span class="pm">${METHODS[p.m]}</span><span class="grow muted">${p.m==='cash'?'reçu '+eur(p.given)+(p.given>p.amt?', rendu '+eur(p.given-p.amt):''):''}</span><b class="num">${eur(p.amt)}</b><button class="ix" data-act="rmpay" data-i="${i}" aria-label="Retirer ce paiement">${ic('x')}</button></div>`).join('');
-  const meths=[['cash','Espèces','cash','pcash'],['card','Carte bancaire','card','padd'],['ancv','Chèques-Vacances','ticket','padd'],['credit','Avoir ou pass','ticket','padd'],...(salleOn()?[['tr','Titres-restaurant','ticket','padd']]:[]),['gift','Carte cadeau','ticket','pgift']];
+  const meths=[['cash','Espèces','cash','pcash'],['card','Carte bancaire','card','padd'],['ancv','Chèques-Vacances','ticket','padd'],['credit','Avoir ou pass','ticket','padd'],...(salleOn()?[['tr','Titres-restaurant','ticket','padd']]:[]),...(giftPayOn()?[['gift','Carte cadeau','ticket','pgift']]:[])];
   showModal(`${mh('Encaisser')}<div class="due"><span>${rem>0?'Reste à payer':'Total réglé'}</span><strong class="num">${eur(rem>0?rem:T.total)}</strong></div>
    ${rows?`<div>${rows}</div>`:''}
    ${rem>0?`<div class="lab">Moyen de paiement</div><div class="methods big">${meths.map(([k,l,i,a])=>`<button class="meth" data-act="${a}" data-m="${k}">${ic(i)}<span>${l}</span></button>`).join('')}</div>`
@@ -2548,7 +2548,14 @@ function fileToData(file,max,cb){
 }
 const logoHtml=(cls='')=>{const l=S.settings.logo;return l?`<img class="brandlogo ${cls}" src="${l}" alt="${esc(S.settings.name)}">`:''};
 const OPM=[['resa','Planning clients'],['staff','Planning staff'],['clients','Clients'],['controle','Contrôle'],['gestion','Gestion']];
-const opHidden=id=>(noPos()&&POS_NAV.includes(id))||(!isAdmin()&&(id==='clients'||id==='resa'))||(!!ME&&ME.kind==='etab'&&id==='staff'&&!canAll())||(id!=='accueil'&&id!=='params'&&!!(S.settings.off&&S.settings.off[id]))||(!isAdmin()&&id!=='accueil'&&id!=='params'&&id!=='controle'&&id!=='chat'&&!perm(id));
+/* vue (menu) réservée à une option non activée : clé « nav:<vue> » dans plans.json, ou toutes ses pages verrouillées */
+function gateNavOff(id){
+  if(id==='accueil'||id==='params'||!PLAN||!PLAN.enforce)return false;
+  if(!gateOk('nav:'+id))return true;
+  const T=TABS[id]||[];
+  return T.length>0&&T.every(([t])=>!gateOk('tab:'+t));
+}
+const opHidden=id=>gateNavOff(id)||(noPos()&&POS_NAV.includes(id))||(!isAdmin()&&(id==='clients'||id==='resa'))||(!!ME&&ME.kind==='etab'&&id==='staff'&&!canAll())||(id!=='accueil'&&id!=='params'&&!!(S.settings.off&&S.settings.off[id]))||(!isAdmin()&&id!=='accueil'&&id!=='params'&&id!=='controle'&&id!=='chat'&&!perm(id));
 const CATDEF=CATS.map(c=>c.name);
 const LISTDEF={mpts:MPTS.slice(),itypes:ITYPES.slice(),meq:MEQ.slice(),isec:ISECOURS.slice()};
 function applyCustom(){
@@ -4161,6 +4168,8 @@ document.addEventListener('click',e=>{
 /* ---------- V. cartes cadeaux, décharges numériques signées ---------- */
 METHODS.gift='Carte cadeau';METHODS.tr='Titres-restaurant';
 const gifts=()=>S.gifts||(S.gifts=[]);
+/* « Carte cadeau » comme moyen de paiement : avec l'option « Cartes cadeaux », ou tant qu'une carte déjà vendue a encore du solde (on honore toujours les cartes des clients) */
+function giftPayOn(){return optOn('gift')||gifts().some(g=>giftState(g)==='ok')}
 const eurP=c=>(c/100).toFixed(2).replace('.',',')+' €';
 const GA='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function giftCode(){let c;do{c='CC-';for(let i=0;i<8;i++){c+=GA[Math.floor(Math.random()*GA.length)];if(i===3)c+='-'}}while(gifts().some(g=>g.code===c));return c}
@@ -5269,7 +5278,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v113';
+const LAGO_V='v114';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -5899,7 +5908,7 @@ const chKey=()=>'lago-chatseen-'+(ME?ME.id:'');
 const chSeenRaw=()=>{try{const v=localStorage.getItem(chKey());return v===null?null:+v||0}catch(e){return 0}};
 const chSeen=()=>chSeenRaw()||0;
 const chSetSeen=t=>{try{localStorage.setItem(chKey(),String(t))}catch(e){}};
-const chOff=()=>!!(S.settings.off&&S.settings.off.chat);
+const chOff=()=>!!(S.settings.off&&S.settings.off.chat)||!gateOk('nav:chat');
 const chMax=()=>talkL().reduce((m,x)=>Math.max(m,x.ts||0),0);
 const chUnread=()=>ME&&!chOff()?talkL().filter(x=>x.ts>chSeen()&&x.accId!==ME.id).length:0;
 const chSorted=()=>[...talkL()].sort((a,b)=>a.ts-b.ts||(a.id<b.id?-1:1));
@@ -7385,6 +7394,7 @@ const cfSha=(()=>{
 function cfEns(){
   if(!Array.isArray(S.zs))S.zs=[];
   if(!Array.isArray(S.jrn))S.jrn=[];
+  if(!Array.isArray(S.anc))S.anc=[];
   if(!S.regs||typeof S.regs!=='object'||Array.isArray(S.regs))S.regs={};
   if(!S.cf||typeof S.cf!=='object')S.cf={};
   if(!S.settings.legal||typeof S.settings.legal!=='object')S.settings.legal={};
@@ -7550,7 +7560,7 @@ function zRoll(){
 function cfTick(){
   try{
     if(!ME||!isAdmin()||!S||(typeof cloudOn==='function'&&cloudOn()&&CL.state!=='ok'))return;
-    if(zRoll()&&view==='gestion'&&tab.gestion==='rapports'&&$('#sub'))vReports($('#sub'));
+    if(zRoll()){cfAncKick();if(view==='gestion'&&tab.gestion==='rapports'&&$('#sub'))vReports($('#sub'))}
   }catch(e){}
 }
 setInterval(cfTick,60000);setTimeout(cfTick,4000);
@@ -7558,6 +7568,243 @@ function cfDayClose(exp,cnt){
   S.closures.push({ts:Date.now(),expected:exp,counted:cnt,diff:cnt-exp});
   if(cfLive()){cfEns();zMakeJ(today(),{force:true,ex:exp,cn:cnt})}
   save();
+  if(cfLive())cfAncKick();
+}
+
+/* --- NF 525 : horodatage signé par le serveur de l'éditeur (ECDSA P-256) ---
+   L'application n'envoie au serveur que les empreintes de tête de ses chaînes (dernier ticket de cette caisse, dernière clôture,
+   dernier événement du journal) : AUCUNE donnée de vente ne quitte l'appareil. Le serveur répond par une signature qui porte SON heure
+   et que personne d'autre ne peut produire (clé privée secrète, jamais dans l'application). La réponse est gardée dans S.anc.
+   Modifier un ticket après coup change son empreinte : elle ne correspond plus à celle que le serveur a signée, même si toute la
+   chaîne a été recalculée. Le registre complet des signatures est aussi tenu côté serveur (GET /v1/seal/log?rg=). */
+const CF_SEAL_URL='https://lago-cloud.leherice-h.workers.dev';
+const CF_KID='a7c253593f6b';
+const CF_KEYS={a7c253593f6b:'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEJHSq3YYBrfLmI2Qe906AOIY+Am0YcCrymIYB6r8+0He/79PqGUFLRTj9x8/Sp8lMkxWBUydH8Zw/CNikQa4r3w=='};
+const CF_ANC={busy:false,t:0,next:0,err:''};
+const cfSealMsg=(rg,ts,t,z,j,a)=>['LAGO-SEAL1',rg,ts,...[['T',t],['Z',z],['J',j],['A',a]].map(([k,v])=>k+(v?v[0]+':'+v[1]:'-'))].join('|');
+const cfB64=s=>Uint8Array.from(atob(String(s).replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+const cfHex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function cfSha256Bytes(u8){
+  try{return cfHex(await crypto.subtle.digest('SHA-256',u8))}
+  catch(e){return cfSha(new TextDecoder().decode(u8))}
+}
+const CF_PK={};
+function cfPub(kid){
+  if(!CF_KEYS[kid])return null;
+  return CF_PK[kid]||(CF_PK[kid]=crypto.subtle.importKey('spki',cfB64(CF_KEYS[kid]),{name:'ECDSA',namedCurve:'P-256'},false,['verify']));
+}
+/* signature valide ? true / false ; null si la clé est inconnue de cette version de Lago */
+async function cfSigOk(x){
+  try{
+    const k=cfPub(x.kid);if(!k)return null;
+    return await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},await k,cfB64(x.sig),new TextEncoder().encode(cfSealMsg(x.rg,x.ts,x.t,x.z,x.j,x.a)));
+  }catch(e){return false}
+}
+function cfHeads(){
+  cfEns();const rg=cfRegId();
+  const t=S.sales.reduce((m,s)=>cfSealed(s)&&s.rg===rg&&(!m||s.sq>m.sq)?s:m,null),z=cfZLast(),j=S.jrn.reduce((m,e)=>!m||e.sq>m.sq?e:m,null);
+  return{rg,t:t?[t.sq,t.h]:null,z:z?[z.sq,z.h]:null,j:j?[j.sq,j.h]:null};
+}
+const cfAncLast=rg=>(S.anc||[]).filter(x=>!rg||x.rg===rg).reduce((m,x)=>!m||x.ts>m.ts?x:m,null);
+const cfSameHead=(x,h)=>['t','z','j'].every(k=>JSON.stringify(x[k]||null)===JSON.stringify(h[k]||null));
+/* demande un horodatage signé ; renvoie l'ancrage, ou null (rien de nouveau, hors ligne, serveur injoignable : on réessaiera) */
+async function cfAnchor(o){
+  o=o||{};cfEns();
+  if(CF_ANC.busy||!ME||!cfLocked())return null;
+  if(!o.a){const h0=cfHeads(),l0=cfAncLast(h0.rg);if(l0&&cfSameHead(l0,h0))return l0;if(Date.now()-CF_ANC.t<11000)return null}
+  CF_ANC.busy=true;
+  try{
+    const gap=Date.now()-CF_ANC.t;if(o.a&&gap<11000)await new Promise(r=>setTimeout(r,11000-gap));
+    const h=cfHeads();if(!h.t&&!h.z&&!h.j)return null;
+    const body={rg:h.rg,v:LAGO_V};['t','z','j'].forEach(k=>{if(h[k])body[k]=h[k]});if(o.a)body.a=o.a;
+    const ac=new AbortController(),to=setTimeout(()=>ac.abort(),o.ms||8000);
+    let r,d;
+    try{r=await fetch(CF_SEAL_URL+'/v1/seal',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:ac.signal});d=await r.json().catch(()=>({}))}
+    finally{clearTimeout(to);CF_ANC.t=Date.now()}
+    if(!r.ok)throw new Error((d&&d.error)||('http '+r.status));
+    const x={id:d.rg+'-'+d.ts,ts:d.ts,rg:d.rg,kid:d.kid,sig:d.sig};['t','z','j','a'].forEach(k=>{if(d[k])x[k]=d[k]});
+    if(x.rg!==body.rg||['t','z','j','a'].some(k=>JSON.stringify(x[k]||null)!==JSON.stringify(body[k]||null)))throw new Error('réponse du serveur incohérente');
+    if(await cfSigOk(x)!==true)throw new Error('signature non reconnue');
+    cfEns();if(!S.anc.some(y=>y.id===x.id))S.anc.push(x);
+    save();CF_ANC.err='';CF_ANC.next=0;return x;
+  }catch(e){
+    CF_ANC.err=e&&e.name==='AbortError'?'délai dépassé':String((e&&e.message)||e).slice(0,120);
+    CF_ANC.next=Date.now()+5*60000;return null;
+  }finally{CF_ANC.busy=false}
+}
+/* en tâche de fond, sur chaque appareil : au premier lancement, puis si la caisse a bougé depuis plus de 6 h */
+function cfAncTick(){
+  try{
+    if(!ME||!S||CF_ANC.busy||Date.now()<CF_ANC.next||navigator.onLine===false)return;
+    if(cloudOn()&&CL.state!=='ok')return;
+    cfEns();if(!cfLocked())return;
+    const h=cfHeads(),l=cfAncLast(h.rg);
+    if(!l||(!cfSameHead(l,h)&&Date.now()-l.ts>=6*3600e3))cfAnchor().catch(()=>{});
+  }catch(e){}
+}
+setInterval(cfAncTick,60000);setTimeout(cfAncTick,6000);
+const cfAncKick=()=>{setTimeout(()=>{cfAnchor().catch(()=>{})},400)};
+/* contrôle de tous les horodatages : signature du serveur, puis correspondance avec les tickets, clôtures et événements actuels */
+async function cfAncCheck(){
+  cfEns();
+  const A=S.anc.slice().sort((a,b)=>a.ts-b.ts),iss=[],tk={},zs={},js={};
+  S.sales.forEach(s=>{if(cfSealed(s))tk[s.rg+'#'+s.sq]=s});S.zs.forEach(z=>{zs[z.sq]=z});S.jrn.forEach(e=>{js[e.sq]=e});
+  const dt=ts=>new Date(ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  let ok=0;
+  for(const x of A){
+    const w='Horodatage du '+dt(x.ts)+' : ',v=await cfSigOk(x);
+    if(v===null){iss.push({k:'bad',x:w+'clé de signature inconnue'});continue}
+    if(!v){iss.push({k:'bad',x:w+'signature invalide'});continue}
+    let bad=false;
+    if(x.t){const s=tk[x.rg+'#'+x.t[0]];if(!s){iss.push({k:'bad',x:w+'le ticket n° '+x.t[0]+' a disparu'});bad=true}else if(s.h!==x.t[1]){iss.push({k:'bad',x:w+'le ticket '+s.no+' a été modifié depuis'});bad=true}}
+    if(x.z){const z=zs[x.z[0]];if(!z||z.h!==x.z[1]){iss.push({k:'bad',x:w+(z?'la clôture '+z.id+' a été modifiée':'la clôture n° '+x.z[0]+' a disparu')});bad=true}}
+    if(x.j){const e=js[x.j[0]];if(!e||e.h!==x.j[1]){iss.push({k:'bad',x:w+(e?'l’événement n° '+e.sq+' du journal a été modifié':'l’événement n° '+x.j[0]+' du journal a disparu')});bad=true}}
+    if(!bad)ok++;
+  }
+  if(iss.length>20){const n=iss.length-20;iss.length=20;iss.push({k:'bad',x:'… et '+n+' autre(s) anomalie(s) d’horodatage'})}
+  return{n:A.length,ok,iss,last:A.length?A[A.length-1].ts:0};
+}
+function cfVerifyAnc(r){
+  cfAncCheck().then(a=>{
+    r.anc=a;
+    if(a.iss.some(i=>i.k==='bad')){r.iss=r.iss.concat(a.iss);r.ok=false;S.cf.lastVerify={ts:r.ts,ok:false};cfLog('verif','Horodatages signés : '+a.iss.length+' anomalie(s)');save()}
+    if(document.querySelector('#modal .cfvr'))cfShowVerify(r);
+    if(view==='params'&&$('#sub')&&SUBS[tab.params])SUBS[tab.params]($('#sub'));
+  }).catch(()=>{});
+}
+const cfAncTxt=()=>{
+  const A=S.anc||[];if(!A.length)return CF_ANC.err?'en attente (serveur injoignable)':'aucun pour le moment';
+  const l=A.reduce((m,x)=>x.ts>m.ts?x:m);
+  return new Date(l.ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' · '+A.length+' au total';
+};
+/* contrôleur indépendant, fourni dans l'archive : il refait les calculs sans Lago (Node.js 18 ou plus) */
+const CF_VERIFIER=String.raw`// Contrôle indépendant d'une archive Lago : chaînes d'empreintes, signatures du serveur, correspondance entre les deux.
+// Node.js 18 ou plus, aucune dépendance. Placez ce fichier à côté de archive.json et signatures.json, puis :
+//   node verifier.mjs              contrôle hors ligne
+//   node verifier.mjs --en-ligne   compare aussi avec le registre public des signatures
+import { readFileSync } from 'node:fs';
+import { createHash, createPublicKey, verify } from 'node:crypto';
+
+const brut = readFileSync('archive.json');
+const A = JSON.parse(brut.toString('utf8'));
+const G = JSON.parse(readFileSync('signatures.json', 'utf8'));
+let anomalies = 0;
+const ko = (m) => { anomalies++; console.log('ANOMALIE : ' + m); };
+const ok = (m) => console.log('OK       : ' + m);
+const sha = (s) => createHash('sha256').update(s, 'utf8').digest('hex');
+
+// 1. L'archive n'a pas changé depuis son horodatage
+const h = createHash('sha256').update(brut).digest('hex');
+if (h === G.archive.sha256) ok('archive.json identique à l’empreinte horodatée (' + h.slice(0, 16) + '...)');
+else ko('archive.json ne correspond plus à l’empreinte notée dans signatures.json');
+
+// 2. Chaînes d'empreintes : chaque empreinte = SHA-256 du contenu + empreinte du maillon précédent
+const canonT = (s, p) => ['LT1', s.rg, s.sq, s.no, s.ts, s.ty || 'S', s.total, s.disc || 0,
+  JSON.stringify(Object.keys(s.vat || {}).sort().map((r) => [r, s.vat[r].ttc, s.vat[r].tva])),
+  JSON.stringify((s.lines || []).map((l) => [l.pid, l.name, l.qty, l.price, l.rate, l.ttc])),
+  JSON.stringify((s.pay || []).map((q) => [q.m, q.amt])), s.rf || '', s.mt || '', p].join('|');
+const canonZ = (z, p) => ['LZ1', z.id, z.ty, z.per, z.ts, z.sq, z.rg || '', z.n, z.na, z.ttc, z.tva,
+  JSON.stringify(Object.keys(z.vat || {}).sort().map((r) => [r, z.vat[r].ttc, z.vat[r].tva])),
+  JSON.stringify(Object.keys(z.pay || {}).sort().map((m) => [m, z.pay[m]])),
+  z.gt, z.ga, JSON.stringify(Object.keys(z.hw || {}).sort().map((r) => [r, z.hw[r]])), z.lh || '',
+  z.ex == null ? '' : z.ex, z.cn == null ? '' : z.cn, p].join('|');
+const canonJ = (e, p) => ['LJ1', e.sq, e.ts, e.t, e.x, e.by, e.rg, p].join('|');
+function chaine(nom, liste, canon, groupe) {
+  const g = {};
+  liste.forEach((x) => { const k = groupe ? groupe(x) : '-'; (g[k] = g[k] || []).push(x); });
+  let n = 0;
+  for (const [k, L] of Object.entries(g)) {
+    L.sort((a, b) => a.sq - b.sq);
+    L.forEach((x, i) => {
+      const suit = i > 0 && L[i - 1].sq === x.sq - 1;
+      if (i > 0 && !suit) ko(nom + (groupe ? ' (caisse ' + k + ')' : '') + ' : numéro manquant avant le n° ' + x.sq);
+      const prec = suit ? L[i - 1].h : x.sq === 1 ? 'GENESIS' : null; // début d'année : le maillon précédent est dans l'archive de l'année d'avant
+      if (prec === null) return;
+      if (sha(canon(x, prec)) === x.h) n++; else ko(nom + ' n° ' + x.sq + (groupe ? ' (caisse ' + k + ')' : '') + ' : empreinte invalide, contenu modifié ou chaîne rompue');
+    });
+  }
+  ok(nom + ' : ' + n + ' empreinte(s) recalculée(s) et conforme(s)');
+}
+chaine('Tickets et avoirs', A.tickets || [], canonT, (s) => s.rg);
+chaine('Clôtures', A.clotures || [], canonZ);
+chaine('Journal des événements', A.journal || [], canonJ);
+
+// 3. Signatures du serveur de l'éditeur (ECDSA P-256 / SHA-256, signature au format IEEE P1363)
+const msg = (a) => ['LAGO-SEAL1', a.rg, a.ts, ...[['T', a.t], ['Z', a.z], ['J', a.j], ['A', a.a]].map(([k, v]) => k + (v ? v[0] + ':' + v[1] : '-'))].join('|');
+const signe = (a) => {
+  const spki = G.cles[a.kid];
+  if (!spki) return null;
+  const cle = createPublicKey({ key: Buffer.from(spki, 'base64'), format: 'der', type: 'spki' });
+  return verify('sha256', Buffer.from(msg(a)), { key: cle, dsaEncoding: 'ieee-p1363' }, Buffer.from(a.sig, 'base64url'));
+};
+const valides = [];
+for (const a of G.ancrages) {
+  const v = signe(a);
+  if (v === null) ko('horodatage ' + a.id + ' : clé ' + a.kid + ' inconnue');
+  else if (v) valides.push(a);
+  else ko('horodatage ' + a.id + ' : signature invalide');
+}
+ok(valides.length + ' / ' + G.ancrages.length + ' horodatage(s) signé(s) authentique(s)');
+
+// 4. Ce que le serveur a signé correspond à ce que contient l'archive
+function recoupe(a, cle, liste, id, quoi, strict) {
+  if (!a[cle]) return;
+  const [sq, hs] = a[cle];
+  const x = liste.find((y) => id(y) === sq);
+  const connus = liste.map(id);
+  if (x) { if (x.h !== hs) ko('horodatage ' + a.id + ' : ' + quoi + ' n° ' + sq + ' modifié depuis la signature'); }
+  else if (connus.length && sq >= Math.min(...connus) && (strict || sq <= Math.max(...connus))) ko('horodatage ' + a.id + ' : ' + quoi + ' n° ' + sq + ' a disparu');
+}
+const recoupeTout = (a) => {
+  recoupe(a, 't', (A.tickets || []).filter((s) => s.rg === a.rg), (s) => s.sq, 'ticket', true);
+  recoupe(a, 'z', A.clotures || [], (z) => z.sq, 'clôture');
+  recoupe(a, 'j', A.journal || [], (e) => e.sq, 'événement du journal', true);
+};
+valides.forEach(recoupeTout);
+ok('recoupement des horodatages avec tickets, clôtures et journal terminé');
+
+// 5. Option : registre public tenu par le serveur. Un horodatage retiré de l'archive y reste : on le contrôle quand même.
+if (process.argv.includes('--en-ligne')) {
+  const fin = Date.parse(G.genere) || Infinity;
+  const caisses = new Set([...G.ancrages.map((a) => a.rg), ...(A.tickets || []).map((s) => s.rg), ...Object.keys(A.caisses || {})]);
+  for (const rg of caisses) {
+    const r = await fetch(G.registre_public + encodeURIComponent(rg));
+    if (!r.ok) { ko('registre public illisible pour la caisse ' + rg + ' (HTTP ' + r.status + ')'); continue; }
+    const reg = ((await r.json()).anchors || []).map((q) => ({ ...q, rg, id: rg + '-' + q.ts }));
+    const mien = G.ancrages.filter((a) => a.rg === rg), dates = new Set(mien.map((a) => a.ts));
+    mien.filter((a) => !reg.some((q) => q.ts === a.ts && q.sig === a.sig)).forEach((a) => ko('horodatage ' + a.id + ' absent du registre public'));
+    let conformes = 0;
+    for (const q of reg.filter((x) => !dates.has(x.ts) && x.ts <= fin)) {
+      if (signe(q) !== true) { ko('horodatage ' + q.id + ' du registre : signature invalide'); continue; }
+      const avant = anomalies; recoupeTout(q); if (anomalies === avant) conformes++;
+    }
+    ok('registre public (caisse ' + rg + ') : ' + reg.length + ' horodatage(s), dont ' + conformes + ' absent(s) de l’archive mais conforme(s) à son contenu');
+  }
+}
+console.log(anomalies ? '\n' + anomalies + ' anomalie(s).' : '\nAucune anomalie.');
+process.exit(anomalies ? 1 : 0);
+`;
+function cfSigNotice(year,H,anc){
+  return 'HORODATAGES SIGNÉS - archive '+year+'\r\n\r\n'+
+  'Chaque fois que la caisse avance (au moins quelques fois par jour, à chaque clôture et à chaque archive), Lago envoie au serveur de l\'éditeur les empreintes de tête de ses chaînes : dernier ticket de la caisse, dernière clôture, dernier événement du journal. Le serveur ne reçoit AUCUNE donnée de vente ni de client. Il répond par une signature numérique qui porte sa propre heure. Elle ne peut être produite que par lui (clé privée secrète) : modifier un ticket après coup, même en recalculant toute la chaîne, ne correspond plus à ce qu\'il a signé.\r\n\r\n'+
+  'FICHIERS\r\n'+
+  '- signatures.json : clé publique, format du message signé, adresse du registre public, empreinte de archive.json et tous les horodatages de la caisse.\r\n'+
+  '- verifier.mjs : contrôleur indépendant (Node.js 18 ou plus, aucune dépendance). Dans ce dossier : node verifier.mjs ; avec accès à internet : node verifier.mjs --en-ligne. Il recalcule les chaînes d\'empreintes de archive.json, vérifie les signatures et les recoupe avec les tickets, clôtures et événements.\r\n\r\n'+
+  'EMPREINTE DE L\'ARCHIVE\r\n'+
+  'SHA-256 de archive.json : '+H+'\r\n'+
+  (anc?'Horodatée et signée par le serveur le '+new Date(anc.ts).toLocaleString('fr-FR')+' (élément A'+year+' du message, identifiant '+anc.id+').\r\n':'Non horodatée : le serveur de signature n\'a pas répondu au moment de l\'archive. Refaites l\'archive avec une connexion internet pour obtenir la signature.\r\n')+
+  '\r\nVÉRIFIER À LA MAIN\r\n'+
+  'Algorithme : ECDSA, courbe P-256, SHA-256. Signature en base64url au format IEEE P1363 (r puis s, 64 octets). Clé publique : SPKI en base64 (voir signatures.json, champ « cles »). Message signé, séparé par des barres verticales :\r\n'+
+  'LAGO-SEAL1|caisse|heure du serveur en ms|T<n°>:<empreinte>|Z<n°>:<empreinte>|J<n°>:<empreinte>|A<année>:<empreinte>\r\n'+
+  'Un élément absent s\'écrit « - » (par exemple « A- »). T : dernier ticket de la caisse, Z : dernière clôture, J : dernier événement du journal, A : empreinte de archive.json.\r\n'+
+  'Registre public des signatures : '+CF_SEAL_URL+'/v1/seal/log?rg=<caisse>\r\nClé publique en ligne : '+CF_SEAL_URL+'/v1/seal/key\r\n';
+}
+function cfSigFiles(year,H,anc){
+  const enc=new TextEncoder(),A=(S.anc||[]).slice().sort((a,b)=>a.ts-b.ts);
+  const sg={format:'lago-signatures-1',genere:new Date().toISOString(),version_lago:LAGO_V,cles:CF_KEYS,algorithme:'ECDSA-P256-SHA256',signature:'base64url, IEEE P1363 (r||s)',
+    message:'LAGO-SEAL1|caisse|heure du serveur (ms)|T<n°>:<empreinte>|Z<n°>:<empreinte>|J<n°>:<empreinte>|A<année>:<empreinte>',
+    registre_public:CF_SEAL_URL+'/v1/seal/log?rg=',archive:{annee:+year,fichier:'archive.json',sha256:H,ancrage:anc?anc.id:null},ancrages:A};
+  return[['signatures.json',enc.encode(JSON.stringify(sg,null,1))],['verifier.mjs',enc.encode(CF_VERIFIER)],['HORODATAGES-SIGNES.txt',enc.encode(cfSigNotice(year,H,anc))]];
 }
 
 /* --- vérification d'intégrité --- */
@@ -7736,15 +7983,17 @@ function cfArchiveFiles(year){
   const enc=new TextEncoder();
   return[['LISEZ-MOI.txt',enc.encode(readme)],['tickets.csv',enc.encode(cfCsv(tk))],['clotures.csv',enc.encode(cfCsv(zr))],['journal.csv',enc.encode(cfCsv(jr))],['archive.json',enc.encode(json)]];
 }
-function cfExport(year){
+async function cfExport(year){
   cfEns();
-  const files=cfArchiveFiles(year),bytes=cfZip(files);
-  S.cf.lastExport={ts:Date.now(),y:String(year)};
-  cfLog('export','Archive fiscale '+year+' générée ('+files.length+' fichiers)');save();
+  const files=cfArchiveFiles(year),H=await cfSha256Bytes(files.find(f=>f[0]==='archive.json')[1]);
+  for(let i=0;i<40&&CF_ANC.busy;i++)await new Promise(r=>setTimeout(r,250));
+  let anc=null;
+  try{anc=await cfAnchor({a:[+year,H],ms:9000})}catch(e){}
+  const all=files.concat(cfSigFiles(year,H,anc)),bytes=cfZip(all);
+  S.cf.lastExport={ts:Date.now(),y:String(year),h:H,sig:anc?1:0};
+  cfLog('export','Archive fiscale '+year+' générée ('+all.length+' fichiers'+(anc?', horodatage signé)':', sans horodatage signé)'));save();
   return saveBytes('archive-fiscale-'+year+'.zip',bytes,'application/zip');
 }
-
-/* --- attestation de l'éditeur (modèle BOI-LETTRE-000242, deux volets) --- */
 function cfAttPdf(){
   const lg=S.settings.legal||{},ed=cfEditor(),d=new Date().toLocaleDateString('fr-FR');
   const bytes=pdfBuild('Attestation individuelle de l’éditeur',S.settings.name,'Attestation logiciel de caisse',w=>{
@@ -7758,6 +8007,7 @@ function cfAttPdf(){
     w.gap(6);
     w.p('Je soussigné(e), représentant légal de l’éditeur, atteste que le logiciel désigné ci-dessus satisfait aux conditions d’inaltérabilité, de sécurisation, de conservation et d’archivage des données en vue du contrôle de l’administration fiscale, prévues au 3° bis du I de l’article 286 du code général des impôts.');
     w.p('Fonctionnalités couvertes : enregistrement des ventes et des règlements, annulations par avoir, duplicata, clôtures journalière, mensuelle et annuelle, journal des événements, archivage annuel.',9);
+    w.p('Inaltérabilité : chaînage SHA-256 des tickets, des clôtures et du journal ; horodatage signé (ECDSA P-256) des empreintes par le serveur de l’éditeur, vérifiable avec la clé publique et un contrôleur indépendant fournis dans l’archive.',9);
     w.p('Fait à ............, le '+d,10);w.sig('Signature de l’éditeur','');
     w.sec('Volet 2 - à remplir par l’entreprise utilisatrice');
     w.kv('Représentant légal','............');w.kv('Raison sociale de l’entreprise',lg.raison||'............');
@@ -7792,7 +8042,7 @@ function vSetCFBase(m){
   m.innerHTML='<div class="cols cfcols">'+
    '<div class="card cfcard"><h3>Caisse conforme</h3>'+
    '<div class="cfst '+(lv&&!lv.ok?'bad':lv?'ok':'')+'">'+(lv?(lv.ok?'Aucune anomalie à la dernière vérification ('+new Date(lv.ts).toLocaleString('fr-FR')+')':'Anomalies détectées à la dernière vérification'):'Intégrité jamais vérifiée')+'</div>'+
-   kv('Tickets scellés',nT)+kv('Avoirs',nA)+kv('Clôtures',S.zs.length)+kv('Dernière clôture journalière',lz?dfr(lz.per)+(lz.auto?' (auto)':''):'aucune')+kv('Dernière archive',le?'année '+le.y+', le '+new Date(le.ts).toLocaleDateString('fr-FR'):'jamais')+
+   kv('Tickets scellés',nT)+kv('Avoirs',nA)+kv('Clôtures',S.zs.length)+kv('Dernière clôture journalière',lz?dfr(lz.per)+(lz.auto?' (auto)':''):'aucune')+kv('Dernière archive',le?'année '+le.y+', le '+new Date(le.ts).toLocaleDateString('fr-FR')+(le.sig?' (horodatée)':''):'jamais')+kv('Dernier horodatage signé',cfAncTxt())+
    (leg&&!locked?'<div class="cfwarn"><b>'+leg+' ticket'+(leg>1?'s':'')+' de test ou antérieur'+(leg>1?'s':'')+'</b> avant la mise en service. À la première vente, ils seront conservés et scellés. Si ce sont des essais, supprimez-les maintenant : après, ce ne sera plus possible.<div class="acts"><button class="btn" data-act="cf_purge">Supprimer les tickets de test</button></div></div>':'')+
    '<div class="acts cfacts"><button class="btn primary" data-act="cf_verify">'+ic('shield')+'Vérifier l’intégrité</button><button class="btn" data-act="cf_export" data-y="'+yr+'">'+ic('box')+'Archive '+yr+'</button>'+(new Date().getMonth()<3?'<button class="btn" data-act="cf_export" data-y="'+(yr-1)+'">'+ic('box')+'Archive '+(yr-1)+'</button>':'')+'</div>'+
    '<p class="muted cfnote">Un ticket validé ne peut plus être modifié ni supprimé : on l’annule par un avoir. L’archive (ZIP : CSV et JSON, avec une notice) est à conserver 6 ans ; faites-la au moins une fois par an.</p></div>'+
@@ -7807,7 +8057,7 @@ function vSetCFBase(m){
 TABS.params.splice(Math.max(1,TABS.params.findIndex(x=>x[0]==='pcat')+1),0,['pcf','Conformité']);SUBS.pcf=vSetCF;
 
 function cfShowVerify(r){
-  showModal(mh('Vérification d’intégrité')+'<div class="cfvr '+(r.ok?'ok':'bad')+'"><b>'+(r.ok?'Aucune anomalie':'Anomalies détectées')+'</b><span>'+r.n.tk+' ticket(s) scellé(s), '+r.n.z+' clôture(s), '+r.n.j+' événement(s) contrôlés</span></div>'+
+  showModal(mh('Vérification d’intégrité')+'<div class="cfvr '+(r.ok?'ok':'bad')+'"><b>'+(r.ok?'Aucune anomalie':'Anomalies détectées')+'</b><span>'+r.n.tk+' ticket(s) scellé(s), '+r.n.z+' clôture(s), '+r.n.j+' événement(s) contrôlés</span>'+(r.anc?'<span>'+(r.anc.n?r.anc.ok+' / '+r.anc.n+' horodatage(s) signé(s) par le serveur conforme(s)':'Aucun horodatage signé pour le moment')+'</span>':'')+'</div>'+
     (r.iss.length?'<div class="cflist">'+r.iss.map(i=>'<div class="cfj '+i.k+'"><span class="grow">'+esc(i.x)+'</span></div>').join('')+'</div>':'')+'<button class="btn primary" data-act="close" style="margin-top:14px">Fermer</button>');
 }
 function cfRestoreOk(d){
@@ -7818,7 +8068,7 @@ function cfRestoreOk(d){
 }
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act^="cf_"]');if(!b)return;const a=b.dataset.act,d=b.dataset;
-  if(a==='cf_verify'&&isAdmin()){const r=cfVerify();S.cf.lastVerify={ts:r.ts,ok:r.ok};cfLog('verif',r.ok?'Intégrité vérifiée : aucune anomalie':'Intégrité vérifiée : '+r.iss.filter(i=>i.k==='bad').length+' anomalie(s)');save();cfShowVerify(r);if(view==='params')setTimeout(()=>{if($('#sub')&&SUBS[tab.params])SUBS[tab.params]($('#sub'))},0)}
+  if(a==='cf_verify'&&isAdmin()){const r=cfVerify();S.cf.lastVerify={ts:r.ts,ok:r.ok};cfLog('verif',r.ok?'Intégrité vérifiée : aucune anomalie':'Intégrité vérifiée : '+r.iss.filter(i=>i.k==='bad').length+' anomalie(s)');save();cfShowVerify(r);cfVerifyAnc(r);if(view==='params')setTimeout(()=>{if($('#sub')&&SUBS[tab.params])SUBS[tab.params]($('#sub'))},0)}
   else if(a==='cf_export'&&isAdmin())cfExport(+d.y||new Date().getFullYear());
   else if(a==='cf_att'&&isAdmin())cfAttPdf();
   else if(a==='cf_legal')cfLegalModal();
@@ -8058,6 +8308,7 @@ function cfwSteps(){
   const lg=S.settings.legal||{},leg=S.sales.filter(s=>cfReal(s)&&!s.h).length,locked=cfLocked(),now=Date.now();
   const lv=S.cf.lastVerify,le=S.cf.lastExport,chk=S.cf.chk||{},yr=new Date().getFullYear();
   const late=locked&&cfDocs().some(s=>ymd(s.ts)<today()&&!cfCovered(s));
+  const hd=cfHeads(),la=cfAncLast(hd.rg),ancOld=locked&&(!la||(!cfSameHead(la,hd)&&now-la.ts>12*3600e3));
   const fd=ts=>new Date(ts).toLocaleDateString('fr-FR');
   const S1=!!(lg.raison&&lg.siret&&(lg.franchise||lg.tva));
   return [
@@ -8072,6 +8323,9 @@ function cfwSteps(){
     {id:'z',ok:locked&&!late,wait:!locked,t:'Clôtures des journées',
       d:!locked?'Après la première vente : une clôture est faite automatiquement chaque jour (puis chaque mois et chaque année).':late?'Des journées passées ne sont pas encore clôturées.':'À jour : une clôture automatique par jour.',
       b:late?'<button type="button" class="btn primary" data-act="cfw_roll">Clôturer maintenant</button>':''},
+    {id:'anc',ok:locked&&!ancOld,wait:!locked,t:'Horodatage signé',
+      d:!locked?'Après la première vente : les empreintes de la caisse sont horodatées et signées par le serveur de l’éditeur, plusieurs fois par jour, sans envoyer aucune donnée de vente.':ancOld?(CF_ANC.err?'Le serveur de signature ne répond pas ('+esc(CF_ANC.err)+'). Lago réessaie tout seul ; vérifiez la connexion internet.':'Pas encore d’horodatage récent : il se fait tout seul, ou vous pouvez le demander maintenant.'):'À jour : dernier horodatage signé le '+(la?fd(la.ts):'-')+'.',
+      b:ancOld?'<button type="button" class="btn primary" data-act="cfw_anc">Horodater maintenant</button>':''},
     {id:'ver',ok:!!(lv&&lv.ok&&now-lv.ts<32*864e5),wait:!locked,t:'Vérification d’intégrité',
       d:lv&&lv.ok&&now-lv.ts<32*864e5?'Aucune anomalie, vérifiée le '+fd(lv.ts)+'. À refaire une fois par mois.':lv&&!lv.ok?'Des anomalies ont été détectées à la dernière vérification : relancez-la et ouvrez le détail.':'À lancer une fois par mois : elle contrôle que rien n’a été modifié.',
       b:'<button type="button" class="btn'+(locked?' primary':'')+'" data-act="cf_verify">Vérifier maintenant</button>'},
@@ -8095,12 +8349,13 @@ function vSetCF(m){
   if(isAdmin()&&m.querySelector('.cfcols'))m.insertAdjacentHTML('afterbegin',cfwCard());
 }
 document.addEventListener('click',e=>{
-  const b=e.target.closest('[data-act="cfw_legal"],[data-act="cfw_roll"],[data-act="cfw_ok"],[data-act="cf_att"],[data-act="cf_verify"],[data-act="cf_export"]');if(!b||!isAdmin())return;
+  const b=e.target.closest('[data-act="cfw_legal"],[data-act="cfw_anc"],[data-act="cfw_roll"],[data-act="cfw_ok"],[data-act="cf_att"],[data-act="cf_verify"],[data-act="cf_export"]');if(!b||!isAdmin())return;
   const a=b.dataset.act;
   if(a==='cfw_legal'){
     const h=[...document.querySelectorAll('.cfcard h3')].find(x=>x.textContent==='Informations légales'),c=h&&h.closest('.card');
     if(c){c.scrollIntoView({block:'center',behavior:'smooth'});const i=[...c.querySelectorAll('input[data-lg]')].find(x=>x.type!=='checkbox'&&!x.value);if(i)setTimeout(()=>i.focus({preventScroll:true}),350)}
   }else if(a==='cfw_roll'){const k=zRoll();toast(k?k+' clôture'+(k>1?'s':'')+' effectuée'+(k>1?'s':''):'Rien à clôturer');cfwRefresh()}
+  else if(a==='cfw_anc'){b.disabled=true;cfAnchor().then(x=>{toast(x?'Horodatage signé obtenu':CF_ANC.err?'Serveur de signature injoignable : '+CF_ANC.err:'Rien à horodater');cfwRefresh()}).catch(()=>cfwRefresh())}
   else if(a==='cfw_ok'){cfEns();S.cf.chk=S.cf.chk||{};if(S.cf.chk[b.dataset.k])delete S.cf.chk[b.dataset.k];else S.cf.chk[b.dataset.k]=Date.now();save();cfwRefresh()}
   else setTimeout(cfwRefresh,400);
 });
@@ -11651,7 +11906,7 @@ function vSetTv(m){
     <label class="wchk"><input type="checkbox" data-tvf="qrOn" ${qon?'checked':''}> Afficher un QR code pour réserver</label>
     ${qon?`<div style="margin-top:10px">${tvTxt('qrUrl','Lien du QR code',t.qrUrl,300,tvLagoLink()?'Laisser vide : votre page de réservation Lago':'https://votre-site.fr/reservation')}</div>
     <p class="muted" style="margin:0">${qmsg}</p>${qm?`<div style="display:flex;justify-content:center;margin:10px 0 0"><div style="background:#fff;padding:8px;border-radius:12px;line-height:0">${qrSvg(qu,150)}</div></div>`:''}`:''}</div>
-   <div class="card"><h3>Texte défilant</h3>${tvTxt('tick','Message en bas de l’écran (laisser vide pour le masquer)',t.tick,400,{s:'Ex. Chaussettes antidérapantes obligatoires · Anniversaires : réservez à l’accueil',r:'Ex. Menu du jour à 14,50 € · Terrasse ouverte · Privatisation sur demande',a:'Ex. Offre étudiants -20 % le mardi · Cartes cadeaux disponibles'}[k],1)}</div>
+   <div class="card"><h3>Texte défilant</h3>${tvTxt('tick','Message en bas de l’écran (laisser vide pour le masquer)',t.tick,400,{s:'Ex. Chaussettes obligatoires · Anniversaires : à l’accueil',r:'Ex. Menu du jour à 14,50 € · Terrasse ouverte · Privatisation sur demande',a:'Ex. Offre étudiants -20 % le mardi · Cartes cadeaux disponibles'}[k],1)}</div>
    ${k==='s'?`<div class="card"><h3>Son et annonces</h3>
     <div class="field"><label>Son à chaque fin de session</label>${paySeg('snd',TV_SND,t.snd).replace(/data-payset=/g,'data-tvset=')}</div>
     <label class="wchk"><input type="checkbox" data-tvf="voice" ${t.voice?'checked':''}> Annonce vocale (« Bracelet orange, votre session est terminée »)</label>
@@ -12513,7 +12768,7 @@ function planClean(c){
   c=c&&typeof c==='object'?c:{};
   const o={enforce:c.enforce===true,stats:planUrl(c.stats).replace(/\/+$/,''),gates:{}};
   const g=c.gates&&typeof c.gates==='object'?c.gates:{};
-  Object.keys(g).slice(0,200).forEach(k=>{if((/^(tab|act|blk):[A-Za-z0-9_-]{1,60}$/.test(k)||k==='cloud')&&/^[a-z0-9_-]{1,30}$/.test(String(g[k])))o.gates[k]=String(g[k])});
+  Object.keys(g).slice(0,200).forEach(k=>{if((/^(tab|act|blk|nav):[A-Za-z0-9_-]{1,60}$/.test(k)||k==='cloud')&&/^[a-z0-9_-]{1,30}$/.test(String(g[k])))o.gates[k]=String(g[k])});
   return o}
 try{const c=JSON.parse(localStorage.getItem(PLAN_KEY)||'null');if(c)PLAN=planClean(c)}catch(e){}
 
@@ -12602,10 +12857,10 @@ async function v108Boot(){
    Rien ne change pour les clients existants : tout ce bloc ne s'applique que si le lien d'activation portait « m » et l'adresse du serveur « w ». */
 const SSOPT=[
  {k:'cast',n:'Écran TV (Cast)',d:'Affichez le planning, les files et vos offres sur la télé de l’accueil.',p:1199},
- {k:'staff',n:'Planning staff',d:'Planning de l’équipe, shifts du jour, congés et échanges de shifts.',p:799},
- {k:'fid',n:'Fidélité et mailing',d:'Points et récompenses pour vos clients, et envoi de mailings.',p:699},
- {k:'wallet',n:'Carte de fidélité wallet',d:'La carte de fidélité dans Apple Wallet et Google Wallet.',p:499},
+ {k:'staff',n:'Planning staff',d:'Planning de l’équipe, shifts du jour, congés, échanges de shifts et chat d’équipe.',p:799},
+ {k:'fid',n:'Fidélité, mailing et carte wallet',d:'Points et récompenses pour vos clients, envoi de mailings, et la carte de fidélité dans Apple Wallet et Google Wallet.',p:899},
  {k:'qr',n:'Check-in par QR code',d:'Vos clients se présentent avec leur code : l’entrée est validée en une seconde.',p:399},
+ {k:'gift',n:'Cartes cadeaux',d:'Vendez des cartes cadeaux (PDF ou e-mail), encaissez-les en caisse et suivez les soldes.',p:299},
  {k:'ia',n:'Recherche et assistant IA',d:'Posez vos questions à vos chiffres, résumés et conseils.',free:1},
  {k:'export',n:'Rapports et exports',d:'Rapport mensuel signé, exports PDF.',free:1},
  {k:'multi',n:'Multi-établissements',d:'Plusieurs sites sous un même compte.',soon:1}];
@@ -12623,6 +12878,7 @@ function optOn(k){
   const o=SSOPT.find(x=>x.k===k);if(o&&o.free)return true;   /* offerte : toujours incluse */
   if(!ssOn())return true;
   const e=ssEnt();
+  if(k==='wallet')return !!(e&&(e.fid===1||e.wallet===1));   /* la carte wallet fait partie de « Fidélité, mailing et carte wallet » (ancien abonnement à part reconnu) */
   return !!(e&&e[k]===1);
 }
 async function ssPost(path,body){
@@ -12636,9 +12892,10 @@ async function ssLoad(){
   try{
     const r=await fetch(c.u.replace(/\/+$/,'')+'/_ent/'+c.r+'.json',{cache:'no-store'});if(!r.ok)return;
     const j=await r.json(),e=j&&typeof j==='object'?j:{};
-    const sig=JSON.stringify(e,Object.keys(e).filter(x=>x!=='at').sort());
+    const sigOf=o=>JSON.stringify(o,Object.keys(o).filter(x=>x!=='at').sort());
+    const sig=sigOf(e),was=SS.sig!==''?SS.sig:(SS.ent?sigOf(SS.ent):'');   /* ce que l'écran a déjà utilisé : le dernier relevé, sinon la copie gardée sur l'appareil */
     SS.ent=e;try{localStorage.setItem(SSKEY,JSON.stringify({r:c.r,e,t:Date.now()}))}catch(x){}
-    if(sig!==SS.sig){const first=SS.sig==='';SS.sig=sig;if(!first)ssRefresh()}
+    SS.sig=sig;if(sig!==was)ssRefresh()   /* les menus dépendent des options : on les redessine dès que les droits changent, y compris au premier chargement d'un appareil neuf */
   }catch(e){}
 }
 function ssRefresh(){try{if(!document.querySelector('#modal .modal'))render()}catch(e){}}
@@ -12658,27 +12915,91 @@ async function ssPayApply(){
   }catch(e){}
 }
 function ssUpsell(k){
+  if(k==='wallet')k='fid';
   const o=SSOPT.find(x=>x.k===k);if(!o)return '';
   const own=ssOwner();
   return `<div class="card ssup" style="text-align:center;padding:26px 18px"><h3 style="margin:0 0 6px">${esc(o.n)}</h3>
    <p class="muted" style="margin:0 0 12px">${esc(o.d||'')}</p>
    <p style="margin:0 0 14px"><b>${ssEur(o.p)}</b> HT par mois, sans engagement, résiliable à tout moment.</p>
-   ${own&&isAdmin()?`<button type="button" class="btn primary" data-act="ss_buy" data-k="${k}">Activer cette option</button> <button type="button" class="btn" data-act="ss_go">Ouvrir l’App Store</button>`
+   ${own&&isAdmin()?`<button type="button" class="btn primary" data-act="ss_info" data-k="${k}">Découvrir et activer</button> <button type="button" class="btn" data-act="ss_go">Ouvrir l’App Store</button>`
     :`<p class="muted" style="margin:0">Cette option se règle depuis l’appareil du propriétaire de l’espace (menu App Store).</p>`}</div>`;
 }
 /* où ouvrir chaque extension (vue, onglet) */
-const EXTNAV={cast:['params','ptv'],qr:['resa','entrees'],wallet:['params','pwal'],export:['gestion','rapports'],staff:['staff','sjour'],fid:['clients','fidelite']};
+const EXTNAV={cast:['params','ptv'],qr:['resa','entrees'],export:['gestion','rapports'],staff:['staff','sjour'],fid:['clients','fidelite'],gift:['gestion','cadeaux']};
+/* bouton « Ouvrir » d'une extension (carte de l'App Store) : seulement si son onglet est visible */
+function ssOpenBtn(o){
+  const n=EXTNAV[o.k];if(!n)return o.k==='ia'?'<span class="muted" style="font-size:13px">Dans la barre de recherche, en haut</span>':'';
+  return tabsFor(n[0]).some(x=>x[0]===n[1])?`<button type="button" class="btn" data-act="goto" data-v="${n[0]}" data-t="${n[1]}">Ouvrir</button>`:'<span class="muted" style="font-size:13px">Masquée (Personnaliser)</span>'}
+/* ---------- page de présentation d'une extension : aperçu, ce que ça fait, bouton d'activation (avant tout paiement) ---------- */
+function ssDemoQr(){
+  const N=13,F=[[0,0],[N-5,0],[0,N-5]];let s=7,r='';const R=()=>(s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff;
+  const fd=(x,y)=>{for(const [p,q] of F){const u=x-p,v=y-q;if(u>=0&&u<5&&v>=0&&v<5)return u===0||u===4||v===0||v===4||(u===2&&v===2);if(u>=-1&&u<=5&&v>=-1&&v<=5)return false}return null};
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const d=fd(x,y);if(d===true||(d===null&&R()>.5))r+=`<rect x="${x}" y="${y}" width="1.03" height="1.03"/>`}
+  return `<svg viewBox="0 0 ${N} ${N}" width="76" height="76" fill="currentColor" aria-hidden="true" style="flex:none">${r}</svg>`}
+const SSPRES={
+  cast:{h:'Votre planning et vos offres sur la télé de l’accueil',
+    pts:['Le planning du jour et les prochaines sessions s’affichent tout seuls','Les files d’attente et vos offres, bien lisibles de loin','Un message défilant en bas de l’écran (consignes, promotions)','Fonctionne sur toute télé dotée d’un navigateur'],
+    who:'Accueils de parcs, salles de sport, salons, espaces de jeux.',
+    demo:()=>`<div class="sd-tv"><div class="sd-tvh"><b>Planning du jour</b><span class="num">14:32</span></div>
+      <div class="sd-tvr"><span class="num">14:00</span><b>Session saut libre</b><em class="num">12 / 20</em></div>
+      <div class="sd-tvr"><span class="num">15:00</span><b>Anniversaire de Léa</b><em>Salle 2</em></div>
+      <div class="sd-tvr"><span class="num">16:30</span><b>Session saut libre</b><em class="num">6 / 20</em></div>
+      <div class="sd-tick">Chaussettes antidérapantes obligatoires · Anniversaires : réservez à l’accueil</div></div>`},
+  staff:{h:'Votre équipe sait toujours quand et où travailler',
+    pts:['Planning de la semaine et shifts du jour, pour toute l’équipe','Demandes de congés et échanges de shifts entre collègues','Chat d’équipe directement dans Lago','Chacun retrouve son planning sur son téléphone'],
+    who:'Équipes de plusieurs personnes, avec des horaires qui changent.',
+    demo:()=>{const D=['Lun','Mar','Mer','Jeu','Ven'],P=[['Camille',['9–15','9–15','','13–19','9–15']],['Yanis',['','13–19','13–19','13–19','']],['Inès',['13–19','','9–15','','13–19']]];
+      return `<div class="sd-wk"><span></span>${D.map(d=>`<b>${d}</b>`).join('')}${P.map(([n,s])=>`<span class="sd-nm">${n}</span>${s.map(x=>x?`<i class="sd-sh">${x}</i>`:'<i></i>').join('')}`).join('')}</div>
+      <div class="sd-chat"><p class="sd-b">Yanis : quelqu’un peut échanger mon jeudi ?</p><p class="sd-b me">Camille : oui, je prends !</p></div>`}},
+  fid:{h:'Faites revenir vos clients, sans effort',
+    pts:['Points et récompenses : vos clients cumulent à chaque passage','Mailings : écrivez à tous vos clients ou à un groupe','Carte de fidélité dans Apple Wallet et Google Wallet','Un seul prix pour la fidélité, les mailings et la carte wallet'],
+    who:'Tous les commerces où les clients reviennent.',
+    demo:()=>`<div class="sd-fid"><div class="sd-wc"><small>${esc(S.settings.name||'Votre établissement')}</small><b class="num">120 points</b><span>Plus que 30 points pour une boisson offerte</span></div>
+      <div class="sd-ml"><b>Mailing</b><p>« Cette semaine, 10 % sur les sessions de l’après-midi »</p><em>Envoyé à 248 clients</em></div></div>`},
+  qr:{h:'Le client montre son code, l’entrée est validée en une seconde',
+    pts:['Chaque client se présente avec son code QR','Validation de l’entrée en une seconde, sans saisie','Fonctionne avec la caméra d’un téléphone ou une douchette'],
+    who:'Entrées sur réservation, billets, invités.',
+    demo:()=>`<div class="sd-qr">${ssDemoQr()}<div class="sd-okc"><b>${ic('check')} Entrée validée</b><strong>Léa M. · 2 personnes</strong><span class="muted">Session de 15 h</span></div></div>`},
+  gift:{h:'Vendez des cartes cadeaux, encaissez-les en caisse',
+    pts:['Créez une carte en quelques secondes : code unique et montant au choix','Envoyez-la en PDF ou par e-mail','Le client la règle en caisse avec le moyen « Carte cadeau »','Solde, validité et historique suivis automatiquement'],
+    who:'Fêtes de fin d’année, anniversaires, cadeaux d’entreprise.',
+    demo:()=>`<div class="sd-gcw"><div class="sd-gc"><small>${esc(S.settings.name||'Votre établissement')}</small><b class="num">CC-7K4M-92QX</b><strong>50 €</strong><span>Valable jusqu’au ${new Date(Date.now()+365*864e5).toLocaleDateString('fr-FR')}</span></div>
+      <p class="sd-gl">Utilisée en caisse : −20 € · <b>solde 30 €</b></p></div>`},
+  ia:{h:'Posez vos questions à vos chiffres',
+    pts:['Demandez en français : tickets, recettes, meilleurs jours','Résumés de la journée et conseils','Dans la barre de recherche, en haut'],who:'',
+    demo:()=>`<div class="sd-ia"><p class="sd-b me">Combien de tickets hier ?</p><p class="sd-b">Hier : 128 tickets pour 2 340 €. Le samedi précédent : 141 tickets.</p></div>`},
+  export:{h:'Des rapports prêts à envoyer à votre comptable',
+    pts:['Rapport mensuel signé','Exports PDF en un geste'],who:'',
+    demo:()=>`<div class="sd-rp"><b>Rapport mensuel</b><div><span>Recettes</span><em class="num">48 210 €</em></div><div><span>Tickets</span><em class="num">3 412</em></div><div><span>Panier moyen</span><em class="num">14,13 €</em></div></div>`},
+  multi:{h:'Plusieurs sites sous un même compte',pts:['Passez d’un établissement à l’autre en un geste','Chiffres de chaque site, et ensemble'],who:'',demo:null}
+};
+function ssPresent(k){
+  const o=SSOPT.find(x=>x.k===k),P=SSPRES[k];if(!o||!P)return;
+  const paid=ssOn(),own=ssOwner()&&isAdmin(),e=ssEnt()||{},on=!!o.free||(!paid&&!o.soon)||e[k]===1,soon=!!o.soon&&!on;
+  const price=o.free||o.soon?'':`<p class="ssd-price"><b>${ssEur(o.p)}</b> <span class="muted">HT par mois, sans engagement</span></p>`;
+  let cta;
+  if(soon)cta='<p class="muted" style="margin:0">Disponible plus tard.</p>';
+  else if(on)cta=`<p style="margin:0"><span class="pill ok">${o.free?'Offerte':paid?'Active':'Incluse'}</span></p>${EXTNAV[k]?`<div class="acts"><button type="button" class="btn primary" data-act="ss_open" data-k="${k}">Ouvrir</button><button type="button" class="btn" data-act="close">Fermer</button></div>`:`<div class="acts"><button type="button" class="btn" data-act="close">Fermer</button></div>`}`;
+  else if(own)cta=`${price}<div class="acts"><button type="button" class="btn primary" data-act="ss_buy" data-k="${k}" ${SS.busy?'disabled':''}>Activer pour ${ssEur(o.p)} par mois</button><button type="button" class="btn" data-act="close">Plus tard</button></div>
+      <p class="muted" id="ssd_msg" style="margin:0;font-size:13px">Paiement sécurisé par Stripe, résiliable à tout moment. L’extension s’active toute seule après le paiement. TVA ajoutée au paiement.</p>`;
+  else cta=`${price}<p class="muted" style="margin:0">Seul le propriétaire de l’espace peut activer cette extension (menu App Store sur son appareil).</p><div class="acts"><button type="button" class="btn" data-act="close">Fermer</button></div>`;
+  showModal(`${mh(esc(o.n))}<div class="ssd" data-ssk="${k}"><p class="ssd-h">${esc(P.h)}</p>
+    ${P.demo?`<div class="ssd-demo" role="img" aria-label="Aperçu de l’extension avec des données d’exemple">${P.demo()}</div><p class="ssd-cap muted">Aperçu avec des données d’exemple.</p>`:''}
+    <ul class="ssd-pts">${P.pts.map(t=>`<li>${ic('check')}<span>${esc(t)}</span></li>`).join('')}</ul>
+    ${P.who?`<p class="muted" style="margin:0">Idéal pour : ${esc(P.who)}</p>`:''}
+    <div class="ssd-cta">${cta}</div></div>`);
+}
 function vSetAbo(m){
   if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
   const paid=ssOn(),own=ssOwner(),e=ssEnt()||{},any=SSOPT.some(o=>!o.free&&!o.soon&&e[o.k]===1);
-  const open=o=>{const n=EXTNAV[o.k];if(!n)return o.k==='ia'?'<span class="muted" style="font-size:13px">Dans la barre de recherche, en haut</span>':'';
-    return tabsFor(n[0]).some(x=>x[0]===n[1])?`<button type="button" class="btn" data-act="goto" data-v="${n[0]}" data-t="${n[1]}">Ouvrir</button>`:'<span class="muted" style="font-size:13px">Masquée (Personnaliser)</span>'};
+  const open=ssOpenBtn;
   const rank=o=>o.soon?2:o.free?1:0;
   const card=o=>{
     const on=o.free||(!paid&&!o.soon)||e[o.k]===1,soon=!!o.soon&&!on;
     const pill=o.free?'<span class="pill ok">Offerte</span>':soon?'<span class="pill">Bientôt</span>':on?`<span class="pill ok">${paid?'Active':'Incluse'}</span>`:'';
     const price=paid&&!o.free&&!o.soon?`<p class="asp"><b>${ssEur(o.p)}</b><span class="muted"> HT par mois</span></p>`:'';
-    const act=soon?'<span class="muted" style="font-size:13px">Disponible plus tard</span>':on?open(o):(own?`<button type="button" class="btn primary" data-act="ss_buy" data-k="${o.k}" ${SS.busy?'disabled':''}>Activer</button>`:'<span class="muted" style="font-size:13px">Réservé au propriétaire</span>');
+    const info=(l,cls)=>`<button type="button" class="btn ${cls}" data-act="ss_info" data-k="${o.k}">${l}</button>`;
+    const act=soon?info('Découvrir',''):on?open(o)+(SSPRES[o.k]&&!o.free?' '+info('Présentation',''):''):(own?info('Découvrir et activer','primary'):info('Découvrir',''));
     return `<div class="card asc"><div class="asch"><h3>${esc(o.n)}</h3>${pill}</div><p class="muted">${esc(o.d||'')}</p>${price}<div class="acts">${act}</div></div>`};
   m.innerHTML=`<p class="muted" style="margin:0 0 12px;max-width:62ch">${paid?'Lago est gratuit : la caisse, les réservations, les clients, la gestion et les rapports n’ont pas de prix. Les extensions ajoutent des fonctions, au mois, sans engagement. Prix hors taxes ; la TVA est ajoutée au paiement.':'Les extensions ajoutent des fonctions à Lago. Sur cet appareil, elles sont toutes incluses, sans frais.'}</p>
    ${paid&&!own?'<div class="banner" style="margin-bottom:12px"><span>Seul l’appareil du propriétaire (celui qui a créé cet espace) peut activer ou résilier une extension.</span></div>':''}
@@ -12688,7 +13009,7 @@ function vSetAbo(m){
 }
 function vAppStore(m){m.innerHTML=head('App Store')+'<div id="sub"></div>';vSetAbo($('#sub'))}
 async function ssBuy(k){
-  if(SS.busy)return;SS.busy=k;const msg=$('#ss_msg');if(msg)msg.textContent='Ouverture du paiement sécurisé…';
+  if(SS.busy)return;SS.busy=k;const msg=$('#ssd_msg')||$('#ss_msg');if(msg)msg.textContent='Ouverture du paiement sécurisé…';
   try{const j=await ssPost('checkout',{opt:k});if(!/^https:\/\/(checkout|billing)\.stripe\.com\//.test(j.url||''))throw new Error('Réponse inattendue');location.href=j.url}
   catch(e){SS.busy='';toast('Paiement impossible : '+(e.message||e));if(msg)msg.textContent='Paiement impossible : '+(e.message||e)}
 }
@@ -12737,6 +13058,9 @@ SUBS.ppay=(f=>function(m){
   const f=SUBS[sub];if(!f)return;
   SUBS[sub]=function(m){if(optOn(k))return f.apply(this,arguments);m.innerHTML=ssUpsell(k)};
 });
+/* les options non activées ne sont plus dans les menus : on les trouve et on les active dans l'App Store */
+const EXTTAB={ptv:'cast',pwal:'wallet',entrees:'qr',cadeaux:'gift'};
+tabsFor=(o=>function(id){return o.apply(this,arguments).filter(([t])=>gateOk('tab:'+t)&&!(EXTTAB[t]&&!optOn(EXTTAB[t])))})(tabsFor);
 document.addEventListener('click',e=>{
   if(!ssOn())return;
   const x=e.target.closest('[data-act="m_pdf"]');
@@ -12746,6 +13070,8 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act^="ss_"]');if(!b)return;
   const a=b.dataset.act;
   if(a==='ss_buy'){if(!isAdmin()||!ssOwner()){toast('Réservé au propriétaire de l’espace');return}ssBuy(b.dataset.k)}
+  else if(a==='ss_info')ssPresent(b.dataset.k);
+  else if(a==='ss_open'){const n=EXTNAV[b.dataset.k];if(!n)return;closeModal();tab[n[0]]=n[1];if(location.hash==='#'+n[0])route();else location.hash=n[0]}
   else if(a==='ss_go'){closeModal();if(location.hash==='#appstore')route();else location.hash='appstore'}
   else if(a==='ss_portal')ssPortal();
   else if(a==='ss_conn')ssConnStart();
