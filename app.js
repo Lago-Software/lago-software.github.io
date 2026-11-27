@@ -5269,7 +5269,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v109';
+const LAGO_V='v110';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -12746,5 +12746,21 @@ setTimeout(()=>{
     if(s){view='params';tab.params='ppay';ssConnLoad(false).finally(()=>{try{render()}catch(e){}})}
   }catch(e){}
 },1200);
-init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();try{if(evDemoFill())save()}catch(e){}applySettings();cart=newCart();chrome();route();bootGate();v108Boot();
+/* ---------- v110 : installation en un clic (le site ouvre Lago avec ?installer=1) ---------- */
+var INST=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();INST=e;instBar()});
+window.addEventListener('appinstalled',()=>{INST=null;instOff(false)});
+function instOff(later){const b=document.getElementById('instbar');if(b)b.remove();if(later){try{sessionStorage.setItem('lago_inst_no','1')}catch(e){}}}
+function instBar(){
+  if(isStandalone()||!/[?&]installer=1(&|$)/.test(location.search))return;
+  try{if(sessionStorage.getItem('lago_inst_no'))return}catch(e){}
+  let b=document.getElementById('instbar');if(!b){b=document.createElement('div');b.id='instbar';b.setAttribute('role','dialog');b.setAttribute('aria-label','Installer Lago');document.body.appendChild(b)}
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent),msg=INST?'Un clic, gratuit, sans magasin d’applications.':ios?'Touchez Partager (le carré avec une flèche), puis « Sur l’écran d’accueil ».':'Dans votre navigateur : icône d’installation dans la barre d’adresse, ou menu ⋮ puis « Installer l’application ».';
+  b.innerHTML=`<div class="instin"><div class="insttx"><b>Installer Lago sur cet appareil</b><span>${msg}</span></div>${INST?'<button type="button" class="btn primary" id="instgo">Installer</button>':''}<button type="button" class="btn" id="instno">Plus tard</button></div>`;
+}
+document.addEventListener('click',e=>{
+  if(e.target.closest&&e.target.closest('#instno')){instOff(true);return}
+  if(e.target.closest&&e.target.closest('#instgo')&&INST){const p=INST;INST=null;try{p.prompt();Promise.resolve(p.userChoice).then(c=>{if(c&&c.outcome==='accepted')instOff(false);else instBar()}).catch(()=>{})}catch(err){}instBar()}
+});
+init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();try{if(evDemoFill())save()}catch(e){}applySettings();cart=newCart();chrome();route();bootGate();v108Boot();instBar();
 })();
