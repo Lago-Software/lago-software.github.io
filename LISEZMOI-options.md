@@ -12,10 +12,12 @@ Prix en euros hors taxes par mois, fixés dans `SSOPT` (`app.js`) et `OPTIONS` (
 | Écran TV (`cast`) | 11,99 € | Paramètres › Écran TV |
 | Planning staff (`staff`) | 7,99 € | Planning staff : équipe, jour, mon planning, échanges, congés, et le chat d’équipe |
 | Fidélité, mailing et carte wallet (`fid`) | 8,99 € | Clients › Fidélité et Mailing, Paramètres › Fidélité, cartes Apple Wallet / Google Wallet |
+| Réservation en ligne (`web`) | 9,99 € + commission de 2 % sur les paiements en ligne | Planning clients › En ligne, Paramètres › Réservation en ligne et Paiement en ligne. Sans l'option, le serveur refuse de créer un paiement en ligne |
 | Check-in par QR code (`qr`) | 3,99 € | Planning clients › Entrées |
 | Cartes cadeaux (`gift`) | 2,99 € | Gestion › Cartes cadeaux (vente, PDF, e-mail, suivi des soldes) et moyen de paiement « Carte cadeau » en caisse. Une carte déjà vendue et encore valable reste utilisable en caisse même si l'option est résiliée |
+| Codes promo (`promo`) | 1,99 € | Gestion › Codes promo, et le champ « Code promo » du ticket (le champ reste pour les carnets de séances) |
 | Recherche et assistant IA (`ia`) | offerte | |
-| Rapports et exports (`export`) | offerte | |
+| Rapports et exports (`export`) | offerte | Rapports PDF, **export comptable** (écritures de vente par jour, colonnes du FEC) et archive fiscale NF 525 (ZIP signé + vérificateur) : toujours inclus |
 | Multi-établissements (`multi`) | bientôt | activée à la main par l'équipe Lago |
 
 Pas de pack, pas de support prioritaire. Le verrouillage est **activé** (`"enforce": true`) : dans un espace créé en libre-service,
@@ -23,7 +25,7 @@ Planning staff (chat d'équipe compris) et Fidélité/mailing sont absents des m
 
 ## Choisir ce qui est payant (`plans.json`, sans nouvelle version)
 1. `"gates"` : pour chaque fonction à verrouiller, écrire `"clé": "option"` avec une option du serveur
-   (`cast`, `staff`, `fid`, `qr` ou `gift` : les seules vendues ; `wallet` n'est plus en vente, il est inclus dans `fid`, et un ancien abonnement `wallet` reste reconnu).
+   (`cast`, `staff`, `fid`, `web`, `qr`, `gift` ou `promo` : les seules vendues ; `wallet` n'est plus en vente, il est inclus dans `fid`, et un ancien abonnement `wallet` reste reconnu).
 2. Passer `"enforce"` à `true` : tous les Lago le prennent en compte à leur prochain lancement.
 
     {

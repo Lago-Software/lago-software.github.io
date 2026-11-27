@@ -4471,7 +4471,8 @@ function x3Cart(){
   let h='';
   if(cart.promo)h+=`<button class="chip on" data-act="x3_pcrm">Code ${esc(cart.promo)}${T.pcInfo?'':' (non applicable)'} ${ic('x')}</button>`;
   if(cart.pass)h+=`<button class="chip on" data-act="x3_psrm">Carnet ${esc(cart.pass.code)}${T.pInfo?'':' (non applicable)'} ${ic('x')}</button>`;
-  if(!cart.promo)h+=`<div class="x3in"><input id="pci" placeholder="Code promo ou carnet" autocomplete="off" autocapitalize="characters" aria-label="Code promo ou carnet"><button class="btn" data-act="x3_apply">OK</button></div>`;
+  {const pOn=optOn('promo'),hasPass=(S.passes||[]).length>0,lb=pOn&&hasPass?'Code promo ou carnet':pOn?'Code promo':'Carnet';   /* le champ n'apparaît que si une option ou un carnet peut l'utiliser */
+   if(!cart.promo&&(pOn||hasPass))h+=`<div class="x3in"><input id="pci" placeholder="${lb}" autocomplete="off" autocapitalize="characters" aria-label="${lb}"><button class="btn" data-act="x3_apply">OK</button></div>`}
   if(!cart.pass)mine.forEach(p=>{h+=`<button class="chip" data-act="x3_psuse" data-code="${esc(p.code)}">Carnet : ${p.left} séance${p.left>1?'s':''} restante${p.left>1?'s':''}</button>`});
   tot.insertAdjacentHTML('afterbegin',`<div class="x3cx">${h}</div>`);
 }
@@ -4479,6 +4480,7 @@ function x3Apply(val){
   const n=pNorm(val);if(!n)return;
   const ps=findPass(n);
   if(ps){const st=passState(ps);if(st!=='ok'){toast('Carnet '+PSLX[st][0].toLowerCase());return}cart.pass={code:ps.code};if(!passCalc(cart,totals(cart))){cart.pass=null;toast('Aucune séance à déduire sur ce ticket');return}drawCart();toast('Carnet appliqué');return}
+  if(!optOn('promo')){toast('Codes promo : option non activée (App Store)');return}
   const p=promoFind(n);
   if(!p){toast(findGift(n)?'C’est une carte cadeau : choisissez-la au paiement':'Code inconnu');return}
   const st=promoState(p);if(st!=='ok'){toast('Code '+PSTL[st][0].toLowerCase());return}
@@ -7905,6 +7907,7 @@ function cfTicketPdf(s){
 function vReports(m){
   vReportsV0(m);
   try{cfRepFix(m)}catch(e){}
+  try{acctRepFix(m)}catch(e){}
 }
 function cfRepFix(m){
   if(!m||!cfLive())return;
@@ -7912,6 +7915,53 @@ function cfRepFix(m){
   m.insertAdjacentHTML('beforeend','<div class="card cfzc"><h3>Clôtures fiscales</h3>'+(zs.length?zs.map(z=>'<button class="row rowbtn" data-act="cf_z" data-id="'+esc(z.id)+'"><span class="grow"><b>'+dfr(z.per)+(z.auto?' · automatique':'')+'</b><span class="muted">'+z.n+' ticket'+(z.n>1?'s':'')+(z.na?' · '+z.na+' avoir'+(z.na>1?'s':''):'')+'</span></span><b class="num">'+eur(z.ttc)+'</b></button>').join(''):'<p class="muted">Aucune clôture pour le moment. Elle se fait avec « Clôturer la journée » ou automatiquement le lendemain.</p>')+
     '<p class="muted" style="font-size:13px;margin:10px 0 0">Chaque clôture est scellée et ne peut plus être modifiée. Les jours, mois et années écoulés sont clôturés automatiquement.</p></div>');
 }
+/* ---------- export comptable (inclus, gratuit) : écritures récapitulatives de ventes par jour, colonnes du FEC ---------- */
+const ACX_DEF={v:'706000',tva:'44571',cash:'531000',card:'511200'};
+const acx=()=>Object.assign({},ACX_DEF,(S.settings&&S.settings.acx)||{});
+const ACX_PAY={ancv:['511500','Chèques-Vacances à encaisser'],tr:['511400','Titres-restaurant à encaisser'],gift:['419100','Cartes cadeaux utilisées'],credit:['419000','Avoirs et pass utilisés']};
+const ACX_TVA={'20':'445711','10':'445712','5.5':'445713','2.1':'445714'};
+const acNum=c=>(c/100).toFixed(2).replace('.',',');
+const acRate=r=>{const n=+String(r).replace(',','.');return Number.isFinite(n)?n.toLocaleString('fr-FR')+' %':String(r)};
+/* per : « AAAA-MM » (un mois) ou « AAAA » (une année). Une écriture équilibrée par jour : règlements au débit, ventes HT et TVA collectée au crédit (un avoir passe en sens inverse). */
+function acctRows(per){
+  const A=acx(),days={};
+  (S.sales||[]).forEach(s=>{const d=ymd(s.ts);if(d.startsWith(per))(days[d]=days[d]||[]).push(s)});
+  const R=[['JournalCode','JournalLib','EcritureNum','EcritureDate','CompteNum','CompteLib','CompAuxNum','CompAuxLib','PieceRef','PieceDate','EcritureLib','Debit','Credit','EcritureLet','DateLet','ValidDate','Montantdevise','Idevise']];
+  let n=0;
+  Object.keys(days).sort().forEach(d=>{
+    const docs=days[d].slice().sort((x,y)=>x.ts-y.ts),g=cfAgg(docs),ds=d.replace(/-/g,''),ref='VT'+ds,nos=docs.map(s=>s.no).filter(Boolean);
+    const lib='Ventes du '+dfr(d)+(nos.length>1?' (tickets '+nos[0]+' à '+nos[nos.length-1]+')':nos.length?' (ticket '+nos[0]+')':'');
+    const L=[],add=(acct,name,amt,side)=>{if(!amt)return;let sd=side,v=amt;if(v<0){v=-v;sd=side==='C'?'D':'C'}L.push([acct,name,sd==='D'?acNum(v):'0,00',sd==='C'?acNum(v):'0,00'])};
+    let paid=0;
+    Object.entries(g.pay).sort().forEach(([m,v])=>{paid+=v;const p=m==='cash'?[A.cash,'Caisse']:m==='card'?[A.card,'Cartes bancaires à encaisser']:ACX_PAY[m]||['511000','Autres règlements à encaisser'];add(p[0],p[1],v,'D')});
+    add('471000','Règlements à régulariser',g.ttc-paid,'D');
+    let seen=0;
+    Object.entries(g.vat).sort((x,y)=>+x[0]-+y[0]).forEach(([r,v])=>{seen+=v.ttc;add(A.v,'Ventes (TVA '+acRate(r)+')',v.ttc-v.tva,'C');add(ACX_TVA[String(r)]||A.tva+String(r).replace(/\D/g,''),'TVA collectée '+acRate(r),v.tva,'C')});
+    add(A.v,'Ventes (sans TVA)',g.ttc-seen,'C');
+    if(!L.length)return;n++;
+    L.forEach(l=>R.push(['VT','Journal des ventes',String(n),ds,l[0],l[1],'','',ref,ds,lib,l[2],l[3],'','',ds,'','']));
+  });
+  return R;
+}
+function acctRepFix(m){
+  if(!m)return;const A=acx(),t=new Date(),cur=t.getFullYear()+'-'+pad(t.getMonth()+1);
+  const f=(k,l)=>`<div class="field"><label for="ac_${k}">${l}</label><input id="ac_${k}" inputmode="numeric" value="${esc(A[k])}"></div>`;
+  m.insertAdjacentHTML('beforeend',`<div class="card" id="acxc"><h3>Export comptable</h3>
+   <p class="muted" style="margin:0 0 10px;max-width:62ch">Les écritures de vente de chaque jour (encaissements, ventes hors taxes, TVA collectée), à remettre à votre expert-comptable. Fichier CSV aux colonnes du FEC. Inclus dans Lago.</p>
+   <div class="field" style="max-width:220px"><label for="ac_m">Mois</label><input id="ac_m" type="month" value="${cur}"></div>
+   <div class="acts"><button type="button" class="btn primary" data-act="ac_dl" data-p="m">Télécharger le mois</button><button type="button" class="btn" data-act="ac_dl" data-p="y">Télécharger l’année</button></div>
+   <details style="margin-top:12px"><summary>Numéros de comptes utilisés</summary><div class="cols" style="margin-top:8px">${f('v','Ventes')}${f('tva','TVA collectée (début)')}${f('cash','Caisse (espèces)')}${f('card','Cartes bancaires')}</div>
+   <p class="muted" style="font-size:13px;margin:8px 0 0">Comptes du plan comptable général, proposés par défaut. Votre expert-comptable peut les adapter ou les remplacer à l’import.</p></details></div>`);
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act="ac_dl"]');if(!b)return;
+  const mv=($('#ac_m')||{}).value||'',per=b.dataset.p==='y'?mv.slice(0,4):mv;
+  if(!/^\d{4}(-\d{2})?$/.test(per)){toast('Choisissez un mois');return}
+  const acc={};['v','tva','cash','card'].forEach(k=>{const i=$('#ac_'+k);if(i&&/^\d{3,12}$/.test(i.value.trim()))acc[k]=i.value.trim()});
+  S.settings.acx=acc;save();
+  const rows=acctRows(per);if(rows.length<2){toast('Aucune vente sur cette période');return}
+  saveBytes('ecritures-ventes-'+per+'.csv',new TextEncoder().encode(cfCsv(rows)),'text/csv');
+});
 function cfZModal(id){
   const z=S.zs.find(x=>x.id===id);if(!z)return;
   const nm=({J:'Clôture journalière',M:'Clôture mensuelle',A:'Clôture annuelle'})[z.ty],per=z.ty==='J'?dfr(z.per):z.ty==='M'?new Date(z.per+'-01T12:00').toLocaleDateString('fr-FR',{month:'long',year:'numeric'}):z.per;
@@ -12859,8 +12909,10 @@ const SSOPT=[
  {k:'cast',n:'Écran TV (Cast)',d:'Affichez le planning, les files et vos offres sur la télé de l’accueil.',p:1199},
  {k:'staff',n:'Planning staff',d:'Planning de l’équipe, shifts du jour, congés, échanges de shifts et chat d’équipe.',p:799},
  {k:'fid',n:'Fidélité, mailing et carte wallet',d:'Points et récompenses pour vos clients, envoi de mailings, et la carte de fidélité dans Apple Wallet et Google Wallet.',p:899},
+ {k:'web',n:'Réservation en ligne',d:'Vos clients réservent et paient eux-mêmes depuis une page à vos couleurs. Commission de 2 % sur les paiements en ligne.',p:999},
  {k:'qr',n:'Check-in par QR code',d:'Vos clients se présentent avec leur code : l’entrée est validée en une seconde.',p:399},
  {k:'gift',n:'Cartes cadeaux',d:'Vendez des cartes cadeaux (PDF ou e-mail), encaissez-les en caisse et suivez les soldes.',p:299},
+ {k:'promo',n:'Codes promo',d:'Créez des codes de réduction pour vos clients et suivez leur utilisation.',p:199},
  {k:'ia',n:'Recherche et assistant IA',d:'Posez vos questions à vos chiffres, résumés et conseils.',free:1},
  {k:'export',n:'Rapports et exports',d:'Rapport mensuel signé, exports PDF.',free:1},
  {k:'multi',n:'Multi-établissements',d:'Plusieurs sites sous un même compte.',soon:1}];
@@ -12925,7 +12977,7 @@ function ssUpsell(k){
     :`<p class="muted" style="margin:0">Cette option se règle depuis l’appareil du propriétaire de l’espace (menu App Store).</p>`}</div>`;
 }
 /* où ouvrir chaque extension (vue, onglet) */
-const EXTNAV={cast:['params','ptv'],qr:['resa','entrees'],export:['gestion','rapports'],staff:['staff','sjour'],fid:['clients','fidelite'],gift:['gestion','cadeaux']};
+const EXTNAV={cast:['params','ptv'],qr:['resa','entrees'],export:['gestion','rapports'],staff:['staff','sjour'],fid:['clients','fidelite'],gift:['gestion','cadeaux'],web:['resa','web'],promo:['gestion','promos']};
 /* bouton « Ouvrir » d'une extension (carte de l'App Store) : seulement si son onglet est visible */
 function ssOpenBtn(o){
   const n=EXTNAV[o.k];if(!n)return o.k==='ia'?'<span class="muted" style="font-size:13px">Dans la barre de recherche, en haut</span>':'';
@@ -12965,6 +13017,19 @@ const SSPRES={
     who:'Fêtes de fin d’année, anniversaires, cadeaux d’entreprise.',
     demo:()=>`<div class="sd-gcw"><div class="sd-gc"><small>${esc(S.settings.name||'Votre établissement')}</small><b class="num">CC-7K4M-92QX</b><strong>50 €</strong><span>Valable jusqu’au ${new Date(Date.now()+365*864e5).toLocaleDateString('fr-FR')}</span></div>
       <p class="sd-gl">Utilisée en caisse : −20 € · <b>solde 30 €</b></p></div>`},
+  web:{h:'Vos clients réservent et paient eux-mêmes, à toute heure',
+    pts:['Une page de réservation à vos couleurs, à placer sur votre site ou vos réseaux','Vos clients choisissent leur créneau et paient par carte, ou versent un acompte','Les réservations arrivent dans votre planning, le paiement est pointé tout seul','Commission de 2 % sur les paiements en ligne, en plus des frais Stripe ; aucune commission sur les paiements à l’accueil'],
+    who:'Parcs, salles, ateliers et tout lieu avec des créneaux à réserver.',
+    demo:()=>`<div class="sd-bk"><b>${esc(S.settings.name||'Votre établissement')}</b><small>Réservez votre session</small>
+      <div class="sd-bkd"><i>Sam. 6</i><i class="on">Dim. 7</i><i>Lun. 8</i></div>
+      <div class="sd-bkd"><i>14:00</i><i class="on">15:00</i><i>16:30</i></div>
+      <div class="sd-bkb"><span>2 personnes</span><strong class="num">28 €</strong></div><u class="sd-bkc">Payer et réserver</u></div>`},
+  promo:{h:'Des codes de réduction que vos clients adorent',
+    pts:['Remise en pourcentage ou en euros','Minimum d’achat, dates de validité, catégorie et nombre d’usages','Le client donne son code, vous le saisissez dans le ticket','Suivi des utilisations et des remises accordées'],
+    who:'Soldes, parrainage, partenariats, événements.',
+    demo:()=>`<div class="sd-pm"><div class="sd-pmr"><b class="num">ETE10</b><span>−10 % · jusqu’au 31/08</span><em class="num">42 utilisations</em></div>
+      <div class="sd-pmr"><b class="num">AMI5</b><span>−5 € · dès 20 € d’achat</span><em class="num">18 utilisations</em></div>
+      <div class="sd-pmt"><span>Code ETE10</span><b class="num">− 2,80 €</b></div></div>`},
   ia:{h:'Posez vos questions à vos chiffres',
     pts:['Demandez en français : tickets, recettes, meilleurs jours','Résumés de la journée et conseils','Dans la barre de recherche, en haut'],who:'',
     demo:()=>`<div class="sd-ia"><p class="sd-b me">Combien de tickets hier ?</p><p class="sd-b">Hier : 128 tickets pour 2 340 €. Le samedi précédent : 141 tickets.</p></div>`},
@@ -13054,12 +13119,12 @@ SUBS.ppay=(f=>function(m){
   const intro=m.querySelector('.card p.muted');if(intro&&/Lago ne touche aucun paiement/.test(intro.textContent))intro.textContent='Après avoir réservé, votre client peut régler tout de suite ou verser un acompte, depuis une page à vos couleurs. L’argent va directement sur votre compte Stripe ; Lago ne voit aucune donnée bancaire.';
   ssConnLoad();
 })(SUBS.ppay);
-[['ptv','cast'],['pwal','wallet'],['entrees','qr']].forEach(([sub,k])=>{
+[['ptv','cast'],['pwal','wallet'],['entrees','qr'],['web','web'],['pweb','web'],['ppay','web'],['promos','promo']].forEach(([sub,k])=>{
   const f=SUBS[sub];if(!f)return;
   SUBS[sub]=function(m){if(optOn(k))return f.apply(this,arguments);m.innerHTML=ssUpsell(k)};
 });
 /* les options non activées ne sont plus dans les menus : on les trouve et on les active dans l'App Store */
-const EXTTAB={ptv:'cast',pwal:'wallet',entrees:'qr',cadeaux:'gift'};
+const EXTTAB={ptv:'cast',pwal:'wallet',entrees:'qr',cadeaux:'gift',web:'web',pweb:'web',ppay:'web',promos:'promo'};
 tabsFor=(o=>function(id){return o.apply(this,arguments).filter(([t])=>gateOk('tab:'+t)&&!(EXTTAB[t]&&!optOn(EXTTAB[t])))})(tabsFor);
 document.addEventListener('click',e=>{
   if(!ssOn())return;
