@@ -133,6 +133,8 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .rowbtn{width:100%;text-align:left}
 .avatar{width:40px;height:40px;border-radius:50%;background:var(--brand-soft);color:var(--brand-t);display:grid;place-items:center;font-weight:700;flex:none}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--cat);flex:none}
+.gd .gdt{display:flex;align-items:center;gap:10px;margin-bottom:4px}.gd .gdt h3{margin:0}.gdn{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--brand-soft);color:var(--brand-ink);font-weight:800;font-size:14px;flex:none}.gd.ok .gdn{background:var(--ok);color:#fff}.gd p{margin:4px 0 10px}.gd .acts,.gdhome .acts{display:flex;gap:8px;flex-wrap:wrap}.gdhome{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-left:4px solid var(--brand);margin:12px 0}
+.asg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}.asc{display:flex;flex-direction:column;gap:6px;margin:0}.asc .asch{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.asc h3{margin:0}.asc p{margin:0}.asc .asp b{font-size:17px}.asc .acts{margin-top:auto;padding-top:10px}
 .pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:var(--surface-2);color:var(--muted);white-space:nowrap}
 .pill.ok{background:color-mix(in srgb,var(--ok) 16%,var(--surface));color:var(--ok)}
 .pill.warn{background:color-mix(in srgb,var(--warn) 18%,var(--surface));color:var(--warn)}
@@ -3442,7 +3444,7 @@ body.cart-open #modal .scrim{z-index:70}
  setTimeout(fail,45000);
 })();
 </script>
-<script src="app.js?v=v111" defer></script>
+<script src="app.js?v=v113" defer></script>
 
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{})}</script>
 </body></html>

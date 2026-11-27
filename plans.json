@@ -1,5 +1,14 @@
 {
-  "enforce": false,
+  "enforce": true,
   "stats": "",
-  "gates": {}
+  "gates": {
+    "tab:equipe": "staff",
+    "tab:sjour": "staff",
+    "tab:monplan": "staff",
+    "tab:echanges": "staff",
+    "tab:conges": "staff",
+    "tab:fidelite": "fid",
+    "tab:mailing": "fid",
+    "tab:ploy": "fid"
+  }
 }

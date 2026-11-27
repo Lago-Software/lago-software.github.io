@@ -2799,7 +2799,7 @@ document.addEventListener('submit',async e=>{
       const id=uid(),first=k==='setup';
       const a={id,name:$('#gn').value.trim(),ident,pwd:pw?await hashPw(pw,id):'',status:first?'active':'pending',admin:first,profileId:'',staffId:k==='new'?$('#gstf').value:'',ts:Date.now()};
       accs().push(a);save();
-      if(first){tplAfterAdmin(a);login(a,true)}
+      if(first){const nw=!!(cloudCfg()&&cloudCfg().boot);tplAfterAdmin(a);login(a,true);try{if(nw&&S.settings.guide&&S.settings.guide.new){tab.params='pguide';location.hash='params'}}catch(e){}}
       else gateShell(`<div class="gpick"><span class="avatar big ok">${ic('check')}</span><h2>Demande envoyée</h2></div><p class="muted" style="text-align:center">Votre compte sera utilisable dès que l’administrateur l’aura validé.</p>${cloudOn()?'':'<div class="banner" id="gnolink"><span><b>Attention :</b> ce téléphone n’est pas connecté à l’équipe. Votre demande n’est enregistrée que sur cet appareil et n’arrivera pas chez l’administrateur. Ouvrez le lien d’équipe, ou touchez le bouton ci-dessous.</span></div>'}<div class="gfoot"><button class="btn primary" data-act="g_back">Retour</button></div>`);
     }else{
       const a=k==='pick'?accs().find(x=>x.id===f.dataset.id):accs().find(x=>x.ident===ident);
@@ -3666,7 +3666,7 @@ function vSetStudioBase(m){
   if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
   const st=S.settings,sy=st.sty||{},T=st.texts||{},tk=Object.keys(T);
   const off=st.off||{},offT=st.offT||{};
-  const mods=NAV.filter(n=>!['accueil','params'].includes(n[0]));
+  const mods=NAV.filter(n=>!['accueil','params','appstore'].includes(n[0]));
   const subsOf=id=>(TABS[id]||[]);
   m.innerHTML=`<div class="card" style="margin-bottom:14px"><h3>Thèmes prêts à l’emploi</h3>
     <div class="stgrid">${PRESETS.map((p,i)=>`<button class="prs ${st.brand===p[1]&&st.accent===p[2]?'on':''}" data-act="st_preset" data-i="${i}"><span><i style="background:${p[1]}"></i><i style="background:${p[2]}"></i></span><b>${p[0]}</b></button>`).join('')}</div>
@@ -5269,7 +5269,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v111';
+const LAGO_V='v113';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -10084,6 +10084,8 @@ function tplSummary(t){
 }
 const tplEur=v=>(+v).toLocaleString('fr-FR',{minimumFractionDigits:(+v)%1?2:0,maximumFractionDigits:2})+' €';
 
+/* un espace neuf démarre avec très peu de produits : le premier de chaque catégorie (hors cartes cadeaux). Le reste s'ajoute depuis Paramètres › Mon métier. */
+const tplStarter=l=>{const seen={},out=[];(l||[]).forEach(p=>{if(p.cat==='gestion'||seen[p.cat])return;seen[p.cat]=1;out.push(p)});return out};
 /* ---- application d'un modèle ----
    mode « replace » : repart du modèle (produits, catégories, horaires, menus affichés, textes, fidélité…). Ventes, clients, comptes et planning ne sont pas touchés.
    mode « add »     : ajoute seulement les produits (et sous-catégories) qui manquent ; les réglages ne bougent pas. */
@@ -10091,7 +10093,7 @@ function tplApply(id,o){
   o=o||{};const t=tplGet(id);if(!t)return false;
   const mode=o.mode==='add'?'add':'replace',st=S.settings,c=t.settings||{},nm=String(o.name||'').trim().slice(0,80);
   const keep=(p,list)=>list.find(x=>x.cat===p.cat&&String(x.name).trim().toLowerCase()===p.name.toLowerCase());
-  const prods=t.products.map(p=>{
+  const prods=(o.starter?tplStarter(t.products):t.products).map(p=>{
     const old=keep(p,S.products||[]),q={id:old?old.id:uid(),name:p.name,cat:p.cat,price:tplEuros(p.price),tva:p.tva,active:true};
     if(old&&old.img)q.img=old.img;
     if(old&&old.tile)q.tile=old.tile;if(old&&old.tileOff)q.tileOff=1;if(old&&isHex(old.tcol))q.tcol=old.tcol;
@@ -10160,11 +10162,12 @@ function tplBootstrap(b){
   try{clearDemo()}catch(e){}
   S.staff=[];S.leaves=[];S.shifts={};S.checks={};S.stock={};S.events=[];S.clients=[];S.sales=[];S.closures=[];S.mails=[];
   S.plans=[buildPlan('p0','Semaine type','','',true)];
-  tplApply(t.id,{mode:'replace',name:b&&b.n,quiet:true,clearDemo:false});
+  tplApply(t.id,{mode:'replace',name:b&&b.n,quiet:true,clearDemo:false,starter:true});
+  S.settings.guide={new:1,done:{}};
   S.noDemo=true;
 }
 function tplAfterAdmin(a){
-  if(!tplBootOn())return;
+  {const c0=cloudCfg();if(!(c0&&c0.boot))return}
   if(!S.staff.length){S.staff=[{id:'e1',name:String(a.name||'Responsable').trim(),role:'resp',color:PCOL[0]}];a.staffId='e1'}
   const c=cloudCfg();if(c){delete c.boot;cloudSet(c)}
   save();
@@ -12518,10 +12521,10 @@ try{const c=JSON.parse(localStorage.getItem(PLAN_KEY)||'null');if(c)PLAN=planCle
 const gateOpt=k=>(PLAN&&PLAN.gates&&PLAN.gates[k])||'';
 /* verrouillé seulement si : interrupteur « enforce » allumé, la fonction est listée, et l'espace n'a pas l'option (optOn est toujours vrai hors espaces en libre-service) */
 function gateOk(k){if(!PLAN||!PLAN.enforce)return true;if(k==='cloud'&&ssOn())return true;const o=gateOpt(k);return !o||optOn(o)}
-const optOf=k=>{const id=gateOpt(k);return id==='pack'?SSPACK:SSOPT.find(x=>x.k===id)||null};
-function lockInner(k,label){const o=optOf(k);return `<div class="lockc"><span class="lockic">${ic('lock')}</span><div><h3>${esc(label||'Cette fonction')} : option « ${esc(o?o.n:'payante')} »</h3>${o&&o.d?`<p class="muted">${esc(o.d)}</p>`:''}<div class="acts"><button type="button" class="btn primary" data-act="goto" data-v="params" data-t="pabo">Voir l’option</button></div></div></div>`}
+const optOf=k=>{const id=gateOpt(k);return SSOPT.find(x=>x.k===id)||null};
+function lockInner(k,label){const o=optOf(k);return `<div class="lockc"><span class="lockic">${ic('lock')}</span><div><h3>${esc(label||'Cette fonction')} : option « ${esc(o?o.n:'payante')} »</h3>${o&&o.d?`<p class="muted">${esc(o.d)}</p>`:''}<div class="acts"><button type="button" class="btn primary" data-act="goto" data-v="appstore">Voir l’option</button></div></div></div>`}
 const lockCard=(k,label)=>`<div class="card">${lockInner(k,label)}</div>`;
-function upsell(k,label){showModal(`${mh('Option « '+esc(optOf(k)?optOf(k).n:'payante')+' »')}<p style="margin:0 0 8px">${esc(label||'Cette fonction')} fait partie d’une option payante.</p>${optOf(k)&&optOf(k).d?`<p class="muted" style="margin:0 0 8px">${esc(optOf(k).d)}</p>`:''}<div class="acts" style="margin-top:14px"><button type="button" class="btn" data-act="close">Plus tard</button><button type="button" class="btn primary" data-act="goto" data-v="params" data-t="pabo">Voir l’option</button></div>`)}
+function upsell(k,label){showModal(`${mh('Option « '+esc(optOf(k)?optOf(k).n:'payante')+' »')}<p style="margin:0 0 8px">${esc(label||'Cette fonction')} fait partie d’une option payante.</p>${optOf(k)&&optOf(k).d?`<p class="muted" style="margin:0 0 8px">${esc(optOf(k).d)}</p>`:''}<div class="acts" style="margin-top:14px"><button type="button" class="btn" data-act="close">Plus tard</button><button type="button" class="btn primary" data-act="goto" data-v="appstore">Voir l’option</button></div>`)}
 /* un clic sur une action verrouillée ouvre l'explication au lieu de l'action */
 document.addEventListener('click',e=>{
   if(!PLAN||!PLAN.enforce)return;
@@ -12535,7 +12538,7 @@ function gateWatch(){try{new MutationObserver(()=>{if(gateWatch.t)return;gateWat
 
 /* ---------- version Simple / Complet ---------- */
 const MODES={
-  simple:{l:'Simple',d:'Caisse, produits, clients et rapports. Le reste est masqué : vous le rajoutez quand vous en avez besoin.',off:{resa:true,staff:true,controle:true},offT:{'clients:fidelite':true,'clients:mailing':true,'clients:carnets':true,'gestion:cadeaux':true,'gestion:promos':true,'gestion:qr':true,'gestion:cse':true},par:['pgen','pmetier','pcat','pstudio','pabo']},
+  simple:{l:'Simple',d:'Caisse, produits, clients et rapports. Le reste est masqué : vous le rajoutez quand vous en avez besoin.',off:{resa:true,staff:true,controle:true},offT:{'clients:fidelite':true,'clients:mailing':true,'clients:carnets':true,'gestion:cadeaux':true,'gestion:promos':true,'gestion:qr':true,'gestion:cse':true},par:['pgen','pmetier','pcat','pstudio']},
   complet:{l:'Complet',d:'Tous les modules : planning clients, planning staff, contrôle, fidélité, mailing, réservation en ligne…',off:{},offT:{},par:null}
 };
 const modeKey=()=>{const k=S&&S.settings&&S.settings.mode;return k==='simple'||k==='perso'?k:'complet'};
@@ -12554,7 +12557,7 @@ document.addEventListener('click',e=>{
   const k=b.dataset.k;if(k==='perso')return;if(!MODES[k])return;
   modeApply(k);save();chrome();render();toast('Version « '+MODES[k].l+' » activée')
 });
-/* en version Simple : seuls quelques réglages sont affichés (l'onglet Extensions est toujours proposé) */
+/* en version Simple : seuls quelques réglages sont affichés (le menu App Store est toujours proposé) */
 tabsFor=(o=>function(id){const L=o.apply(this,arguments);if(id!=='params')return L;
   let r=L;
   if(modeKey()==='simple')r=r.filter(x=>MODES.simple.par.includes(x[0]));
@@ -12598,14 +12601,14 @@ async function v108Boot(){
    Lago est gratuit. Les options se paient chaque mois via le serveur d'abonnement (Stripe) : le paiement active l'option tout seul.
    Rien ne change pour les clients existants : tout ce bloc ne s'applique que si le lien d'activation portait « m » et l'adresse du serveur « w ». */
 const SSOPT=[
- {k:'cast',n:'Écran TV (Cast)',d:'Affichez le planning, les files et vos offres sur la télé de l’accueil.',p:900},
- {k:'qr',n:'Check-in par QR code',d:'Vos clients se présentent avec leur code : l’entrée est validée en une seconde.',p:500},
- {k:'wallet',n:'Carte de fidélité wallet',d:'La carte de fidélité dans Apple Wallet et Google Wallet.',p:900},
- {k:'ia',n:'Recherche et assistant IA',d:'Posez vos questions à vos chiffres, résumés et conseils.',p:900},
- {k:'multi',n:'Multi-établissements',d:'Plusieurs sites sous un même compte. Activé par l’équipe Lago après votre paiement.',p:1900},
- {k:'export',n:'Rapports et exports',d:'Rapport mensuel signé, exports PDF.',p:900},
- {k:'support',n:'Support prioritaire',d:'Une réponse humaine sous 4 heures ouvrées.',p:1900}];
-const SSPACK={k:'pack',n:'Pack Tout',p:5900};
+ {k:'cast',n:'Écran TV (Cast)',d:'Affichez le planning, les files et vos offres sur la télé de l’accueil.',p:1199},
+ {k:'staff',n:'Planning staff',d:'Planning de l’équipe, shifts du jour, congés et échanges de shifts.',p:799},
+ {k:'fid',n:'Fidélité et mailing',d:'Points et récompenses pour vos clients, et envoi de mailings.',p:699},
+ {k:'wallet',n:'Carte de fidélité wallet',d:'La carte de fidélité dans Apple Wallet et Google Wallet.',p:499},
+ {k:'qr',n:'Check-in par QR code',d:'Vos clients se présentent avec leur code : l’entrée est validée en une seconde.',p:399},
+ {k:'ia',n:'Recherche et assistant IA',d:'Posez vos questions à vos chiffres, résumés et conseils.',free:1},
+ {k:'export',n:'Rapports et exports',d:'Rapport mensuel signé, exports PDF.',free:1},
+ {k:'multi',n:'Multi-établissements',d:'Plusieurs sites sous un même compte.',soon:1}];
 var SSKEY='lago-ent';
 var SS={ent:null,conn:null,busy:'',sig:''};
 function ssOn(){const c=cloudCfg();return !!(c&&c.m===1&&/^https:\/\//.test(c.w||'')&&/^c\/[a-z0-9]+$/.test(c.r||''))}
@@ -12617,9 +12620,10 @@ function ssEnt(){
   return null;
 }
 function optOn(k){
+  const o=SSOPT.find(x=>x.k===k);if(o&&o.free)return true;   /* offerte : toujours incluse */
   if(!ssOn())return true;
   const e=ssEnt();
-  return !!(e&&(e[k]===1||e.pack===1));
+  return !!(e&&e[k]===1);
 }
 async function ssPost(path,body){
   const c=cloudCfg(),r=await fetch(c.w+'/v1/'+path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(Object.assign({r:c.r,o:c.o},body||{}))});
@@ -12654,35 +12658,35 @@ async function ssPayApply(){
   }catch(e){}
 }
 function ssUpsell(k){
-  const o=k==='pack'?SSPACK:SSOPT.find(x=>x.k===k);if(!o)return '';
+  const o=SSOPT.find(x=>x.k===k);if(!o)return '';
   const own=ssOwner();
   return `<div class="card ssup" style="text-align:center;padding:26px 18px"><h3 style="margin:0 0 6px">${esc(o.n)}</h3>
    <p class="muted" style="margin:0 0 12px">${esc(o.d||'')}</p>
    <p style="margin:0 0 14px"><b>${ssEur(o.p)}</b> HT par mois, sans engagement, résiliable à tout moment.</p>
-   ${own&&isAdmin()?`<button type="button" class="btn primary" data-act="ss_buy" data-k="${k}">Activer cette option</button> <button type="button" class="btn" data-act="ss_go">Voir toutes les extensions</button>`
-    :`<p class="muted" style="margin:0">Cette option se règle depuis l’appareil du propriétaire de l’espace (Paramètres › Extensions).</p>`}</div>`;
+   ${own&&isAdmin()?`<button type="button" class="btn primary" data-act="ss_buy" data-k="${k}">Activer cette option</button> <button type="button" class="btn" data-act="ss_go">Ouvrir l’App Store</button>`
+    :`<p class="muted" style="margin:0">Cette option se règle depuis l’appareil du propriétaire de l’espace (menu App Store).</p>`}</div>`;
 }
 /* où ouvrir chaque extension (vue, onglet) */
-const EXTNAV={cast:['params','ptv'],qr:['resa','entrees'],wallet:['params','pwal'],export:['gestion','rapports']};
+const EXTNAV={cast:['params','ptv'],qr:['resa','entrees'],wallet:['params','pwal'],export:['gestion','rapports'],staff:['staff','sjour'],fid:['clients','fidelite']};
 function vSetAbo(m){
   if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
-  const paid=ssOn(),own=ssOwner(),e=ssEnt()||{},any=Object.keys(e).some(x=>x!=='at');
+  const paid=ssOn(),own=ssOwner(),e=ssEnt()||{},any=SSOPT.some(o=>!o.free&&!o.soon&&e[o.k]===1);
   const open=o=>{const n=EXTNAV[o.k];if(!n)return o.k==='ia'?'<span class="muted" style="font-size:13px">Dans la barre de recherche, en haut</span>':'';
     return tabsFor(n[0]).some(x=>x[0]===n[1])?`<button type="button" class="btn" data-act="goto" data-v="${n[0]}" data-t="${n[1]}">Ouvrir</button>`:'<span class="muted" style="font-size:13px">Masquée (Personnaliser)</span>'};
-  const row=o=>{const on=!paid||(o.k==='pack'?e.pack===1:(e[o.k]===1||e.pack===1));const viaPack=paid&&on&&e.pack===1&&o.k!=='pack';
-    return `<div class="row" style="align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)"><span class="grow"><b>${esc(o.n)}</b>${o.d?`<span class="muted" style="display:block;font-size:13px">${esc(o.d)}</span>`:''}</span>
-     ${paid?`<span style="white-space:nowrap;text-align:right"><b>${ssEur(o.p)}</b><span class="muted"> /mois</span></span>`:''}
-     ${on?`<span class="pill" style="background:var(--ok-bg,#e4f7ec);color:var(--ok,#157347)">${!paid?'Incluse':viaPack?'Inclus dans le pack':'Actif'}</span>${o.k==='pack'?'':open(o)}`
-       :(own?`<button type="button" class="btn ${o.k==='pack'?'primary':''}" data-act="ss_buy" data-k="${o.k}" ${SS.busy?'disabled':''}>Activer</button>`:'')}</div>`};
-  m.innerHTML=`<div class="card"><h3>Extensions</h3>
-   ${paid?`<p class="muted" style="margin:0 0 6px">Lago est gratuit : la caisse, les réservations, le planning et les rapports de base n’ont pas de prix. Les extensions ajoutent des fonctions, au mois, sans engagement. Prix hors taxes ; la TVA est ajoutée au paiement.</p>
-   ${own?'':'<div class="banner"><span>Seul l’appareil du propriétaire (celui qui a créé cet espace) peut activer ou résilier une extension.</span></div>'}
-   ${row(SSPACK).replace('<b>'+esc(SSPACK.n)+'</b>','<b>'+esc(SSPACK.n)+'</b><span class="muted" style="display:block;font-size:13px">Toutes les extensions ci-dessous, au prix d’un pack (au lieu de '+ssEur(SSOPT.reduce((a,x)=>a+x.p,0))+').</span>')}`
-   :`<p class="muted" style="margin:0 0 6px">Les extensions ajoutent des fonctions à Lago. Sur cet appareil, elles sont toutes incluses, sans frais.</p>`}
-   ${SSOPT.map(row).join('')}
-   ${paid&&own&&any?`<div class="acts" style="margin-top:12px"><button type="button" class="btn" data-act="ss_portal">Factures, moyen de paiement, résiliation</button></div>`:''}
-   ${paid?`<p class="muted" id="ss_msg" style="margin:10px 0 0">Après le paiement, l’extension s’active toute seule en quelques secondes.</p>`:''}</div>`;
+  const rank=o=>o.soon?2:o.free?1:0;
+  const card=o=>{
+    const on=o.free||(!paid&&!o.soon)||e[o.k]===1,soon=!!o.soon&&!on;
+    const pill=o.free?'<span class="pill ok">Offerte</span>':soon?'<span class="pill">Bientôt</span>':on?`<span class="pill ok">${paid?'Active':'Incluse'}</span>`:'';
+    const price=paid&&!o.free&&!o.soon?`<p class="asp"><b>${ssEur(o.p)}</b><span class="muted"> HT par mois</span></p>`:'';
+    const act=soon?'<span class="muted" style="font-size:13px">Disponible plus tard</span>':on?open(o):(own?`<button type="button" class="btn primary" data-act="ss_buy" data-k="${o.k}" ${SS.busy?'disabled':''}>Activer</button>`:'<span class="muted" style="font-size:13px">Réservé au propriétaire</span>');
+    return `<div class="card asc"><div class="asch"><h3>${esc(o.n)}</h3>${pill}</div><p class="muted">${esc(o.d||'')}</p>${price}<div class="acts">${act}</div></div>`};
+  m.innerHTML=`<p class="muted" style="margin:0 0 12px;max-width:62ch">${paid?'Lago est gratuit : la caisse, les réservations, les clients, la gestion et les rapports n’ont pas de prix. Les extensions ajoutent des fonctions, au mois, sans engagement. Prix hors taxes ; la TVA est ajoutée au paiement.':'Les extensions ajoutent des fonctions à Lago. Sur cet appareil, elles sont toutes incluses, sans frais.'}</p>
+   ${paid&&!own?'<div class="banner" style="margin-bottom:12px"><span>Seul l’appareil du propriétaire (celui qui a créé cet espace) peut activer ou résilier une extension.</span></div>':''}
+   <div class="asg">${SSOPT.slice().sort((a,b)=>rank(a)-rank(b)).map(card).join('')}</div>
+   ${paid&&own&&any?`<div class="acts" style="margin-top:14px"><button type="button" class="btn" data-act="ss_portal">Factures, moyen de paiement, résiliation</button></div>`:''}
+   ${paid?`<p class="muted" id="ss_msg" style="margin:10px 0 0">Après le paiement, l’extension s’active toute seule en quelques secondes.</p>`:''}`;
 }
+function vAppStore(m){m.innerHTML=head('App Store')+'<div id="sub"></div>';vSetAbo($('#sub'))}
 async function ssBuy(k){
   if(SS.busy)return;SS.busy=k;const msg=$('#ss_msg');if(msg)msg.textContent='Ouverture du paiement sécurisé…';
   try{const j=await ssPost('checkout',{opt:k});if(!/^https:\/\/(checkout|billing)\.stripe\.com\//.test(j.url||''))throw new Error('Réponse inattendue');location.href=j.url}
@@ -12742,13 +12746,13 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act^="ss_"]');if(!b)return;
   const a=b.dataset.act;
   if(a==='ss_buy'){if(!isAdmin()||!ssOwner()){toast('Réservé au propriétaire de l’espace');return}ssBuy(b.dataset.k)}
-  else if(a==='ss_go'){const md=$('#modal');if(md)md.innerHTML='';view='params';tab.params='pabo';render()}
+  else if(a==='ss_go'){closeModal();if(location.hash==='#appstore')route();else location.hash='appstore'}
   else if(a==='ss_portal')ssPortal();
   else if(a==='ss_conn')ssConnStart();
   else if(a==='ss_connref'){b.disabled=true;ssConnLoad().finally(()=>{b.disabled=false})}
 });
-TABS.params.splice(1,0,['pabo','Extensions']);SUBS.pabo=vSetAbo;
-PGRP.unshift(['abo','Extensions',['pabo']]);
+IC.store='<path d="M4 9l1.500-5h13L20 9"/><path d="M5 12v8h14v-8"/><path d="M4 9a2.670 2.670 0 0 0 5.330 0 2.670 2.670 0 0 0 5.340 0A2.670 2.670 0 0 0 20 9"/><path d="M10 20v-4h4v4"/>';
+NAV.splice(NAV.findIndex(n=>n[0]==='params'),0,['appstore','App Store','store','Apps']);VIEWS.appstore=vAppStore;
 setTimeout(ssLoad,900);setInterval(()=>{if(!document.hidden)ssLoad()},60000);addEventListener('focus',()=>{ssLoad();ssPayApply()});
 setTimeout(ssPayApply,2500);setInterval(()=>{if(!document.hidden)ssPayApply()},60000);
 /* retour de Stripe : abonnement payé (on attend l'activation) ou compte connecté */
@@ -12757,7 +12761,7 @@ setTimeout(()=>{
   try{
     const q=new URLSearchParams(location.search),a=q.get('abonnement'),s=q.get('stripe');
     if(a||s){history.replaceState(null,'',location.pathname+location.hash)}
-    if(a==='ok'){toast('Paiement reçu : activation en cours…');let n=0;const t=setInterval(()=>{ssLoad();if(++n>20)clearInterval(t)},3000);view='params';tab.params='pabo';try{render()}catch(e){}}
+    if(a==='ok'){toast('Paiement reçu : activation en cours…');let n=0;const t=setInterval(()=>{ssLoad();if(++n>20)clearInterval(t)},3000);location.hash='appstore';try{route()}catch(e){}}
     else if(a==='annule')toast('Paiement annulé : rien n’a été débité');
     if(s){view='params';tab.params='ppay';ssConnLoad(false).finally(()=>{try{render()}catch(e){}})}
   }catch(e){}
@@ -12777,6 +12781,52 @@ function instBar(){
 document.addEventListener('click',e=>{
   if(e.target.closest&&e.target.closest('#instno')){instOff(true);return}
   if(e.target.closest&&e.target.closest('#instgo')&&INST){const p=INST;INST=null;try{p.prompt();Promise.resolve(p.userChoice).then(c=>{if(c&&c.outcome==='accepted')instOff(false);else instBar()}).catch(()=>{})}catch(err){}instBar()}
+});
+/* ---------- v112 : guide de démarrage (Paramètres › Guide) + produits de départ minimaux ---------- */
+const gd=()=>{const g=S.settings.guide;return g&&typeof g==='object'?g:(S.settings.guide={})};
+const gDone=()=>{const g=gd();return g.done&&typeof g.done==='object'?g.done:(g.done={})};
+const gSee=(v,t)=>{try{return !opHidden(v)&&(!t||tabsFor(v).some(x=>x[0]===t))}catch(e){return true}};
+const GSTEPS=[
+ {id:'demo',t:'Effacer les exemples',d:'Les ventes, clients et plannings d’exemple servent à découvrir Lago. Quand vous êtes prêt, supprimez-les dans « Données de démonstration » : vos réglages sont conservés.',v:'params',tab:'pgen',b:'Ouvrir Général',on:()=>{try{return demoCount()>0}catch(e){return false}}},
+ {id:'etab',t:'Le nom de votre établissement',d:'Vérifiez le nom et l’e-mail d’envoi : ils apparaissent sur les tickets et dans les e-mails à vos clients. Réglez aussi le fond de caisse.',v:'params',tab:'pgen',b:'Ouvrir Général'},
+ {id:'hours',t:'Vos horaires et votre capacité',d:'Indiquez vos jours et heures d’ouverture, et combien de personnes vous accueillez en même temps.',v:'params',tab:'ppark',b:'Régler les horaires'},
+ {id:'prod',t:'Vos produits et vos prix',d:'Lago démarre avec seulement 3 produits d’exemple. Touchez un produit pour changer son nom, son prix TTC et sa TVA, ou « Nouveau produit » pour ajouter les vôtres.',v:'gestion',tab:'produits',b:'Ouvrir les produits'},
+ {id:'ideas',t:'Besoin d’idées ? (facultatif)',d:'Ajoutez d’un coup les produits habituels de votre métier, puis supprimez ceux dont vous n’avez pas besoin. Choisissez « Ajouter les produits manquants » : vos produits ne sont pas touchés.',v:'params',tab:'pmetier',b:'Voir les exemples de mon métier'},
+ {id:'team',t:'Votre équipe',d:'Ajoutez vos employés, puis créez leur compte ou envoyez-leur le lien d’équipe. Chacun ne voit que ce que vous autorisez.',v:'params',tab:'pteam',b:'Ajouter mon équipe'},
+ {id:'sale',t:'Une première vente pour essayer',d:'Touchez un produit, encaissez, puis regardez le ticket. Les totaux se retrouvent ensuite dans Gestion › Rapports.',v:'caisse',tab:'',b:'Ouvrir la caisse'},
+ {id:'web',t:'Réservation en ligne (facultatif)',d:'Si vos clients réservent eux-mêmes, activez la page de réservation et copiez son lien sur votre site ou vos réseaux.',v:'params',tab:'pweb',b:'Régler la réservation en ligne'},
+ {id:'save',t:'Sauvegarde et installation',d:'Téléchargez de temps en temps une copie de vos données. Ajoutez aussi Lago à l’écran d’accueil de chaque appareil pour l’ouvrir comme une application.',v:'params',tab:'psante',b:'Ouvrir Santé'}
+];
+const gSteps=()=>GSTEPS.filter(s=>(!s.on||s.on())&&gSee(s.v,s.tab));
+function gDraw(){try{render()}catch(e){}}
+function vSetGuide(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const L=gSteps(),dn=gDone(),n=L.filter(s=>dn[s.id]).length;
+  m.innerHTML=`<div class="card"><h3>Bien démarrer avec Lago</h3><p class="muted" style="margin:0 0 10px">Suivez ces étapes dans l’ordre. Chaque bouton ouvre le bon écran. Quand une étape est réglée, touchez « C’est fait ». Vous pouvez revenir ici quand vous voulez.</p>
+    <div class="bar" style="margin:6px 0 8px"><i style="width:${L.length?Math.round(n/L.length*100):0}%"></i></div><p class="muted" style="margin:0">${n} étape${n>1?'s':''} faite${n>1?'s':''} sur ${L.length}</p></div>`
+   +L.map((s,i)=>`<div class="card gd${dn[s.id]?' ok':''}"><div class="gdt"><span class="gdn">${dn[s.id]?'✓':i+1}</span><h3>${esc(s.t)}</h3></div><p>${esc(s.d)}</p>
+     <div class="acts"><button class="btn primary" data-act="goto" data-v="${s.v}"${s.tab?` data-t="${s.tab}"`:''}>${esc(s.b)}</button><button class="btn" data-act="g112_tick" data-id="${s.id}">${dn[s.id]?'Remettre à faire':'C’est fait'}</button></div></div>`).join('')
+   +`<div class="card"><h3>Pour aller plus loin</h3><p class="muted" style="margin:0 0 10px">Version Simple ou Complète, couleurs et logo : « Personnaliser ». Les extensions (écran TV, QR code…) sont dans « Extensions ».</p>
+     <div class="acts">${gSee('params','pstudio')?'<button class="btn" data-act="goto" data-v="params" data-t="pstudio">Personnaliser</button>':''}${gSee('appstore')?'<button class="btn" data-act="goto" data-v="appstore">App Store</button>':''}<button class="btn" data-act="g112_hide">${gd().hide?'Afficher le guide sur l’accueil':'Masquer le guide de l’accueil'}</button></div></div>`;
+}
+TABS.params.splice(1,0,['pguide','Guide de démarrage']);SUBS.pguide=vSetGuide;
+PGRP.unshift(['guide','Guide',['pguide']]);
+/* carte « Bienvenue » sur l'accueil : espaces neufs seulement, jusqu'à ce que le guide soit fini ou masqué */
+function gHome(m){
+  if(!isAdmin()||m.querySelector('.gdhome'))return;
+  const g=S.settings.guide;if(!g||!g.new||g.hide)return;
+  const L=gSteps(),dn=gDone(),left=L.filter(s=>!dn[s.id]);if(!left.length)return;
+  const c=document.createElement('div');c.className='card gdhome';
+  c.innerHTML=`<div><b>Bienvenue ! Configurons votre Lago.</b><p class="muted" style="margin:2px 0 0">${L.length-left.length} étape${L.length-left.length>1?'s':''} faite${L.length-left.length>1?'s':''} sur ${L.length}. Prochaine étape : ${esc(left[0].t)}.</p></div><div class="acts"><button class="btn primary" data-act="goto" data-v="params" data-t="pguide">Ouvrir le guide</button><button class="btn" data-act="g112_hide">Masquer</button></div>`;
+  const h=m.querySelector('.hero');if(h)h.insertAdjacentElement('afterend',c);else m.insertAdjacentElement('afterbegin',c);
+}
+VIEWS.accueil=(o=>function(m){o.apply(this,arguments);try{gHome(m)}catch(e){}})(VIEWS.accueil);
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('[data-act="g112_tick"],[data-act="g112_hide"]');if(!b||!isAdmin())return;
+  const g=gd();
+  if(b.dataset.act==='g112_tick'){const d=gDone();if(d[b.dataset.id])delete d[b.dataset.id];else d[b.dataset.id]=1}
+  else g.hide=g.hide?0:1;
+  save();gDraw();
 });
 init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();try{if(evDemoFill())save()}catch(e){}applySettings();cart=newCart();chrome();route();bootGate();v108Boot();instBar();
 })();

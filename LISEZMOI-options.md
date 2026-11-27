@@ -3,14 +3,32 @@
 Lago est **gratuit**. Rien n'est verrouillé tant que `"enforce"` vaut `false` dans `plans.json`, et rien ne l'est jamais
 hors des espaces créés en libre-service (ceux-ci achètent leurs options via le serveur décrit dans `cloud/LISEZMOI.md`).
 
+## Les options (menu « App Store » de l'application)
+Tout le monde voit le menu **App Store** (administrateur) : la liste des extensions, leur prix et leur état.
+Prix en euros hors taxes par mois, fixés dans `SSOPT` (`app.js`) et `OPTIONS` (`cloud/worker.js`), à garder identiques :
+
+| Option (clé) | Prix | Ce qu'elle débloque |
+|---|---|---|
+| Écran TV (`cast`) | 11,99 € | Paramètres › Écran TV |
+| Planning staff (`staff`) | 7,99 € | Planning staff : équipe, jour, mon planning, échanges, congés |
+| Fidélité et mailing (`fid`) | 6,99 € | Clients › Fidélité et Mailing, Paramètres › Fidélité |
+| Carte de fidélité wallet (`wallet`) | 4,99 € | Cartes Apple Wallet / Google Wallet |
+| Check-in par QR code (`qr`) | 3,99 € | Planning clients › Entrées |
+| Recherche et assistant IA (`ia`) | offerte | |
+| Rapports et exports (`export`) | offerte | |
+| Multi-établissements (`multi`) | bientôt | activée à la main par l'équipe Lago |
+
+Pas de pack, pas de support prioritaire. Le verrouillage est **activé** (`"enforce": true`) : dans un espace créé en libre-service,
+Planning staff et Fidélité/mailing sont verrouillés tant que l'option n'est pas payée. Les espaces existants (hors libre-service) ne sont jamais verrouillés.
+
 ## Choisir ce qui est payant (`plans.json`, sans nouvelle version)
 1. `"gates"` : pour chaque fonction à verrouiller, écrire `"clé": "option"` avec une option du serveur
-   (`cast`, `qr`, `wallet`, `ia`, `multi`, `export`, `support`, ou `pack`).
+   (`cast`, `staff`, `fid`, `wallet` ou `qr` : les seules vendues).
 2. Passer `"enforce"` à `true` : tous les Lago le prennent en compte à leur prochain lancement.
 
     {
       "enforce": true,
-      "gates": { "blk:stats_cat": "export", "act:planpdf": "export", "tab:ptv": "cast" }
+      "gates": { "tab:equipe": "staff", "tab:fidelite": "fid", "tab:ptv": "cast" }
     }
 
 | Clé | Ce qu'elle verrouille |
