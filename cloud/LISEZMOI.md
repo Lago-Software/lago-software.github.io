@@ -36,7 +36,7 @@ wrangler deploy
 Facultatif : Turnstile (`TURNSTILE_SECRET`) et un espace KV `RL` (5 inscriptions par heure et par adresse IP).
 
 ### D. Brancher le site
-Mettre l'adresse du Worker dans `LAGO_CLOUD` (début de `telecharger.html` de chaque langue). L'appli n'a rien à configurer : le lien d'inscription renvoyé par le Worker contient déjà son adresse (`w`). Tant que `LAGO_CLOUD` est vide, le site propose la demande par e-mail.
+Mettre l’adresse du Worker dans `LAGO_CLOUD` (début de `lago.js`). L'appli n'a rien à configurer : le lien d'inscription renvoyé par le Worker contient déjà son adresse (`w`). Tant que `LAGO_CLOUD` est vide, le site propose la demande par e-mail.
 L'adresse du Worker doit se terminer par `.workers.dev` ou `.lago-caisse.fr` (liste blanche de la page de paiement client : `payer.html`, variable `WURL`, et sa balise CSP `connect-src`). Autre domaine : modifier ces deux endroits (et `app.js`, `reserver.html`).
 `ALLOW_ORIGINS` doit contenir `https://lago-software.github.io` (retours de paiement) et `https://lago-caisse.fr` (inscription).
 
