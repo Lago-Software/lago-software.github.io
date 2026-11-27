@@ -5269,7 +5269,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v108';
+const LAGO_V='v109';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -12538,7 +12538,7 @@ document.addEventListener('click',e=>{
   const k=b.dataset.k;if(k==='perso')return;if(!MODES[k])return;
   modeApply(k);save();chrome();render();toast('Version « '+MODES[k].l+' » activée')
 });
-/* en version Simple : seuls quelques réglages sont affichés (l'onglet Abonnement n'existe que dans les espaces en libre-service) */
+/* en version Simple : seuls quelques réglages sont affichés (l'onglet Extensions est toujours proposé) */
 tabsFor=(o=>function(id){const L=o.apply(this,arguments);if(id!=='params')return L;
   let r=L;
   if(modeKey()==='simple')r=r.filter(x=>MODES.simple.par.includes(x[0]));
@@ -12643,24 +12643,29 @@ function ssUpsell(k){
   return `<div class="card ssup" style="text-align:center;padding:26px 18px"><h3 style="margin:0 0 6px">${esc(o.n)}</h3>
    <p class="muted" style="margin:0 0 12px">${esc(o.d||'')}</p>
    <p style="margin:0 0 14px"><b>${ssEur(o.p)}</b> HT par mois, sans engagement, résiliable à tout moment.</p>
-   ${own&&isAdmin()?`<button type="button" class="btn primary" data-act="ss_buy" data-k="${k}">Activer cette option</button> <button type="button" class="btn" data-act="ss_go">Voir toutes les options</button>`
-    :`<p class="muted" style="margin:0">Cette option se règle depuis l’appareil du propriétaire de l’espace (Paramètres › Abonnement).</p>`}</div>`;
+   ${own&&isAdmin()?`<button type="button" class="btn primary" data-act="ss_buy" data-k="${k}">Activer cette option</button> <button type="button" class="btn" data-act="ss_go">Voir toutes les extensions</button>`
+    :`<p class="muted" style="margin:0">Cette option se règle depuis l’appareil du propriétaire de l’espace (Paramètres › Extensions).</p>`}</div>`;
 }
+/* où ouvrir chaque extension (vue, onglet) */
+const EXTNAV={cast:['params','ptv'],qr:['resa','entrees'],wallet:['params','pwal'],export:['gestion','rapports']};
 function vSetAbo(m){
   if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
-  const own=ssOwner(),e=ssEnt()||{},any=Object.keys(e).some(x=>x!=='at');
-  const row=o=>{const on=o.k==='pack'?e.pack===1:(e[o.k]===1);const viaPack=on&&e.pack===1&&o.k!=='pack';
+  const paid=ssOn(),own=ssOwner(),e=ssEnt()||{},any=Object.keys(e).some(x=>x!=='at');
+  const open=o=>{const n=EXTNAV[o.k];if(!n)return o.k==='ia'?'<span class="muted" style="font-size:13px">Dans la barre de recherche, en haut</span>':'';
+    return tabsFor(n[0]).some(x=>x[0]===n[1])?`<button type="button" class="btn" data-act="goto" data-v="${n[0]}" data-t="${n[1]}">Ouvrir</button>`:'<span class="muted" style="font-size:13px">Masquée (Personnaliser)</span>'};
+  const row=o=>{const on=!paid||(o.k==='pack'?e.pack===1:(e[o.k]===1||e.pack===1));const viaPack=paid&&on&&e.pack===1&&o.k!=='pack';
     return `<div class="row" style="align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)"><span class="grow"><b>${esc(o.n)}</b>${o.d?`<span class="muted" style="display:block;font-size:13px">${esc(o.d)}</span>`:''}</span>
-     <span style="white-space:nowrap;text-align:right"><b>${ssEur(o.p)}</b><span class="muted"> /mois</span></span>
-     ${on?`<span class="pill" style="background:var(--ok-bg,#e4f7ec);color:var(--ok,#157347)">${viaPack?'Inclus dans le pack':'Actif'}</span>`
+     ${paid?`<span style="white-space:nowrap;text-align:right"><b>${ssEur(o.p)}</b><span class="muted"> /mois</span></span>`:''}
+     ${on?`<span class="pill" style="background:var(--ok-bg,#e4f7ec);color:var(--ok,#157347)">${!paid?'Incluse':viaPack?'Inclus dans le pack':'Actif'}</span>${o.k==='pack'?'':open(o)}`
        :(own?`<button type="button" class="btn ${o.k==='pack'?'primary':''}" data-act="ss_buy" data-k="${o.k}" ${SS.busy?'disabled':''}>Activer</button>`:'')}</div>`};
-  m.innerHTML=`<div class="card"><h3>Votre abonnement</h3>
-   <p class="muted" style="margin:0 0 6px">Lago est gratuit : la caisse, les réservations, le planning et les rapports de base n’ont pas de prix. Vous n’ajoutez que les options dont vous avez besoin, au mois, sans engagement. Prix hors taxes ; la TVA est ajoutée au paiement.</p>
-   ${own?'':'<div class="banner"><span>Seul l’appareil du propriétaire (celui qui a créé cet espace) peut activer ou résilier une option.</span></div>'}
-   ${row(SSPACK).replace('<b>'+esc(SSPACK.n)+'</b>','<b>'+esc(SSPACK.n)+'</b><span class="muted" style="display:block;font-size:13px">Toutes les options ci-dessous, au prix d’un pack (au lieu de '+ssEur(SSOPT.reduce((a,x)=>a+x.p,0))+').</span>')}
+  m.innerHTML=`<div class="card"><h3>Extensions</h3>
+   ${paid?`<p class="muted" style="margin:0 0 6px">Lago est gratuit : la caisse, les réservations, le planning et les rapports de base n’ont pas de prix. Les extensions ajoutent des fonctions, au mois, sans engagement. Prix hors taxes ; la TVA est ajoutée au paiement.</p>
+   ${own?'':'<div class="banner"><span>Seul l’appareil du propriétaire (celui qui a créé cet espace) peut activer ou résilier une extension.</span></div>'}
+   ${row(SSPACK).replace('<b>'+esc(SSPACK.n)+'</b>','<b>'+esc(SSPACK.n)+'</b><span class="muted" style="display:block;font-size:13px">Toutes les extensions ci-dessous, au prix d’un pack (au lieu de '+ssEur(SSOPT.reduce((a,x)=>a+x.p,0))+').</span>')}`
+   :`<p class="muted" style="margin:0 0 6px">Les extensions ajoutent des fonctions à Lago. Sur cet appareil, elles sont toutes incluses, sans frais.</p>`}
    ${SSOPT.map(row).join('')}
-   ${own&&any?`<div class="acts" style="margin-top:12px"><button type="button" class="btn" data-act="ss_portal">Factures, moyen de paiement, résiliation</button></div>`:''}
-   <p class="muted" id="ss_msg" style="margin:10px 0 0">Après le paiement, l’option s’active toute seule en quelques secondes.</p></div>`;
+   ${paid&&own&&any?`<div class="acts" style="margin-top:12px"><button type="button" class="btn" data-act="ss_portal">Factures, moyen de paiement, résiliation</button></div>`:''}
+   ${paid?`<p class="muted" id="ss_msg" style="margin:10px 0 0">Après le paiement, l’extension s’active toute seule en quelques secondes.</p>`:''}</div>`;
 }
 async function ssBuy(k){
   if(SS.busy)return;SS.busy=k;const msg=$('#ss_msg');if(msg)msg.textContent='Ouverture du paiement sécurisé…';
@@ -12726,9 +12731,8 @@ document.addEventListener('click',e=>{
   else if(a==='ss_conn')ssConnStart();
   else if(a==='ss_connref'){b.disabled=true;ssConnLoad().finally(()=>{b.disabled=false})}
 });
-TABS.params.splice(1,0,['pabo','Abonnement']);SUBS.pabo=vSetAbo;
-PGRP.unshift(['abo','Abonnement',['pabo']]);
-tabsFor=(o=>function(id){const L=o.apply(this,arguments);return id==='params'&&!ssOn()?L.filter(x=>x[0]!=='pabo'):L})(tabsFor);
+TABS.params.splice(1,0,['pabo','Extensions']);SUBS.pabo=vSetAbo;
+PGRP.unshift(['abo','Extensions',['pabo']]);
 setTimeout(ssLoad,900);setInterval(()=>{if(!document.hidden)ssLoad()},60000);addEventListener('focus',()=>{ssLoad();ssPayApply()});
 setTimeout(ssPayApply,2500);setInterval(()=>{if(!document.hidden)ssPayApply()},60000);
 /* retour de Stripe : abonnement payé (on attend l'activation) ou compte connecté */
