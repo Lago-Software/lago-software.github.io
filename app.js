@@ -219,7 +219,7 @@ function init(){
   let st=null,raw=msBoot();try{st=JSON.parse(raw||'null')}catch(e){msCorrupt(raw)}
   if(st&&st.products){S=st;S.settings=Object.assign(defaultSettings(),S.settings);migratePalette(S.settings);if(S.seedDay!==today()&&!cloudOn()&&!S.noDemo&&S.sales.every(s=>s.demo)){S.sales=seedSales();S.events=seedEvents();S.seedDay=today();S.closures=seedClosures();save()}}
   else{S={products:seedProducts(),clients:seedClients(),sales:[],closures:[],settings:defaultSettings(),seedDay:today()};
-    S.sales=seedSales();S.closures=seedClosures();number();save()}
+    S.sales=seedSales();S.closures=seedClosures();modeApply(NEW_MODE);number();save()}
   number();
   if(!S.staff){S.events=seedEvents();S.mails=[];S.staff=seedStaff();S.leaves=seedLeaves();S.shifts={};S.checks=seedChecks();seedShifts();save()}
   S.shifts=S.shifts||{};S.events=S.events||[];S.mails=S.mails||[];
@@ -297,6 +297,8 @@ function tabbedBase(m,title){
   {const L=tabsFor(view);if(L.length&&!L.some(x=>x[0]===tab[view]))tab[view]=L[0][0]}
   m.innerHTML=head(title)+tabsBar(view)+`<div id="sub"></div>`;
   try{m.querySelectorAll('.tabs button.on').forEach(b=>{const bar=b.parentNode;if(bar.scrollWidth>bar.clientWidth+2)bar.scrollLeft+=b.getBoundingClientRect().left-bar.getBoundingClientRect().left-(bar.clientWidth-b.offsetWidth)/2})}catch(e){}
+  try{m.querySelectorAll('.tabs button[data-id]').forEach(b=>{if(!gateOk('tab:'+b.dataset.id))b.classList.add('lk')})}catch(e){}
+  if(!gateOk('tab:'+tab[view])){const lb=((tabsFor(view).find(x=>x[0]===tab[view]))||[])[1];$('#sub').innerHTML=lockCard('tab:'+tab[view],lb);return}
   SUBS[tab[view]]($('#sub'));
 }
 function vPlanning(m){tabbed(m,'Planning')}
@@ -563,7 +565,7 @@ function vReportsV0(m){
     <div class="kpi"><div class="l">${CAPP()}</div><div class="v num">${jp}</div></div></div>
   <div class="card" style="margin-bottom:14px"><h3>Chiffre d’affaires par heure</h3><div class="chartwrap">${svg}</div></div>
   <div class="cols"><div class="card"><h3>Moyens de paiement</h3>${Object.entries(pm).sort((a,b)=>b[1]-a[1]).map(([k,v])=>mr(METHODS[k],eur(v),Math.round(v/pmTot*100))).join('')||'<p class="muted">Aucun encaissement aujourd’hui.</p>'}</div>
-    <div class="card"><h3>Ventes par catégorie</h3>${CATS.filter(c=>ct[c.id]).map(c=>mr(c.name,eur(ct[c.id]),Math.round(ct[c.id]/(ca||1)*100),`background:var(${c.v})`)).join('')||'<p class="muted">Aucune vente aujourd’hui.</p>'}</div></div>
+    <div class="card" data-gate="stats_cat" data-gl="Les ventes par catégorie"><h3>Ventes par catégorie</h3>${CATS.filter(c=>ct[c.id]).map(c=>mr(c.name,eur(ct[c.id]),Math.round(ct[c.id]/(ca||1)*100),`background:var(${c.v})`)).join('')||'<p class="muted">Aucune vente aujourd’hui.</p>'}</div></div>
   <div class="cols"><div class="card"><h3>Clôture de caisse</h3>
     <div class="sum" style="margin-bottom:12px"><div class="r"><span>Fond de caisse</span><span class="num">${eur(S.settings.fond)}</span></div><div class="r"><span>Espèces encaissées</span><span class="num">${eur(cash)}</span></div><div class="r k"><span>Espèces attendues</span><span class="num">${eur(exp)}</span></div></div>
     ${clo?`<div class="success">${ic('check')}<span>Clôturée à ${hm(clo.ts)}, écart ${clo.diff>0?'+':''}${eur(clo.diff)}</span></div>`:
@@ -3091,7 +3093,7 @@ function vStats(m){
    <div class="kpis st6">${kp('Chiffre d’affaires',eurN(cur.ca),dlt(cur.ca,prev.ca),'vs période précédente')}${kp('Tickets',cur.n,dlt(cur.n,prev.n))}${kp('Panier moyen',eurN(cur.avg),dlt(cur.avg,prev.avg))}${kp(CAPP(),cur.jp,dlt(cur.jp,prev.jp))}${kp('CA par sauteur',eurN(cur.perJ),dlt(cur.perJ,prev.perJ))}${kp('Clients identifiés',cur.n?Math.round(withCl/cur.n*100)+' %':'–',null,'des tickets')}</div>
    ${aiOk()?`<div class="card ai-sum"><button class="btn ai" data-act="stai" ${ctl.busy?'disabled':''}>${ic('wave')}Résumé et conseils IA</button><p class="aiout" id="stai">${esc(ctl.stAi||'')}</p></div>`:''}
    <div class="card"><div class="mtitle"><h3>Chiffre d’affaires par jour</h3><span class="muted">moyenne ${eurN(avgD)} · ligne orange</span></div><div class="bchw">${svg}</div></div>
-   <div class="cols"><div class="card"><h3>Ventes par catégorie</h3>${bars(catL.map(([c,v])=>[c+' · '+Math.round(v/catT*100)+' %',v]),eurN)}</div>
+   <div class="cols"><div class="card" data-gate="stats_cat" data-gl="Les ventes par catégorie"><h3>Ventes par catégorie</h3>${bars(catL.map(([c,v])=>[c+' · '+Math.round(v/catT*100)+' %',v]),eurN)}</div>
     <div class="card"><h3>Produits les plus vendus</h3>${bars(top.map(([n,p])=>[n+' ×'+p.q,p.v]),eurN,'var(--pay)')}</div></div>
    <div class="card"><h3>Heures de pointe <span class="muted" style="font-weight:500">${PLUR()} par créneau</span></h3><div class="heatw">${heatH}</div></div>
    <div class="cols"><div class="card"><h3>Modes de paiement</h3>${bars(Object.entries(pays).sort((a,b)=>b[1]-a[1]),eurN)}</div>
@@ -3232,7 +3234,7 @@ function sxTabVentes(R,cur,prev){
   const items=sumBy(cur.T,s=>sumBy(s.lines,l=>l.qty));
   return `<div class="kpis st6">${sxKpi('Chiffre d’affaires',eurN(cur.ca),dlt(cur.ca,prev.ca),'net des avoirs')}${sxKpi('Panier moyen',eurN(cur.avg),dlt(cur.avg,prev.avg))}${sxKpi('Articles par ticket',cur.n?(items/cur.n).toFixed(1).replace('.',','):'–',null,'en moyenne')}${sxKpi('Remises',eurN(cur.rem),null,cur.brut?sxPct(cur.rem,cur.brut)+' % du CA brut':'')}${sxKpi('Avoirs',eurN(cur.avo),null,cur.AV.length+' '+sxS(cur.AV.length,'annulation'))}</div>
    ${cur.ca?`<div class="card"><div class="mtitle"><h3>Chiffre d’affaires</h3><span class="muted">${R.n>62?'par semaine':'par jour'}</span></div>${sxChart(R,cur,prev)}</div>`:''}
-   <div class="cols"><div class="card"><h3>Ventes par catégorie</h3>${bars(catL.map(([c,v])=>{const d=dlt(v,pc[c]||0);return[cat(c).name+' · '+Math.round(v/catT*100)+' %'+(d!=null&&pc[c]?' ('+sxDeltaTxt(d)+')':''),v]}),eurN)}<p class="muted sx-note">Entre parenthèses : évolution par rapport à la période précédente.</p></div>
+   <div class="cols"><div class="card" data-gate="stats_cat" data-gl="Les ventes par catégorie"><h3>Ventes par catégorie</h3>${bars(catL.map(([c,v])=>{const d=dlt(v,pc[c]||0);return[cat(c).name+' · '+Math.round(v/catT*100)+' %'+(d!=null&&pc[c]?' ('+sxDeltaTxt(d)+')':''),v]}),eurN)}<p class="muted sx-note">Entre parenthèses : évolution par rapport à la période précédente.</p></div>
    <div class="card"><h3>Produits les plus vendus</h3>${bars(top.map(p=>[p.n+' ×'+p.q,p.v]),eurN,'var(--pay)')}</div></div>
    <div class="cols"><div class="card"><h3>Modes de paiement</h3>${bars(Object.entries(pays).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k+' · '+Math.round(v/payT*100)+' %',v]),eurN)}</div>
    <div class="card"><h3>Remises, codes promo et avoirs</h3><div class="mini"><div><b class="num">${nd}</b><span>${sxS(nd,'ticket')} avec remise (${cur.n?sxPct(nd,cur.n):0} %)</span></div><div><b class="num">${promoN}</b><span>${sxS(promoN,'utilisation')} de code promo</span></div><div><b class="num">${rwN}</b><span>récompense${rwN>1?'s':''} fidélité utilisée${rwN>1?'s':''}</span></div><div><b class="num">${cur.AV.length}</b><span>avoir${cur.AV.length>1?'s':''} · ${eurN(cur.avo)}</span></div></div>
@@ -3303,7 +3305,7 @@ function sxTabCats(R,cur,prev){
       <div class="sx-crb">${subs.length>1||(subs[0]&&subs[0].n!=='Sans sous-catégorie')?`<h4 class="sx-h4" style="margin-top:0">Par sous-catégorie</h4><table class="sx-t"><thead><tr><th>Sous-catégorie</th><th>Articles</th><th>CA TTC</th><th>Part</th></tr></thead><tbody>${subs.map(s=>`<tr><td>${esc(s.n)}</td><td class="num">${sxN(s.q)}</td><td class="num">${eurN(s.ttc)}</td><td class="num">${sxPct(s.ttc,x.ttc)} %</td></tr>`).join('')}</tbody></table>`:''}
        <h4 class="sx-h4">Produits les plus vendus</h4>${bars(prods.map(p=>[p.n+' ×'+sxN(p.q),p.ttc]),eurN,`var(${c.v})`)}</div></details>`};
   return `<div class="kpis st6">${sxKpi('CA TTC',eurN(tot),dlt(tot,ptot),'toutes catégories')}${sxKpi('Catégorie n°1',esc(cat(top.id).name),null,sxPct(top.ttc,tot)+' % du CA')}${sxKpi('Articles vendus',sxN(totQ),null,'net des avoirs')}${sxKpi('Prix moyen par article',eurN(avg),null,'TTC')}</div>
-   <div class="card"><div class="mtitle"><h3>Ventes par catégorie</h3><button class="btn" data-act="sx_csv">Exporter (CSV)</button></div>
+   <div class="card" data-gate="stats_cat" data-gl="Les ventes par catégorie"><div class="mtitle"><h3>Ventes par catégorie</h3><button class="btn" data-act="sx_csv">Exporter (CSV)</button></div>
     <div class="sx-cat"><div class="sx-dw">${sxDonut(L,tot)}<ul class="sx-lg">${L.map(x=>`<li><i style="background:var(${cat(x.id).v})"></i><span>${esc(cat(x.id).name)}</span><b class="num">${sxPct(x.ttc,tot)} %</b></li>`).join('')}</ul></div>
     <div class="sx-ct"><div class="sx-crh"><span>Catégorie</span><span>Articles</span><span>CA TTC</span><span class="sx-ht">CA HT</span><span>Part</span><span class="sx-ev">Évolution</span></div>${L.map(row).join('')}
     <div class="sx-crs sx-crt"><span class="sx-cn"><b>Total</b></span><span class="num">${sxN(totQ)}</span><b class="num">${eurN(tot)}</b><span class="num sx-ht">${eurN(totHt)}</span><span class="num">100 %</span><span class="sx-ev">${ptot?sxD(dlt(tot,ptot)):''}</span></div></div></div>
@@ -3712,14 +3714,14 @@ document.addEventListener('click',e=>{
   else if(a==='st_css'){st.css=$('#ucss').value;save();applyStudio();toast('Style appliqué')}
   else if(a==='st_cssclear'){st.css='';save();applyStudio();re()}
   else if(a==='st_exp')exportAll();
-  else if(a==='st_resetall'){askYes('Remettre couleurs, police, textes, CSS et fonctionnalités par défaut ? Vos données ne sont pas touchées.',()=>{st.sty={};st.font='def';st.texts={};st.css='';st.off={};st.offT={};delete st.sideColor;st.brand=PRESETS[0][1];st.accent=PRESETS[0][2];applyTheme();applyLook();save();chrome();route();toast('Personnalisation réinitialisée')},'Réinitialiser')}
+  else if(a==='st_resetall'){askYes('Remettre couleurs, police, textes, CSS et fonctionnalités par défaut ? Vos données ne sont pas touchées.',()=>{st.sty={};st.font='def';st.texts={};st.css='';st.off={};st.offT={};st.mode='complet';delete st.sideColor;st.brand=PRESETS[0][1];st.accent=PRESETS[0][2];applyTheme();applyLook();save();chrome();route();toast('Personnalisation réinitialisée')},'Réinitialiser')}
 });
 document.addEventListener('change',e=>{
   const t=e.target;if(!isAdmin())return;const st=S.settings;
   if(t.dataset.stc){const k=t.dataset.stc;if(k==='brand'||k==='accent'){st[k]=t.value;if(k==='brand')delete st.sideColor;applyTheme()}else{st.sty=st.sty||{};st.sty[k]=t.value}applyLook();save();toast('Couleur enregistrée')}
   else if(t.dataset.sfont){st.font=t.value;save();applyStudio();toast('Police appliquée')}
-  else if(t.dataset.foff){st.off=st.off||{};st.off[t.dataset.foff]=!t.checked;save();chrome();toast(t.checked?'Activé':'Désactivé')}
-  else if(t.dataset.fofft){st.offT=st.offT||{};st.offT[t.dataset.fofft]=!t.checked;save();renderNav();toast(t.checked?'Activé':'Désactivé')}
+  else if(t.dataset.foff){st.off=st.off||{};st.off[t.dataset.foff]=!t.checked;const m0=st.mode;st.mode='perso';save();chrome();if(m0!=='perso')modeRefresh();toast(t.checked?'Activé':'Désactivé')}
+  else if(t.dataset.fofft){st.offT=st.offT||{};st.offT[t.dataset.fofft]=!t.checked;const m0=st.mode;st.mode='perso';save();renderNav();if(m0!=='perso')modeRefresh();toast(t.checked?'Activé':'Désactivé')}
   else if(t.id==='bkf'&&t.files[0]){
     const f=t.files[0],rd=new FileReader();
     rd.onload=()=>{try{
@@ -4775,7 +4777,7 @@ const JM='\u0001J',NM='\u0001N',EA='\u0001A',EO='\u0001O';
 const isO=x=>!!x&&typeof x==='object';
 const same=(a,b)=>a===b||(isO(a)&&isO(b)&&JSON.stringify(a)===JSON.stringify(b));
 function cloudCfg(){try{return JSON.parse(localStorage.getItem(CKEY)||'null')}catch(e){return null}}
-function cloudOn(){const c=cloudCfg();return !!(c&&c.u&&c.r)}
+function cloudOn(){const c=cloudCfg();return !!(c&&c.u&&c.r&&gateOk('cloud'))}
 function cloudSet(c){try{c?localStorage.setItem(CKEY,JSON.stringify(c)):localStorage.removeItem(CKEY)}catch(e){}}
 const KBAD=/[.$#\[\]\/%\x00-\x1f\x7f]/,KBADG=/[.$#\[\]\/%\x00-\x1f\x7f]/g,hasOwn=Object.prototype.hasOwnProperty;
 const kEnc=k=>{k=String(k);return k===''?'%00':KBAD.test(k)?k.replace(KBADG,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0')):k};
@@ -5267,7 +5269,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v107';
+const LAGO_V='v108';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -12406,7 +12408,7 @@ function vSetWallet(m){
   const inp=(id,v,ph,mx)=>`<input id="${id}" value="${esc(v||'')}" placeholder="${esc(ph)}" maxlength="${mx}" autocomplete="off">`;
   const ck=(id,on,t)=>`<label class="check" style="margin:2px 0"><input type="checkbox" id="${id}" ${on?'checked':''}><span>${t}</span></label>`;
   m.innerHTML=`<div class="card"><h3>Carte de fidélité sur téléphone ${ok?'<span class="pill ok">Activée</span>':'<span class="pill warn">À configurer</span>'}</h3>
-   <p class="muted" style="font-size:13.5px;margin:0 0 12px">Chaque client peut mettre sa carte de fidélité dans <b>Apple Wallet</b> ou <b>Google Wallet</b>. Elle affiche son code (à scanner en caisse), ses points et son palier, et se met à jour toute seule après chaque achat. Le service s’appelle <b>WalletWallet</b> : gratuit jusqu’à 1 000 cartes créées ou modifiées par mois, sans compte développeur Apple.</p>
+   <p class="muted" style="font-size:13.5px;margin:0 0 12px">Chaque client peut mettre sa carte de fidélité dans <b>Apple Wallet</b> ou <b>Google Wallet</b>. Elle affiche son code (à scanner en caisse), ses points et son palier, et se met à jour toute seule après chaque achat. Le service s’appelle <b>WalletWallet</b> : gratuit jusqu’à 1 000 cartes créées ou modifiées par mois, sans compte développeur Apple (celui d’Apple coûte 99 $ par an). La formule gratuite a un habillage limité : logo personnalisé et notifications sont dans leur formule payante.</p>
    ${ck('wl_on',w.on,'Activer les cartes wallet')}
    ${fld('Clé WalletWallet','<input id="wl_key" type="password" value="'+esc(w.key||'')+'" placeholder="ww_live_…" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off">','Gardez-la pour vous : elle permet de créer des cartes sur votre compte. Inutile si vous utilisez un relais (ci-dessous).')}
    <details class="walrel" ${w.api?'open':''}><summary><b>Relais (avancé, facultatif)</b></summary>
@@ -12469,5 +12471,183 @@ TABS.params.splice(Math.max(1,TABS.params.findIndex(x=>x[0]==='pmail')+1),0,['pw
 /* mise à jour des points : après chaque vente, puis toutes les 30 s */
 finalize=(o=>function(){const r=o.apply(this,arguments);try{setTimeout(walFlush,2500)}catch(e){}return r})(finalize);
 setInterval(()=>{try{walFlush()}catch(e){}},30000);
-init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();try{if(evDemoFill())save()}catch(e){}applySettings();cart=newCart();chrome();route();bootGate();
+/* ======================================================================
+   v108 — Lago est GRATUIT. Les options payantes sont FACULTATIVES (modèle Hiboutik : base gratuite complète, options en plus).
+   · plans.json (à la racine du site) décide de tout, sans nouvelle version : interrupteur « enforce », options, et ce qui est verrouillé.
+   · Tant que « enforce » est faux, RIEN n'est verrouillé.
+   · Version « Simple » par défaut pour les nouvelles installations, personnalisable (Paramètres → Personnaliser).
+   · Compteur anonyme d'appareils (facultatif, adresse « stats » dans plans.json) lu dans la console propriétaire.
+   ====================================================================== */
+IC.lock='<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>';
+var PLAN=null;
+const PLAN_KEY='lago_plans',PLAN_GRACE=3*864e5,NEW_MODE='simple',DEV_KEY='lago_dev';
+const planUrl=u=>typeof u==='string'&&/^https:\/\/[^\s"'<>]+$/.test(u)?u:'';
+function planClean(c){
+  c=c&&typeof c==='object'?c:{};
+  const o={enforce:c.enforce===true,api:planUrl(c.api).replace(/\/+$/,''),stats:planUrl(c.stats).replace(/\/+$/,''),pub:null,options:{},gates:{}};
+  const p=c.pub;if(p&&typeof p==='object'&&p.kty==='EC'&&p.crv==='P-256'&&typeof p.x==='string'&&typeof p.y==='string')o.pub={kty:'EC',crv:'P-256',x:p.x,y:p.y};
+  const op=c.options&&typeof c.options==='object'?c.options:{};
+  Object.keys(op).slice(0,20).forEach(id=>{if(!/^[a-z0-9_-]{1,30}$/.test(id))return;const x=op[id]||{};
+    o.options[id]={name:String(x.name||id).slice(0,40),price:String(x.price||'').slice(0,60),blurb:String(x.blurb||'').slice(0,240),link:planUrl(x.link),portal:planUrl(x.portal),feats:(Array.isArray(x.feats)?x.feats:[]).slice(0,12).map(f=>String(f).slice(0,120))}});
+  const g=c.gates&&typeof c.gates==='object'?c.gates:{};
+  Object.keys(g).slice(0,200).forEach(k=>{if((/^(tab|act|blk):[A-Za-z0-9_-]{1,60}$/.test(k)||k==='cloud')&&o.options[g[k]])o.gates[k]=g[k]});
+  return o}
+try{const c=JSON.parse(localStorage.getItem(PLAN_KEY)||'null');if(c)PLAN=planClean(c)}catch(e){}
+
+/* ---------- licence : signée (ECDSA P-256) par le service Cloudflare, vérifiée ici ---------- */
+const LICV={opts:{}};
+const licSt=()=>{const s=S.settings;if(!s.lic||typeof s.lic!=='object')s.lic={};return s.lic};
+function licCid(){const l=licSt();if(!/^[A-Za-z0-9]{20}$/.test(l.cid||'')){const a=new Uint8Array(20);crypto.getRandomValues(a);const al='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';l.cid=[...a].map(x=>al[x%al.length]).join('');save()}return l.cid}
+const b64d=s=>{s=String(s).replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a};
+async function licCheck(tok,cid){
+  try{
+    if(!PLAN||!PLAN.pub||typeof tok!=='string'||!cid)return null;
+    const [p,sg]=tok.split('.');if(!p||!sg)return null;
+    const k=await crypto.subtle.importKey('jwk',PLAN.pub,{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+    if(!(await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},k,b64d(sg),new TextEncoder().encode(p))))return null;
+    const o=JSON.parse(new TextDecoder().decode(b64d(p)));
+    if(!o||o.v!==1||o.id!==cid||!o.opts||typeof o.opts!=='object')return null;
+    const out={};Object.keys(o.opts).forEach(k=>{if(/^[a-z0-9_-]{1,30}$/.test(k)&&+o.opts[k]>0)out[k]=+o.opts[k]});return out}
+  catch(e){return null}
+}
+async function licVerify(){const l=licSt();const o=l.tok?await licCheck(l.tok,l.cid):null;LICV.opts=o||{};if(JSON.stringify(l.ok||{})!==JSON.stringify(LICV.opts)){l.ok=LICV.opts;if(!o)delete l.tok;save()}return LICV.opts}
+const hasOpt=o=>((LICV.opts&&LICV.opts[o])||0)+PLAN_GRACE>Date.now();
+/* Demande la licence au service : { ok, n } — n = nombre d'options actives, ou erreur « net » / « conf » */
+async function licFetch(){
+  if(!PLAN||!PLAN.api||!PLAN.pub)return{ok:false,err:'conf'};
+  try{
+    const r=await fetch(PLAN.api+'/license?cid='+encodeURIComponent(licCid()),{cache:'no-store'});
+    const j=await r.json();if(!j||!j.ok)return{ok:false,err:'net'};
+    const l=licSt();
+    if(!j.tok){delete l.tok;l.ok={};LICV.opts={};save();return{ok:true,n:0}}
+    const o=await licCheck(j.tok,l.cid);if(!o)return{ok:false,err:'sig'};
+    l.tok=j.tok;l.ok=o;LICV.opts=o;l.at=Date.now();save();return{ok:true,n:Object.keys(o).length}}
+  catch(e){return{ok:false,err:'net'}}
+}
+
+/* ---------- verrous : « clés » écrites dans plans.json → option requise ---------- */
+const gateOpt=k=>(PLAN&&PLAN.gates&&PLAN.gates[k])||'';
+function gateOk(k){if(!PLAN||!PLAN.enforce)return true;const o=gateOpt(k);return !o||hasOpt(o)}
+const optOf=k=>PLAN&&PLAN.options&&PLAN.options[gateOpt(k)]||null;
+function lockInner(k,label){const o=optOf(k);return `<div class="lockc"><span class="lockic">${ic('lock')}</span><div><h3>${esc(label||'Cette fonction')} : option « ${esc(o?o.name:'payante')} »</h3>${o&&o.blurb?`<p class="muted">${esc(o.blurb)}</p>`:''}<div class="acts"><button type="button" class="btn primary" data-act="goto" data-v="params" data-t="pabo">Voir l’option</button></div></div></div>`}
+const lockCard=(k,label)=>`<div class="card">${lockInner(k,label)}</div>`;
+function upsell(k,label){showModal(`${mh('Option « '+esc(optOf(k)?optOf(k).name:'payante')+' »')}<p style="margin:0 0 8px">${esc(label||'Cette fonction')} fait partie d’une option payante.</p>${optOf(k)&&optOf(k).blurb?`<p class="muted" style="margin:0 0 8px">${esc(optOf(k).blurb)}</p>`:''}<div class="acts" style="margin-top:14px"><button type="button" class="btn" data-act="close">Plus tard</button><button type="button" class="btn primary" data-act="goto" data-v="params" data-t="pabo">Voir l’option</button></div>`)}
+/* un clic sur une action verrouillée ouvre l'explication au lieu de l'action */
+document.addEventListener('click',e=>{
+  if(!PLAN||!PLAN.enforce)return;
+  const b=e.target&&e.target.closest?e.target.closest('[data-act]'):null;if(!b)return;
+  const a=b.dataset.act;if(a==='goto'||a==='close')return;
+  const k='act:'+a;if(!gateOk(k))return void(e.preventDefault(),e.stopImmediatePropagation(),upsell(k,(b.textContent||'').trim()))
+},true);
+/* blocs verrouillés : <… data-gate="nom" data-gl="Libellé"> */
+function gateBlocks(){if(!PLAN||!PLAN.enforce)return;document.querySelectorAll('[data-gate]:not([data-gated])').forEach(el=>{const k='blk:'+el.dataset.gate;if(gateOk(k))return;el.dataset.gated='1';el.innerHTML=lockInner(k,el.dataset.gl||'')})}
+function gateWatch(){try{new MutationObserver(()=>{if(gateWatch.t)return;gateWatch.t=requestAnimationFrame(()=>{gateWatch.t=0;try{gateBlocks()}catch(e){}})}).observe(document.body,{childList:true,subtree:true})}catch(e){}}
+
+/* ---------- version Simple / Complet ---------- */
+const MODES={
+  simple:{l:'Simple',d:'Caisse, produits, clients et rapports. Le reste est masqué : vous le rajoutez quand vous en avez besoin.',off:{resa:true,staff:true,controle:true},offT:{'clients:fidelite':true,'clients:mailing':true,'clients:carnets':true,'gestion:cadeaux':true,'gestion:promos':true,'gestion:qr':true,'gestion:cse':true},par:['pgen','pmetier','pcat','pstudio','pabo']},
+  complet:{l:'Complet',d:'Tous les modules : planning clients, planning staff, contrôle, fidélité, mailing, réservation en ligne…',off:{},offT:{},par:null}
+};
+const modeKey=()=>{const k=S&&S.settings&&S.settings.mode;return k==='simple'||k==='perso'?k:'complet'};
+function modeApply(k){const m=MODES[k];if(!m)return;const st=S.settings;st.mode=k;st.off=Object.assign({},m.off);st.offT=Object.assign({},m.offT)}
+function modeRefresh(){const y=window.scrollY;render();window.scrollTo(0,y)}
+function modeCard(){
+  const k=modeKey(),cur=MODES[k]||{l:'Personnalisé',d:'Vous avez choisi vous-même ce qui s’affiche (« Menus et fonctions » ci-dessous). Tous les réglages sont visibles.'};
+  return `<div class="card modecard" style="margin-bottom:14px"><h3>Version du logiciel</h3>
+   <div class="seg" role="group" aria-label="Version du logiciel">${Object.keys(MODES).map(x=>`<button type="button" class="${k===x?'on':''}" data-act="mode_set" data-k="${x}">${MODES[x].l}</button>`).join('')}${k==='perso'?'<button type="button" class="on" data-act="mode_set" data-k="perso">Personnalisé</button>':''}</div>
+   <p class="muted" style="margin:10px 0 0;font-size:13.5px">${esc(cur.d)} Vos données ne changent pas. Pour ajuster module par module : « Menus et fonctions ».</p></div>`}
+const vSetPerso0=vSetPerso;
+vSetPerso=function(m){vSetPerso0(m);if(isAdmin())m.insertAdjacentHTML('afterbegin',modeCard())};
+SUBS.pstudio=vSetPerso;
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('[data-act="mode_set"]');if(!b||!isAdmin())return;
+  const k=b.dataset.k;if(k==='perso')return;if(!MODES[k])return;
+  modeApply(k);save();chrome();render();toast('Version « '+MODES[k].l+' » activée')
+});
+/* en version Simple : seuls quelques réglages sont affichés ; l'onglet Abonnement n'apparaît que s'il y a des options */
+tabsFor=(o=>function(id){const L=o.apply(this,arguments);if(id!=='params')return L;
+  let r=L;
+  if(modeKey()==='simple')r=r.filter(x=>MODES.simple.par.includes(x[0]));
+  if(!PLAN||!Object.keys(PLAN.options).length)r=r.filter(x=>x[0]!=='pabo');
+  return r})(tabsFor);
+
+/* ---------- Paramètres → Abonnement ---------- */
+function aboLink(o){if(!o.link)return '';try{const u=new URL(o.link);u.searchParams.set('client_reference_id',licCid());return u.toString()}catch(e){return ''}}
+const dFR=ts=>new Date(ts).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+function vSetAbo(m){
+  if(!isAdmin()){m.innerHTML='<div class="card"><p class="muted">Réservé à l’administrateur.</p></div>';return}
+  const P=PLAN,ids=P?Object.keys(P.options):[],gated=P&&P.enforce&&Object.keys(P.gates).length;
+  if(!ids.length){m.innerHTML='<div class="card"><h3>Lago est gratuit</h3><p class="muted">Aucune option payante pour le moment : toutes les fonctions sont incluses.</p></div>';return}
+  const cid=licCid();
+  m.innerHTML=`<div class="card"><h3>Lago est gratuit</h3><p class="muted" style="margin:0">${gated?'La base est gratuite, sans limite de durée ni de ventes. Les options ci-dessous ajoutent des fonctions en plus, au mois et sans engagement.':'Toutes les fonctions sont actuellement incluses. Les options ci-dessous sont facultatives.'}</p></div>
+   ${ids.map(id=>{const o=P.options[id],exp=LICV.opts[id]||0,on=hasOpt(id),lk=aboLink(o);
+     const feats=Object.keys(P.gates).filter(k=>P.gates[k]===id);
+     return `<div class="card abo" data-opt="${esc(id)}"><div class="row" style="align-items:flex-start;gap:12px"><div class="grow"><h3 style="margin:0">${esc(o.name)} ${on?'<span class="pill ok">Active</span>':''}</h3>${o.price?`<div class="aboprice">${esc(o.price)}</div>`:''}${o.blurb?`<p class="muted" style="margin:6px 0 0">${esc(o.blurb)}</p>`:''}</div></div>
+      ${o.feats.length?`<ul class="abof">${o.feats.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>`:''}
+      ${on?`<p class="muted" style="margin:10px 0 0">${exp>Date.now()?'Active jusqu’au '+dFR(exp)+' (renouvelée automatiquement).':'Période terminée : le renouvellement est en cours de vérification.'}</p>`:''}
+      <div class="acts" style="margin-top:12px">${on?(o.portal?`<a class="btn" href="${esc(o.portal)}" target="_blank" rel="noopener">Gérer ou arrêter l’abonnement</a>`:''):(lk?`<a class="btn primary" href="${esc(lk)}" target="_blank" rel="noopener">Activer cette option</a>`:'<span class="muted">Bientôt disponible</span>')}</div></div>`}).join('')}
+   <div class="card"><h3>Déjà payé ?</h3><p class="muted" style="margin:0 0 10px">L’activation est automatique. Si rien n’a changé après quelques instants, vérifiez ici.</p>
+    <div class="acts"><button type="button" class="btn" data-act="abo_chk">Vérifier mon paiement</button><span id="abomsg" class="muted" role="status"></span></div>
+    <p class="muted" style="font-size:12.5px;margin:12px 0 0">Identifiant de ce logiciel : <b>${esc(cid)}</b></p></div>`;
+}
+TABS.params.push(['pabo','Abonnement']);SUBS.pabo=vSetAbo;
+PGRP.push(['abo','Abonnement',['pabo']]);
+async function aboCheck(quiet){
+  const r=await licFetch(),msg=$('#abomsg');
+  const t=r.ok?(r.n?'Option activée, merci !':'Aucun paiement trouvé pour le moment.'):r.err==='conf'?'Les abonnements ne sont pas encore configurés.':r.err==='sig'?'Licence refusée : contactez le support.':'Connexion impossible. Réessayez dans un instant.';
+  if(msg)msg.textContent=t;else if(!quiet)toast(t);
+  if(r.ok&&r.n){chrome();if(view==='params'&&tab.params==='pabo')vSetAbo($('#sub'));else route()}
+  return r}
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('[data-act="abo_chk"]');if(!b)return;
+  b.disabled=true;aboCheck().finally(()=>{b.disabled=false})
+});
+/* retour de Stripe (« ?premium=ok ») : on interroge le service quelques secondes, le temps que le paiement soit confirmé */
+async function aboReturn(){
+  try{const u=new URL(location.href);if(u.searchParams.get('premium')!=='ok')return;u.searchParams.delete('premium');history.replaceState(null,'',u.pathname+u.search+u.hash)}catch(e){return}
+  for(let i=0;i<8;i++){const r=await licFetch();if(r.ok&&r.n){toast('Option activée, merci !');chrome();route();return}if(!r.ok&&r.err==='conf')return;await new Promise(f=>setTimeout(f,3000))}
+  toast('Paiement en cours de confirmation : vérifiez dans Paramètres → Abonnement')
+}
+
+/* ---------- plans.json (réglages distants) ---------- */
+async function planLoad(){
+  try{
+    if(location.protocol==='file:')return false;   /* page ouverte depuis un fichier : pas de réglages distants */
+    const r=await fetch('plans.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return false;
+    const c=planClean(await r.json()),s=JSON.stringify(c);
+    if(s===JSON.stringify(PLAN))return false;
+    PLAN=c;try{localStorage.setItem(PLAN_KEY,s)}catch(e){}
+    await licVerify();
+    if(!$('#modal').innerHTML){chrome();render()}
+    return true}
+  catch(e){return false}
+}
+
+/* ---------- compteur anonyme d'appareils (facultatif) : une ligne par appareil, aucun nom, aucune donnée personnelle ---------- */
+const devId=()=>{let d='';try{d=localStorage.getItem(DEV_KEY)||''}catch(e){return''}if(!/^[A-Za-z0-9]{16}$/.test(d)){const a=new Uint8Array(16);crypto.getRandomValues(a);const al='abcdefghijkmnpqrstuvwxyz23456789';d=[...a].map(x=>al[x%al.length]).join('');try{localStorage.setItem(DEV_KEY,d)}catch(e){return''}}return d};
+async function statPing(kind){
+  try{
+    const u=PLAN&&PLAN.stats;if(!u)return;const id=devId();if(!id)return;
+    const fk=DEV_KEY+'_'+kind;if(localStorage.getItem(fk)===u)return;
+    const body=kind==='ins'?{t:Date.now()}:{t:Date.now(),v:LAGO_V,p:/iPhone|iPad|iPod/.test(navigator.userAgent)?'ios':/Android/.test(navigator.userAgent)?'android':'pc',m:modeKey()};
+    const r=await fetch(u+'/'+kind+'/'+id+'.json',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    if(r.ok)localStorage.setItem(fk,u)}
+  catch(e){}
+}
+const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
+window.addEventListener('appinstalled',()=>{statPing('ins')});
+
+/* ---------- démarrage ---------- */
+async function v108Boot(){
+  gateWatch();
+  try{LICV.opts=(S.settings.lic&&S.settings.lic.ok)||{}}catch(e){}
+  try{await licVerify()}catch(e){}
+  await planLoad();
+  statPing('dev');if(isStandalone())statPing('ins');
+  aboReturn();
+  /* renouvellement discret de la licence : au plus une fois par 6 h, seulement s'il y en a une */
+  try{const l=licSt();if(PLAN&&PLAN.api&&l.tok&&Date.now()-(l.at||0)>216e5)await licFetch()}catch(e){}
+}
+
+init();migrateSubs();migrateQ();migrateR();migrateT();migrateV();try{if(migrateM())save()}catch(e){}migrateImgs();migrateTiles();v61Init();hoursInit();try{if(evDemoFill())save()}catch(e){}applySettings();cart=newCart();chrome();route();bootGate();v108Boot();
 })();

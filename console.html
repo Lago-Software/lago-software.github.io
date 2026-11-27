@@ -42,6 +42,8 @@ main{max-width:980px;margin:0 auto;padding:26px 20px 70px}
 .lnk{background:none;border:0;padding:0;color:var(--bt);cursor:pointer;font-weight:600;text-decoration:underline}
 .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
 .box{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:0 0 16px;background:#fff}
+.dlg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}.dlk{background:var(--soft);border-radius:12px;padding:12px 14px}.dlk b{display:block;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}.dlk span{font-size:12.5px;color:var(--muted)}
+.dlc{display:flex;align-items:flex-end;gap:3px;height:64px;margin-top:6px}.dlc i{flex:1;min-width:3px;background:var(--brand);border-radius:3px 3px 0 0;opacity:.85}
 .box>h3{margin-bottom:8px}
 .box.warn{background:#FFF8EF;border-color:#F2D3B0}
 .box.okb{background:#F2FAF6;border-color:#BFE3D0}
@@ -246,7 +248,10 @@ function parseCfg(t){
 
 /* ---------- règles de sécurité ---------- */
 const UIDOK=/^[A-Za-z0-9]{10,64}$/;
-const rulesOwner=uid=>JSON.stringify({rules:{'.read':`auth != null && auth.uid === '${uid}'`,'.write':`auth != null && auth.uid === '${uid}'`}},null,2);
+const rulesOwner=uid=>JSON.stringify({rules:{'.read':`auth != null && auth.uid === '${uid}'`,'.write':`auth != null && auth.uid === '${uid}'`,
+  /* compteur anonyme d'appareils (v108) : Lago écrit UNE ligne par appareil (écriture unique, sans nom ni donnée personnelle) ; seule votre session peut lire */
+  dev:{'.indexOn':['t'],$id:{'.write':'!data.exists() && $id.matches(/^[A-Za-z0-9]{16}$/)','.validate':"newData.hasChildren(['t','v','p','m'])",t:{'.validate':'newData.isNumber()'},v:{'.validate':'newData.isString() && newData.val().length <= 12'},p:{'.validate':"newData.isString() && (newData.val() === 'ios' || newData.val() === 'android' || newData.val() === 'pc')"},m:{'.validate':"newData.isString() && (newData.val() === 'simple' || newData.val() === 'complet' || newData.val() === 'perso')"},'$other':{'.validate':false}}},
+  ins:{$id:{'.write':'!data.exists() && $id.matches(/^[A-Za-z0-9]{16}$/)','.validate':"newData.hasChildren(['t'])",t:{'.validate':'newData.isNumber()'},'$other':{'.validate':false}}}}},null,2);
 /*FBR*/
 /* bloc identique à celui de Lago (app.js) : réservation en ligne, paiement et écran TV. Un test vérifie qu’il est identique. */
 function fbPubTv(){
@@ -320,6 +325,39 @@ async function liveOf(c){
   }
   return o;
 }
+/* ---------- compteur d'appareils (v108) ---------- */
+const dayKey=t=>new Date(t).toLocaleDateString('sv-SE');
+async function loadDl(){try{await loadDl0()}finally{if(ST.view==='list')draw()}}
+async function loadDl0(){
+  try{
+    const sh=await rdb('GET','dev',undefined,'shallow=true'),si=await rdb('GET','ins',undefined,'shallow=true');
+    if(denied(sh)||denied(si)){ST.dl={err:'denied'};return}
+    if(!sh.ok||!si.ok){ST.dl={err:'net'};return}
+    const since=Date.now()-30*864e5;
+    const w=await rdb('GET','dev',undefined,'orderBy='+encodeURIComponent('"t"')+'&startAt='+since);
+    if(w.status===400){ST.dl={err:'denied'};return}  /* index « t » absent : règles à mettre à jour */
+    if(!w.ok){ST.dl={err:'net'};return}
+    const L=Object.values(w.d||{}).filter(x=>x&&typeof x==='object'),n0=new Date();n0.setHours(0,0,0,0);
+    const days={};for(let i=29;i>=0;i--)days[dayKey(Date.now()-i*864e5)]=0;
+    const cnt=k=>{const o={};L.forEach(x=>{o[x[k]]=(o[x[k]]||0)+1});return o};
+    L.forEach(x=>{const k=dayKey(x.t);if(k in days)days[k]++});
+    ST.dl={n:Object.keys(sh.d||{}).length,ins:Object.keys(si.d||{}).length,days,d1:L.filter(x=>x.t>=n0.getTime()).length,d7:L.filter(x=>x.t>=Date.now()-7*864e5).length,d30:L.length,plat:cnt('p'),mode:cnt('m'),ver:cnt('v'),at:Date.now()}
+  }catch(e){ST.dl={err:'net'}}
+}
+const dlRules=()=>`<textarea id="dlr" readonly rows="8" onclick="this.select()">${esc(rulesOwner(ST.rs.uid))}</textarea><div class="acts"><button class="btn" data-a="dlcopy" type="button">Copier les règles</button></div>`;
+function dlBox(){
+  const d=ST.dl;
+  if(!d)return `<div class="box"><h3>Téléchargements</h3><p class="muted" style="margin:6px 0 0">Chargement…</p></div>`;
+  if(d.err==='denied')return `<div class="box"><h3>Téléchargements</h3><p class="muted" style="margin:6px 0 10px">Pour compter les appareils qui ouvrent Lago, mettez à jour une fois les règles de votre registre (Firebase › Realtime Database › Règles), puis « Publier ».</p>${dlRules()}</div>`;
+  if(d.err)return `<div class="box"><h3>Téléchargements</h3><p class="muted" style="margin:6px 0 0">Compteur injoignable pour le moment. Réessayez avec « Actualiser ».</p></div>`;
+  const mx=Math.max(1,...Object.values(d.days)),nm={ios:'iPhone / iPad',android:'Android',pc:'Ordinateur',simple:'Simple',complet:'Complet',perso:'Personnalisé'};
+  const dist=(o)=>Object.keys(o).sort((a,b)=>o[b]-o[a]).map(k=>`${esc(nm[k]||k)} ${o[k]}`).join(' · ')||'—';
+  return `<div class="box" id="dlbox"><h3>Téléchargements</h3>
+   <div class="dlg"><div class="dlk"><b>${d.n}</b><span>appareils au total</span></div><div class="dlk"><b>${d.ins}</b><span>installés sur l’écran d’accueil</span></div><div class="dlk"><b>${d.d1}</b><span>aujourd’hui</span></div><div class="dlk"><b>${d.d7}</b><span>7 derniers jours</span></div><div class="dlk"><b>${d.d30}</b><span>30 derniers jours</span></div></div>
+   <div class="dlc" role="img" aria-label="Nouveaux appareils par jour sur 30 jours">${Object.keys(d.days).map(k=>`<i title="${esc(k)} : ${d.days[k]}" style="height:${Math.max(3,Math.round(d.days[k]/mx*100))}%"></i>`).join('')}</div>
+   <p class="small muted" style="margin:10px 0 0">Appareils (30 jours) : ${dist(d.plat)}<br>Version choisie : ${dist(d.mode)}<br>Versions de Lago : ${dist(d.ver)}</p>
+   <p class="small muted" style="margin:8px 0 0">Adresse à indiquer dans <b>plans.json</b> (« stats ») : <b>${esc(ST.reg&&ST.reg.u||'')}</b></p>
+   <details style="margin-top:10px"><summary class="small muted">Règles Firebase du compteur (à publier une seule fois)</summary>${dlRules()}</details></div>`}
 async function loadLive(){
   const q=ST.clients.filter(c=>!ST.live[c.id]);
   await Promise.all(Array.from({length:4},async()=>{while(q.length){const c=q.shift();ST.live[c.id]=await liveOf(c);if(ST.view==='list'||ST.view==='detail')draw()}}));
@@ -444,6 +482,7 @@ function vList(){
   const L=ST.clients,n=L.length,act=L.filter(c=>statusOf(c)[0]==='ok').length,sp=L.filter(c=>statusOf(c)[0]==='susp').length;
   let h=`<main><div class="bar"><div><h1>Clients</h1><p>${n?`${n} espace${n>1?'s':''} · ${act} actif${act>1?'s':''}${sp?` · ${sp} suspendu${sp>1?'s':''}`:''}`:'Aucun espace pour le moment'}</p></div>
    <div class="acts" style="margin:0"><button class="btn" data-a="refresh" type="button"${busy()}>Actualiser</button><button class="btn pri" data-a="wnew" type="button">Nouveau client</button></div></div>`;
+  h+=dlBox();
   if(!n)h+=`<div class="box"><h3>Créez le premier espace client</h3><p class="muted">L’assistant vous guide : nom du client, métier (modèle prêt à l’emploi), projet Firebase dédié, règles de sécurité, puis un lien à envoyer.</p><div class="acts"><button class="btn pri" data-a="wnew" type="button">Nouveau client</button></div></div>`;
   else h+=`<table class="tbl"><thead><tr><th scope="col">Client</th><th scope="col">Métier</th><th scope="col">Modèle</th><th scope="col">Créé le</th><th scope="col">Statut</th></tr></thead><tbody>${L.map(c=>{
     const l=ST.live[c.id]||{},[sk,st]=statusOf(c),cur=l.tpl&&l.tpl.v||c.tv,last=(tplOf(c.t)||{}).v,up=last&&cur&&last>cur;
@@ -529,14 +568,15 @@ async function act(fn,msg){
 const go=v=>{ST.view=v;window.scrollTo(0,0);draw()};
 
 /* ---------- actions ---------- */
-const lgOut=()=>{ST.own=null;ST.rs=null;ST.cs={};ST.clients=[];ST.live={};ST.bks={};ST.chk={};ST.wz={};ST.sel=null;go('login')};
+const lgOut=()=>{ST.dl=null;ST.own=null;ST.rs=null;ST.cs={};ST.clients=[];ST.live={};ST.bks={};ST.chk={};ST.wz={};ST.sel=null;go('login')};
 async function startList(){
-  await loadClients();go('list');loadLive();
+  await loadClients();go('list');loadLive();loadDl();
 }
 const A={
   logout:lgOut,
-  home(){ST.wz={};ST.sel=null;go('list');loadLive()},
-  async refresh(){await act(async()=>{await loadClients();ST.live={};draw();loadLive()})},
+  home(){ST.wz={};ST.sel=null;go('list');loadLive();if(!ST.dl)loadDl()},
+  dlcopy(){copy(rulesOwner(ST.rs.uid),'Règles copiées')},
+  async refresh(){await act(async()=>{await loadClients();ST.live={};draw();loadLive();loadDl()})},
   resetreg(){if(!confirm('Oublier le projet Firebase de la console sur cet appareil ? Vos clients ne sont pas supprimés.'))return;try{localStorage.removeItem(REGK)}catch(e){}ST.reg=null;ST.su={};go('setup')},
   open(b){ST.sel=b.dataset.id;ST.spMsg='';go('detail')},
   /* --- première configuration --- */

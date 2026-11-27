@@ -1,0 +1,17 @@
+{
+  "enforce": false,
+  "api": "",
+  "pub": null,
+  "stats": "",
+  "options": {
+    "premium": {
+      "name": "Premium",
+      "price": "à définir",
+      "blurb": "Les outils pour aller plus loin.",
+      "link": "",
+      "portal": "",
+      "feats": []
+    }
+  },
+  "gates": {}
+}
