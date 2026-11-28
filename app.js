@@ -3755,7 +3755,7 @@ document.addEventListener('change',e=>{
     rd.readAsText(f);t.value='';
   }
 });
-function exportAll(){saveBytes('lago-sauvegarde-'+today()+'.json',new TextEncoder().encode(JSON.stringify({lago:1,ts:Date.now(),data:Object.assign({},S,{settings:Object.assign({},S.settings,{aiKey:undefined})})})),'application/json')}
+function exportAll(){saveBytes('lago-sauvegarde-'+today()+'.json',new TextEncoder().encode(JSON.stringify({lago:1,ts:Date.now(),data:Object.assign({},S,{push:undefined,settings:Object.assign({},S.settings,{aiKey:undefined})})})),'application/json')}
 
 /* ---- sauvegardes des plannings employés ---- */
 const archive=()=>S.planArchive||(S.planArchive=[]);
@@ -5293,7 +5293,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v116';
+const LAGO_V='v117';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -6144,6 +6144,7 @@ function swNotify(to,text,w){
   if(!to)return;const n=swNots();
   n.push({id:uid(),ts:Date.now(),to,text,ref:w?w.id:'',read:false});
   if(n.length>300)n.splice(0,n.length-300);
+  pushSend('swap',{title:'Échange de shift',body:String(text||'').slice(0,200),url:'#staff',tag:'sw'+String(w&&w.id||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,20),ttl:86400},p=>to==='admin'?!!p.adm:p.emp===to);
 }
 const swMine=()=>{const k=[swMe()];if(isAdmin())k.push('admin');return k.filter(Boolean)};
 const swUnread=()=>ME?swNots().filter(n=>!n.read&&swMine().includes(n.to)):[];
@@ -6622,6 +6623,148 @@ setTimeout(()=>{
   auCheck();
 },600);
 
+/* ===== Notifications sur le téléphone (Web Push) =====
+   Chaque appareil qui active les notifications s'inscrit dans S.push (synchronisé avec l'équipe) : adresse de livraison du téléphone + clés de chiffrement.
+   Pour prévenir quelqu'un (chat, échange de shift), l'appli envoie le message au serveur Lago Cloud qui le chiffre et le remet au service de notification
+   du téléphone (Google, Apple…) ; le serveur ne conserve rien. Les nouvelles réservations en ligne sont signalées par le serveur lui-même (voir puWatchSync).
+   Android : appli installée ou navigateur. iPhone/iPad : seulement si Lago est ajouté à l'écran d'accueil (iOS 16.4 et plus). */
+const PU_DEV='lago-pushdev',PU_WK='lago-pushw';
+let PU_MEM='',PU_WERR=false;
+const puDev=()=>{
+  try{let d=localStorage.getItem(PU_DEV);if(!/^d[a-z0-9]{8,16}$/.test(d||'')){d='d'+(uid()+uid()).replace(/[^a-z0-9]/g,'').slice(0,12);localStorage.setItem(PU_DEV,d)}return d}
+  catch(e){return PU_MEM||(PU_MEM='d'+(uid()+uid()).replace(/[^a-z0-9]/g,'').slice(0,12))}
+};
+const puIos=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const puStandalone=()=>!!(navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches));
+const puSupported=()=>location.protocol.startsWith('http')&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const puName=()=>/iPhone|iPod/.test(navigator.userAgent)?'iPhone':/iPad/.test(navigator.userAgent)?'iPad':/Android/.test(navigator.userAgent)?'Android':'Ordinateur';
+const puMine=()=>{const p=(S.push||{})[puDev()];return p&&p.ep?p:null};
+function puState(){
+  if(puIos()&&!puStandalone())return 'ios';
+  if(!puSupported())return 'nosupport';
+  if(Notification.permission==='denied')return 'denied';
+  const p=puMine();if(!p)return 'off';
+  return ME&&p.uid===ME.id?'on':'other';
+}
+/* qui reçoit quoi : les appareils inscrits pour ce type de message, sauf ceux du compte qui écrit */
+function puTargets(kind,pick){
+  return Object.entries(S.push||{}).filter(([id,p])=>p&&p.ep&&p.k&&p.a&&p.on&&p.on[kind]&&!(ME&&p.uid===ME.id)&&(!pick||pick(p))).map(([id,p])=>({ep:p.ep,k:p.k,a:p.a}));
+}
+function puPrune(gone){
+  if(!gone.length)return;const P=S.push||{};let ch=false;
+  Object.keys(P).forEach(id=>{if(P[id]&&gone.includes(P[id].ep)){delete P[id];ch=true}});
+  if(ch){save();puWatchSync(true)}
+}
+async function pushSend(kind,msg,pick){
+  try{
+    const t=puTargets(kind,pick);if(!t.length||navigator.onLine===false)return;
+    const parts=[];for(let i=0;i<t.length;i+=5)parts.push(t.slice(i,i+5));
+    const res=await Promise.all(parts.map(async c=>{
+      try{const r=await fetch(CF_SEAL_URL+'/v1/push/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subs:c,...msg})});return r.ok?await r.json():null}catch(e){return null}
+    }));
+    puPrune(res.flatMap(j=>j&&Array.isArray(j.gone)?j.gone:[]));
+  }catch(e){}
+}
+/* réservations en ligne : le serveur doit connaître les appareils du gérant (la page de réservation n'est pas dans Lago) */
+async function puWatchSync(force){
+  try{
+    if(!ME||!isAdmin())return;const w=webCfg();if(!w.k)return;
+    const subs=Object.values(S.push||{}).filter(p=>p&&p.ep&&p.k&&p.a&&p.adm&&p.on&&p.on.resa).slice(0,5).map(p=>({ep:p.ep,k:p.k,a:p.a}));
+    const sig=w.k+'|'+subs.map(x=>x.ep).sort().join(',');let prev='';try{prev=localStorage.getItem(PU_WK)||''}catch(e){}
+    if(!force&&sig===prev)return;
+    if(!subs.length&&!prev)return;
+    if(!S.settings.pushNt){S.settings.pushNt=Array.from(crypto.getRandomValues(new Uint8Array(24)),x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');save()}
+    const c=cloudCfg();
+    const r=await fetch(CF_SEAL_URL+'/v1/push/watch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:w.k,nt:S.settings.pushNt,subs,...(c&&c.r&&c.o?{r:c.r,o:c.o}:{})})});
+    PU_WERR=r.status===403;
+    if(r.ok){try{localStorage.setItem(PU_WK,subs.length?sig:'')}catch(e){}}
+    if(document.getElementById('accpush'))puDraw();
+  }catch(e){}
+}
+async function puReg(){
+  return Promise.race([navigator.serviceWorker.ready,new Promise((_,rj)=>setTimeout(()=>rj(new Error('sw')),6000))]);
+}
+async function puEnable(btn){
+  if(!ME||puState()==='ios'||!puSupported())return;
+  if(btn)btn.disabled=true;
+  try{
+    const perm=await Notification.requestPermission(); /* en premier : le téléphone exige que la demande suive directement le toucher */
+    if(perm!=='granted'){puDraw();return}
+    const reg=await puReg();
+    const r=await fetch(CF_SEAL_URL+'/v1/push/key',{cache:'no-store'});if(!r.ok)throw new Error('key');
+    const kb=cfB64((await r.json()).key);
+    let sub=await reg.pushManager.getSubscription();
+    if(sub){const cur=sub.options&&sub.options.applicationServerKey;const same=cur&&new Uint8Array(cur).length===kb.length&&new Uint8Array(cur).every((v,i)=>v===kb[i]);if(!same){await sub.unsubscribe();sub=null}}
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:kb});
+    const j=sub.toJSON();if(!j.endpoint||!j.keys||!j.keys.p256dh||!j.keys.auth)throw new Error('sub');
+    const P=S.push||(S.push={}),dev=puDev();
+    Object.keys(P).forEach(id=>{if(id!==dev&&P[id]&&P[id].ep===j.endpoint)delete P[id]});
+    const old=P[dev]&&P[dev].uid===ME.id?P[dev].on:null;
+    P[dev]={ep:j.endpoint,k:j.keys.p256dh,a:j.keys.auth,uid:ME.id,emp:swMe(),adm:isAdmin(),n:puName(),at:Date.now(),on:old||{chat:1,swap:1,resa:isAdmin()?1:0}};
+    save();puWatchSync(true);puDraw();toast('Notifications activées sur cet appareil');
+  }catch(e){toast('Impossible d’activer les notifications pour le moment. Vérifiez la connexion et réessayez.')}
+  finally{if(btn&&btn.isConnected)btn.disabled=false}
+}
+async function puOff(){
+  try{const reg=await tmo(navigator.serviceWorker.getRegistration(),3000);const s=reg&&await reg.pushManager.getSubscription();if(s)await s.unsubscribe()}catch(e){}
+  const P=S.push||{};delete P[puDev()];save();puWatchSync(true);puDraw();toast('Notifications désactivées sur cet appareil');
+}
+const tmo=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(()=>r(null),ms))]);
+async function puTest(btn){
+  const p=puMine();if(!p)return;if(btn)btn.disabled=true;
+  try{
+    const r=await fetch(CF_SEAL_URL+'/v1/push/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subs:[{ep:p.ep,k:p.k,a:p.a}],title:'Lago',body:'Les notifications fonctionnent sur cet appareil.',tag:'test',ttl:300})});
+    const j=r.ok?await r.json():null;
+    if(j&&j.sent)toast('Test envoyé : la notification arrive dans quelques secondes');
+    else if(j&&j.gone&&j.gone.length){puPrune(j.gone);puDraw();toast('Cet appareil n’est plus reconnu : réactivez les notifications')}
+    else toast('Le service de notification du téléphone n’a pas répondu. Réessayez dans un instant.');
+  }catch(e){toast('Test impossible : vérifiez la connexion')}
+  finally{if(btn&&btn.isConnected)btn.disabled=false}
+}
+/* l'abonnement du téléphone a pu disparaître (navigateur nettoyé, notifications retirées) : on le constate à l'ouverture de « Mon compte » */
+async function puVerify(){
+  const p=puMine();if(!p||!puSupported())return;
+  try{
+    const reg=await tmo(navigator.serviceWorker.getRegistration(),2500);if(!reg)return;
+    const s=await reg.pushManager.getSubscription();
+    if(!s||Notification.permission!=='granted'){delete S.push[puDev()];save();puWatchSync(true);puDraw()}
+    else if(s.endpoint!==p.ep){const j=s.toJSON();if(j.keys){Object.assign(p,{ep:j.endpoint,k:j.keys.p256dh,a:j.keys.auth,at:Date.now()});save();puWatchSync(true)}}
+  }catch(e){}
+}
+function accPushHtml(){
+  if(!ME)return '';
+  const st=puState(),on=st==='on'?puMine().on||{}:{};
+  const row=(k,l)=>`<label class="check" style="margin:4px 0"><input type="checkbox" data-pk="${k}" ${on[k]?'checked':''}>${l}</label>`;
+  let h='';
+  if(st==='ios')h=`<p class="muted">Sur iPhone et iPad, ajoutez d’abord Lago à l’écran d’accueil : touchez le bouton Partager, puis « Sur l’écran d’accueil ». Ouvrez ensuite Lago depuis cette icône pour activer les notifications.</p>`;
+  else if(st==='nosupport')h=`<p class="muted">Ce navigateur ne peut pas recevoir de notifications. Essayez avec Chrome, Edge, Firefox ou Safari à jour.</p>`;
+  else if(st==='denied')h=`<p class="muted">Les notifications sont bloquées pour Lago sur cet appareil. Autorisez-les dans les réglages du navigateur (ou de l’appli installée), puis revenez ici.</p>`;
+  else if(st==='off')h=`<p class="muted">Recevez une alerte sur ce téléphone, même quand Lago est fermé : messages du chat, échanges de shift${isAdmin()?', nouvelles réservations en ligne':''}.</p><div class="acts"><button class="btn primary" data-act="pu_on">Activer les notifications</button></div>`;
+  else if(st==='other')h=`<p class="muted">Les notifications de cet appareil sont réglées pour un autre compte. Activez-les pour vous : elles seront retirées à l’autre compte.</p><div class="acts"><button class="btn primary" data-act="pu_on">Les activer pour moi</button></div>`;
+  else{
+    const chat=!chOff(),swp=!!(swMe()||isAdmin()),resa=isAdmin()&&webCfg().on;
+    h=`<p class="muted"><b style="color:var(--ink)">Activées sur cet appareil.</b> Choisissez ce que vous voulez recevoir :</p>
+     ${chat?row('chat','Messages du chat d’équipe'):''}${swp?row('swap','Échanges de shift'):''}${resa?row('resa','Nouvelles réservations en ligne'):''}
+     ${resa&&PU_WERR?'<p class="gerr" style="margin:4px 0">Ce site de réservation est déjà relié à une autre installation de Lago : les alertes de réservation ne partiront pas d’ici.</p>':''}
+     <p class="muted" style="font-size:12.5px;margin-top:6px">Le texte d’une notification (message du chat, échange de shift) passe par le serveur de Lago pour être chiffré vers votre téléphone ; il n’y est pas conservé. Pour une réservation en ligne, aucune coordonnée du client n’est envoyée.</p>
+     <div class="acts"><button class="btn" data-act="pu_test">Envoyer un test</button><button class="btn" data-act="pu_off">Désactiver</button></div>`;
+  }
+  return `<div id="accpush" class="accpush"><h3 class="mah">Notifications sur le téléphone</h3>${h}</div>`;
+}
+function puDraw(){const el=document.getElementById('accpush');if(el)el.outerHTML=accPushHtml()}
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('[data-act^="pu_"]');if(!b)return;
+  const a=b.dataset.act;if(a==='pu_on')puEnable(b);else if(a==='pu_off')puOff();else if(a==='pu_test')puTest(b);
+});
+document.addEventListener('change',e=>{
+  const k=e.target&&e.target.dataset&&e.target.dataset.pk;if(!k||!ME)return;
+  const p=puMine();if(!p||p.uid!==ME.id)return;(p.on=p.on||{})[k]=e.target.checked?1:0;save();puWatchSync(true);
+});
+/* un toucher sur la notification ouvre la bonne page de Lago (le service worker envoie « lagoGo ») */
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{
+  const u=e.data&&e.data.lagoGo;if(typeof u==='string'&&/^#[a-z0-9_/-]{1,40}$/.test(u)&&location.hash!==u)location.hash=u;
+});
+
 /* ---- « Mon compte » : version + vérification manuelle ---- */
 function accountMenu(){
   accountMenuV0();
@@ -6629,6 +6772,7 @@ function accountMenu(){
   m.insertAdjacentHTML('beforeend',`<div class="auv"><div><b>Lago ${esc(LAGO_V)}</b><span class="muted" id="auvs">${AU.ver?'Nouvelle version '+esc(AU.ver)+' disponible':'Les mises à jour s’installent toutes seules.'}</span></div><button type="button" class="btn" data-act="${AU.ver?'au_go':'au_check'}" id="auvb">${AU.ver?'Mettre à jour':'Rechercher une mise à jour'}</button></div><button type="button" class="glink cflegb" data-act="cf_legal">Mentions légales et propriété du logiciel</button>`);
   m.insertAdjacentHTML('beforeend',accThemeHtml());
   m.insertAdjacentHTML('beforeend',accAnimHtml());
+  try{const f=m.querySelector('#pwform2');if(f&&!m.querySelector('#accpush')){f.insertAdjacentHTML('afterend',accPushHtml());puVerify()}}catch(e){}
   try{appSyncRow(m)}catch(e){}
 }
 document.addEventListener('click',async e=>{
@@ -7176,7 +7320,9 @@ function chPost(t){
   const L=talkL(),ts=Math.max(Date.now(),chMax()+1);
   L.push({id:uid(),accId:ME.id,name:ME.name,text:t,ts});
   L.sort((a,b)=>a.ts-b.ts);while(L.length>TK_MAX)L.shift();
-  save();chSetSeen(ts);chatDraw(true);return true;
+  save();chSetSeen(ts);chatDraw(true);
+  pushSend('chat',{title:'Chat d’équipe',body:ME.name+' : '+t.slice(0,160),url:'#chat',tag:'chat',ttl:3600});
+  return true;
 }
 function chQuick(){
   const q=document.getElementById('chquick'),ta=document.getElementById('chtext');if(!q||!ta)return;
@@ -8705,6 +8851,7 @@ async function webPoll(){
   const w=webCfg();if(!webReady()||WEBR.busy)return;
   WEBR.busy=true;
   try{
+    puWatchSync(); /* appareils à prévenir pour les nouvelles réservations (ne fait rien tant que rien n'a changé) */
     let r=await fetch(webU('req')+'?orderBy="ts"&startAt='+Math.max(0,(w.seen||0)-900000),{cache:'no-store'});
     if(r.status===400)r=await fetch(webU('req'),{cache:'no-store'});
     if(!r.ok)throw new Error('http '+r.status);

@@ -430,6 +430,7 @@ async function seal(obj){
   const ct=await S.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(obj))),raw=await S.exportKey('raw',key),wk=await S.encrypt({name:'RSA-OAEP'},pub,raw);
   return{k:b64u(wk),iv:b64u(iv),ct:b64u(ct)};
 }
+const PUSHW='https://lago-cloud.leherice-h.workers.dev';
 const rid=()=>{const a=crypto.getRandomValues(new Uint8Array(15));return Array.from(a,x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('')};
 const refCode=()=>{const a=crypto.getRandomValues(new Uint8Array(6)),c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return (CFG.pre||'RES')+'-'+Array.from(a,x=>c[x%c.length]).join('')};
 async function patchCounters(ds,inc){
@@ -463,6 +464,8 @@ async function confirm(){
     const r=await fetch(url('req/'+id),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({ts:Date.now(),...box})});
     if(!r.ok)throw new Error('http '+r.status);
     bumped=false;
+    /* prévient le gérant sur son téléphone (le serveur vérifie que la demande existe ; texte fixe, aucune donnée client) */
+    try{fetch(PUSHW+'/v1/push/resa',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({u:DB,k:K,id}),keepalive:true}).catch(()=>{})}catch(_){}
     /* v92 : couleurs réglées dans Lago (carte heure -> couleur), ou texte (« Partie de 14:20 ») */
     const BRs=CFG.br&&CFG.br.length===6?CFG.br:BR0,BRH=Array.isArray(CFG.brh)&&CFG.brh.length>=25?CFG.brh:null,TXT=CFG.bm==='text',W=String(CFG.bw||'Partie').slice(0,20);
     const br=sessLines().map(p=>{const until=Math.ceil((start+p.dur)/60),h=BRH&&Array.isArray(BRH[until])&&/^#[0-9a-f]{6}$/i.test(BRH[until][1]||'')?BRH[until]:BRs[until%6],c=TXT?[W+' de '+fm(start),'#5A6785']:h;return{n:String(c[0]),c:c[1],x:TXT,t:q(p.id)+' × '+p.n+' · '+(TXT?'fin à ':'sortie à ')+fm(start+p.dur)}});
