@@ -107,8 +107,14 @@ const norm=s=>String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const uid=()=>Math.random().toString(36).slice(2,9);
 const addDays=(ds,n)=>{const d=new Date(ds+'T12:00');d.setDate(d.getDate()+n);return dkey(d)};
 const dlong=ds=>new Date(ds+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+/* date longue avec majuscule initiale seulement (« Samedi 28 novembre ») : en français le mois ne prend pas de majuscule */
+const dlongC=ds=>{const t=dlong(ds);return t.charAt(0).toUpperCase()+t.slice(1)};
 const dshort=ds=>new Date(ds+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
-const parseEur=s=>{const v=parseFloat(String(s).replace(',','.').replace(/[^\d.]/g,''));return Number.isFinite(v)?Math.round(v*100):0};
+const parseEur=s=>{
+  /* « 1 234,50 », « 1.234,50 », « 1,234.50 », « 12,5 € » : quand les deux séparateurs sont présents, le dernier est la virgule décimale et l'autre sépare les milliers */
+  let t=String(s).replace(/[\s\u00a0\u202f]/g,'');const c=t.lastIndexOf(','),d=t.lastIndexOf('.');
+  t=c>-1&&d>-1?(c>d?t.replace(/\./g,'').replace(',','.'):t.replace(/,/g,'')):t.replace(',','.');
+  const v=parseFloat(t.replace(/[^\d.]/g,''));return Number.isFinite(v)?Math.round(v*100):0};
 const inEur=c=>(c/100).toFixed(2).replace('.',',');
 const today=()=>dkey(new Date());
 const IC={
@@ -242,8 +248,14 @@ function totalsBase(c){
 }
 function finalizeBase(c,pays,ts,demo){
   const T=totals(c);const vat={};
-  const lines=T.L.map(l=>{
-    const sh=T.sub?Math.round(l.t*T.total/T.sub):0;
+  /* répartition de la remise : plus forte tranche — la somme des lignes est toujours égale au total du ticket, au centime */
+  const raw=T.L.map(l=>T.sub?l.t*T.total/T.sub:0),shs=raw.map(Math.floor);
+  let rest=(T.sub?T.total:0)-shs.reduce((a,b)=>a+b,0);
+  const ord=raw.map((r,i)=>[r-Math.floor(r),i]).sort((a,b)=>b[0]-a[0]||a[1]-b[1]);
+  for(let k=0;rest>0&&ord.length;k=(k+1)%ord.length,rest--)shs[ord[k][1]]++;
+  for(let k=0;rest<0&&ord.length;k=(k+1)%ord.length,rest++)shs[ord[ord.length-1-k][1]]--;
+  const lines=T.L.map((l,i)=>{
+    const sh=shs[i];
     const v=sh-Math.round(sh/(1+l.p.tva/100));
     (vat[l.p.tva]=vat[l.p.tva]||{ttc:0,tva:0});vat[l.p.tva].ttc+=sh;vat[l.p.tva].tva+=v;
     return{pid:l.pid,name:l.p.name,qty:l.qty,price:l.p.price,rate:l.p.tva,cat:l.p.cat,jumper:!!l.p.jumper,ttc:sh};
@@ -265,7 +277,7 @@ const clientName=id=>{const c=S.clients.find(c=>c.id===id);return c?c.name:''};
 
 /* ---------- gabarits communs ---------- */
 function head(title,actions=''){
-  return `<header class="top"><div><div class="logo logo-m">${S.settings.logo?logoHtml():lagoLogo('l')}</div><h1>${title}</h1><p class="sub">${dlong(today())}</p></div><div class="top-actions">${actions}${rolePill()}</div></header>`;
+  return `<header class="top"><div><div class="logo logo-m">${S.settings.logo?logoHtml():lagoLogo('l')}</div><h1>${title}</h1><p class="sub">${dlongC(today())}</p></div><div class="top-actions">${actions}${rolePill()}</div></header>`;
 }
 /* Une fenêtre déjà ouverte est mise à jour sur place : plus de fermeture/réouverture (animation, flou, défilement remis en haut)
    à chaque choix. Le défilement et le champ actif sont conservés tant que le titre reste le même. */
@@ -501,7 +513,7 @@ function vSlots(m){
 function slotDetailOld(h){
   const key=slotDay+'|'+h,cap=S.settings.cap,base=baseBooked(slotDay,h);
   const ss=S.sales.filter(s=>s.slot===key),extra=ss.reduce((a,s)=>a+s.jumpers,0),left=Math.max(0,cap-base-extra);
-  showModal(`${mh(pad(h)+':00 – '+pad(h+1)+':00')}<p class="muted" style="text-transform:capitalize">${dlong(slotDay)}</p>
+  showModal(`${mh(pad(h)+':00 – '+pad(h+1)+':00')}<p class="muted">${dlongC(slotDay)}</p>
     <div class="kpis" style="margin:0"><div class="kpi"><div class="l">Réservé en ligne</div><div class="v num">${base}</div></div>
     <div class="kpi"><div class="l">Vendu en caisse</div><div class="v num">${extra}</div></div>
     <div class="kpi"><div class="l">Places libres</div><div class="v num">${left}</div></div></div>
@@ -513,7 +525,7 @@ function slotDetailOld(h){
 function vProducts(m){
   m.innerHTML=bar(`${salleOn()?`<button class="btn" data-act="algprint">${ic('ticket')}Tableau des allergènes</button>`:''}<button class="btn primary" data-act="newprod">${ic('plus')}Nouveau produit</button>`)+
     CATS.map(c=>{const l=S.products.filter(p=>p.cat===c.id);return `<div class="card" style="margin-bottom:14px;--cat:var(${c.v})"><h3 style="display:flex;align-items:center;gap:8px"><span class="dot"></span>${c.name}</h3>
-    ${l.length?l.map(p=>`<button class="row rowbtn" data-act="editprod" data-id="${p.id}" style="${p.active?'':'opacity:.55'}"><span class="grow"><b>${esc(p.name)}</b><span class="muted">${p.scat?esc(p.scat)+' · ':''}TVA ${p.tva} %${(p.alg&&p.alg.length)?' · allergènes : '+p.alg.map(algN).join(', '):''}${p.jumper?' · compte comme '+NOUN():''}${p.active?'':' · masqué en caisse'}</span></span><b class="num">${eur(p.price)}</b></button>`).join(''):'<p class="muted">Aucun produit dans cette catégorie.</p>'}</div>`}).join('');
+    ${l.length?l.map(p=>`<button class="row rowbtn${p.active?'':' pof'}" data-act="editprod" data-id="${p.id}"><span class="grow"><b>${esc(p.name)}</b><span class="muted">${p.scat?esc(p.scat)+' · ':''}TVA ${p.tva} %${(p.alg&&p.alg.length)?' · allergènes : '+p.alg.map(algN).join(', '):''}${p.jumper?' · compte comme '+NOUN():''}${p.active?'':' · masqué en caisse'}</span></span><b class="num">${eur(p.price)}</b></button>`).join(''):'<p class="muted">Aucun produit dans cette catégorie.</p>'}</div>`}).join('');
 }
 function prodForm(id){
   if(!canEdit()){toast('Réservé à l’administrateur');return}
@@ -1405,7 +1417,7 @@ function vDayOld(m){
 function slotDetail(m){
   const ds=slotDay,cap=S.settings.cap,o=occ(ds,m);
   const ss=S.sales.filter(s=>{if(!(s.slot&&s.slot.startsWith(ds)))return false;const st=+s.slot.split('|')[1];return st<=m&&m<st+(s.dur||60)});
-  showModal(`${mh(fm(m))}<p class="muted" style="text-transform:capitalize">${dlong(ds)}</p>
+  showModal(`${mh(fm(m))}<p class="muted">${dlongC(ds)}</p>
     <div class="kpis" style="margin:0"><div class="kpi"><div class="l">Présents</div><div class="v num">${o}</div></div><div class="kpi"><div class="l">Places libres</div><div class="v num">${cap-o}</div></div></div>
     <div>${ss.length?ss.map(s=>{const st=+s.slot.split('|')[1];return `<div class="row"><span class="grow"><b>${s.no}${s.clientId?' · '+esc(clientName(s.clientId)):''}</b><span class="muted">${swatch(bracelet(st,s.dur||60).color)}${fm(st)} à ${fm(st+(s.dur||60))}</span></span><b>${s.jumpers} ${NOUN()}${s.jumpers>1?'s':''}</b></div>`}).join(''):'<p class="muted">Aucune vente en caisse sur ce départ.</p>'}</div>
     <button class="btn primary" data-act="sellslot" data-m="${m}" ${cap-o<=0?'disabled':''}>Vendre sur ce départ</button>`);
@@ -1538,7 +1550,7 @@ function contrastOf(a,b){const x=relLum(a),y=relLum(b);return (Math.max(x,y)+.05
 /* texte lisible sur la couleur de marque : encre foncée sur une couleur claire, blanc sur une couleur foncée */
 function inkFor(h){return contrastOf(h,'#FFFFFF')>=contrastOf(h,'#0A1F4D')?'#FFFFFF':'#0A1F4D'}
 /* version de la couleur de marque assez foncée pour du texte sur fond clair (contraste 4,5) */
-function textTone(h){let c=h;for(let t=0;t<=1.001;t+=.04){c=mixHex(h,'#0A1F4D',t);if(contrastOf(c,'#FFFFFF')>=5.2)break}return c}
+function textTone(h){const soft=mixHex(h,'#FFFFFF',.88);let c=h;for(let t=0;t<=1.001;t+=.04){c=mixHex(h,'#0A1F4D',t);if(contrastOf(c,'#FFFFFF')>=5.2&&contrastOf(c,soft)>=4.7)break}return c}
 /* v81 : nouvelle palette Lago (bleu #31ACF0, orange #F76300) — les anciennes couleurs par défaut sont remplacées une fois */
 function migratePalette(st){if(st.palV>=81)return;if(String(st.brand).toUpperCase()==='#1D4FD7')st.brand='#31ACF0';if(String(st.accent).toUpperCase()==='#FF7A1A')st.accent='#F76300';st.palV=81}
 function applyTheme(){
@@ -1548,7 +1560,7 @@ function applyTheme(){
     let bd=st.brand;if(dk){for(let t=0;t<=1.001&&contrastOf(bd,'#121B2E')<3;t+=.05)bd=mixHex(st.brand,'#FFFFFF',t)}
     const ink=inkFor(bd);
     r.setProperty('--brand',bd);r.setProperty('--brand-ink',ink);
-    if(dk){let bt=bd;for(let t=0;t<=1.001;t+=.04){bt=mixHex(bd,'#FFFFFF',t);if(contrastOf(bt,'#121B2E')>=6)break}r.setProperty('--brand-t',bt);
+    if(dk){const soft=mixHex(bd,'#0F1829',.82);let bt=bd;for(let t=0;t<=1.001;t+=.04){bt=mixHex(bd,'#FFFFFF',t);if(contrastOf(bt,'#121B2E')>=6&&contrastOf(bt,soft)>=5.2)break}r.setProperty('--brand-t',bt);
       r.setProperty('--side',mixHex(bd,'#050B16',.9));r.setProperty('--brand-soft',mixHex(bd,'#0F1829',.82));r.setProperty('--surface-2',mixHex(bd,'#18233A',.93))}
     else{r.setProperty('--brand-t',textTone(st.brand));
       r.setProperty('--side',relLum(st.brand)>.2?mixHex(st.brand,'#0B1B33',.86):st.brand);
@@ -1556,7 +1568,7 @@ function applyTheme(){
     r.setProperty('--c-entree',bd);
     r.setProperty('--pay',st.accent);r.setProperty('--pay-ink',contrastOf(st.accent,'#FFFFFF')>=contrastOf(st.accent,'#1F0F00')?'#FFFFFF':'#1F0F00');r.setProperty('--c-snack',st.accent);
     /* v85 : version « texte » et « fond doux » de l'orange (actions, sélections, bandeaux) */
-    let pt=st.accent;if(dk){for(let t=0;t<=1.001;t+=.04){pt=mixHex(st.accent,'#FFFFFF',t);if(contrastOf(pt,'#121B2E')>=6)break}}else pt=textTone(st.accent);
+    let pt=st.accent;if(dk){const psoft=mixHex(st.accent,'#0F1829',.82);for(let t=0;t<=1.001;t+=.04){pt=mixHex(st.accent,'#FFFFFF',t);if(contrastOf(pt,'#121B2E')>=6&&contrastOf(pt,psoft)>=5.2)break}}else pt=textTone(st.accent);
     r.setProperty('--pay-t',pt);r.setProperty('--pay-soft',dk?mixHex(st.accent,'#0F1829',.82):mixHex(st.accent,'#FFFFFF',.88))}catch(e){}
   applyCustom();
 }
@@ -1787,7 +1799,7 @@ function vHomeBase(m){
   const resaN=S.sales.filter(s=>s.slot&&s.slot.startsWith(td)).length+evOn(td).length;
   const duty=onDuty(td),c=checkToday(),pend=S.leaves.filter(l=>l.status==='pending'),done=c?CHECK_IDS.filter(k=>c.items[k]).length:0;
   const start=Math.max(QSTART,Math.min(QEND,qCeil(nm))),deps=QS.filter(q=>q>=start).slice(0,4);
-  m.innerHTML=`<div class="top-actions" style="margin-bottom:10px;justify-content:flex-end">${rolePill()}</div><div class="hero"><div><p class="eyebrow">${dlong(td)}</p><h2>${greet()}</h2>${welcomeOn()?`<p class="wel">${esc(S.settings.welcome)}</p>`:''}<p>${esc(S.settings.name)} · ${openNow?here+' personnes présentes sur '+cap:'fermé pour le moment'} · <span data-po="hero">${poHero(poNow(true))}</span></p></div>
+  m.innerHTML=`<div class="top-actions" style="margin-bottom:10px;justify-content:flex-end">${rolePill()}</div><div class="hero"><div><p class="eyebrow">${dlongC(td)}</p><h2>${greet()}</h2>${welcomeOn()?`<p class="wel">${esc(S.settings.welcome)}</p>`:''}<p>${esc(S.settings.name)} · ${openNow?here+' personnes présentes sur '+cap:'fermé pour le moment'} · <span data-po="hero">${poHero(poNow(true))}</span></p></div>
     <div class="hero-actions"><a class="btn ghost" href="#resa">Planning clients</a></div></div>${homeTiles()}${ctrlBanner()}
    <div class="kpis"><div class="kpi"><div class="l">Ventes du jour</div><div class="v num">${eur(ca)}</div></div><div class="kpi"><div class="l">Présents</div><div class="v num">${here}<small> / ${cap}</small></div></div>
      <div class="kpi"><div class="l">Réservations</div><div class="v num">${resaN}</div></div><div class="kpi"><div class="l">Équipe en poste</div><div class="v num" data-po="kpi">${poKpi(poNow(true))}</div></div></div>
@@ -1938,8 +1950,9 @@ function satStyle(p){
   p=Math.max(0,Math.min(1,p));let a=SAT[0],b=SAT[SAT.length-1];
   for(let i=0;i<SAT.length-1;i++)if(p>=SAT[i][0]&&p<=SAT[i+1][0]){a=SAT[i];b=SAT[i+1];break}
   const t=b[0]===a[0]?0:(p-a[0])/(b[0]-a[0]),c=a[1].map((v,i)=>Math.round(v+(b[1][i]-v)*t));
-  const lum=(c[0]*299+c[1]*587+c[2]*114)/1000;
-  return[`rgb(${c})`,lum>150?'#0A1F4D':'#FFFFFF'];
+  /* texte : celui des deux (blanc ou encre) qui offre le meilleur contraste (WCAG) sur la couleur du créneau */
+  const f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)},L=.2126*f(c[0])+.7152*f(c[1])+.0722*f(c[2]);
+  return[`rgb(${c})`,1.05/(L+.05)>=(L+.05)/.0658?'#FFFFFF':'#0A1F4D'];
 }
 function dayStrip(ds){
   const cap=S.settings.cap;
@@ -1974,7 +1987,7 @@ function slotDetail(m){
   const row=x=>`<button class="row rowbtn" data-act="ticket" data-id="${x.s.id}"><span class="grow"><b>${swatch(bracelet(x.st,x.dur).color)}${x.s.jumpers} ${NOUN()}${x.s.jumpers>1?'s':''} · ${x.s.clientId?esc(clientName(x.s.clientId)):'Au comptoir'}</b><span class="muted">${x.s.no} · ${fm(x.st)} à ${fm(x.st+x.dur)}</span></span><b class="num">${eur(x.s.total)}</b></button>`;
   const can=m>=QS[0],prev=QS.includes(m-STEP)?m-STEP:null,next=QS.includes(m+STEP)?m+STEP:null;
   showModal(`<div class="mh"><button class="ix" data-act="slot" data-m="${prev}" ${prev==null?'disabled':''} aria-label="Créneau précédent">${ic('left')}</button><h2 style="flex:1;text-align:center">${fm(m)} à ${fm(m+STEP)}</h2><button class="ix" data-act="slot" data-m="${next}" ${next==null?'disabled':''} aria-label="Créneau suivant">${ic('right')}</button><button class="ix" data-act="close" aria-label="Fermer">${ic('x')}</button></div>
-   <p class="muted" style="text-transform:capitalize;margin-top:-6px">${dlong(ds)}</p>
+   <p class="muted" style="margin-top:-6px">${dlongC(ds)}</p>
    <div class="occbox" style="background:${bg};color:${satStyle(pc)[1]}"><div><span class="lab">Présents sur ce créneau</span><b class="num">${o}<small> / ${cap}</small></b></div><div style="text-align:right"><span class="lab">Places libres</span><b class="num">${cap-o}</b></div></div>
    <div class="grp-h">Départs à ${fm(m)} <span class="muted">· ${go.length} réservation${go.length>1?'s':''}, ${go.reduce((a,x)=>a+x.s.jumpers,0)} personne${go.reduce((a,x)=>a+x.s.jumpers,0)>1?'s':''}</span></div>
    ${go.length?go.map(row).join(''):'<p class="muted">Aucun départ en caisse sur ce créneau.</p>'}
@@ -4093,7 +4106,7 @@ function vQwRes(m){
   }
   html+=`<div class="toolbar"><div class="search" style="margin:0;flex:1;min-width:220px">${ic('search')}<input id="qwq" type="search" placeholder="Rechercher : nom, référence, téléphone, activité" autocomplete="off" value="${esc(qwQ)}"></div>
     <div class="seg"><button class="${!qwAll?'on':''}" data-act="qwall" data-v="0">Par jour</button><button class="${qwAll?'on':''}" data-act="qwall" data-v="1">À venir</button></div></div>`;
-  if(!qwAll&&!qwQ)html+=`<div class="qw-day"><button class="btn" data-act="qwd" data-d="-1" aria-label="Jour précédent">${ic('left')}</button><b>${new Date(qwDay+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</b><button class="btn" data-act="qwd" data-d="1" aria-label="Jour suivant">${ic('right')}</button><button class="btn" data-act="qwd" data-d="0">Aujourd’hui</button><span class="pill">${day.length} réservation${day.length>1?'s':''} · ${dp} personne${dp>1?'s':''}</span></div>`;
+  if(!qwAll&&!qwQ)html+=`<div class="qw-day"><button class="btn" data-act="qwd" data-d="-1" aria-label="Jour précédent">${ic('left')}</button><b>${dlongC(qwDay)}</b><button class="btn" data-act="qwd" data-d="1" aria-label="Jour suivant">${ic('right')}</button><button class="btn" data-act="qwd" data-d="0">Aujourd’hui</button><span class="pill">${day.length} réservation${day.length>1?'s':''} · ${dp} personne${dp>1?'s':''}</span></div>`;
   let last='',rows='';
   L.forEach(x=>{const key=(qwAll||qwQ)?x.date:Math.floor(x.start/60);const lab=(qwAll||qwQ)?dshort(x.date):Math.floor(x.start/60)+'h';if(key!==last){rows+=`<div class="grp-h">${lab}</div>`;last=key}
     rows+=`<div class="row qwr"><span class="rt-time num">${fm(x.start)}</span><span class="grow"><b>${esc(x.name||'Sans nom')}</b><span class="muted">${x.n} personne${x.n>1?'s':''} · ${fm(x.start)}–${fm(x.start+x.dur)}${x.act?' · '+esc(x.act):''}${x.ref?' · '+esc(x.ref):''}</span>${(x.phone||x.mail)&&pshow('v_contact')?`<span class="muted">${esc(x.phone)}${x.phone&&x.mail?' · ':''}${esc(x.mail)}</span>`:''}</span>${x.stat?`<span class="pill">${esc(x.stat)}</span>`:''}</div>`});
@@ -5280,7 +5293,7 @@ setInterval(()=>{
 },1500);
 document.addEventListener('change',e=>{if(e.target.id==='x4_signup'&&isAdmin()){S.settings.signup=e.target.checked;save();toast(e.target.checked?'« Créer mon compte » affiché sur les appareils d’équipe':'Création de compte réservée à l’administrateur')}});
 /* ---- écran de connexion : état de l'équipe, afficher le mot de passe ---- */
-const LAGO_V='v115';
+const LAGO_V='v116';
 function gateShell(inner){gateShellBase(inner);gateStat()}
 function gateStat(){
   const g=document.getElementById('gate');if(!g||g.hidden)return;
@@ -8454,7 +8467,7 @@ function brHtml(){
   const rows=D.rows.map(r=>`<div class="brl-r${r.past?' past':''}${(D.txt?r.nx:r.h===D.nh)?' nxt':''}"><b class="num">${r.lbl||r.h+'h'}</b>${sw(r.color)}<span>${esc(r.name)}</span><em>${r.n?pl(r.n):'—'}</em></div>`).join('');
   const soon=D.soon.length?D.soon.map(x=>`<div class="brl-a"><b class="num">${fm(x.start)}</b>${sw(x.b.color)}<span>${esc(x.name||(x.src==='qweekle'?'Réservation Qweekle':x.src==='web'?'Réservation en ligne':'Vente caisse'))}</span><em>${pl(x.n)}</em></div>`).join(''):'<p class="brl-none">Personne n’est attendu dans l’heure.</p>';
   return `<div class="brl-top"><div class="brl-clock"><b class="num">${brClock(now)}</b><span class="num">:${String(now.getSeconds()).padStart(2,'0')}</span></div>
-      <div class="brl-info"><div class="brl-date">${esc(now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))}</div><div class="brl-pres"><b class="num">${D.present}</b> présent${D.present>1?'s':''} dans le parc</div></div></div>
+      <div class="brl-info"><div class="brl-date">${esc(dlongC(dkey(now)))}</div><div class="brl-pres"><b class="num">${D.present}</b> présent${D.present>1?'s':''} dans le parc</div></div></div>
     <div class="brl-grid">
       <section class="brl-p brl-now"><h2>À remettre maintenant</h2><p class="brl-sub">Départ de ${fm(D.q)}</p>${give}</section>
       <section class="brl-p brl-next" style="--bc:${D.next.color}"><h2>${D.txt?'Prochaine fin':'Prochain retrait'}</h2><div class="brl-big">${sw(D.next.color,1)}<div><b>${esc(D.next.name)}</b><span>à ${D.next.at||D.nh+'h00'}</span></div></div>
@@ -8733,7 +8746,7 @@ function webDetail(id){
   const s=WEB_ST[b.st]||WEB_ST.ok,live=b.st==='ok'||b.st==='full';
   const mail=b.mail?`<a class="btn" href="mailto:${esc(b.mail)}?subject=${encodeURIComponent('Votre réservation '+b.ref+' – '+S.settings.name)}">Écrire</a>`:'',tel=b.phone?`<a class="btn" href="tel:${esc(b.phone.replace(/[^\d+]/g,''))}">Appeler</a>`:'';
   showModal(`${mh('Réservation '+esc(b.ref))}
-   <p class="muted" style="text-transform:capitalize;margin:0 0 8px">${esc(dlong(b.date))} · ${fm(b.start)}</p>
+   <p class="muted" style="margin:0 0 8px">${esc(dlongC(b.date))} · ${fm(b.start)}</p>
    <div class="wbst ${s[1]}">${s[0]}</div>
    ${payBlock(b)}
    ${b.st==='full'?'<p class="muted">Les places de ce créneau ont été prises entre-temps en caisse : contactez le client pour lui proposer un autre horaire, puis annulez-la.</p>':''}
@@ -8775,7 +8788,7 @@ function vWeb(m){
   else st=`<div class="banner ok"><span>Réservation en ligne ouverte${WEBR.err?' · '+esc(WEBR.err):''}. Le planning se met à jour tout seul.</span></div>`;
   const nchk=payToCheck().length;if(nchk)st+=`<div class="banner"><span><b>${nchk} paiement${nchk>1?'s':''} à vérifier</b> : le client indique avoir payé en ligne. Ouvrez la réservation pour contrôler dans Stripe.</span></div>`;
   m.innerHTML=st+`<div class="kpis"><div class="kpi"><div class="l">À venir</div><div class="v num">${up.length}</div></div><div class="kpi"><div class="l">Participants</div><div class="v num">${pp}</div></div><div class="kpi"><div class="l">À replacer</div><div class="v num">${need}</div></div></div>
-   ${Object.keys(days).map(d=>`<div class="card"><h3 style="text-transform:capitalize">${esc(dlong(d))}${d===t0?' · aujourd’hui':''}</h3>${days[d].map(row).join('')}</div>`).join('')||'<div class="card"><p class="muted">Aucune réservation en ligne à venir.</p></div>'}
+   ${Object.keys(days).map(d=>`<div class="card"><h3>${esc(dlongC(d))}${d===t0?' · aujourd’hui':''}</h3>${days[d].map(row).join('')}</div>`).join('')||'<div class="card"><p class="muted">Aucune réservation en ligne à venir.</p></div>'}
    ${past.length?`<details class="card"><summary><b>Passées, encaissées ou annulées</b></summary>${past.map(row).join('')}</details>`:''}`;
 }
 /* ---------- les réglages ---------- */
@@ -10730,7 +10743,7 @@ function cxVal(m){
   const day=cxDay,all=S.sales.filter(s=>s.ty!=='av'&&cxDayOf(s)===day).sort((a,b)=>b.ts-a.ts);
   const ok=all.filter(s=>!s.cx),ca=ok.reduce((a,s)=>a+s.total,0),pms=[...new Set(all.flatMap(s=>(s.pay||[]).map(p=>p.m)))];
   if(cxPm!=='all'&&!pms.includes(cxPm))cxPm='all';
-  m.innerHTML=`<div class="cxday"><button class="ix" data-act="cx_day" data-d="-1" aria-label="Jour précédent">${ic('left')}</button><b>${day===today()?'Aujourd’hui':dlong(day)}</b><button class="ix" data-act="cx_day" data-d="1" aria-label="Jour suivant" ${day>=today()?'disabled':''}>${ic('right')}</button>${day!==today()?'<button class="btn" data-act="cx_today">Aujourd’hui</button>':''}<input type="date" id="cxdate" value="${day}" max="${today()}" aria-label="Choisir une date"></div>
+  m.innerHTML=`<div class="cxday"><button class="ix" data-act="cx_day" data-d="-1" aria-label="Jour précédent">${ic('left')}</button><b>${day===today()?'Aujourd’hui':dlongC(day)}</b><button class="ix" data-act="cx_day" data-d="1" aria-label="Jour suivant" ${day>=today()?'disabled':''}>${ic('right')}</button>${day!==today()?'<button class="btn" data-act="cx_today">Aujourd’hui</button>':''}<input type="date" id="cxdate" value="${day}" max="${today()}" aria-label="Choisir une date"></div>
   <div class="kpis cxk"><div class="kpi"><div class="l">Ventes validées</div><div class="v num">${ok.length}</div></div><div class="kpi"><div class="l">Chiffre d’affaires</div><div class="v num">${eur(ca)}</div></div><div class="kpi"><div class="l">Panier moyen</div><div class="v num">${eur(ok.length?Math.round(ca/ok.length):0)}</div></div><div class="kpi"><div class="l">Annulées par avoir</div><div class="v num">${all.length-ok.length}</div></div></div>
   <div class="card"><div class="cxfilters"><div class="search cxsearch">${ic('search')}<input id="cxq" type="search" placeholder="N° de ticket, client ou article" autocomplete="off" value="${esc(cxQ)}"></div>
    ${pms.length>1?`<div class="chips cxchips"><button class="chip ${cxPm==='all'?'on':''}" data-act="cx_pm" data-id="all">Tous</button>${pms.map(k=>`<button class="chip ${cxPm===k?'on':''}" data-act="cx_pm" data-id="${esc(k)}">${esc(METHODS[k]||k)}</button>`).join('')}</div>`:''}</div>
